@@ -82,6 +82,8 @@ export class Indexer {
       await this.insert(journal, date, node);
     }
 
+    if (!node.children) return;
+
     for (const child of node.children) {
       await this.indexNode(journal, date, child);
     }
