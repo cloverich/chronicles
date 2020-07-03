@@ -1,0 +1,9 @@
+node_modules
+yarn-error.log
+
+# db files usually for testing
+*.db
+
+tmp/
+.DS_Store
+*.code-workspace

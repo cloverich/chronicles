@@ -1,0 +1,11 @@
+.container {
+  width: 800px;
+  margin: auto;
+}
+
+.doc-date {
+  margin-left: -150px;
+  font-family: "IBM Plex Mono";
+  font-size: 18px;
+  color: rgb(41, 58, 242);;
+}

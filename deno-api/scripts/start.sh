@@ -1,0 +1,1 @@
+PRAGMA_DB='./pragma.db' deno run --unstable --allow-read --allow-write --allow-env index.ts
