@@ -15,6 +15,12 @@ import {
 const db = createDb("./pragma.db", true);
 const journals = await Journals.create(db);
 const finder = new DocsFinder(db, journals);
+
+// debugging
+await journals.add({
+  name: "chronicles",
+  url: "/Users/cloverich/Google Drive/notes/chronicles",
+});
 // Initializes journals. Stupid.
 await journals.list();
 

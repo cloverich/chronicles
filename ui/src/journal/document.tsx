@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Pane } from "evergreen-ui";
+import { Pane, Badge, Text } from "evergreen-ui";
 import { useDocument } from "../hooks";
 import remark from "remark";
 const html = require("remark-html");
@@ -30,9 +30,9 @@ export default function Document(props: Props) {
 
   return (
     <Pane>
-      <h5>
-        {props.date} ({props.journal})
-      </h5>
+      <Text>
+        <Badge color="blue">{props.date} </Badge>({props.journal})
+      </Text>
       <Content />
     </Pane>
   );

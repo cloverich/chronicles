@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Pane, Text, TextInputField } from "evergreen-ui";
+import { Button, Pane, Text, TextInputField, FilePicker } from "evergreen-ui";
 import client, { IJournal } from "../client";
 import { JournalsState } from "../hooks";
 

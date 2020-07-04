@@ -33,6 +33,13 @@ interface NodeSchema {
   attributes: string; // jsonb
 }
 
+class IndexParsingError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = "IndexParsingError";
+  }
+}
+
 export class Indexer {
   private db: DB;
   constructor(db: DB) {
@@ -47,9 +54,16 @@ export class Indexer {
     // when pulling listItem children off of list nodes to independnetly index....
     // Basically the structure of MDAST is affecting how I process it. Blargh.
     const { type, children, position, ...atributes } = node;
-    const contents = stringifier.stringify(node);
 
-    // todo: use auto-increment, kill manually passed idx
+    let contents: string;
+
+    try {
+      contents = stringifier.stringify(node);
+    } catch (err) {
+      throw new IndexParsingError(err);
+    }
+
+    // todo: use auto-increment to track parent node
     this.db.query(
       "INSERT INTO nodes (journal, date, type, contents, attributes) VALUES (?, ?, ?, ?, ?)",
       [journal, date, type, contents, JSON.stringify(atributes)]
@@ -73,13 +87,34 @@ export class Indexer {
 
   /**
    * Recursively index an mdast document
+   *
+   * NOTE: This is a naive strategy to make content searchable by node type.
+   * Little thought has been applied to the right way to index content, and
+   * all the things that go with that.
    * @param journal
    * @param date
    * @param node - TODO: Base node type
    */
   indexNode = async (journal: string, date: string, node: Root | any) => {
     if (node.type !== "root") {
-      await this.insert(journal, date, node);
+      try {
+        await this.insert(journal, date, node);
+      } catch (err) {
+        // Because I am recursively indexing _all_ nodeTypes, the remark parser
+        // I am using to stringify node content may not have a "compiler" for a particular
+        // node: Ex - if compiles a table node, but will choke if passed its child tableRow
+        // node directly. Ignore these errors and simply don't index those child nodes.
+        // Longer term, I'll likely use a different indexing strategy / implementation so
+        // not concerned about this right now.
+        if (err instanceof IndexParsingError) {
+          // ignore
+        } else {
+          console.error(
+            "Error indexing node for journal ${journal}: It may not show up correctly"
+          );
+          console.error(err);
+        }
+      }
     }
 
     if (!node.children) return;
@@ -89,14 +124,23 @@ export class Indexer {
     }
   };
 
-  // Index journal
   index = async (srcDir: string, name: string) => {
     const sr = await this.walk(srcDir, name);
 
     for (const entry of sr.results) {
       const contents = await FileDAO.read(sr.path, entry);
-      const parsed = parser.parse(contents);
-      await this.indexNode(sr.journal, entry, parsed);
+      // todo: track parsing errors so you understand why your content
+      // isn't showing up in your journal view (failed to index).
+      try {
+        const parsed = parser.parse(contents);
+        await this.indexNode(sr.journal, entry, parsed);
+      } catch (err) {
+        // Log and continue, so we can index remaining journal documents
+        console.error(
+          `[Indexer.index] error indexing entry ${sr.path} - ${entry}`,
+          err
+        );
+      }
     }
   };
 
@@ -113,15 +157,17 @@ export class Indexer {
       path: srcDir,
     };
 
+    // NOTE: Docs say walk is lexicographical but if I log out statements, its not walking in order
     for await (const entry of walk(srcDir, {
       includeDirs: false,
       exts: ["md", "mdown"],
     })) {
-      // entry.
+      // todo: process as a stream
       if (reg.test(entry.name)) {
         sr.results.push(path.parse(entry.name).name);
       }
-      //   entry
+      // I used this previously to generate YYYY-MM-DD filenames
+      // Feel like I'll use it again soon...
       // const dateStr = fileInfo.mtime!.toISOString().slice(0, 10);
     }
 

@@ -6,6 +6,11 @@ const remarkStringify = require("remark-stringify");
 const unified = require("unified");
 
 import { Root } from "./types/mdast.d.ts";
+import { RemarkParseOptions } from "./types/remark-parse.d.ts";
+import {
+  RemarkStringifyOptions,
+  Stringify,
+} from "./types/remark-stringify.d.ts";
 
 /**
  * The types from remark-parse say it accepts no arguments for parse.
@@ -23,8 +28,25 @@ interface Parser {
   parse(contents: string): Root;
 }
 
-export const parser: Parser = unified().use(remarkParser, {
+// Wrap parser creation so I can signify it takes Partial<RemarkParseOptions>
+function makeParser(opts: Partial<RemarkParseOptions>): Parser {
+  return unified().use(remarkParser, opts);
+}
+
+function makeStringCompiler(opts: Partial<RemarkStringifyOptions>): any {
+  return (
+    unified()
+      // yeah idk if adding the parser is needed here
+      // or if adding the options, I think they are defaults
+      // ¯\_(ツ)_/¯
+      .use(remarkParser, { commonmark: true, gfm: true })
+      .use(remarkStringify, opts)
+  );
+}
+
+export const parser: Parser = makeParser({
   commonmark: true,
+  gfm: true,
 });
 
 /**
@@ -35,9 +57,7 @@ export const parser: Parser = unified().use(remarkParser, {
  * same exact text that came in. So, this is useful for POC but longer term...
  * I'll need to do something a little smarter perhaps.
  */
-export const stringifier = unified().use(remarkStringify, {
-  // bullet: '*',
-  // fence: '~',
-  // fences: true,
-  // incrementListMarker: false
+export const stringifier = makeStringCompiler({
+  commonmark: true,
+  gfm: true,
 });
