@@ -1,6 +1,6 @@
 import ky from "ky-universal";
 
-interface IJournal {
+export interface IJournal {
   name: string;
   url: string;
 }
@@ -21,19 +21,19 @@ class JournalsClient {
   };
 }
 
-interface GetDocument {
+export interface GetDocument {
   journalName: string;
   date: string;
 }
 
-interface GetDocumentResponse {
+export interface GetDocumentResponse {
   raw: string;
   // todo: MDAST types
   mdast: Record<string, any>;
 }
 
 // DocsQuery in deno-api
-interface SearchRequest {
+export interface SearchRequest {
   journals?: string[];
 
   nodeMatch?: {
@@ -43,19 +43,19 @@ interface SearchRequest {
   };
 }
 
-type SearchResponse = {
+export type SearchResponse = {
   query: SearchRequest;
-  docs: Array<{ journal: string; date: string }>;
+  docs: Array<[string, string]>; // journal name, date (string, YYYY-MM-DD)
 };
 
 // Now straight up copying from the API layer
-interface SaveRawRequest {
+export interface SaveRawRequest {
   journalName: string;
   date: string;
   raw: string;
 }
 
-interface SaveMdastRequest {
+export interface SaveMdastRequest {
   journalName: string;
   date: string;
   mdast: any;
@@ -100,3 +100,6 @@ export class Client {
     this.docs = new DocsClient(urlBase);
   }
 }
+
+// todo: DI
+export default new Client();

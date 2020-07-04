@@ -1,10 +1,20 @@
 import React, { useState } from "react";
+import { Pane, Tablist, Tab } from "evergreen-ui";
+import Layout from "./layout";
 
 import Docs from "./docs";
 import Editor from "./editor";
+import Journals from "./journals";
+
+import { useContent, useJournals } from "./hooks";
+// name not at all confusing
+import Journal from "./journal";
 
 export default function Container() {
   const [isEditor, setEditor] = useState("");
+  const [view, setView] = useState<"config" | "journal">("config");
+  const journalsState = useJournals();
+  const contentState = useContent();
 
   const turnonEdit = (content: string) => {
     setEditor(content);
@@ -15,6 +25,30 @@ export default function Container() {
     e.stopPropagation();
     setEditor("");
   };
+
+  if (view === "config") {
+    return (
+      <Layout
+        tabs={["config", "journal"]}
+        selected={view}
+        setSelected={setView}
+      >
+        <Journals {...journalsState} />
+      </Layout>
+    );
+  }
+
+  if (view === "journal") {
+    return (
+      <Layout
+        tabs={["config", "journal"]}
+        selected={view}
+        setSelected={setView}
+      >
+        <Journal {...contentState} journals={journalsState.journals} />
+      </Layout>
+    );
+  }
 
   if (isEditor) {
     return (

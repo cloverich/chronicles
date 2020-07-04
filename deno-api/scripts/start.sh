@@ -1,1 +1,1 @@
-PRAGMA_DB='./pragma.db' deno run --unstable --allow-read --allow-write --allow-env index.ts
+PRAGMA_DB='./pragma.db' deno run --unstable -A server.ts

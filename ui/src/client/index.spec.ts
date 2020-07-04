@@ -14,7 +14,7 @@ describe("Client.journals", function () {
 
     const client = new Client();
     await client.journals.add({
-      name: "Chronicles",
+      name: "reading",
       url: "/Users/cloverich/Google Drive/notes/chronicles",
     });
 
@@ -94,5 +94,6 @@ describe("Client.docs", function () {
       date: "2020-06-30 05:03:31",
     });
   });
+
   it("throws if ");
 });

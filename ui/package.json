@@ -16,6 +16,7 @@
     "chai": "^4.2.0",
     "css-loader": "^3.6.0",
     "emotion": "^10.0.27",
+    "evergreen-ui": "^4.28.0",
     "html-webpack-plugin": "^4.3.0",
     "ky": "^0.20.0",
     "ky-universal": "^0.8.1",
