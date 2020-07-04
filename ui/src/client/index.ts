@@ -29,7 +29,7 @@ export interface GetDocument {
 export interface GetDocumentResponse {
   raw: string;
   // todo: MDAST types
-  mdast: Record<string, any>;
+  mdast: any; // Record<string, any>;
 }
 
 // DocsQuery in deno-api

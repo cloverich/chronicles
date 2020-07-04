@@ -97,16 +97,6 @@ export class Indexer {
       const contents = await FileDAO.read(sr.path, entry);
       const parsed = parser.parse(contents);
       await this.indexNode(sr.journal, entry, parsed);
-
-      // for (const child of parsed.children) {
-      //   await this.insert(sr.journal, entry, child);
-
-      //   if (child.type === "list" && child.children.length > 0) {
-      //     for (const listChild of child.children) {
-      //       await this.insert(sr.journal, entry, listChild);
-      //     }
-      //   }
-      // }
     }
   };
 

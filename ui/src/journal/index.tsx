@@ -38,7 +38,7 @@ export default function Journal(
     ));
 
   return (
-    <Pane>
+    <Pane margin={50}>
       <Search {...props} />
       {docs}
     </Pane>
