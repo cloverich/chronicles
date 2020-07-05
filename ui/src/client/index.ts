@@ -81,7 +81,7 @@ class DocsClient {
       .json();
   };
 
-  save = (req: SaveRequest) => {
+  save = (req: SaveRequest): Promise<GetDocumentResponse> => {
     const body = "raw" in req ? { raw: req.raw } : { mdast: req.mdast };
 
     return ky

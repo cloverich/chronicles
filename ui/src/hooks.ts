@@ -151,12 +151,16 @@ export function useDocument(journal: string, date: string): DocumentState {
   // Setup an interval to check for dirty, and auto-save if true
   // Consider tracking status here as well
   // Consider caching original to support reverting
-
   async function saveDocument(content: string) {
     if (saving) return;
     setSaving(true);
     try {
-      await client.docs.save({ date, journalName: journal, raw: content });
+      const doc = await client.docs.save({
+        date,
+        journalName: journal,
+        raw: content,
+      });
+      setDocument(doc);
       setSaveError(null);
       setSaving(false);
     } catch (err) {

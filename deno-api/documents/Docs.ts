@@ -149,5 +149,7 @@ export class DocsFinder {
       await FileDAO.save(jpath, req.date, contents);
       await this.indexer.indexNode(req.journalName, req.date, req.mdast);
     }
+
+    return this.fetchDoc(req.journalName, req.date);
   };
 }

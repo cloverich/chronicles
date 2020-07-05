@@ -19,7 +19,7 @@ module.exports = (env, argv) => {
     },
 
     // Enable sourcemaps for debugging webpack's output.
-    devtool: "source-map",
+    devtool: "eval-source-map",
 
     resolve: {
       // Add '.ts' and '.tsx' as resolvable extensions.
@@ -57,6 +57,13 @@ module.exports = (env, argv) => {
           ],
         },
       ]
+    },
+
+    // ui-box source maps are not loaded correctly and I do not care to debug
+    // this filters out those warnings
+    // https://webpack.js.org/loaders/source-map-loader/
+    stats: {
+      warningsFilter: [/Failed to parse source map/],
     },
 
     plugins: [
