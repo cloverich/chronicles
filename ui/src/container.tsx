@@ -1,9 +1,5 @@
 import React, { useState } from "react";
-import { Pane, Tablist, Tab } from "evergreen-ui";
 import Layout from "./layout";
-
-import Docs from "./docs";
-import Editor from "./editor";
 import Journals from "./journals";
 
 import { useContent, useJournals } from "./hooks";
@@ -50,27 +46,29 @@ export default function Container() {
     );
   }
 
-  if (isEditor) {
-    return (
-      <div className="container">
-        <a href="#" onClick={turnoffEdit}>
-          Turn it off
-        </a>
-        <div>
-          <Editor initial={[{ children: [{ text: isEditor }] }]} />
-        </div>
-      </div>
-    );
-  } else {
-    return (
-      <div className="container">
-        <a href="#" onClick={turnoffEdit}>
-          Turn it on
-        </a>
-        <div>
-          <Docs edit={turnonEdit} />
-        </div>
-      </div>
-    );
-  }
+  return <div>¯\_(ヅ)_/¯</div>;
+
+  // if (isEditor) {
+  //   return (
+  //     <div className="container">
+  //       <a href="#" onClick={turnoffEdit}>
+  //         Turn it off
+  //       </a>
+  //       <div>
+  //         <Editor initial={[{ children: [{ text: isEditor }] }]} />
+  //       </div>
+  //     </div>
+  //   );
+  // } else {
+  //   return (
+  //     <div className="container">
+  //       <a href="#" onClick={turnoffEdit}>
+  //         Turn it on
+  //       </a>
+  //       <div>
+  //         <Docs edit={turnonEdit} />
+  //       </div>
+  //     </div>
+  //   );
+  // }
 }

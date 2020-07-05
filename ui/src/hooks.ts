@@ -110,14 +110,19 @@ export function useContent(): ContentState {
   return { loading, error, query, setQuery, content };
 }
 
-interface DocumentState {
+export interface DocumentState {
   document: GetDocumentResponse | null;
   error: Error | null;
   loading: boolean;
+  saveDocument: Func<string, Promise<any>>;
+  saving: boolean;
+  saveError: Error | null;
 }
 
 export function useDocument(journal: string, date: string): DocumentState {
   const { loading, setLoading, error, setError } = useLoading();
+  const [saving, setSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<Error | null>(null);
   const [document, setDocument] = useState<GetDocumentResponse | null>(null);
 
   useEffect(() => {
@@ -140,5 +145,25 @@ export function useDocument(journal: string, date: string): DocumentState {
     loadDocument();
   }, [journal, date]);
 
-  return { loading, error, document };
+  // TODO: auto-save
+  // Pull out document content and setter inside hook
+  // Make setter mark document as dirty
+  // Setup an interval to check for dirty, and auto-save if true
+  // Consider tracking status here as well
+  // Consider caching original to support reverting
+
+  async function saveDocument(content: string) {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await client.docs.save({ date, journalName: journal, raw: content });
+      setSaveError(null);
+      setSaving(false);
+    } catch (err) {
+      setSaveError(err);
+      setSaving(false);
+    }
+  }
+
+  return { loading, error, document, saveDocument, saving, saveError };
 }

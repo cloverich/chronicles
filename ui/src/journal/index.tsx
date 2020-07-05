@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Pane } from "evergreen-ui";
 import { ContentState, JournalsState } from "../hooks";
 import Search from "./search";

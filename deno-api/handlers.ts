@@ -159,6 +159,7 @@ class Handlers {
     }
 
     await this.finder.save(saveRequest);
+    ctx.response.status = 204;
     // ideally, return server-side parsed content as mdast?
     // todo: update journal entries
   };
