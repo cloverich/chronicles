@@ -1,5 +1,6 @@
 import { DB } from "../deps.ts";
 import { Indexer } from "./Indexer.ts";
+import { recreateSchema } from "./db.ts";
 
 interface IJournal {
   // path to root folder
@@ -98,6 +99,25 @@ export class Journals {
 
     // Return the list of journals
     return this.journals;
+  };
+
+  reindex = async () => {
+    console.log("[Journals.reindex] start");
+
+    // grab current list, then re-set it
+    const list = await this.list();
+    this.journals = [];
+
+    // faster then deleting one by one
+    await recreateSchema(this.db);
+
+    // re-index
+    for (const journal of list) {
+      console.log("[Journals.reindex] reindexing", journal.name);
+      await this.add(journal);
+      console.log("[Journals.reindex] completed", journal.name);
+    }
+    console.log("[Journals.reindex] complete");
   };
 
   remove = async () => {

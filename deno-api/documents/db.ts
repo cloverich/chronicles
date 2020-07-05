@@ -8,12 +8,14 @@ export function createDb(
 ): DB {
   if (db) return db;
   db = new DB(url);
-  if (reschema) createSchema(db);
+  if (reschema) recreateSchema(db);
 
   return db;
 }
 
-function createSchema(db: DB) {
+// Exported to support naively re-indexing by deleting and re-adding
+// everything
+export async function recreateSchema(db: DB) {
   db.query(`DROP TABLE IF EXISTS nodes`);
   db.query("DROP TABLE IF EXISTS journals");
 

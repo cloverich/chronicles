@@ -12,17 +12,10 @@ import {
 } from "https://deno.land/x/oak@v5.3.1/mod.ts";
 
 // Bootstrap services
-const db = createDb("./pragma.db", true);
+// todo: ENV based db url
+const db = createDb("./pragma.db");
 const journals = await Journals.create(db);
 const finder = new DocsFinder(db, journals);
-
-// debugging
-await journals.add({
-  name: "chronicles",
-  url: "/Users/cloverich/Google Drive/notes/chronicles",
-});
-// Initializes journals. Stupid.
-await journals.list();
 
 // Route middelware
 interface R {
