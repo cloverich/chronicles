@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import client, {
   IJournal,
   SearchResponse,
   SearchRequest,
   GetDocumentResponse,
 } from "./client";
+import { toaster } from "evergreen-ui";
+import ky from "ky-universal";
 
 // I am lazy
 type Func<T, U = any> = (args: T) => U;
@@ -24,10 +32,53 @@ interface LoadingState {
   setError: Func<Error | null>;
 }
 
+// So this works.. but its dumb because if two hooks in this file want to use it,
+// they must rely on some parent cotenxt import and Providing this context with a value
+// from a different hook.
+// I wonder how to write this cleanly.
+// Maybe... `useJournals` should only be used in one place as well,
+// in which case both this and that should be in the same Container component
+// that loads them
+export const JournalsContext = React.createContext<IJournal[]>([]);
+
+// todo: inject this from a context elsewhere...
+import { DocsStore } from "./client/docstore";
+const docs = new DocsStore();
+
+/**
+ * Re-usable state for loading and errors
+ * @param defaultLoading
+ * @param defaultError
+ */
 function useLoading(defaultLoading = true, defaultError = null): LoadingState {
   const [loading, setLoading] = useState<boolean>(defaultLoading);
   const [error, setError] = useState<Error | null>(defaultError);
   return { loading, setLoading, error, setError };
+}
+
+/**
+ * abstract the error / loading pattern into a helper that returns
+ * a wrapped async function and loadingstate.
+ * @param cb - The async logic to wrap. Ex: const state = withLoading(() => fetch('http://foo.com'));
+ */
+function withLoading(cb: () => Promise<any>) {
+  const state = useLoading(false);
+
+  const wrapper = async () => {
+    if (state.loading) return;
+    state.setLoading(true);
+    state.setError(null);
+    try {
+      await cb();
+      state.setLoading(false);
+    } catch (err) {
+      state.setError(err);
+      state.setLoading(false);
+      toaster.danger(err);
+    }
+  };
+
+  return { loading: state.loading, error: state.error, wrapper };
 }
 
 export function useJournals(): JournalsState {
@@ -68,12 +119,13 @@ export interface ContentState {
   loading: boolean;
   error: Error | null;
   query: SearchRequest | null;
-  setQuery: Func<SearchRequest>;
+  setQuery: Dispatch<SetStateAction<SearchRequest | null>>;
   content: SearchResponse | null;
 }
 
 /**
  * Hook to hold query and content state
+ * TODO: "content" is not hte right name, its search result state
  */
 export function useContent(): ContentState {
   const { loading, setLoading, error, setError } = useLoading();
@@ -119,7 +171,60 @@ export interface DocumentState {
   saveError: Error | null;
 }
 
-export function useDocument(journal: string, date: string): DocumentState {
+interface DocumentLoadedState {
+  error: null;
+  loading: false;
+  document: GetDocumentResponse;
+}
+
+interface DocumentLoadingState {
+  error: null;
+  loading: true;
+  document: null;
+}
+
+/**
+ * The document failed to load because of an error.
+ */
+interface DocumentErrorState {
+  error: Error;
+  loading: false;
+  document: null;
+}
+
+/**
+ * A document request (really, any request) can actually be only one of
+ * these discrete states.
+ *
+ * 1. Loading: Document is loading
+ * 2. Error: Document failed to load
+ * 3. Loaded: Document loaded succesfully (is now non-null)
+ */
+type DocumentLoaderState =
+  | DocumentLoadedState
+  | DocumentLoadingState
+  | DocumentErrorState;
+
+/**
+ * Options to useDocument
+ */
+type UseDocumentOpts = {
+  /**
+   * Should it return an empty document on 404, or propagate the error?
+   */
+  isCreate: true;
+  /**
+   * A key that, when changed, will cause the load effect to re-run
+   * Kind of stupid but, works for MVP
+   */
+  refresh: boolean;
+};
+
+export function useDocument(
+  journal: string,
+  date: string,
+  opts: Partial<UseDocumentOpts> = {}
+): DocumentState {
   const { loading, setLoading, error, setError } = useLoading();
   const [saving, setSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<Error | null>(null);
@@ -129,21 +234,25 @@ export function useDocument(journal: string, date: string): DocumentState {
     async function loadDocument() {
       setLoading(true);
       try {
-        const docRes = await client.docs.findOne({
-          journalName: journal,
-          date,
-        });
+        const docRes = await docs.loadDocument({ journalName: journal, date });
         setDocument(docRes);
         setError(null);
-        setLoading(false);
       } catch (err) {
-        setError(err);
-        setLoading(false);
+        // special case: creating a new document
+        if (err instanceof ky.HTTPError) {
+          if (err.response.status === 404 && opts.isCreate) {
+            setDocument({ mdast: null, raw: "" });
+          }
+        } else {
+          toaster.danger(`failed to load document ${err}`);
+          setError(err);
+        }
       }
+      setLoading(false);
     }
 
     loadDocument();
-  }, [journal, date]);
+  }, [journal, date, opts.refresh]);
 
   // TODO: auto-save
   // Pull out document content and setter inside hook
@@ -170,4 +279,71 @@ export function useDocument(journal: string, date: string): DocumentState {
   }
 
   return { loading, error, document, saveDocument, saving, saveError };
+}
+
+import { Node } from "slate";
+
+/**
+ * The "New document" button needs to know what date today is.
+ */
+function getToday() {
+  const d = new Date();
+  // This isn't quite right. At 6:30 am, this makes a date
+  // that is 00:30. setUTCHours is stranger. TODO: Revisit
+  d.setHours(-d.getTimezoneOffset() / 60);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * The Slate editor uses nodes for its state.
+ *
+ * These are hacky to get it rolling, not sure what the state is supposed
+ * to look like.
+ */
+class EditHelper {
+  static stringify(node: Node[]) {
+    return node.map((n: any) => Node.string(n)).join("\n");
+  }
+
+  static nodify(contents?: string) {
+    return [{ children: [{ text: contents || "" }] }];
+  }
+}
+
+export function useEditableDocument(journal: string, isUsing: boolean) {
+  // todo: this needs to not be cached, leaving the browser open overnight
+  // and using it the next morning is something I do commonly -- it cannot
+  // have a reference to yesterday
+  const today = getToday();
+  const { document, ...rest } = useDocument(journal, today, {
+    isCreate: true,
+    refresh: isUsing,
+  });
+
+  // Editor gets a copy of the documents contents.
+  const [value, setValue] = useState<Node[]>(EditHelper.nodify(document?.raw));
+
+  // Anytime the document changes, the copy provided to the editor should too
+  useEffect(() => {
+    setValue(EditHelper.nodify(document?.raw));
+  }, [document]);
+
+  const { wrapper: saveDocument, ...savingState } = withLoading(async () => {
+    await docs.saveDocument({
+      date: today,
+      journalName: journal,
+      // todo: this is duplicated from document.tsx
+      raw: EditHelper.stringify(value),
+    });
+  });
+
+  return {
+    ...rest,
+    document,
+    date: today,
+    value,
+    setValue,
+    saveDocument,
+    savingState,
+  };
 }

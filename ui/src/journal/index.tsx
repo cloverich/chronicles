@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Pane } from "evergreen-ui";
 import { ContentState, JournalsState } from "../hooks";
-import Search from "./search";
 import Document from "./document";
+import Header from "./header";
+import Search from "./search";
 
 export default function Journal(
   props: ContentState & Pick<JournalsState, "journals">
@@ -21,6 +22,9 @@ export default function Journal(
     );
 
   // Empty helpers too
+  // todo: add document if journals != null
+  // todo: if no journals direct user to config
+  // todo: if journals but no query direct user to query
   if (!content) {
     return (
       <Pane>
@@ -40,6 +44,7 @@ export default function Journal(
   return (
     <Pane margin={50}>
       <Search {...props} />
+      <Header {...props} />
       {docs}
     </Pane>
   );

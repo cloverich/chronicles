@@ -80,13 +80,24 @@ class Handlers {
       };
     }
 
-    const doc = await this.finder.fetchDoc(
-      ctx.params.journal!,
-      ctx.params.date!
-    ); // could pass ctx.params...
-
-    ctx.response.status = Status.OK;
-    ctx.response.body = doc;
+    try {
+      const doc = await this.finder.fetchDoc(
+        ctx.params.journal!,
+        ctx.params.date!
+      ); // could pass ctx.params....
+      ctx.response.status = Status.OK;
+      ctx.response.body = doc;
+    } catch (err) {
+      if (err.name === "NotFound") {
+        ctx.response.status = Status.NotFound;
+        ctx.response.body = {
+          title: "Document not found. Maybe you need to create it?",
+        };
+      } else {
+        console.error("[Handlers.fetchDoc] error fetching document", err);
+        throw err;
+      }
+    }
   };
 
   search = async (ctx: RouterContext) => {

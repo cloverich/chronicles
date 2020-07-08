@@ -75,7 +75,7 @@ Prism.languages.markdown = Prism.languages.extend("markup", {});
   Prism.languages.markdown.bold
 );
 
-interface Props {
+export interface Props {
   saving: boolean;
   value: Node[];
   setValue: (n: Node[]) => any;
