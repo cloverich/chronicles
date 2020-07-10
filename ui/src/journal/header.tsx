@@ -12,49 +12,103 @@ import {
 } from "evergreen-ui";
 import { ContentState, JournalsState, useEditableDocument } from "../hooks";
 import Editor, { Props as EditorProps } from "./editor";
+import { Node } from "slate";
+
+interface EditProps {
+  editing?: { journal: string; date?: string };
+  setEditing: (args?: { journal: string; date?: string }) => any;
+}
+
+export default function HeaderWrapper(
+  props: ContentState & Pick<JournalsState, "journals"> & EditProps
+) {
+  function editToday() {
+    props.setEditing({
+      journal: props.journals[0].name,
+    });
+  }
+
+  if (props.editing) {
+    return (
+      <>
+        <Button
+          onClick={() => props.setEditing({ journal: props.journals[0].name })}
+        >
+          Add
+        </Button>
+        <DocsListHeader {...props} editing={props.editing} />
+      </>
+    );
+  } else {
+    return (
+      <Button
+        onClick={() => props.setEditing({ journal: props.journals[0].name })}
+      >
+        Add
+      </Button>
+    );
+  }
+}
+
+interface DefinitelyEditingProps {
+  editing: { journal: string; date?: string };
+  setEditing: (args?: { journal: string; date?: string }) => any;
+}
 
 // Search and Add and...
-export default function DocsListHeader(
-  props: ContentState & Pick<JournalsState, "journals">
+export function DocsListHeader(
+  props: ContentState & Pick<JournalsState, "journals"> & DefinitelyEditingProps
 ) {
   if (props.journals.length === 0) return null;
-  const [isShown, setShown] = useState(false);
-  const [selected, setSelected] = useState(props.journals[0].name);
 
   const {
     value,
     setValue,
-    date,
+    isDirty,
     saveDocument,
     savingState,
     loading,
-  } = useEditableDocument(selected, isShown);
+    date,
+  } = useEditableDocument(props.editing.journal, props.editing.date);
+
+  const [didSave, setDidSave] = useState(false);
 
   async function doConfirm(close: any) {
     await saveDocument();
-
-    // hacky way to refresh the query
-    props.setQuery((query) => ({ ...query } as any));
+    setDidSave(true);
     close();
+  }
+
+  function onCloseComplete() {
+    // Unset editing state, which unmounts this component
+    props.setEditing();
+
+    if (didSave) {
+      // hacky way to refresh the query, todo: mobx
+      props.setQuery((query) => ({ ...query } as any));
+    }
   }
 
   return (
     <>
-      <Button onClick={() => setShown(true)}>Add</Button>
       <Dialog
         minHeightContent="50vh"
         width="80vw"
         header={
           <DialogHeader
             journalNames={props.journals.map((j) => j.name)}
-            selected={selected}
-            setSelected={setSelected}
+            selected={props.editing.journal}
+            setSelected={(name: string) =>
+              props.setEditing({ ...props.editing, journal: name })
+            }
             date={date}
           />
         }
-        title={props.journals[0].name + "-" + date}
-        isShown={isShown}
-        onCloseComplete={() => setShown(false)}
+        title={props.journals[0].name + "-" + props.editing?.date}
+        isShown={true}
+        shouldCloseOnEscapePress={!isDirty}
+        shouldCloseOnOverlayClick={!isDirty}
+        onCloseComplete={onCloseComplete}
         preventBodyScrolling
         confirmLabel="save"
         isConfirmLoading={savingState.loading}
@@ -65,11 +119,6 @@ export default function DocsListHeader(
       </Dialog>
     </>
   );
-
-  // for each journal, see if there is rorom for a new entry today
-  // Then, for each of those offer to add one here
-  // Once it appears, only actually send it if content is added
-  // otherrwise clear and forget it
 }
 
 interface DialogHeaderProps {

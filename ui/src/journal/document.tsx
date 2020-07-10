@@ -9,6 +9,7 @@ import { Node } from "slate";
 interface Props {
   journal: string;
   date: string;
+  setEditing: (args: { journal: string; date: string }) => any;
 }
 
 const compiler = remark().use(html);
@@ -59,6 +60,7 @@ export default function Document(props: Props) {
         status={status}
         editText={editText}
         toggleEdit={edit}
+        setEditing={props.setEditing}
         editContent={document!.raw}
         {...docState}
       />
@@ -116,6 +118,7 @@ interface HeaderProps {
   status: string;
   editText: string;
   toggleEdit: any;
+  setEditing: (args: { journal: string; date: string }) => any;
   saveDocument: any;
 }
 
@@ -129,6 +132,14 @@ function Header(props: HeaderProps) {
       </Text>
       <Button onClick={props.toggleEdit} appearance="minimal">
         {props.editText}
+      </Button>
+      <Button
+        onClick={() =>
+          props.setEditing({ journal: props.journal, date: props.date })
+        }
+        appearance="minimal"
+      >
+        Edit in Modal
       </Button>
     </>
   );

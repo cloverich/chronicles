@@ -229,8 +229,10 @@ export function useDocument(
   const [saving, setSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<Error | null>(null);
   const [document, setDocument] = useState<GetDocumentResponse | null>(null);
+  console.log("useDocument", journal, date);
 
   useEffect(() => {
+    console.log("useDocument.useEffect", journal, date);
     async function loadDocument() {
       setLoading(true);
       try {
@@ -310,18 +312,27 @@ class EditHelper {
   }
 }
 
-export function useEditableDocument(journal: string, isUsing: boolean) {
-  // todo: this needs to not be cached, leaving the browser open overnight
-  // and using it the next morning is something I do commonly -- it cannot
-  // have a reference to yesterday
-  const today = getToday();
-  const { document, ...rest } = useDocument(journal, today, {
+export function useEditableDocument(
+  journal: string,
+  date?: string,
+  isUsing?: boolean
+) {
+  // todo: refresh periodically or useEffect w/ isUsing to change the date
+  // use case: I leave browser open overnight, "add" has yseterday as date.
+  const dateToUse = date || getToday();
+  const { document, ...rest } = useDocument(journal, dateToUse, {
     isCreate: true,
     refresh: isUsing,
   });
 
   // Editor gets a copy of the documents contents.
   const [value, setValue] = useState<Node[]>(EditHelper.nodify(document?.raw));
+  const [isDirty, setDirty] = useState(false);
+
+  const setEditorValue = (v: Node[]) => {
+    setDirty(true);
+    setValue(v);
+  };
 
   // Anytime the document changes, the copy provided to the editor should too
   useEffect(() => {
@@ -330,19 +341,21 @@ export function useEditableDocument(journal: string, isUsing: boolean) {
 
   const { wrapper: saveDocument, ...savingState } = withLoading(async () => {
     await docs.saveDocument({
-      date: today,
+      date: dateToUse,
       journalName: journal,
       // todo: this is duplicated from document.tsx
       raw: EditHelper.stringify(value),
     });
+    setDirty(false);
   });
 
   return {
     ...rest,
     document,
-    date: today,
+    date: dateToUse,
     value,
-    setValue,
+    setValue: setEditorValue,
+    isDirty,
     saveDocument,
     savingState,
   };

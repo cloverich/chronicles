@@ -5,10 +5,16 @@ import Document from "./document";
 import Header from "./header";
 import Search from "./search";
 
+interface EditingArgs {
+  journal: string;
+  date?: string;
+}
+
 export default function Journal(
   props: ContentState & Pick<JournalsState, "journals">
 ) {
   const { loading, error, content, query, setQuery } = props;
+  const [editing, setEditing] = useState<EditingArgs | undefined>();
 
   // TODO: Layout and ErrorLoading helpers
   // TODO: Call it: /canvas
@@ -38,13 +44,18 @@ export default function Journal(
   const docs = content.docs
     .slice(0, 10)
     .map((item) => (
-      <Document key={item.join("-")} journal={item[0]} date={item[1]} />
+      <Document
+        key={item.join("-")}
+        journal={item[0]}
+        date={item[1]}
+        setEditing={setEditing}
+      />
     ));
 
   return (
     <Pane margin={50}>
       <Search {...props} />
-      <Header {...props} />
+      <Header {...props} editing={editing} setEditing={setEditing} />
       {docs}
     </Pane>
   );
