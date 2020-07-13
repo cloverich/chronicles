@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import Layout from "./layout";
-import Journals from "./journals";
+import Config from "./config";
 
 import { useContent, useJournals, JournalsContext } from "./hooks"; // name not at all confusing
 import Journal from "./journal";
 
 export default function Container() {
-  const [view, setView] = useState<"config" | "journal">("config");
+  const [view, setView] = useState<"config" | "journal">("journal");
   const journalsState = useJournals();
   const contentState = useContent();
 
@@ -18,7 +18,7 @@ export default function Container() {
           selected={view}
           setSelected={setView}
         >
-          <Journals {...journalsState} />
+          <Config {...journalsState} />
         </Layout>
       </JournalsContext.Provider>
     );

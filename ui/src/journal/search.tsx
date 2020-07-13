@@ -2,9 +2,9 @@ import React from "react";
 import { SelectMenu, SelectMenuItem, Button } from "evergreen-ui";
 import { ContentState, JournalsState } from "../hooks";
 
-// TODO: Also need known journals...
-type SearchProps = Pick<ContentState, "loading" | "query" | "setQuery"> &
-  Pick<JournalsState, "journals">;
+export type SearchProps =
+  & Pick<ContentState, "loading" | "query" | "setQuery">
+  & Pick<JournalsState, "journals">;
 
 export default function Search(props: SearchProps) {
   const options = props.journals.map((j) => ({ label: j.name, value: j.name }));

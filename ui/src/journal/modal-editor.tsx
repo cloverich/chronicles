@@ -19,8 +19,10 @@ interface EditProps {
   setEditing: (args?: { journal: string; date?: string }) => any;
 }
 
-export default function HeaderWrapper(
-  props: ContentState & Pick<JournalsState, "journals"> & EditProps
+export type Props = EditProps & ContentState & Pick<JournalsState, "journals">;
+
+export default function EditorWrapper(
+  props: Props,
 ) {
   function editToday() {
     props.setEditing({
@@ -36,7 +38,7 @@ export default function HeaderWrapper(
         >
           Add
         </Button>
-        <DocsListHeader {...props} editing={props.editing} />
+        <ModalEditor {...props} editing={props.editing} />
       </>
     );
   } else {
@@ -50,14 +52,16 @@ export default function HeaderWrapper(
   }
 }
 
-interface DefinitelyEditingProps {
+interface ModalEditor {
   editing: { journal: string; date?: string };
   setEditing: (args?: { journal: string; date?: string }) => any;
 }
 
-// Search and Add and...
-export function DocsListHeader(
-  props: ContentState & Pick<JournalsState, "journals"> & DefinitelyEditingProps
+function ModalEditor(
+  props:
+    & Pick<ContentState, "query" | "setQuery">
+    & Pick<JournalsState, "journals">
+    & ModalEditor,
 ) {
   if (props.journals.length === 0) return null;
 
@@ -94,16 +98,13 @@ export function DocsListHeader(
       <Dialog
         minHeightContent="50vh"
         width="80vw"
-        header={
-          <DialogHeader
-            journalNames={props.journals.map((j) => j.name)}
-            selected={props.editing.journal}
-            setSelected={(name: string) =>
-              props.setEditing({ ...props.editing, journal: name })
-            }
-            date={date}
-          />
-        }
+        header={<DialogHeader
+          journalNames={props.journals.map((j) => j.name)}
+          selected={props.editing.journal}
+          setSelected={(name: string) =>
+            props.setEditing({ ...props.editing, journal: name })}
+          date={date}
+        />}
         title={props.journals[0].name + "-" + props.editing?.date}
         isShown={true}
         shouldCloseOnEscapePress={!isDirty}
@@ -144,11 +145,9 @@ function DialogHeader(props: DialogHeaderProps) {
     <>
       <Popover
         position={Position.BOTTOM_LEFT}
-        content={
-          <Menu>
-            <Menu.Group>{menuItems}</Menu.Group>
-          </Menu>
-        }
+        content={<Menu>
+          <Menu.Group>{menuItems}</Menu.Group>
+        </Menu>}
       >
         <Button marginRight={16}>{props.selected}</Button>
       </Popover>

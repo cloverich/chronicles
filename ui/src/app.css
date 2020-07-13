@@ -9,3 +9,10 @@
   font-size: 18px;
   color: rgb(41, 58, 242);;
 }
+
+/**
+ * When the first element in a document is a heading, its default margin-top
+ * pushes the content down which looks strange when multiple documents
+ * are displayed in a list. 
+ */
+article :first-child { margin-top: 0; }

@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Pane } from "evergreen-ui";
+import { Pane, Heading, Paragraph } from "evergreen-ui";
 import { ContentState, JournalsState } from "../hooks";
 import Document from "./document";
-import Header from "./header";
-import Search from "./search";
+import Layout from "./layout";
 
 interface EditingArgs {
   journal: string;
@@ -11,21 +10,27 @@ interface EditingArgs {
 }
 
 export default function Journal(
-  props: ContentState & Pick<JournalsState, "journals">
+  props: ContentState & Pick<JournalsState, "journals">,
 ) {
   const { loading, error, content, query, setQuery } = props;
   const [editing, setEditing] = useState<EditingArgs | undefined>();
 
-  // TODO: Layout and ErrorLoading helpers
-  // TODO: Call it: /canvas
-  if (loading) return <h1>Loading</h1>;
-  if (error)
+  if (loading) {
     return (
-      <Pane>
-        <h1>Error</h1>
-        <p>{error.message}</p>
-      </Pane>
+      <Layout {...props} {...{ editing, setEditing }}>
+        <Heading>Loading</Heading>
+      </Layout>
     );
+  }
+
+  if (error) {
+    return (
+      <Layout {...props} {...{ editing, setEditing }}>
+        <Heading>Error</Heading>
+        <Paragraph>{error.message}</Paragraph>
+      </Layout>
+    );
+  }
 
   // Empty helpers too
   // todo: add document if journals != null
@@ -33,11 +38,10 @@ export default function Journal(
   // todo: if journals but no query direct user to query
   if (!content) {
     return (
-      <Pane>
-        <Search {...props} />
-        <h1>Missing content</h1>
-        <p>A content placeholder sure would be nice!</p>
-      </Pane>
+      <Layout {...props} {...{ editing, setEditing }}>
+        <Heading>Missing content</Heading>
+        <Paragraph>A content Paragraphlaceholder sure would be nice!</Paragraph>
+      </Layout>
     );
   }
 
@@ -53,10 +57,8 @@ export default function Journal(
     ));
 
   return (
-    <Pane margin={50}>
-      <Search {...props} />
-      <Header {...props} editing={editing} setEditing={setEditing} />
+    <Layout {...props} {...{ editing, setEditing }}>
       {docs}
-    </Pane>
+    </Layout>
   );
 }

@@ -128,7 +128,7 @@ export interface ContentState {
  * TODO: "content" is not hte right name, its search result state
  */
 export function useContent(): ContentState {
-  const { loading, setLoading, error, setError } = useLoading();
+  const { loading, setLoading, error, setError } = useLoading(false);
   const [query, setQuery] = useState<SearchRequest | null>(null);
   const [content, setContent] = useState<SearchResponse | null>(null);
 
@@ -142,6 +142,7 @@ export function useContent(): ContentState {
           "Not executing query because last search is still in progress"
         );
         console.warn(query);
+        return;
       }
       setLoading(true);
       if (query) {
