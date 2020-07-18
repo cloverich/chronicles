@@ -24,6 +24,7 @@ class JournalsClient {
 export interface GetDocument {
   journalName: string;
   date: string;
+  isCreate?: boolean;
 }
 
 export interface GetDocumentResponse {

@@ -1,7 +1,7 @@
 import React, {
   useState,
   useEffect,
-  useContext,
+  useCallback,
   Dispatch,
   SetStateAction,
 } from "react";
@@ -13,6 +13,7 @@ import client, {
 } from "./client";
 import { toaster } from "evergreen-ui";
 import ky from "ky-universal";
+import { autorun } from "mobx";
 
 // I am lazy
 type Func<T, U = any> = (args: T) => U;
@@ -25,12 +26,14 @@ export interface JournalsState {
   adding: boolean;
 }
 
-interface LoadingState {
-  loading: boolean;
+type LoadingState = {
   setLoading: Func<boolean>;
-  error: Error | null;
   setError: Func<Error | null>;
-}
+} & (
+  | { error: Error; loading: false }
+  | { error: null; loading: false }
+  | { error: null; loading: true }
+);
 
 // So this works.. but its dumb because if two hooks in this file want to use it,
 // they must rely on some parent cotenxt import and Providing this context with a value
@@ -43,7 +46,9 @@ export const JournalsContext = React.createContext<IJournal[]>([]);
 
 // todo: inject this from a context elsewhere...
 import { DocsStore } from "./client/docstore";
-const docs = new DocsStore();
+
+// exported for testing
+export const docs = new DocsStore();
 
 /**
  * Re-usable state for loading and errors
@@ -53,7 +58,7 @@ const docs = new DocsStore();
 function useLoading(defaultLoading = true, defaultError = null): LoadingState {
   const [loading, setLoading] = useState<boolean>(defaultLoading);
   const [error, setError] = useState<Error | null>(defaultError);
-  return { loading, setLoading, error, setError };
+  return { loading, setLoading, error, setError } as LoadingState;
 }
 
 /**
@@ -163,15 +168,6 @@ export function useContent(): ContentState {
   return { loading, error, query, setQuery, content };
 }
 
-export interface DocumentState {
-  document: GetDocumentResponse | null;
-  error: Error | null;
-  loading: boolean;
-  saveDocument: Func<string, Promise<any>>;
-  saving: boolean;
-  saveError: Error | null;
-}
-
 interface DocumentLoadedState {
   error: null;
   loading: false;
@@ -201,7 +197,7 @@ interface DocumentErrorState {
  * 2. Error: Document failed to load
  * 3. Loaded: Document loaded succesfully (is now non-null)
  */
-type DocumentLoaderState =
+export type DocumentState =
   | DocumentLoadedState
   | DocumentLoadingState
   | DocumentErrorState;
@@ -219,70 +215,35 @@ type UseDocumentOpts = {
    * Kind of stupid but, works for MVP
    */
   refresh: boolean;
+  consumer?: string;
 };
 
 export function useDocument(
   journal: string,
   date: string,
   opts: Partial<UseDocumentOpts> = {}
-): DocumentState {
-  const { loading, setLoading, error, setError } = useLoading();
-  const [saving, setSaving] = useState<boolean>(false);
-  const [saveError, setSaveError] = useState<Error | null>(null);
-  const [document, setDocument] = useState<GetDocumentResponse | null>(null);
-  console.log("useDocument", journal, date);
+) {
+  const [record] = useState(
+    docs.loadDocument({
+      journalName: journal,
+      date,
+      isCreate: opts.isCreate,
+    })
+  );
 
-  useEffect(() => {
-    console.log("useDocument.useEffect", journal, date);
-    async function loadDocument() {
-      setLoading(true);
-      try {
-        const docRes = await docs.loadDocument({ journalName: journal, date });
-        setDocument(docRes);
-        setError(null);
-      } catch (err) {
-        // special case: creating a new document
-        if (err instanceof ky.HTTPError) {
-          if (err.response.status === 404 && opts.isCreate) {
-            setDocument({ mdast: null, raw: "" });
-          }
-        } else {
-          toaster.danger(`failed to load document ${err}`);
-          setError(err);
-        }
-      }
-      setLoading(false);
-    }
-
-    loadDocument();
-  }, [journal, date, opts.refresh]);
-
-  // TODO: auto-save
-  // Pull out document content and setter inside hook
-  // Make setter mark document as dirty
-  // Setup an interval to check for dirty, and auto-save if true
-  // Consider tracking status here as well
-  // Consider caching original to support reverting
-  async function saveDocument(content: string) {
-    if (saving) return;
-    setSaving(true);
-    try {
-      const doc = await client.docs.save({
-        date,
-        journalName: journal,
-        raw: content,
-      });
-      setDocument(doc);
-      setSaveError(null);
-      setSaving(false);
-    } catch (err) {
-      setSaveError(err);
-      setSaving(false);
-    }
-  }
-
-  return { loading, error, document, saveDocument, saving, saveError };
+  return record;
 }
+
+// https://stackoverflow.com/questions/53215285/how-can-i-force-component-to-re-render-with-hooks-in-react
+function useForceUpdate() {
+  const [, setTick] = useState(0);
+  const update = useCallback(() => {
+    setTick((tick) => tick + 1);
+  }, []);
+  return update;
+}
+
+let lastId = 0;
 
 import { Node } from "slate";
 
@@ -318,16 +279,17 @@ export function useEditableDocument(
   date?: string,
   isUsing?: boolean
 ) {
-  // todo: refresh periodically or useEffect w/ isUsing to change the date
-  // use case: I leave browser open overnight, "add" has yseterday as date.
-  const dateToUse = date || getToday();
-  const { document, ...rest } = useDocument(journal, dateToUse, {
+  const [dateToUse] = useState(date || getToday());
+
+  // this is safe to run on every render
+  const doc = useDocument(journal, dateToUse, {
+    // todo: Actually -- createIfNotExist
     isCreate: true,
     refresh: isUsing,
   });
 
   // Editor gets a copy of the documents contents.
-  const [value, setValue] = useState<Node[]>(EditHelper.nodify(document?.raw));
+  const [value, setValue] = useState<Node[]>(EditHelper.nodify(doc?.data?.raw));
   const [isDirty, setDirty] = useState(false);
 
   const setEditorValue = (v: Node[]) => {
@@ -335,10 +297,20 @@ export function useEditableDocument(
     setValue(v);
   };
 
-  // Anytime the document changes, the copy provided to the editor should too
+  // once document is loaded... need to sert value...
   useEffect(() => {
-    setValue(EditHelper.nodify(document?.raw));
-  }, [document]);
+    const dispoable = autorun(() => {
+      console.log("autorun gogogo");
+
+      // may also need to ensure this only runs...
+      // not when saving... it shouldnt'
+      if (!doc.loading && doc.data) {
+        setValue(EditHelper.nodify(doc.data.raw));
+      }
+    });
+
+    return dispoable;
+  }, [journal, date]);
 
   const { wrapper: saveDocument, ...savingState } = withLoading(async () => {
     await docs.saveDocument({
@@ -351,8 +323,7 @@ export function useEditableDocument(
   });
 
   return {
-    ...rest,
-    document,
+    doc,
     date: dateToUse,
     value,
     setValue: setEditorValue,

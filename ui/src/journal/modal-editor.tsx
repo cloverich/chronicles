@@ -21,9 +21,7 @@ interface EditProps {
 
 export type Props = EditProps & ContentState & Pick<JournalsState, "journals">;
 
-export default function EditorWrapper(
-  props: Props,
-) {
+export default function EditorWrapper(props: Props) {
   function editToday() {
     props.setEditing({
       journal: props.journals[0].name,
@@ -58,10 +56,9 @@ interface ModalEditor {
 }
 
 function ModalEditor(
-  props:
-    & Pick<ContentState, "query" | "setQuery">
-    & Pick<JournalsState, "journals">
-    & ModalEditor,
+  props: Pick<ContentState, "query" | "setQuery"> &
+    Pick<JournalsState, "journals"> &
+    ModalEditor
 ) {
   if (props.journals.length === 0) return null;
 
@@ -71,8 +68,8 @@ function ModalEditor(
     isDirty,
     saveDocument,
     savingState,
-    loading,
     date,
+    doc,
   } = useEditableDocument(props.editing.journal, props.editing.date);
 
   const [didSave, setDidSave] = useState(false);
@@ -98,13 +95,16 @@ function ModalEditor(
       <Dialog
         minHeightContent="50vh"
         width="80vw"
-        header={<DialogHeader
-          journalNames={props.journals.map((j) => j.name)}
-          selected={props.editing.journal}
-          setSelected={(name: string) =>
-            props.setEditing({ ...props.editing, journal: name })}
-          date={date}
-        />}
+        header={
+          <DialogHeader
+            journalNames={props.journals.map((j) => j.name)}
+            selected={props.editing.journal}
+            setSelected={(name: string) =>
+              props.setEditing({ ...props.editing, journal: name })
+            }
+            date={date}
+          />
+        }
         title={props.journals[0].name + "-" + props.editing?.date}
         isShown={true}
         shouldCloseOnEscapePress={!isDirty}
@@ -113,7 +113,7 @@ function ModalEditor(
         preventBodyScrolling
         confirmLabel="save"
         isConfirmLoading={savingState.loading}
-        isConfirmDisabled={loading}
+        isConfirmDisabled={doc.loading}
         onConfirm={doConfirm}
       >
         <Editor value={value} setValue={setValue} saving={false} />
@@ -145,9 +145,11 @@ function DialogHeader(props: DialogHeaderProps) {
     <>
       <Popover
         position={Position.BOTTOM_LEFT}
-        content={<Menu>
-          <Menu.Group>{menuItems}</Menu.Group>
-        </Menu>}
+        content={
+          <Menu>
+            <Menu.Group>{menuItems}</Menu.Group>
+          </Menu>
+        }
       >
         <Button marginRight={16}>{props.selected}</Button>
       </Popover>

@@ -10,12 +10,12 @@ interface EditingArgs {
 }
 
 export default function Journal(
-  props: ContentState & Pick<JournalsState, "journals">,
+  props: ContentState & Pick<JournalsState, "journals">
 ) {
   const { loading, error, content, query, setQuery } = props;
   const [editing, setEditing] = useState<EditingArgs | undefined>();
 
-  if (loading) {
+  if (loading && !content) {
     return (
       <Layout {...props} {...{ editing, setEditing }}>
         <Heading>Loading</Heading>
