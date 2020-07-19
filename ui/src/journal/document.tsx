@@ -15,8 +15,6 @@ const compiler = remark().use(html);
 
 export default React.memo(
   observer(function Document(props: Props) {
-    // return useObserver(() => {
-    console.log("document.tsx", props.date);
     const docRecord = useDocument(props.journal, props.date);
     const { loading, error, data: document } = docRecord;
 
@@ -32,9 +30,10 @@ export default React.memo(
     return (
       <article style={{ marginTop: 64 }}>
         <Header {...props} />
-        <Pane>
-          <div dangerouslySetInnerHTML={{ __html: HTML }} />
-        </Pane>
+        <div
+          className="content-section"
+          dangerouslySetInnerHTML={{ __html: HTML }}
+        />
       </article>
     );
   })

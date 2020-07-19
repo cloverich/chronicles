@@ -11,8 +11,25 @@
 }
 
 /**
- * When the first element in a document is a heading, its default margin-top
- * pushes the content down which looks strange when multiple documents
- * are displayed in a list. 
+ * When first elements of each note have margin-top,
+ * like heading elements, it acts like extra padding in the
+ * note.
  */
-article :first-child { margin-top: 0; }
+.content-section > :first-child {
+  margin-top: 0; 
+}
+
+article {
+  max-width: 768px;
+  /* for <pre> elements */
+  overflow: hidden;
+}
+
+article img {
+  max-width: 64%;
+}
+
+/* 
+removed dthis one from typography.js
+p *:last-child{margin-bottom:0;}
+*/
