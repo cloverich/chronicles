@@ -1,4 +1,9 @@
-import { Application, Router } from "https://deno.land/x/oak@v5.3.1/mod.ts";
+import {
+  Application,
+  Router,
+  RouterContext,
+  send,
+} from "https://deno.land/x/oak@v5.3.1/mod.ts";
 import handlers from "./handlers.ts";
 
 // Bootstrap server
@@ -42,6 +47,23 @@ router.post("/journals", handlers.addJournal);
 router.get("/journals/:journal/:date", handlers.fetchDoc);
 router.post("/journals/:journal/:date", handlers.save);
 router.post("/search", handlers.search);
+
+/**
+ * This catch all route is for image requests.
+ */
+router.get("(.*)", async (ctx) => {
+  // Replace url encoded characters, ex: %20 -> space
+  const url = decodeURI(ctx.request.url.pathname);
+
+  // Any non-matched request lands here, and atttempts to
+  // serve a file. Obviously a complete hack.
+  // todo: verify request is for a known journal,
+  // or re-write the file requests, or something
+  // else in general
+  await send(ctx, url, {
+    root: "/",
+  });
+});
 
 app.use(router.routes());
 app.use(router.allowedMethods());

@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "webpack-dev-server --config webpack.js --hot --inline --colors --port 3000 --open",
+    "dev": "webpack-dev-server --config webpack.js --hot --inline --colors --open",
     "test": "mocha -r ts-node/register -r esm src/**/*.spec.ts"
   },
   "dependencies": {

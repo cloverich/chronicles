@@ -90,10 +90,15 @@ module.exports = (env, argv) => {
       //   new OptimizeCSSAssetsPlugin({})
       // ]
     },
-    // devServer: {
+    devServer: {
     //   contentBase: path.join(__dirname, 'dist'),
     //   compress: true,
-    //   port: 9000
-    // }
+      proxy: {
+        '/Users': {
+          target: "http://localhost:8001",
+        },
+      },
+      port: 9000
+    }
   }
 }
