@@ -3,7 +3,7 @@ import {
   Router,
   RouterContext,
   send,
-} from "https://deno.land/x/oak@v5.3.1/mod.ts";
+} from "https://deno.land/x/oak@v6.0.1/mod.ts";
 import handlers from "./handlers.ts";
 
 // Bootstrap server

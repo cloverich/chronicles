@@ -9,7 +9,7 @@ import {
   RouterContext,
   Status,
   // asssert
-} from "https://deno.land/x/oak@v5.3.1/mod.ts";
+} from "https://deno.land/x/oak@v6.0.1/mod.ts";
 
 // Bootstrap services
 // todo: ENV based db url
@@ -36,15 +36,16 @@ class Handlers {
 
   addJournal = async (ctx: RouterContext) => {
     const body = await ctx.request.body({
+      type: "json",
       contentTypes: {
         text: ["application/json"],
       },
-    });
+    }).value;
 
     function assertBody() {
-      if (!body.value) return "no body";
-      if (!body.value.name) return "no body.name";
-      if (!body.value.url) return "no body.url";
+      if (!body) return "no body";
+      if (!("name" in body)) return "no body.name";
+      if (!("url" in body)) return "no body.url";
     }
 
     // ctx.response.headers.append("content-type", "application/json");
@@ -67,12 +68,6 @@ class Handlers {
 
   // docs
   fetchDoc = async (ctx: RouterContext) => {
-    const body = await ctx.request.body({
-      contentTypes: {
-        text: ["application/json"],
-      },
-    });
-
     if (!ctx.params.journal || !ctx.params.date) {
       ctx.response.status = Status.BadRequest;
       ctx.response.body = {
@@ -102,14 +97,12 @@ class Handlers {
 
   search = async (ctx: RouterContext) => {
     const body = await ctx.request.body({
-      contentTypes: {
-        text: ["application/json"],
-      },
-    });
+      type: "json",
+    }).value;
 
     // DocsQuery
     // .journals and other keys are optional.. pass through?
-    const docs = await this.finder.search(body.value);
+    const docs = await this.finder.search(body);
 
     ctx.response.status = Status.OK;
     ctx.response.body = {
@@ -119,11 +112,9 @@ class Handlers {
   };
 
   save = async (ctx: RouterContext) => {
-    const { value } = await ctx.request.body({
-      contentTypes: {
-        text: ["application/json"],
-      },
-    });
+    const value = await ctx.request.body({
+      type: "json",
+    }).value;
 
     // todo validation and error helpers this is banananas
     function assertBody(): string | SaveRequest {
@@ -132,7 +123,7 @@ class Handlers {
       if (!ctx.params.journal) return "";
       if (!ctx.params.date) return "no date specified";
 
-      if (value.raw) {
+      if ("raw" in value) {
         return {
           journalName: ctx.params.journal,
           date: ctx.params.date,
@@ -140,7 +131,7 @@ class Handlers {
         };
       }
 
-      if (value.mdast) {
+      if ("mdast" in value) {
         return {
           journalName: ctx.params.journal,
           date: ctx.params.date,

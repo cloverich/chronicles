@@ -2,8 +2,8 @@ import {
   ensureDir,
   readFileStr,
   writeFileStr,
-} from "https://deno.land/std@v0.59.0/fs/mod.ts";
-import * as path from "https://deno.land/std@v0.59.0/path/mod.ts";
+} from "https://deno.land/std@v0.61.0/fs/mod.ts";
+import * as path from "https://deno.land/std@v0.61.0/path/mod.ts";
 
 // for matching exact
 const reg = /^\d{4}-\d{2}-\d{2}$/;

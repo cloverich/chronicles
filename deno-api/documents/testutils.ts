@@ -1,9 +1,9 @@
-import { tmpdir } from "https://deno.land/std@v0.59.0/node/os.ts";
+import { tmpdir } from "https://deno.land/std@v0.61.0/node/os.ts";
 import {
   ensureDir,
   readFileStr,
   writeFileStr,
-} from "https://deno.land/std@v0.59.0/fs/mod.ts";
+} from "https://deno.land/std@v0.61.0/fs/mod.ts";
 
 // Oh no not yet implemented!
 // const tmp = tmpdir();

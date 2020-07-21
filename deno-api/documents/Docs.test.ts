@@ -6,7 +6,7 @@ import {
   assertStringContains,
   assertArrayContains,
   assert,
-} from "https://deno.land/std@v0.59.0/testing/asserts.ts";
+} from "https://deno.land/std@v0.61.0/testing/asserts.ts";
 
 async function seed() {
   const db = createDb(":memory:", true);

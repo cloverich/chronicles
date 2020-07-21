@@ -1,4 +1,4 @@
-import { readFileStr, emptyDir } from "https://deno.land/std@v0.59.0/fs/mod.ts";
+import { readFileStr, emptyDir } from "https://deno.land/std@v0.61.0/fs/mod.ts";
 import { FileDAO } from "./FileDAO.ts";
 import {
   assertEquals,
@@ -6,7 +6,7 @@ import {
   assertArrayContains,
   assert,
   assertThrowsAsync,
-} from "https://deno.land/std@v0.59.0/testing/asserts.ts";
+} from "https://deno.land/std@v0.61.0/testing/asserts.ts";
 
 // node/os.tmpdir() not yet implemented!
 const tmpdir = Deno.cwd() + "/tmp/data/reading";

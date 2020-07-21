@@ -2,8 +2,8 @@ import {
   walk,
   ensureDir,
   readFileStr,
-} from "https://deno.land/std@v0.59.0/fs/mod.ts";
-import * as path from "https://deno.land/std@v0.59.0/path/mod.ts";
+} from "https://deno.land/std@v0.61.0/fs/mod.ts";
+import * as path from "https://deno.land/std@v0.61.0/path/mod.ts";
 const { readFile, writeFile, stat } = Deno;
 import { parser, stringifier } from "../md/index.ts";
 import { Root } from "../md/types/mdast.d.ts";

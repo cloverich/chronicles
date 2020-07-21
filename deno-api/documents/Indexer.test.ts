@@ -1,8 +1,8 @@
 import { DB } from "../deps.ts";
 import { createDb } from "./db.ts";
 import { Journals } from "./Journals.ts";
-import { assertEquals } from "https://deno.land/std@v0.59.0/testing/asserts.ts";
-import { emptyDir } from "https://deno.land/std@v0.59.0/fs/mod.ts";
+import { assertEquals } from "https://deno.land/std@v0.61.0/testing/asserts.ts";
+import { emptyDir } from "https://deno.land/std@v0.61.0/fs/mod.ts";
 import { Indexer } from "./Indexer.ts";
 import { parser } from "../md/index.ts";
 

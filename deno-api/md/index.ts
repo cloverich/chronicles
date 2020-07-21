@@ -1,4 +1,4 @@
-import { createRequire } from "https://deno.land/std@v0.59.0/node/module.ts";
+import { createRequire } from "https://deno.land/std@v0.61.0/node/module.ts";
 
 const require = createRequire(import.meta.url);
 const remarkParser = require("remark-parse");
