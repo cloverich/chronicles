@@ -4,6 +4,8 @@ yarn-error.log
 # db files usually for testing
 *.db
 
+.deno_plugins
+
 tmp/
 .DS_Store
 *.code-workspace

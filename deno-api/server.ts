@@ -12,6 +12,15 @@ const router = new Router();
 const port = 8001;
 
 // Misc middlewares
+app.use(async (ctx, next) => {
+  try {
+    await next();
+  } catch (err) {
+    console.error("error handling", ctx.request.url.pathname);
+    console.error(err);
+    ctx.response.status = 500;
+  }
+});
 
 // CORS
 app.use(async (ctx, next) => {
@@ -20,9 +29,8 @@ app.use(async (ctx, next) => {
   ctx.response.headers.set("Access-Control-Allow-Headers", `*`);
   ctx.response.headers.set(
     "Access-Control-Allow-Methods",
-    `POST, GET, OPTIONS, DELETE`
+    `POST, PUT, GET, OPTIONS, DELETE`
   );
-
   await next();
 });
 
@@ -30,7 +38,10 @@ app.use(async (ctx, next) => {
 app.use(async (ctx, next) => {
   await next();
   const rt = ctx.response.headers.get("X-Response-Time");
-  console.log(`${ctx.request.method} ${ctx.request.url} - ${rt}`);
+  console.log(
+    `${ctx.request.method} ${ctx.response.status} ${ctx.request.url} - ${rt}`
+  );
+  console.log(ctx.response.headers);
 });
 
 // Timing

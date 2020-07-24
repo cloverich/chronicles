@@ -1,5 +1,5 @@
 .container {
-  width: 800px;
+  width: 42.25rem;
   margin: auto;
 }
 
@@ -20,7 +20,7 @@
 }
 
 article {
-  max-width: 768px;
+  max-width: 42.25rem;
   /* for <pre> elements */
   overflow: hidden;
 }

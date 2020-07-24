@@ -36,7 +36,8 @@ Prism.languages.markdown = Prism.languages.extend("markup", {});
     alias: "punctuation",
   },
   "url-reference": {
-    pattern: /!?\[[^\]]+\]:[\t ]+(?:\S+|<(?:\\.|[^>\\])+>)(?:[\t ]+(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^)\\])*\)))?/,
+    pattern:
+      /!?\[[^\]]+\]:[\t ]+(?:\S+|<(?:\\.|[^>\\])+>)(?:[\t ]+(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^)\\])*\)))?/,
     inside: {
       variable: { pattern: /^(!?\[)[^\]]+/, lookbehind: !0 },
       string: /(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\((?:\\.|[^)\\])*\))$/,
@@ -55,7 +56,8 @@ Prism.languages.markdown = Prism.languages.extend("markup", {});
     inside: { punctuation: /^[*_]|[*_]$/ },
   },
   url: {
-    pattern: /!?\[[^\]]+\](?:\([^\s)]+(?:[\t ]+"(?:\\.|[^"\\])*")?\)| ?\[[^\]\n]*\])/,
+    pattern:
+      /!?\[[^\]]+\](?:\([^\s)]+(?:[\t ]+"(?:\\.|[^"\\])*")?\)| ?\[[^\]\n]*\])/,
     inside: {
       variable: { pattern: /(!?\[)[^\]]+(?=\]$)/, lookbehind: !0 },
       string: { pattern: /"(?:\\.|[^"\\])*"(?=\)$)/ },
@@ -63,16 +65,16 @@ Prism.languages.markdown = Prism.languages.extend("markup", {});
   },
 });
 (Prism.languages.markdown.bold as any).inside.url = Prism.util.clone(
-  Prism.languages.markdown.url
+  Prism.languages.markdown.url,
 );
 (Prism.languages.markdown.italic as any).inside.url = Prism.util.clone(
-  Prism.languages.markdown.url
+  Prism.languages.markdown.url,
 );
 (Prism.languages.markdown.bold as any).inside.italic = Prism.util.clone(
-  Prism.languages.markdown.italic
+  Prism.languages.markdown.italic,
 );
 (Prism.languages.markdown.italic as any).inside.bold = Prism.util.clone(
-  Prism.languages.markdown.bold
+  Prism.languages.markdown.bold,
 );
 
 export interface Props {
@@ -145,49 +147,39 @@ const Leaf = ({ attributes, children, leaf }: any) => {
         font-weight: ${leaf.bold && "bold"};
         font-style: ${leaf.italic && "italic"};
         text-decoration: ${leaf.underlined && "underline"};
-        ${
-          leaf.title &&
-          css`
+        ${leaf.title &&
+        css`
             display: inline-block;
             font-weight: bold;
             font-size: 20px;
             margin: 20px 0 10px 0;
-          `
-        }
-        ${
-          leaf.list &&
-          css`
+          `}
+        ${leaf.list &&
+        css`
             padding-left: 10px;
             font-size: 20px;
             line-height: 10px;
-          `
-        }
-        ${
-          leaf.hr &&
-          css`
+          `}
+        ${leaf.hr &&
+        css`
             display: block;
             text-align: center;
             border-bottom: 2px solid #ddd;
-          `
-        }
-        ${
-          leaf.blockquote &&
-          css`
+          `}
+        ${leaf.blockquote &&
+        css`
             display: inline-block;
             border-left: 2px solid #ddd;
             padding-left: 10px;
             color: #aaa;
             font-style: italic;
-          `
-        }
-        ${
-          leaf.code &&
-          css`
+          `}
+        ${leaf.code &&
+        css`
             font-family: monospace;
             background-color: #eee;
             padding: 3px;
-          `
-        }
+          `}
       `}
     >
       {children}

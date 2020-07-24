@@ -37,9 +37,6 @@ class Handlers {
   addJournal = async (ctx: RouterContext) => {
     const body = await ctx.request.body({
       type: "json",
-      contentTypes: {
-        text: ["application/json"],
-      },
     }).value;
 
     function assertBody() {
@@ -59,8 +56,8 @@ class Handlers {
     // });
 
     ctx.response.body = await this.journals.add({
-      name: body.value.name,
-      url: body.value.url,
+      name: body.name,
+      url: body.url,
     });
 
     ctx.response.status = Status.OK;
