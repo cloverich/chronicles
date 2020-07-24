@@ -5,7 +5,6 @@ export interface IJournal {
   url: string;
 }
 
-// class
 class JournalsClient {
   constructor(private urlBase: string) {}
 

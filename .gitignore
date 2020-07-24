@@ -9,3 +9,7 @@ yarn-error.log
 tmp/
 .DS_Store
 *.code-workspace
+
+# build output
+dist/
+packaged/

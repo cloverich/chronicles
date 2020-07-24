@@ -15,24 +15,14 @@ interface ActiveRecord<T> {
 
 type DocRecord = ActiveRecord<GetDocumentResponse>;
 
-// type DocsRecord = {
-//   data: GetDocumentResponse;
-//   callbacks: VoidFunction[];
-// };
-
 export class DocsStore {
   private docs: ObservableMap<string, ActiveRecord<GetDocumentResponse>>;
   private loading: ObservableMap<string, WaitingCallback[]>;
 
   constructor() {
+    // todo: no need for observable map
     this.docs = observable.map();
     this.loading = observable.map();
-    this.docs.observe((changes) => {
-      console.log(changes);
-      // if (changes.type === 'update') {
-      //   changes.
-      // }
-    });
   }
 
   addWatcher() {}
