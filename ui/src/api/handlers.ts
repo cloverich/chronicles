@@ -38,10 +38,6 @@ export default class Handlers {
     if (error) {
       ctx.response.status = 400;
     }
-    // How to send back JSON for error? Ugh.
-    // ctx.assert(assertBody(), 400, {
-    //   title: "Body must be a valid journal",
-    // });
 
     ctx.response.body = await this.journals.add({
       name: body.name,
@@ -51,7 +47,6 @@ export default class Handlers {
     ctx.response.status = 200;
   };
 
-  // docs
   fetchDoc = async (ctx: RouterContext) => {
     if (!ctx.params.journal || !ctx.params.date) {
       ctx.response.status = 400;
@@ -82,9 +77,6 @@ export default class Handlers {
 
   search = async (ctx: RouterContext) => {
     const body = ctx.request!.body;
-
-    // DocsQuery
-    // .journals and other keys are optional.. pass through?
     const docs = await this.documents.search(body);
 
     ctx.response.status = 200;

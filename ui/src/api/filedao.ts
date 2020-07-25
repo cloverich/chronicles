@@ -1,10 +1,5 @@
-import mkdirp, { Options } from "mkdirp";
-import { promisify } from "util";
+import mkdirp from "mkdirp";
 import walk = require("klaw");
-
-// promisify thinks mkdirps Options argument is required
-// const mkdirp = promisify(mkdirpCb) as (dir: string) => Promise<void>;
-
 import path from "path";
 import fs from "fs";
 const { readFile, writeFile } = fs.promises;

@@ -1,5 +1,7 @@
-// https://github.com/electron/electron-rebuild
 /**
+ * See https://github.com/electron/electron-rebuild
+ * and https://www.electronjs.org/docs/tutorial/using-native-node-modules
+ * 
  * This file was created specifically to handle re-building sqlite3
  * That is, sqlite3 is a _native_ dependency, and where there is a mis-match
  * between the development nodejs version, and the target electron version of nodejs (v8?),

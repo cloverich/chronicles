@@ -14,12 +14,6 @@ async function init() {
   return { documents, journals };
 }
 
-// init().then(() => console.log("done?"), console.error);
-
-// (async () => {
-//   const { documents, journals } = await init();
-//   console.log(documents.search({ journals: ["chronicles"] }));
-// })();
 export default async function initServer() {
   await server(new Handlers(await init()));
 }

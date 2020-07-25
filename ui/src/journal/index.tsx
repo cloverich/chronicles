@@ -44,7 +44,7 @@ export default function Journal(
       </Layout>
     );
   }
-  console.log(content);
+
   const docs = content.docs
     .slice(0, 10)
     .map((item) => (

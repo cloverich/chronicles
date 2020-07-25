@@ -8,16 +8,6 @@ interface IJournal {
   name: string;
 }
 
-// function one(db: Database, query: string, params: any[] = []) {
-//   const rows = db.query(query, params);
-//   for (const row of rows) {
-//     rows.done();
-//     return row;
-//   }
-
-//   throw new Error(`no result for query ${query}`);
-// }
-
 /**
  * The Journals service knows how to CRUD journals and calls
  * out to index them when a new journal is added.
