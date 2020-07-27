@@ -1,5 +1,6 @@
 import { Database, recreateSchema } from "./database";
 import { Indexer } from "./indexer";
+import { Files } from "./files";
 
 interface IJournal {
   // path to root folder
@@ -7,6 +8,9 @@ interface IJournal {
   // display name
   name: string;
 }
+
+// todo: if more custom errors, move to errors file
+export class ValidationError extends Error {}
 
 /**
  * The Journals service knows how to CRUD journals and calls
@@ -39,6 +43,14 @@ export class Journals {
     return journal.url;
   };
 
+  private existsByName = async (journal: string) => {
+    const { count } = this.db
+      .prepare("select count(*) as count from journals where name = :name")
+      .get({ name: journal });
+
+    return count >= 0;
+  };
+
   private exists = async (journal: IJournal) => {
     const { count } = this.db
       .prepare(
@@ -60,6 +72,16 @@ export class Journals {
       return this.journals;
     }
 
+    // Avoid auto-creating a new journal directory; require user to
+    // explicitly opt-in (currently, via Create Folder option in UI)
+    if (!Files.isValidDirectory(journal.url)) {
+      throw new ValidationError(
+        "Journal.add called with directory that does not exist. Create it first"
+      );
+    }
+
+    // todo: prior to this, validate directory
+    // todo: what if after inserting, the actual indexing fails?
     this.db
       .prepare("INSERT INTO journals (name, url) VALUES (:name, :url)")
       .run(journal);
@@ -82,7 +104,7 @@ export class Journals {
     this.journals = [];
 
     // faster then deleting one by one
-    await recreateSchema(this.db);
+    await recreateSchema(this.db, false);
 
     // re-index
     for (const journal of list) {
@@ -93,8 +115,24 @@ export class Journals {
     console.log("[Journals.reindex] complete");
   };
 
-  remove = async () => {
-    throw new Error("todo");
+  remove = async (journal: string) => {
+    if (!(await this.existsByName(journal))) {
+      throw new ValidationError(
+        "Journals.remove cannot be called with journal that does not exist"
+      );
+    }
+
+    // dereference journal
+    const stmt = this.db.prepare("DELETE FROM journals where name = :name");
+    // todo: validate exactly one was removed...
+    stmt.run({ name: journal });
+
+    // re-dindex
+    // todo: transaction...
+    await this.idxService.deindex(journal);
+
+    this.journals = this.journals.filter((j) => j.name !== journal);
+    return this.journals;
   };
 
   list = async () => {

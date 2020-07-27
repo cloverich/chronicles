@@ -1,4 +1,4 @@
-import { Journals } from "./journals";
+import { Journals, ValidationError } from "./journals";
 import { Documents } from "./documents";
 import { RouterContext } from "@koa/router";
 import { SaveRequest } from "./documents";
@@ -39,14 +39,43 @@ export default class Handlers {
       ctx.response.status = 400;
     }
 
-    ctx.response.body = await this.journals.add({
-      name: body.name,
-      url: body.url,
-    });
+    try {
+      // idk what default is, maybe 10 seconds?
+      // https://stackoverflow.com/questions/40138600/disable-request-timeout-in-koa;
+      ctx.request.socket.setTimeout(60 * 1000);
+      ctx.response.body = await this.journals.add({
+        name: body.name,
+        url: body.url,
+      });
 
-    ctx.response.status = 200;
+      ctx.response.status = 200;
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          title: err.message,
+        };
+      } else {
+        throw err;
+      }
+    }
   };
 
+  removeJournal = async (ctx: RouterContext) => {
+    const journal = ctx.params.journal;
+    if (!journal) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        title: "Invalid delete journal request",
+      };
+    }
+
+    const remainingJournals = await this.journals.remove(journal);
+    ctx.status = 200;
+    ctx.response.body = remainingJournals;
+  };
+
+  // documents
   fetchDoc = async (ctx: RouterContext) => {
     if (!ctx.params.journal || !ctx.params.date) {
       ctx.response.status = 400;

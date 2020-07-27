@@ -12,7 +12,12 @@ const reg = /^\d{4}-\d{2}-\d{2}$/;
 /**
  * FileDAO has methods for finding and fetching documents from the file system
  */
-export class FileDAO {
+export class Files {
+  static isValidDirectory(directory: string) {
+    // well this feels superfluous
+    return fs.existsSync(directory);
+  }
+
   static pathForEntry(journalPath: string, date: string) {
     return path.join(
       journalPath,
@@ -23,7 +28,7 @@ export class FileDAO {
   }
 
   static async read(journalPath: string, date: string) {
-    const fp = FileDAO.pathForEntry(journalPath, date);
+    const fp = Files.pathForEntry(journalPath, date);
     return await readFileStr(fp);
   }
 
@@ -38,7 +43,7 @@ export class FileDAO {
     if (!reg.test(date)) {
       throw new Error("[FileDAO.save] date must match format YYYY-MM-DD");
     }
-    const fp = FileDAO.pathForEntry(journalPath, date);
+    const fp = Files.pathForEntry(journalPath, date);
     const dir = path.parse(fp).dir;
 
     await mkdirp(dir);

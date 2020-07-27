@@ -24,8 +24,11 @@ function createWindow () {
     width: 800,
     height: 600,
     webPreferences: {
+      // Actually i should not need this
       nodeIntegration: true,
       // preload: path.join(app.getAppPath(), 'preload.js')
+      // but apparently do need this now
+      enableRemoteModule: true,
     }
   })
 
