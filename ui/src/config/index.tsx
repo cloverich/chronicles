@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from "react";
-import { Button, Pane, Text, TextInputField, Table } from "evergreen-ui";
+import {
+  Button,
+  Pane,
+  Text,
+  TextInputField,
+  Table,
+  toaster,
+} from "evergreen-ui";
 import client, { IJournal } from "../client";
 import { JournalsState } from "../hooks";
 import AddJournal from "./add";
+import ElectronDialog from "./electron-dialog";
 
 export default function Config(props: JournalsState) {
   const { journals, loading, addJournal, adding } = props;
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [directory, setDirectory] = useState<string>("");
 
   function onClosed() {
-    setShowAddModal(false);
+    setDirectory("");
+  }
+
+  function onSelectDirectory(directory: string) {
+    setDirectory(directory);
+  }
+
+  async function removeJournal(journal: IJournal) {
+    try {
+      await props.removeJournal(journal);
+      toaster.success(`Successfully removed ${journal.name}`);
+    } catch (err) {
+      toaster.danger(err);
+    }
   }
 
   if (loading) {
@@ -21,12 +42,12 @@ export default function Config(props: JournalsState) {
       <AddJournal
         addJournal={addJournal}
         adding={adding}
-        isShown={showAddModal}
+        directory={directory}
         onClosed={onClosed}
       />
 
       <Pane marginBottom={10} display="flex">
-        <Button onClick={() => setShowAddModal(!showAddModal)}>Add</Button>
+        <ElectronDialog onSelected={onSelectDirectory}>Add</ElectronDialog>
       </Pane>
       <Table>
         <Table.Head>
@@ -38,6 +59,9 @@ export default function Config(props: JournalsState) {
             <Table.Row key={journal.name}>
               <Table.TextCell>{journal.name}</Table.TextCell>
               <Table.TextCell>{journal.url}</Table.TextCell>
+              <Table.TextCell>
+                <Button onClick={() => removeJournal(journal)}>Remove</Button>
+              </Table.TextCell>
             </Table.Row>
           ))}
         </Table.Body>

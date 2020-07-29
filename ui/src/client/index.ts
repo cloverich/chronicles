@@ -18,6 +18,12 @@ class JournalsClient {
       json: journal,
     }).json();
   };
+
+  remove = (journal: IJournal): Promise<IJournal[]> => {
+    return ky(this.urlBase + "/journals/" + journal.name, {
+      method: "delete",
+    }).json();
+  };
 }
 
 export interface GetDocument {

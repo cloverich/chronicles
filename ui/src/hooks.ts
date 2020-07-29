@@ -22,7 +22,8 @@ export interface JournalsState {
   loading: boolean;
   error: Error | null;
   journals: IJournal[];
-  addJournal: Func<IJournal>;
+  addJournal: (journal: IJournal, propagate: boolean) => any;
+  removeJournal: Func<IJournal>;
   adding: boolean;
 }
 
@@ -55,9 +56,12 @@ export const docs = new DocsStore();
  * @param defaultLoading
  * @param defaultError
  */
-function useLoading(defaultLoading = true, defaultError = null): LoadingState {
+function useLoading(
+  defaultLoading = true,
+  defaultError = undefined
+): LoadingState {
   const [loading, setLoading] = useState<boolean>(defaultLoading);
-  const [error, setError] = useState<Error | null>(defaultError);
+  const [error, setError] = useState<Error | undefined | null>(defaultError);
   return { loading, setLoading, error, setError } as LoadingState;
 }
 
@@ -74,6 +78,8 @@ function withLoading(cb: () => Promise<any>) {
     state.setLoading(true);
     state.setError(null);
     try {
+      // todo: wrap in useEffect, only setLoading / Error / Toast afterwards
+      // if still mounted.
       await cb();
       state.setLoading(false);
     } catch (err) {
@@ -91,17 +97,51 @@ export function useJournals(): JournalsState {
   const [adding, setAdding] = useState(false);
   const [journals, setJournals] = useState<IJournal[]>([]);
 
-  async function addJournal(journal: IJournal) {
+  async function addJournal(journal: IJournal, propagate = false) {
     setAdding(true);
     setError(null);
     try {
-      await client.journals.add(journal);
+      const updatedList = await client.journals.add(journal);
+      setJournals(updatedList);
+      setAdding(false);
+    } catch (err) {
+      setAdding(false);
+
+      // My god this is ugly
+      if (err instanceof ky.HTTPError) {
+        try {
+          // Basically if the error comes from my backend, pull out the
+          // error title then propagate. Client library should handle this.
+          const json = await err.response.json();
+          err = new Error(json.title);
+        } catch (jsonError) {
+          // at this point, rely on outer error handler
+        }
+      }
+
+      setError(err);
+
+      // Should propagate error, so caller can try / catch
+      // instead of observing adding / error
+      // I _really_ hate this...
+      if (propagate) throw err;
+    }
+  }
+
+  async function removeJournal(journal: IJournal) {
+    setAdding(true);
+    setError(null);
+    try {
+      const updatedList = await client.journals.remove(journal);
+      setJournals(updatedList);
+      setAdding(false);
     } catch (err) {
       setAdding(false);
       setError(err);
+
+      // see comments above on saving.
+      throw err;
     }
-    setJournals(await client.journals.list());
-    setAdding(false);
   }
 
   async function loadJournals() {
@@ -114,7 +154,7 @@ export function useJournals(): JournalsState {
     loadJournals();
   }, []);
 
-  return { loading, error, journals, addJournal, adding };
+  return { loading, error, journals, addJournal, removeJournal, adding };
 }
 
 // Content state returned from the useContent hook

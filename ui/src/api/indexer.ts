@@ -2,7 +2,7 @@ import path from "path";
 import { parser, stringifier } from "../markdown";
 import { Root } from "ts-mdast";
 import { Database } from "./database";
-import { FileDAO } from "./filedao";
+import { Files } from "./files";
 
 interface DocsWalkResult {
   count: number;
@@ -71,6 +71,16 @@ export class Indexer {
   };
 
   /**
+   * De-index a journals documents
+   *
+   * @param journal - name of journal to remove from indexed nodes table
+   */
+  deindex = async (journal: string) => {
+    const stmt = this.db.prepare("DELETE FROM nodes where journal = :journal");
+    stmt.run({ journal });
+  };
+
+  /**
    * Re-index a document - e.g. after its been updated
    * @param journal - name of journal
    * @param date
@@ -125,11 +135,10 @@ export class Indexer {
   };
 
   index = async (srcDir: string, name: string) => {
-    const sr = await FileDAO.walk(srcDir, name);
-    console.log("indexing", sr);
+    const sr = await Files.walk(srcDir, name);
+
     for (const entry of sr.results) {
-      console.log("indexing ", entry);
-      const contents = await FileDAO.read(sr.path, entry);
+      const contents = await Files.read(sr.path, entry);
       // todo: track parsing errors so you understand why your content
       // isn't showing up in your journal view (failed to index).
       try {

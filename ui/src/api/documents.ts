@@ -1,6 +1,6 @@
 import { Database } from "./database";
 import { Journals } from "./journals";
-import { FileDAO } from "./filedao";
+import { Files } from "./files";
 import { parser, stringifier } from "../markdown";
 import { Indexer } from "./indexer";
 
@@ -115,7 +115,7 @@ export class Documents {
 
   fetchDoc = async (journalName: string, date: string) => {
     const url = this.journals.pathForJournal(journalName);
-    const raw = await FileDAO.read(url, date);
+    const raw = await Files.read(url, date);
     return { raw, mdast: parser.parse(raw) };
   };
 
@@ -134,7 +134,7 @@ export class Documents {
     // that ever has an issue it would be ummm disastrous. Hmmm...
     // TODO: Think about backups when overwriting
     if ("raw" in req) {
-      await FileDAO.save(jpath, req.date, req.raw);
+      await Files.save(jpath, req.date, req.raw);
       await this.indexer.indexNode(
         req.journalName,
         req.date,
@@ -142,7 +142,7 @@ export class Documents {
       );
     } else {
       const contents = stringifier.stringify(req.mdast);
-      await FileDAO.save(jpath, req.date, contents);
+      await Files.save(jpath, req.date, contents);
       await this.indexer.indexNode(req.journalName, req.date, req.mdast);
     }
 

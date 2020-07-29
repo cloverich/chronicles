@@ -1,23 +1,76 @@
-import React, { useState } from "react";
-import { Dialog, Pane, TextInputField, Button } from "evergreen-ui";
+import React, { useState, useEffect, PropsWithChildren as P } from "react";
+import { Dialog, Pane, TextInputField, Button, toaster } from "evergreen-ui";
 import client, { IJournal } from "../client";
 import { JournalsState } from "../hooks";
+import Ajv, { ErrorObject } from "ajv";
+import ky from "ky";
 
-export default function AddJournal(
-  props: Pick<JournalsState, "adding" | "addJournal"> & {
-    isShown: boolean;
-    onClosed: () => any;
-  }
-) {
+const schema = {
+  $schema: "http://json-schema.org/draft-07/schema#",
+  type: "object",
+  properties: {
+    name: {
+      type: "string",
+      title: "name",
+      // https://github.com/prettier/prettier/issues/2789
+      pattern: "^[\\w\\-._ ]+$",
+    },
+    url: {
+      type: "string",
+      title: "url",
+      minLength: 1,
+    },
+  },
+  required: ["name", "url"],
+};
+
+const ajv = new Ajv();
+const validate = ajv.compile(schema);
+
+interface Props extends P<Pick<JournalsState, "adding" | "addJournal">> {
+  directory: string;
+  onClosed: () => any;
+}
+
+// Just wraps and prevents instantiating the <AddJournalDialog /> unless
+// a non-empty directory is passed.
+export default function AddJournalDialogWrapper(props: Props) {
+  if (!props.directory.length) return null;
+
+  return <AddJournalDialog {...props} />;
+}
+
+function AddJournalDialog(props: Props) {
   const { addJournal, adding } = props;
+
+  // todo: windows
+  // todo: parse with Browser compatible URL parser?
   const [formState, setState] = useState<IJournal>({
-    name: "",
-    url: "",
+    // Pre-populate the journal name field using the directory
+    // name. Did not think through validation much here
+    name: props.directory.split("/").pop() || "",
+    url: props.directory,
   });
 
+  const [isShown, setIsShown] = useState(true);
+
+  // todo: ugggh refactor this all
   async function submit(close: any) {
-    await addJournal(formState);
-    close();
+    const valid = validate(formState);
+    if (!valid) {
+      validate.errors &&
+        validate.errors.forEach((err) => {
+          toaster.danger(`${err.dataPath} - ${err.message}`);
+        });
+      return false;
+    }
+
+    try {
+      await addJournal(formState, true);
+      close();
+    } catch (err) {
+      toaster.danger(err.message);
+    }
   }
 
   return (
@@ -26,7 +79,7 @@ export default function AddJournal(
         minHeightContent="50vh"
         width="80vw"
         title="Add journal"
-        isShown={props.isShown}
+        isShown={isShown}
         shouldCloseOnEscapePress={!adding}
         shouldCloseOnOverlayClick={!adding}
         preventBodyScrolling
@@ -38,7 +91,6 @@ export default function AddJournal(
       >
         <AddJournalForm
           saving={adding}
-          submit={submit}
           formState={formState}
           setState={setState}
         />
@@ -49,17 +101,16 @@ export default function AddJournal(
 
 export function AddJournalForm(props: {
   saving: boolean;
-  submit: any;
   formState: any;
   setState: any;
 }) {
-  const { formState, setState, submit } = props;
+  const { formState, setState } = props;
 
   return (
     <Pane backgroundColor="tint" margin={24}>
       <TextInputField
         label="Name"
-        name={"name"}
+        name="name"
         hint="Must be unique"
         placeholder="A short display name for the journal"
         onChange={(e: any) => setState({ ...formState, name: e.target.value })}

@@ -12,7 +12,7 @@ module.exports = (env, argv) => {
   return {
     entry: __dirname + "/src/app.tsx",
     mode: PRODUCTION ? 'production' : 'development',
-
+    target: 'electron-renderer',
     output: {
       filename: "app.js",
       path: __dirname + "/dist"

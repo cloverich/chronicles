@@ -50,6 +50,7 @@ export async function server(handlers: Handlers) {
   // Make routes
   router.get("/journals", handlers.findJournals);
   router.post("/journals", handlers.addJournal);
+  router.delete("/journals/:journal", handlers.removeJournal);
   router.get("/journals/:journal/:date", handlers.fetchDoc);
   router.post("/journals/:journal/:date", handlers.save);
   router.post("/search", handlers.search);
