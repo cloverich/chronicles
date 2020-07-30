@@ -1,4 +1,5 @@
 import ky from "ky-universal";
+import { DocsStore } from "./docstore";
 
 export interface IJournal {
   name: string;
@@ -101,11 +102,11 @@ class DocsClient {
 export class Client {
   readonly journals: JournalsClient;
   readonly docs: DocsClient;
-  constructor(urlBase = "http://localhost:8001") {
+  readonly cache: DocsStore;
+
+  constructor(urlBase: string) {
     this.journals = new JournalsClient(urlBase);
     this.docs = new DocsClient(urlBase);
+    this.cache = new DocsStore(this);
   }
 }
-
-// todo: DI
-export default new Client();

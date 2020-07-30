@@ -1,6 +1,6 @@
 import React, { useState, useEffect, PropsWithChildren as P } from "react";
 import { Dialog, Pane, TextInputField, Button, toaster } from "evergreen-ui";
-import client, { IJournal } from "../client";
+import { IJournal } from "../client";
 import { JournalsState } from "../hooks";
 import Ajv, { ErrorObject } from "ajv";
 import ky from "ky";

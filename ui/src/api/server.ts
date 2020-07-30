@@ -3,12 +3,28 @@ import Router from "@koa/router";
 import send from "koa-send";
 const bodyParser = require("koa-bodyparser");
 import Handlers from "./handlers";
+// i hate myself
+import makePort from "get-port";
+
+/**
+ * This process is started by the electron main process
+ * as a background worker, but does not consistently get
+ * killed when the parent dies.
+ *
+ * This sets up a listener to suicide if it loses connection
+ * with the parent process, which might be more consistent.
+ *
+ * https://github.com/node-modules/graceful-process/blob/master/index.js
+ */
+process.on("disconnect", () => {
+  console.log("server disconnected, shutting down");
+  process.exit();
+});
 
 export async function server(handlers: Handlers) {
   const app = new Koa();
   app.use(bodyParser());
   const router = new Router();
-  const port = 8001;
 
   // Misc middlewares
   app.use(async (ctx, next) => {
@@ -75,6 +91,15 @@ export async function server(handlers: Handlers) {
   app.use(router.routes());
   app.use(router.allowedMethods());
 
-  console.log(`Server running on port ${port}`);
+  // Dynamically allocate a free port and listen
+  const port = await makePort();
   app.listen({ port });
+
+  /**
+   * Process.send only exists if started by a parent with
+   * ipc, which we do, specifically so this process can
+   * send a signal back indicating which port its attaching
+   * to.
+   */
+  process.send!(JSON.stringify({ name: "server_port", port }));
 }

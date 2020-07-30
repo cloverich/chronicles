@@ -1,16 +1,9 @@
-import React, { useState, useEffect } from "react";
-import {
-  Button,
-  Pane,
-  Text,
-  TextInputField,
-  Table,
-  toaster,
-} from "evergreen-ui";
-import client, { IJournal } from "../client";
+import React, { useState } from "react";
+import { Button, Pane, Table, toaster } from "evergreen-ui";
+import { IJournal } from "../client";
 import { JournalsState } from "../hooks";
 import AddJournal from "./add";
-import ElectronDialog from "./electron-dialog";
+import ElectronDialog from "./dialog.electron";
 
 export default function Config(props: JournalsState) {
   const { journals, loading, addJournal, adding } = props;

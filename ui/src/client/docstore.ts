@@ -1,7 +1,8 @@
 import { ObservableMap, observable } from "mobx";
-import client, { GetDocument, GetDocumentResponse, SaveRequest } from ".";
+import { GetDocument, GetDocumentResponse, SaveRequest } from ".";
 import ky from "ky-universal";
 import { toaster } from "evergreen-ui";
+import { Client } from "./";
 
 type WaitingCallback = [(doc: GetDocumentResponse) => any, (err: Error) => any];
 
@@ -18,8 +19,10 @@ type DocRecord = ActiveRecord<GetDocumentResponse>;
 export class DocsStore {
   private docs: ObservableMap<string, ActiveRecord<GetDocumentResponse>>;
   private loading: ObservableMap<string, WaitingCallback[]>;
+  private client: Client;
 
-  constructor() {
+  constructor(client: Client) {
+    this.client = client;
     // todo: no need for observable map
     this.docs = observable.map();
     this.loading = observable.map();
@@ -76,7 +79,7 @@ export class DocsStore {
     }
 
     try {
-      const doc = await client.docs.findOne(req);
+      const doc = await this.client.docs.findOne(req);
       const activeDocRecord = observable({
         loading: false,
         error: null,
@@ -115,11 +118,10 @@ export class DocsStore {
     record.loading = true;
     record.error = null;
     try {
-      const doc = await client.docs.findOne(req);
+      const doc = await this.client.docs.findOne(req);
       record.data = doc;
       record.loading = false;
     } catch (err) {
-      console.log("load error", req.isCreate);
       if (err instanceof ky.HTTPError) {
         if (err.response.status === 404 && req.isCreate) {
           record.data = { mdast: null, raw: "" };
@@ -159,16 +161,13 @@ export class DocsStore {
 
   saveDocument = async (req: SaveRequest) => {
     const doc = this.docs.get(this.asString(req));
-    if (!doc || !doc.data)
-      throw new Error("cannot save document, it is not in the cache");
+    if (!doc) throw new Error("cannot save document, it is not in the cache");
     doc.saving = true;
     try {
-      const updated = await client.docs.save(req);
-      doc.data.mdast = updated.mdast;
-      doc.data.raw = updated.raw;
-      console.log("updated", doc);
+      const updated = await this.client.docs.save(req);
+      doc.data!.mdast = updated.mdast;
+      doc.data!.raw = updated.raw;
     } catch (err) {
-      console.error("Error saving", req);
       doc.saving = false;
       doc.error = err;
       throw err;

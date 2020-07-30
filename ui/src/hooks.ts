@@ -5,12 +5,13 @@ import React, {
   Dispatch,
   SetStateAction,
 } from "react";
-import client, {
+import {
   IJournal,
   SearchResponse,
   SearchRequest,
   GetDocumentResponse,
 } from "./client";
+import { useClient } from "./client/context";
 import { toaster } from "evergreen-ui";
 import ky from "ky-universal";
 import { autorun } from "mobx";
@@ -45,11 +46,11 @@ type LoadingState = {
 // that loads them
 export const JournalsContext = React.createContext<IJournal[]>([]);
 
-// todo: inject this from a context elsewhere...
-import { DocsStore } from "./client/docstore";
+// // todo: inject this from a context elsewhere...
+// import { DocsStore } from "./client/docstore";
 
-// exported for testing
-export const docs = new DocsStore();
+// // exported for testing
+// export const docs = new DocsStore();
 
 /**
  * Re-usable state for loading and errors
@@ -85,7 +86,7 @@ function withLoading(cb: () => Promise<any>) {
     } catch (err) {
       state.setError(err);
       state.setLoading(false);
-      toaster.danger(err);
+      toaster.danger(err.message);
     }
   };
 
@@ -93,6 +94,7 @@ function withLoading(cb: () => Promise<any>) {
 }
 
 export function useJournals(): JournalsState {
+  const client = useClient();
   const { loading, setLoading, error, setError } = useLoading();
   const [adding, setAdding] = useState(false);
   const [journals, setJournals] = useState<IJournal[]>([]);
@@ -176,6 +178,7 @@ export function useContent(): ContentState {
   const { loading, setLoading, error, setError } = useLoading(false);
   const [query, setQuery] = useState<SearchRequest | null>(null);
   const [content, setContent] = useState<SearchResponse | null>(null);
+  const client = useClient();
 
   // Search journal content whenever query changes
   // TODO: How to debounce?
@@ -263,8 +266,9 @@ export function useDocument(
   date: string,
   opts: Partial<UseDocumentOpts> = {}
 ) {
+  const client = useClient();
   const [record] = useState(
-    docs.loadDocument({
+    client.cache.loadDocument({
       journalName: journal,
       date,
       isCreate: opts.isCreate,
@@ -319,6 +323,7 @@ export function useEditableDocument(
   date?: string,
   isUsing?: boolean
 ) {
+  const client = useClient();
   const [dateToUse] = useState(date || getToday());
 
   // this is safe to run on every render
@@ -353,7 +358,7 @@ export function useEditableDocument(
   }, [journal, date]);
 
   const { wrapper: saveDocument, ...savingState } = withLoading(async () => {
-    await docs.saveDocument({
+    await client.cache.saveDocument({
       date: dateToUse,
       journalName: journal,
       // todo: this is duplicated from document.tsx

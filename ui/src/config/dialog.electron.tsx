@@ -15,13 +15,11 @@ export default function ElectronDialog(props: P<Props>) {
 
     setSelecting(true);
     try {
-      const selected = await dialog.showOpenDialog(
-        {
-          title: "Select a directory",
-          buttonLabel: "Use as journal",
-          properties: ["openDirectory", "createDirectory"],
-        },
-      );
+      const selected = await dialog.showOpenDialog({
+        title: "Select a directory",
+        buttonLabel: "Use as journal",
+        properties: ["openDirectory", "createDirectory"],
+      });
 
       if (selected.filePaths.length) {
         props.onSelected(selected.filePaths[0]);
