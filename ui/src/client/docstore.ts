@@ -163,10 +163,13 @@ export class DocsStore {
     const doc = this.docs.get(this.asString(req));
     if (!doc) throw new Error("cannot save document, it is not in the cache");
     doc.saving = true;
+
     try {
       const updated = await this.client.docs.save(req);
-      doc.data!.mdast = updated.mdast;
-      doc.data!.raw = updated.raw;
+      doc.data = {
+        mdast: updated.mdast,
+        raw: updated.raw,
+      };
     } catch (err) {
       doc.saving = false;
       doc.error = err;

@@ -1,6 +1,16 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const { spawn, fork } = require("child_process");
+
+/**
+ * Open browser windows on link-click, an event triggered by renderer process.
+ * @param {String} link
+ */
+ipcMain.on('link-click', (_, link) => {
+  // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/390
+  shell.openExternal(link);
+});
+
 
 /**
  * After the backend is spawned, await the dynamically
@@ -76,9 +86,12 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      // Actually i should not need this
-      nodeIntegration: false,
-      // but apparently do need this now
+      // This is needed to load electron modules
+      // Loading the electron requiring scripts in a preload
+      // script, then disabling nodeIntegration, would be
+      // more secure
+      nodeIntegration: true,
+      // same as above
       enableRemoteModule: true,
     },
   });
