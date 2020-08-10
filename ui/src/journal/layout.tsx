@@ -2,8 +2,9 @@ import React, { useState, PropsWithChildren } from "react";
 import { Pane } from "evergreen-ui";
 import { ContentState, JournalsState } from "../hooks";
 import Document from "./document";
-import ModalEditor, { Props as ModalEditorProps } from "./modal-editor";
-import Search, { SearchProps } from "./search";
+import ModalEditor, { Props as ModalEditorProps } from "./editor/modal-editor";
+import Search from "./search/singleselect";
+import { SearchProps } from "./search/searchprops";
 
 interface EditingArgs {
   journal: string;
@@ -12,9 +13,7 @@ interface EditingArgs {
 
 type LayoutProps = PropsWithChildren<SearchProps & ModalEditorProps>;
 
-export default function JournalsLayout(
-  props: LayoutProps,
-) {
+export default function JournalsLayout(props: LayoutProps) {
   return (
     <Pane margin={50}>
       <Pane display={"flex"} marginBottom={25}>

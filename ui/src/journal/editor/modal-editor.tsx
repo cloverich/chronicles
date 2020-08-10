@@ -1,5 +1,4 @@
 import React, { useContext, useState } from "react";
-import Search from "./search";
 import {
   Button,
   Menu,
@@ -10,7 +9,7 @@ import {
   Dialog,
   Badge,
 } from "evergreen-ui";
-import { ContentState, JournalsState, useEditableDocument } from "../hooks";
+import { ContentState, JournalsState, useEditableDocument } from "../../hooks";
 import Editor, { Props as EditorProps } from "./editor";
 import { Node } from "slate";
 

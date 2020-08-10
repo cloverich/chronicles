@@ -10,22 +10,22 @@ import { ClientContext } from "./client/context";
 import { getClient } from "./loadclient.electron";
 import { Client } from "./client";
 
-export default function RealContainer() {
+/**
+ * Wrap the main container and supply the API client, which
+ * needs to wait for a signal from Electron to be ready.
+ */
+export default function ClientInjectingContainer() {
   const [client, setClient] = useState<Client>();
 
   async function waitForClient() {
-    console.log("waitForClient");
     const client = await getClient();
-    console.log("gotClient", client);
     setClient(client);
   }
   useEffect(() => {
-    console.log("waiting for client!");
     waitForClient();
   }, []);
 
   if (!client) {
-    console.log("not client!");
     return <div>¯\_(ヅ)_/¯</div>;
   }
 

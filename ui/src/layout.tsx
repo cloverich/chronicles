@@ -1,10 +1,10 @@
-import React, { useState, ComponentProps, PropsWithChildren } from "react";
+import React, { PropsWithChildren } from "react";
 import { Pane, Tablist, Tab, Text, Icon } from "evergreen-ui";
 
 interface Props<T> {
   tabs: T[];
   selected: T;
-  setSelected: (tab: T) => any;
+  setSelected: React.Dispatch<React.SetStateAction<T>>;
 }
 
 const monoStyle = {
@@ -30,11 +30,7 @@ export default function Layout<T>(props: PropsWithChildren<Props<T>>) {
       <Pane borderBottom="default" elevation={1} padding={15} display="flex">
         <Pane marginRight={25}>
           <span style={monoStyle}>#</span>
-          <span
-            style={monoStyle}
-          >
-            PRAGMA
-          </span>
+          <span style={monoStyle}>chronicles</span>
         </Pane>
         <Tablist flexBasis={240} marginRight={24}>
           {tabs}

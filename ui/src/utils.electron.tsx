@@ -11,7 +11,6 @@ const { ipcRenderer } = require("electron");
  * and window.open defaults to opening a new window / tab
  */
 function externalLinksListener(event: any) {
-  console.log(event.target);
   // hopefully only relevent on <a href="..."> elements
   if (event.target.tagName !== "A") return;
 
