@@ -1,9 +1,8 @@
 import React, { useState, useEffect, PropsWithChildren as P } from "react";
 import { Dialog, Pane, TextInputField, Button, toaster } from "evergreen-ui";
 import { IJournal } from "../client";
-import { JournalsState } from "../hooks";
+import { JournalsState } from "../hooks/journals";
 import Ajv, { ErrorObject } from "ajv";
-import ky from "ky";
 
 const schema = {
   $schema: "http://json-schema.org/draft-07/schema#",
@@ -27,7 +26,7 @@ const schema = {
 const ajv = new Ajv();
 const validate = ajv.compile(schema);
 
-interface Props extends P<Pick<JournalsState, "adding" | "addJournal">> {
+interface Props extends P<Pick<JournalsState, "saving" | "addJournal">> {
   directory: string;
   onClosed: () => any;
 }
@@ -41,7 +40,7 @@ export default function AddJournalDialogWrapper(props: Props) {
 }
 
 function AddJournalDialog(props: Props) {
-  const { addJournal, adding } = props;
+  const { addJournal, saving } = props;
 
   // todo: windows
   // todo: parse with Browser compatible URL parser?
@@ -80,17 +79,17 @@ function AddJournalDialog(props: Props) {
         width="80vw"
         title="Add journal"
         isShown={isShown}
-        shouldCloseOnEscapePress={!adding}
-        shouldCloseOnOverlayClick={!adding}
+        shouldCloseOnEscapePress={!saving}
+        shouldCloseOnOverlayClick={!saving}
         preventBodyScrolling
         confirmLabel="save"
-        isConfirmLoading={adding}
+        isConfirmLoading={saving}
         isConfirmDisabled={!formState.name || !formState.url}
         onConfirm={submit}
         onCloseComplete={props.onClosed}
       >
         <AddJournalForm
-          saving={adding}
+          saving={saving}
           formState={formState}
           setState={setState}
         />

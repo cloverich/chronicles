@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 const { readFile, writeFile } = fs.promises;
 import { Stats } from "fs";
+import { NotFoundError, ValidationError } from "./errors";
 const readFileStr = (path: string) => readFile(path, "utf8");
 
 // for matching exact
@@ -29,19 +30,31 @@ export class Files {
 
   static async read(journalPath: string, date: string) {
     const fp = Files.pathForEntry(journalPath, date);
-    return await readFileStr(fp);
+    try {
+      return await readFileStr(fp);
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        throw new NotFoundError(`Document at ${fp} does not exist.`);
+      } else {
+        throw err;
+      }
+    }
   }
 
   static async save(journalPath: string, date: string, contents: string) {
     if (!contents || !contents.trim()) {
-      throw new Error("[FileDAO.save] contents are required to save a file");
+      throw new ValidationError(
+        "[Files.save] contents are required to save a file"
+      );
     }
 
     // TODO: Unit test
     // TODO: More robust, assert range: i.e. positive ints, etc...
     // probably just do a date parse to be safe
     if (!reg.test(date)) {
-      throw new Error("[FileDAO.save] date must match format YYYY-MM-DD");
+      throw new ValidationError(
+        "[Files.save] date must match format YYYY-MM-DD"
+      );
     }
     const fp = Files.pathForEntry(journalPath, date);
     const dir = path.parse(fp).dir;

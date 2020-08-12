@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { observer } from "mobx-react-lite";
 import Layout from "./layout";
 import Config from "./config";
 
-import { useContent, useJournals, JournalsContext } from "./hooks"; // name not at all confusing
+import { useSearch, useJournals, JournalsContext } from "./hooks/journals"; // name not at all confusing
+// import { useContent } from './hooks/documents';
 import Journal from "./journal";
 
 // todo: less stupid when i have > 20 minutes to do anything
@@ -29,45 +31,47 @@ export default function ClientInjectingContainer() {
     return <div>¯\_(ヅ)_/¯</div>;
   }
 
-  return (
-    <ClientContext.Provider value={client}>
-      <Container />
-    </ClientContext.Provider>
-  );
+  // I don't actually need to inject it... its exported as a singleton...
+  return <Container />;
 }
 
-function Container() {
+const Container = observer(() => {
   const [view, setView] = useState<"config" | "journal">("journal");
-  const journalsState = useJournals();
-  const contentState = useContent();
+  const journals = useJournals();
+  const searchState = useSearch();
+
+  useEffect(() => {
+    journals.load();
+  }, []);
+
+  // todo: error states :D
+  if (journals.loading) {
+    return <h1>Loading journals...</h1>;
+  }
 
   if (view === "config") {
     return (
-      <JournalsContext.Provider value={journalsState.journals}>
-        <Layout
-          tabs={["config", "journal"]}
-          selected={view}
-          setSelected={setView}
-        >
-          <Config {...journalsState} />
-        </Layout>
-      </JournalsContext.Provider>
+      <Layout
+        tabs={["config", "journal"]}
+        selected={view}
+        setSelected={setView}
+      >
+        <Config />
+      </Layout>
     );
   }
 
   if (view === "journal") {
     return (
-      <JournalsContext.Provider value={journalsState.journals}>
-        <Layout
-          tabs={["config", "journal"]}
-          selected={view}
-          setSelected={setView}
-        >
-          <Journal {...contentState} journals={journalsState.journals} />
-        </Layout>
-      </JournalsContext.Provider>
+      <Layout
+        tabs={["config", "journal"]}
+        selected={view}
+        setSelected={setView}
+      >
+        <Journal />
+      </Layout>
     );
   }
 
   return <div>¯\_(ヅ)_/¯</div>;
-}
+});

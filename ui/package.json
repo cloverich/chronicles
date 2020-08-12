@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "webpack-dev-server --config webpack.js --hot --inline --colors --open",
+    "dev": "webpack-dev-server --config webpack.js --hot --inline --colors",
     "test": "mocha -r ts-node/register -r esm src/**/*.spec.ts"
   },
   "dependencies": {
@@ -45,6 +45,7 @@
     "electron-packager": "^15.0.0",
     "electron-rebuild": "^1.11.0",
     "emotion": "^10.0.27",
+    "error-overlay-webpack-plugin": "^0.4.1",
     "esm": "^3.2.25",
     "evergreen-ui": "^4.28.0",
     "html-webpack-plugin": "^4.3.0",

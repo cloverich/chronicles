@@ -1,4 +1,5 @@
-import { Journals, ValidationError } from "./journals";
+import { Journals } from "./journals";
+import { ValidationError } from "./errors";
 import { Documents } from "./documents";
 import { RouterContext } from "@koa/router";
 import { SaveRequest } from "./documents";

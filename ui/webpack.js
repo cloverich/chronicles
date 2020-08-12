@@ -1,4 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ErrorOverlayPlugin = require('error-overlay-webpack-plugin')
 // const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 // const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 // const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
@@ -19,7 +20,7 @@ module.exports = (env, argv) => {
     },
 
     // Enable sourcemaps for debugging webpack's output.
-    devtool: "eval-source-map",
+    devtool: 'cheap-module-source-map', // "eval-source-map", -- changed for error-overlay-webpack-plugin
 
     resolve: {
       // Add '.ts' and '.tsx' as resolvable extensions.
@@ -76,7 +77,10 @@ module.exports = (env, argv) => {
         title: 'Pragma',
         template: __dirname + "/src/app.html",
         filename: "index.html"
-      })
+      }),
+
+      // https://github.com/smooth-code/error-overlay-webpack-plugin
+      new ErrorOverlayPlugin(),
     ],
 
     // Optimizations are enabled when PRODUCTION is true

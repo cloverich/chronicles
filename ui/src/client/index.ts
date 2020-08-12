@@ -7,23 +7,27 @@ export interface IJournal {
 }
 
 class JournalsClient {
-  constructor(private urlBase: string) {}
+  constructor(private api: KyClient) {}
 
   list = (): Promise<IJournal[]> => {
-    return ky(this.urlBase + "/journals").json();
+    return this.api.ky("journals").json();
   };
 
   add = (journal: IJournal): Promise<IJournal[]> => {
-    return ky(this.urlBase + "/journals", {
-      method: "post",
-      json: journal,
-    }).json();
+    return this.api
+      .ky("journals", {
+        method: "post",
+        json: journal,
+      })
+      .json();
   };
 
   remove = (journal: IJournal): Promise<IJournal[]> => {
-    return ky(this.urlBase + "/journals/" + journal.name, {
-      method: "delete",
-    }).json();
+    return this.api
+      .ky("journals/" + journal.name, {
+        method: "delete",
+      })
+      .json();
   };
 }
 
@@ -39,9 +43,17 @@ export interface GetDocumentResponse {
   mdast: any; // Record<string, any>;
 }
 
-// DocsQuery in deno-api
+/**
+ * Structure for searching journal content.
+ *
+ * todo: DocsQuery in the API. Refactor, re-name, merge
+ */
 export interface SearchRequest {
-  journals?: string[];
+  /**
+   * Filter to these journals. The empty array is treated as "all journals",
+   * rather than None.
+   */
+  journals: string[];
 
   nodeMatch?: {
     type: string; // type of Node
@@ -71,18 +83,18 @@ export interface SaveMdastRequest {
 export type SaveRequest = SaveRawRequest | SaveMdastRequest;
 
 class DocsClient {
-  constructor(private urlBase: string) {}
+  constructor(private api: KyClient) {}
 
   findOne = ({
     journalName,
     date,
   }: GetDocument): Promise<GetDocumentResponse> => {
-    return ky.get(this.urlBase + `/journals/${journalName}/${date}`).json();
+    return this.api.ky.get(`journals/${journalName}/${date}`).json();
   };
 
   search = (q: SearchRequest): Promise<SearchResponse> => {
-    return ky
-      .post(this.urlBase + "/search", {
+    return this.api.ky
+      .post("search", {
         json: q,
       })
       .json();
@@ -91,22 +103,45 @@ class DocsClient {
   save = (req: SaveRequest): Promise<GetDocumentResponse> => {
     const body = "raw" in req ? { raw: req.raw } : { mdast: req.mdast };
 
-    return ky
-      .post(this.urlBase + `/journals/${req.journalName}/${req.date}`, {
+    return this.api.ky
+      .post(`journals/${req.journalName}/${req.date}`, {
         json: body,
       })
       .json();
   };
 }
 
-export class Client {
+abstract class KyClient {
+  ky: typeof ky = ((() => {
+    throw new Error("ky not configured yet");
+  }) as unknown) as any;
+}
+
+class ClientImplementation extends KyClient {
   readonly journals: JournalsClient;
   readonly docs: DocsClient;
   readonly cache: DocsStore;
 
-  constructor(urlBase: string) {
-    this.journals = new JournalsClient(urlBase);
-    this.docs = new DocsClient(urlBase);
+  constructor() {
+    super();
+    this.journals = new JournalsClient(this);
+    this.docs = new DocsClient(this);
     this.cache = new DocsStore(this);
   }
+
+  /**
+   * Set the URL for the API client. Since the port is dynamically provided via electron IPC,
+   * this step is necessary to figure out how to make URL calls.
+   *
+   * @param urlBase - The base url + port for the backend server
+   */
+  configure(urlBase: string) {
+    this.ky = ky.extend({ prefixUrl: urlBase });
+  }
 }
+
+// Hmm. could do this to expose the types but no the class.
+export type Client = ClientImplementation;
+
+// singleton
+export default new ClientImplementation();

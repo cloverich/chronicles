@@ -12,6 +12,7 @@ const monoStyle = {
 };
 
 export default function Layout<T>(props: PropsWithChildren<Props<T>>) {
+  // todo: optimize
   const tabs = props.tabs.map((tab) => {
     return (
       <Tab

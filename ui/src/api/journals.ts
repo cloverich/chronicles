@@ -1,6 +1,7 @@
 import { Database, recreateSchema } from "./database";
 import { Indexer } from "./indexer";
 import { Files } from "./files";
+import { ValidationError } from "./errors";
 
 interface IJournal {
   // path to root folder
@@ -8,9 +9,6 @@ interface IJournal {
   // display name
   name: string;
 }
-
-// todo: if more custom errors, move to errors file
-export class ValidationError extends Error {}
 
 /**
  * The Journals service knows how to CRUD journals and calls

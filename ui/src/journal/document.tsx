@@ -1,6 +1,6 @@
 import React from "react";
 import { Pane, Badge, Button, Heading } from "evergreen-ui";
-import { useDocument } from "../hooks";
+import { useDocument } from "../hooks/documents";
 import { observer } from "mobx-react-lite";
 import remark from "remark";
 const html = require("remark-html");

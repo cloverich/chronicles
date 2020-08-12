@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Button, Pane, Table, toaster } from "evergreen-ui";
 import { IJournal } from "../client";
-import { JournalsState } from "../hooks";
+import { useJournals } from "../hooks/journals";
 import AddJournal from "./add";
 import ElectronDialog from "./dialog.electron";
+import { observer } from "mobx-react-lite";
 
-export default function Config(props: JournalsState) {
-  const { journals, loading, addJournal, adding } = props;
+function Config() {
+  const store = useJournals();
   const [directory, setDirectory] = useState<string>("");
 
   function onClosed() {
@@ -19,22 +20,18 @@ export default function Config(props: JournalsState) {
 
   async function removeJournal(journal: IJournal) {
     try {
-      await props.removeJournal(journal);
+      await store.remove(journal);
       toaster.success(`Successfully removed ${journal.name}`);
     } catch (err) {
       toaster.danger(err);
     }
   }
 
-  if (loading) {
-    return <h1>LOADING</h1>;
-  }
-
   return (
     <Pane margin={50}>
       <AddJournal
-        addJournal={addJournal}
-        adding={adding}
+        addJournal={store.add}
+        saving={store.saving}
         directory={directory}
         onClosed={onClosed}
       />
@@ -48,7 +45,7 @@ export default function Config(props: JournalsState) {
           <Table.TextHeaderCell>URL</Table.TextHeaderCell>
         </Table.Head>
         <Table.Body height={240}>
-          {journals.map((journal) => (
+          {store.journals.map((journal) => (
             <Table.Row key={journal.name}>
               <Table.TextCell>{journal.name}</Table.TextCell>
               <Table.TextCell>{journal.url}</Table.TextCell>
@@ -62,3 +59,5 @@ export default function Config(props: JournalsState) {
     </Pane>
   );
 }
+
+export default observer(Config);

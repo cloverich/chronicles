@@ -18,3 +18,9 @@ suite("startup", function () {
   test("opening background process");
   test("background process shuts down on close");
 });
+
+suite("editing", function () {
+  test("opening editor defaults to currently selected journal");
+  test("editor pre-populates with selected dates content");
+  test("editing and saving content works... more of an e2e test");
+});

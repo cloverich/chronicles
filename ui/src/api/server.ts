@@ -5,6 +5,7 @@ const bodyParser = require("koa-bodyparser");
 import Handlers from "./handlers";
 // i hate myself
 import makePort from "get-port";
+import { ValidationError, NotFoundError } from "./errors";
 
 /**
  * This process is started by the electron main process
@@ -28,39 +29,40 @@ export async function server(handlers: Handlers) {
 
   // Misc middlewares
   app.use(async (ctx, next) => {
-    try {
-      await next();
-    } catch (err) {
-      console.error("error handling", ctx.request.path);
-      console.error(err);
-      ctx.response.status = 500;
-    }
-  });
-
-  // CORS
-  app.use(async (ctx, next) => {
+    const start = Date.now();
+    // CORS
     // TODO: Is this the simplest configuration?
     ctx.set("Access-Control-Allow-Origin", "*");
     ctx.set("Access-Control-Allow-Headers", `*`);
     ctx.set("Access-Control-Allow-Methods", `POST, PUT, GET, OPTIONS, DELETE`);
-    await next();
-  });
 
-  // Log response time
-  app.use(async (ctx, next) => {
-    await next();
-    const rt = ctx.get("X-Response-Time");
-    console.log(
-      `${ctx.request.method} ${ctx.response.status} ${ctx.request.url} - ${rt}`
-    );
-  });
+    try {
+      await next();
+    } catch (err) {
+      console.error(err);
+      if (err instanceof ValidationError) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          title: err.message,
+        };
+      } else if (err instanceof NotFoundError) {
+        ctx.response.status = 404;
+        ctx.response.body = {
+          title: err.message,
+        };
+      } else {
+        ctx.response.status = 500;
+        ctx.response.body = {
+          title: err.message,
+        };
+      }
+    }
 
-  // Timing
-  app.use(async (ctx, next) => {
-    const start = Date.now();
-    await next();
     const ms = Date.now() - start;
     ctx.set("X-Response-Time", `${ms}ms`);
+    console.log(
+      `${ctx.request.method} ${ctx.response.status} ${ctx.request.url} - ${ms}`
+    );
   });
 
   // Make routes

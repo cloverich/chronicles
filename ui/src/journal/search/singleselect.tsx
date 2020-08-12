@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { Select } from "evergreen-ui";
-import { SearchProps } from "./searchprops";
 
-export default function SelectJournal(props: SearchProps) {
-  const selected = props?.query?.journals?.length
-    ? props.query.journals[0]
-    : "";
+interface Props {
+  journals: string[];
+  selected: string;
+  onSelect: (j: string) => any;
+}
 
-  const options = props.journals.map((j) => (
-    <option value={j.name} key={j.name}>
-      {j.name}
+export default function SelectJournal(props: Props) {
+  if (!props.selected) {
+    // Make the user pay for my programming mistakes!
+    throw new Error(
+      "SelectJournal received null for currently selected journal, but does not support this!"
+    );
+  }
+
+  // Although, once journals have display names and such
+  // may actually want IJournal interface and to pull out the display name
+  const options = props.journals.map((journal) => (
+    <option value={journal} key={journal}>
+      {journal}
     </option>
   ));
 
   function onSelect(item: React.ChangeEvent<HTMLSelectElement>) {
-    props.setQuery({
-      journals: [item.target.value],
-      nodeMatch: undefined,
-    });
+    props.onSelect(item.target.value);
   }
 
   return (
-    <Select value={selected} onChange={onSelect} placeholder="Select a journal">
-      <option value=""></option>
+    <Select
+      value={props.selected}
+      onChange={onSelect}
+      placeholder="Select a journal"
+    >
       {options}
     </Select>
   );
