@@ -35,17 +35,27 @@ function Journal() {
     );
   }
 
-  // Empty helpers too
-  // todo: add document if journals != null
-  // todo: if no journals direct user to config
-  // todo: if journals but no query direct user to query
-  if (!search.content) {
-    return (
-      <Layout editing={editing} setEditing={setEditing}>
-        <Heading>Missing content</Heading>
-        <Paragraph>A content Paragraphlaceholder sure would be nice!</Paragraph>
-      </Layout>
-    );
+  // empty states
+  if (!search.content || !search.content.length) {
+    if (store.journals.length) {
+      return (
+        <Layout editing={editing} setEditing={setEditing}>
+          <Heading>No documents</Heading>
+          <Paragraph>
+            The selected journal has no documents yet. Add one.
+          </Paragraph>
+        </Layout>
+      );
+    } else {
+      return (
+        <Layout editing={editing} setEditing={setEditing}>
+          <Heading>No journals added</Heading>
+          <Paragraph>
+            Use the config link in the navbar to create a new journal.
+          </Paragraph>
+        </Layout>
+      );
+    }
   }
 
   const docs = search.content

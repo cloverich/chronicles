@@ -29,6 +29,7 @@ export default function SelectJournal(props: Props) {
 
   return (
     <Select
+      width={256}
       value={props.selected}
       onChange={onSelect}
       placeholder="Select a journal"

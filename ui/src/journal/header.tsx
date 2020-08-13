@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
-import { Button } from "evergreen-ui";
-import { toJS } from "mobx";
+import { Button, Pane, Heading } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import { useJournals } from "../hooks/journals";
 import { Setter } from "../hooks/loadutils";
@@ -40,22 +39,34 @@ function Header(props: Props) {
   if (!state.journals.length) {
     // really, should be handled above. But this provides some protection
     return (
-      <>
-        <h1>todo: empty state for header</h1>
+      <Pane
+        flex={1}
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <Heading level={2}>No journals</Heading>
         <Button disabled={true}>Add</Button>
-      </>
+      </Pane>
     );
   }
 
   return (
-    <>
-      <Dropdown
-        journals={state.journals.map((j) => j.name)}
-        selected={selectedJournal}
-        onSelect={selectJournal}
-      />
+    <Pane
+      flex={1}
+      display="flex"
+      alignItems="center"
+      justifyContent="space-between"
+    >
+      <Pane width={304}>
+        <Dropdown
+          journals={state.journals.map((j) => j.name)}
+          selected={selectedJournal}
+          onSelect={selectJournal}
+        />
+      </Pane>
       <Button onClick={setEditing}>Add</Button>
-    </>
+    </Pane>
   );
 }
 

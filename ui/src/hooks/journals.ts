@@ -7,6 +7,7 @@ import client, {
   Client,
 } from "../client";
 import { useClient } from "../client/context";
+import { IReactionDisposer } from "mobx";
 
 export type JournalsState = SavingState & {
   journals: IJournal[];
@@ -32,15 +33,56 @@ class JournalsStore {
   @observable saving: boolean = false;
   @observable searching: boolean = false;
   @observable error: Error | null = null;
-  @observable journals: IJournal[] = [];
+  @observable journals: IJournal[];
 
   // todo: see reaction in this.load
   @observable query: SearchRequest = { journals: [] };
+  private queryReaction: IReactionDisposer | null = null;
 
   // todo: this interface needs work
   @observable content: Array<[string, string]> = [];
 
-  constructor(private client: Client) {}
+  constructor(private client: Client) {
+    this.journals = [];
+
+    reaction(
+      () => this.journals,
+      (journals) => {
+        if (journals.length === 0) {
+          // we removed the last journal, clear cached data
+          if (this.queryReaction) this.queryReaction();
+          this.query = { journals: [] };
+          this.content = [];
+        } else if (journals.length === 1) {
+          // we added or removed, and there is only one journal
+          // set default search etc
+          this.query = { journals: [journals[0].name] };
+          this.watchQuery();
+        } else {
+          // have > 1 journals, whether add or remove ensure
+          // the query does not have a reference to the removed journal.
+          for (const journal of this.query.journals) {
+            if (!journals.find((j) => j.name === journal)) {
+              this.query = { journals: [journals[0].name] };
+            }
+          }
+          this.watchQuery();
+        }
+      }
+    );
+  }
+
+  private watchQuery = () => {
+    if (this.queryReaction) this.queryReaction();
+
+    // This lets components set the query and the search automatically executes.
+    // Probably better to ditch this and let calling `search` be how it all works.
+    reaction(
+      () => this.query,
+      (query) => this.search(query), // todo: confirm... the query is valid?
+      { delay: 25, fireImmediately: true }
+    );
+  };
 
   load = async () => {
     if (this.isLoaded) return;
@@ -54,12 +96,7 @@ class JournalsStore {
       this.error = err;
     }
 
-    reaction(
-      () => this.query,
-      (query) => this.search(query),
-      { delay: 25, fireImmediately: true }
-    );
-
+    this.watchQuery();
     this.isLoaded = true;
     this.loading = false;
   };
