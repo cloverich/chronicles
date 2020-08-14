@@ -32,9 +32,9 @@ function Header(props: Props) {
 
   const setEditing = useCallback(() => {
     props.setEditing({
-      journal: state.journals[0].name,
+      journal: selectedJournal,
     });
-  }, [state.journals]);
+  }, [state.journals, selectedJournal]);
 
   if (!state.journals.length) {
     // really, should be handled above. But this provides some protection
