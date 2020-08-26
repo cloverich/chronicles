@@ -3,11 +3,16 @@ import { Indexer } from "./indexer";
 import { Files } from "./files";
 import { ValidationError } from "./errors";
 
-interface IJournal {
+export interface IJournal {
   // path to root folder
   url: string;
   // display name
   name: string;
+
+  /**
+   * The duration of a single document in a journal.
+   */
+  unit: "day" | "week" | "month" | "year";
 }
 
 /**
@@ -81,11 +86,13 @@ export class Journals {
     // todo: prior to this, validate directory
     // todo: what if after inserting, the actual indexing fails?
     this.db
-      .prepare("INSERT INTO journals (name, url) VALUES (:name, :url)")
+      .prepare(
+        "INSERT INTO journals (name, url, unit) VALUES (:name, :url, :unit)"
+      )
       .run(journal);
 
     // if exists, return 204
-    await this.idxService.index(journal.url, journal.name);
+    await this.idxService.index(journal);
 
     // Update this.journals
     this.journals.push(journal);
@@ -102,7 +109,7 @@ export class Journals {
     this.journals = [];
 
     // faster then deleting one by one
-    await recreateSchema(this.db, false);
+    await recreateSchema(this.db, true);
 
     // re-index
     for (const journal of list) {
@@ -135,12 +142,13 @@ export class Journals {
 
   list = async () => {
     let journals: Array<IJournal> = [];
-    const rows = this.db.prepare("SELECT id,name,url FROM journals").all();
+    const rows = this.db.prepare("SELECT id,name,url,unit FROM journals").all();
 
-    for (const { id, name, url } of rows) {
+    for (const { name, url, unit } of rows) {
       journals.push({
         name,
         url,
+        unit,
       });
     }
 

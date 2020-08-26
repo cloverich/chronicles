@@ -20,6 +20,7 @@ export function createDb(
 // everything
 export async function recreateSchema(db: Database, reschema: boolean) {
   if (reschema) {
+    console.log("[recreateSchema] Recreating schema");
     db.exec(`DROP TABLE IF EXISTS nodes`);
     db.exec("DROP TABLE IF EXISTS journals");
   }
@@ -27,7 +28,8 @@ export async function recreateSchema(db: Database, reschema: boolean) {
   db.exec(`CREATE TABLE IF NOT EXISTS journals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    url TEXT NOT NULL
+    url TEXT NOT NULL,
+    unit TEXT NOT NULL DEFAULT "day" -- day, month, year
   )`);
 
   db.exec(

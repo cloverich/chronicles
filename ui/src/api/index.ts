@@ -8,7 +8,7 @@ const dbfile = process.argv[2] || "./pragma.db";
 console.log("using db file", dbfile);
 
 async function init() {
-  const db = createDb(dbfile); // todo: how to decide if re-schema!?
+  const db = createDb(dbfile, process.env.CHRONICLES_RESCHEMA != null);
   const journals = await Journals.create(db);
   const documents = new Documents(db, journals);
   return { documents, journals };

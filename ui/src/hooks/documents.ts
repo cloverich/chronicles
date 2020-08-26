@@ -10,6 +10,9 @@ import { autorun } from "mobx";
 import { withLoading } from "./loadutils";
 import client, { GetDocumentResponse } from "../client";
 import { useClient } from "../client/context";
+import { useJournal } from "./journals";
+import { IJournal } from "../api/journals";
+import { DateTime } from "luxon";
 
 interface DocumentLoadedState {
   error: null;
@@ -117,16 +120,51 @@ class EditHelper {
   }
 }
 
+/**
+ * When creating a new entry, get the latest date for a given journal.
+ * day - today
+ * week - the start of this week
+ * month - the start of this month
+ * ...
+ *
+ * TODO: Should this logic be in the API? The future client library?
+ * @param unit
+ */
+function getLatestDate(unit: IJournal["unit"]): string {
+  switch (unit) {
+    case "day":
+      return getToday();
+    case "week":
+      return DateTime.local().startOf("week").toISODate()!;
+    case "month":
+      return DateTime.local().startOf("month").toISODate()!;
+    case "year":
+      return DateTime.local().startOf("year").toISODate()!;
+    default:
+      throw new Error(`getLatestDate called with unknown date type ${unit}`);
+  }
+}
+
+/**
+ * This is how the editor gets a handle on a document which may be edited.
+ *
+ * @param journal - Name of journal this document belongs to
+ * @param date  - Specify a date. But... depends on unit of the journal of course. Kind of...
+ * @param isUsing  - Spilling modal details into this hook. Great.
+ */
 export function useEditableDocument(
-  journal: string,
+  journalName: string,
   date?: string,
   isUsing?: boolean
 ) {
   const client = useClient();
-  const [dateToUse] = useState(date || getToday());
+  const journal = useJournal(journalName);
+  const [dateToUse] = useState(date || getLatestDate(journal.unit));
 
   // this is safe to run on every render
-  const doc = useDocument(journal, dateToUse, {
+  // TODO: Add validation in useDocument to protect against wrong date?
+  // Or just rely on the API to do that?
+  const doc = useDocument(journalName, dateToUse, {
     // todo: Actually -- createIfNotExist
     isCreate: true,
     refresh: isUsing,
@@ -141,7 +179,7 @@ export function useEditableDocument(
     setValue(v);
   };
 
-  // once document is loaded... need to sert value...
+  // once document is loaded... need to set value...
   useEffect(() => {
     const dispoable = autorun(() => {
       // may also need to ensure this only runs...
@@ -154,20 +192,11 @@ export function useEditableDocument(
     return dispoable;
   }, [journal, date]);
 
-  useEffect(() => {
-    const clearit = setInterval(() => {
-      console.log(EditHelper.stringify(value));
-    }, 2000);
-
-    return () => clearInterval(clearit);
-  }, [value]);
-
+  // todo: this whole wrapper business is confusing
   const saveDocumentBase = async () => {
-    console.log(EditHelper.stringify(value));
-
     await client.cache.saveDocument({
       date: dateToUse,
-      journalName: journal,
+      journalName,
       // todo: this is duplicated from document.tsx
       raw: EditHelper.stringify(value),
     });

@@ -24,3 +24,12 @@ suite("editing", function () {
   test("editor pre-populates with selected dates content");
   test("editing and saving content works... more of an e2e test");
 });
+
+suite("journal units", function () {
+  test(
+    "indexing a journal by week, month, year only loads entries that match start of segment"
+  );
+  test("(API) adding an entry with wrong unit fails");
+  test("(UI) clicking 'new' defaults to the start of the journals unit");
+  test("(UI:hooks) getTodaysDate works, maybe same thing as above");
+});

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, PropsWithChildren as P } from "react";
+import React, { useState, useEffect, PropsWithChildren } from "react";
 import { Dialog, Pane, TextInputField, Button, toaster } from "evergreen-ui";
 import { IJournal } from "../client";
-import { JournalsState } from "../hooks/journals";
 import Ajv, { ErrorObject } from "ajv";
+import { Select } from "../components/Select";
 
 const schema = {
   $schema: "http://json-schema.org/draft-07/schema#",
@@ -19,6 +19,11 @@ const schema = {
       title: "url",
       minLength: 1,
     },
+    unit: {
+      type: "string",
+      title: "unit",
+      pattern: "^[day|week|month|year]$",
+    },
   },
   required: ["name", "url"],
 };
@@ -26,7 +31,9 @@ const schema = {
 const ajv = new Ajv();
 const validate = ajv.compile(schema);
 
-interface Props extends P<Pick<JournalsState, "saving" | "addJournal">> {
+interface Props extends PropsWithChildren<{}> {
+  saving: boolean;
+  addJournal: (journal: IJournal, propagate: boolean) => any;
   directory: string;
   onClosed: () => any;
 }
@@ -49,6 +56,7 @@ function AddJournalDialog(props: Props) {
     // name. Did not think through validation much here
     name: props.directory.split("/").pop() || "",
     url: props.directory,
+    unit: "day",
   });
 
   const [isShown, setIsShown] = useState(true);
@@ -121,6 +129,13 @@ export function AddJournalForm(props: {
         onChange={(e: any) => setState({ ...formState, url: e.target.value })}
         value={formState.url}
         placeholder="Journal URL"
+      />
+      <Select
+        label="Journal Unit"
+        description="The time span of a single document"
+        options={["day", "week", "month", "year"]}
+        selected={formState.unit}
+        onSelect={(item) => setState({ ...formState, unit: item })}
       />
     </Pane>
   );

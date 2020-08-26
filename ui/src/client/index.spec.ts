@@ -13,11 +13,13 @@ describe("Client.journals", function () {
     await client.journals.add({
       name: "reading",
       url: "/Users/cloverich/Google Drive/notes/chronicles",
+      unit: "day",
     });
 
     const res = await client.journals.add({
       name: "reading",
       url: "/Users/cloverich/Google Drive/notes/reading",
+      unit: "day",
     });
 
     assert.exists(res);

@@ -115,7 +115,7 @@ export class Documents {
 
   fetchDoc = async (journalName: string, date: string) => {
     const url = this.journals.pathForJournal(journalName);
-    const raw = await Files.read(url, date);
+    const raw = await Files.read(Files.pathForEntry(url, date));
     return { raw, mdast: parser.parse(raw) };
   };
 

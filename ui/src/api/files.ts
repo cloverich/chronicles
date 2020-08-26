@@ -5,9 +5,17 @@ import fs from "fs";
 const { readFile, writeFile } = fs.promises;
 import { Stats } from "fs";
 import { NotFoundError, ValidationError } from "./errors";
+import { DateTime } from "luxon";
 const readFileStr = (path: string) => readFile(path, "utf8");
 
-// for matching exact
+export interface PathStatsFile {
+  path: string;
+  stats: Stats;
+}
+
+type ShouldIndex = (file: PathStatsFile) => boolean;
+
+// for matching exact (ex: 2020-05-01)
 const reg = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
@@ -16,6 +24,7 @@ const reg = /^\d{4}-\d{2}-\d{2}$/;
 export class Files {
   static isValidDirectory(directory: string) {
     // well this feels superfluous
+    // todo... this doesn't stat.isDirectory? WTF
     return fs.existsSync(directory);
   }
 
@@ -28,8 +37,7 @@ export class Files {
     );
   }
 
-  static async read(journalPath: string, date: string) {
-    const fp = Files.pathForEntry(journalPath, date);
+  static async read(fp: string) {
     try {
       return await readFileStr(fp);
     } catch (err) {
@@ -67,52 +75,21 @@ export class Files {
    *
    * @param srcDir - Journal directory to walk,looking for files to index
    * @param name - The journal name. Treated as a key to the journals table. Stupid.
+   *
+   * todo: If bored, implement a more efficient and easier to work with API:
+   * - Implement walk with w/ node APIs
+   * - Filter on filename -- avoid non-journal directories and calling fs.stat needlessly
    */
-  static walk = async (srcDir: string, name: string) => {
-    const sr = {
-      count: 0,
-      results: [] as string[],
-      journal: name,
-      path: srcDir,
-    };
-
-    // todo: filter .dotfiles, asset dirctories, etc
-    // todo: collect and report on statistics, like directory size
-    // num files time taken etc
-    const walking = walk(srcDir);
+  static async *walk(directory: string, shouldIndex: ShouldIndex) {
+    // todo: statistics
+    const walking = walk(directory);
 
     // NOTE: Docs say walk is lexicographical but if I log out statements, its not walking in order
     for await (const entry of walking) {
+      console.log("[Files.walk] calling shouldIndex with", entry.path);
       if (shouldIndex(entry)) {
-        // todo: more efficiently could begin indexing while walking
-        sr.results.push(path.parse(entry.path).name);
+        yield entry as PathStatsFile;
       }
     }
-
-    return sr;
-  };
-}
-
-interface PathStatsFile {
-  path: string;
-  stats: Stats;
-}
-
-const fileformat = /\/(\d{4})\/(\d{2})\/(\d{4})-(\d{2})-\d{2}/;
-
-function shouldIndex(file: PathStatsFile): boolean {
-  if (file.stats.isDirectory()) return false;
-
-  const { ext, name } = path.parse(file.path);
-  if (ext !== ".md") return false;
-  if (name.startsWith(".")) return false;
-
-  const segments = fileformat.exec(file.path);
-  // Match: ['...2016-02-15.md', '2016', '02', '2016', '02']
-
-  if (!segments) return false;
-  if (segments.length !== 5) return false;
-  if (segments[1] !== segments[3] || segments[2] !== segments[4]) return false;
-
-  return true;
+  }
 }

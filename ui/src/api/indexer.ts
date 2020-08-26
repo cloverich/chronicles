@@ -2,21 +2,16 @@ import path from "path";
 import { parser, stringifier } from "../markdown";
 import { Root } from "ts-mdast";
 import { Database } from "./database";
-import { Files } from "./files";
+import { Files, PathStatsFile } from "./files";
+import { IJournal } from "./journals";
+import { DateTime } from "luxon";
 
-interface DocsWalkResult {
-  count: number;
-  // path to journal
-  path: string;
-}
-
-interface Journal {
-  name: string;
-  path: string;
+function isISODate(dateStr: string) {
+  const parsedDate = DateTime.fromISO(dateStr);
+  return dateStr === parsedDate.toISODate();
 }
 
 const reg = /\d{4}-\d{2}-\d{2}/;
-// reg.test()
 
 interface NodeSchema {
   journal: string; // future: id
@@ -40,7 +35,7 @@ export class Indexer {
   }
 
   insert = (journal: string, date: string, node: any) => {
-    // NOTE: Lazy work here. I want to serialize most node attributes into a JSOn column that
+    // NOTE: Lazy work here. I want to serialize most node attributes into a JSON column that
     // I could eventually search on, like "depth" for heading nodes. But other properties on the node
     // (like children and and position) I do not need. So, pull them off and discard.
     // I could delete node.position but I may need node.children in subsequent processing steps, like
@@ -106,6 +101,13 @@ export class Indexer {
    * @param node - TODO: Base node type
    */
   indexNode = async (journal: string, date: string, node: Root | any) => {
+    // Redundant when called by index since Files.walk shouldIndex does this. But
+    // I put this here because of a bug so.... hmmm..
+    if (!isISODate(date))
+      throw new Error(
+        `[Indexer.indexNode] Expected an ISO formatted date but got ${date}`
+      );
+
     if (node.type !== "root") {
       try {
         await this.insert(journal, date, node);
@@ -134,23 +136,124 @@ export class Indexer {
     }
   };
 
-  index = async (srcDir: string, name: string) => {
-    const sr = await Files.walk(srcDir, name);
+  index = async (journal: IJournal) => {
+    const shouldFunc = getShouldFunc(journal.unit);
 
-    for (const entry of sr.results) {
-      const contents = await Files.read(sr.path, entry);
+    for await (const entry of Files.walk(journal.url, shouldFunc)) {
+      console.debug("[Indexer.index] processing entry", entry.path);
+
+      const contents = await Files.read(entry.path);
       // todo: track parsing errors so you understand why your content
       // isn't showing up in your journal view (failed to index).
       try {
         const parsed = parser.parse(contents);
-        await this.indexNode(sr.journal, entry, parsed);
+
+        // BUG ALERT: I was passing `entry.path` as second argument, when it wanted the
+        // filename, because it wants an ISODate: 2020-05-01, which is how we name files.
+        // I added `isISODate` to indexNode.
+        const filename = path.parse(entry.path).name;
+
+        await this.indexNode(journal.name, filename, parsed);
       } catch (err) {
         // Log and continue, so we can index remaining journal documents
         console.error(
-          `[Indexer.index] error indexing entry ${sr.path} - ${entry}`,
+          `[Indexer.index] error indexing entry ${entry.path}`,
           err
         );
       }
     }
   };
+}
+
+// BELOW: HELPERS FOR DETERMINING IF A FILE SHOULD BE INDEXED, BASED ON FILENAME
+// AND THE JOURNAL'S "unit" -- day, month, year.
+// SEE Files.walk usage
+
+// To check for filename structure and directory naming convention
+// Has match groups for year, month, and filename parts
+// ex match: /journals/reviews/2020/04/2020-04-01.md
+const fileformat = /\/(\d{4})\/(\d{2})\/(\d{4})-(\d{2})-\d{2}/;
+
+function isStartofWeek(d: DateTime) {
+  return d.startOf("week").day + 6 === d.day;
+}
+
+function isStartOfMonth(d: DateTime) {
+  return d.startOf("month").toISODate() === d.toISODate();
+}
+
+function isStartOfYear(d: DateTime) {
+  return d.startOf("year").toISODate() === d.toISODate();
+}
+
+const shouldIndexDay = (file: PathStatsFile) => shouldIndex(file, "day");
+const shouldIndexWeek = (file: PathStatsFile) => shouldIndex(file, "week");
+const shouldIndexMonth = (file: PathStatsFile) => shouldIndex(file, "month");
+const shouldIndexYear = (file: PathStatsFile) => shouldIndex(file, "year");
+
+function getShouldFunc(unit: IJournal["unit"]) {
+  switch (unit) {
+    case "day":
+      return shouldIndexDay;
+    case "week":
+      return shouldIndexWeek;
+    case "month":
+      return shouldIndexMonth;
+    case "year":
+      return shouldIndexYear;
+  }
+}
+
+/**
+ * Should we index a given file?
+ *
+ * @param file - A file yielded by our directory walking function
+ * @param unit  - The journal "unit"
+ */
+function shouldIndex(file: PathStatsFile, unit: IJournal["unit"]): boolean {
+  if (file.stats.isDirectory()) return false;
+
+  const { ext, name } = path.parse(file.path);
+  if (ext !== ".md") return false;
+  if (name.startsWith(".")) return false;
+
+  // Filename (without extension) must be a valid date
+  const parsedDate = DateTime.fromISO(name);
+  if (name !== parsedDate.toISODate()) return false;
+
+  if (unit === "week") {
+    if (!isStartofWeek(parsedDate)) return false;
+  }
+
+  if (unit === "month") {
+    if (!isStartOfMonth(parsedDate)) return false;
+  }
+
+  if (unit === "year") {
+    if (!isStartOfYear(parsedDate)) return false;
+  }
+
+  // const result = fileformat.exec('journals/foo/2020/02/2020-01-15.md')
+  // Produces an array-like object:
+  // [
+  //   '/2020/02/2020-01-15',
+  //   '2020',
+  //   '02',
+  //   '2020',
+  //   '01',
+  //   index: 17,
+  //   input: 'journals/foo//2020/02/2020-01-15.md',
+  //   groups: undefined
+  // ]
+  // NOTE: Its only array _like_, and only the matched segments
+  const segments = fileformat.exec(file.path);
+
+  // Is it in the correct directory structure?
+  if (!segments) return false;
+  if (segments.length !== 5) return false;
+
+  // File should be in nested directories for its year and month
+  if (segments[1] !== segments[3] || segments[2] !== segments[4]) return false;
+
+  return true;
 }

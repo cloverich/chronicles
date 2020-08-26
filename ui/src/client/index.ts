@@ -1,10 +1,7 @@
 import ky from "ky-universal";
 import { DocsStore } from "./docstore";
-
-export interface IJournal {
-  name: string;
-  url: string;
-}
+import { IJournal } from "../api/journals";
+export { IJournal } from "../api/journals";
 
 class JournalsClient {
   constructor(private api: KyClient) {}

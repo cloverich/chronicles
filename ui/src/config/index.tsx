@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Pane, Table, toaster } from "evergreen-ui";
+import { Button, Pane, Table, toaster, Badge } from "evergreen-ui";
 import { IJournal } from "../client";
 import { useJournals } from "../hooks/journals";
 import AddJournal from "./add";
@@ -42,12 +42,16 @@ function Config() {
       <Table>
         <Table.Head>
           <Table.TextHeaderCell>Name</Table.TextHeaderCell>
+          <Table.TextHeaderCell>Unit</Table.TextHeaderCell>
           <Table.TextHeaderCell>URL</Table.TextHeaderCell>
         </Table.Head>
         <Table.Body height={240}>
           {store.journals.map((journal) => (
             <Table.Row key={journal.name}>
               <Table.TextCell>{journal.name}</Table.TextCell>
+              <Table.TextCell style={{ textAlign: "center" }}>
+                <Badge>{journal.unit}</Badge>
+              </Table.TextCell>
               <Table.TextCell>{journal.url}</Table.TextCell>
               <Table.TextCell>
                 <Button onClick={() => removeJournal(journal)}>Remove</Button>
