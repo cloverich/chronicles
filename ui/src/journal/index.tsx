@@ -2,44 +2,37 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Heading, Paragraph } from "evergreen-ui";
 import { useJournals, useSearch } from "../hooks/journals";
-import Document from "./document";
+import Document from "./document/document";
 import Layout from "./layout";
-
-interface EditingArgs {
-  journal: string;
-  date?: string;
-}
+import { useViewModel } from "./useViewModel";
+import PinnedHeading from "./pinnedheading";
 
 function Journal() {
-  const store = useJournals();
-  const search = useSearch();
+  const { journals, search, store } = useViewModel();
 
-  const [editing, setEditing] = useState<EditingArgs | undefined>();
-
-  // todo: i made parent container take care of watching for loading
-  if (store.loading && !search.content) {
+  if (journals.loading && !search.content) {
     return (
-      <Layout editing={editing} setEditing={setEditing}>
+      <Layout store={store}>
         <Heading>Loading</Heading>
       </Layout>
     );
   }
 
   // todo: I didn't really implement error handling :|
-  if (store.error) {
+  if (journals.error) {
     return (
-      <Layout editing={editing} setEditing={setEditing}>
+      <Layout store={store}>
         <Heading>Error</Heading>
-        <Paragraph>{store.error.message}</Paragraph>
+        <Paragraph>{journals.error.message}</Paragraph>
       </Layout>
     );
   }
 
   // empty states
   if (!search.content || !search.content.length) {
-    if (store.journals.length) {
+    if (journals.journals.length) {
       return (
-        <Layout editing={editing} setEditing={setEditing}>
+        <Layout store={store}>
           <Heading>No documents</Heading>
           <Paragraph>
             The selected journal has no documents yet. Add one.
@@ -48,7 +41,7 @@ function Journal() {
       );
     } else {
       return (
-        <Layout editing={editing} setEditing={setEditing}>
+        <Layout store={store}>
           <Heading>No journals added</Heading>
           <Paragraph>
             Use the config link in the navbar to create a new journal.
@@ -65,12 +58,20 @@ function Journal() {
         key={item.join("-")}
         journal={item[0]}
         date={item[1]}
-        setEditing={setEditing}
+        store={store}
       />
     ));
 
+  const heaading = store.filter?.content ? (
+    <PinnedHeading
+      content={store.filter.content}
+      clearHeading={() => store.setFilter(undefined)}
+    />
+  ) : null;
+
   return (
-    <Layout editing={editing} setEditing={setEditing}>
+    <Layout store={store}>
+      {heaading}
       {docs}
     </Layout>
   );

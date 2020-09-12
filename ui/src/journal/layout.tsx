@@ -5,44 +5,46 @@ import ModalEditor from "./editor/modal";
 import { useJournals } from "../hooks/journals";
 import Header from "./header";
 import { Setter } from "../hooks/loadutils";
-
-interface EditingArgs {
-  journal: string;
-  date?: string;
-}
+import { IJournalsViewModel } from "./useViewModel";
 
 interface Props {
-  setEditing: (args?: EditingArgs) => any;
-  editing: any; // que hueva
+  store: IJournalsViewModel;
 }
 
 function JournalsLayout(props: PC<Props>) {
-  const state = useJournals();
+  const store = props.store;
 
-  const onSaved = useCallback(
-    (didSave: boolean) => {
-      // Unset editing state, which unmounts this component
-      // Calling setEditing with undefined exists edit mode,
-      // I can't get the type signature to accept undefined argh
-      (props as any).setEditing();
+  function onSaved(didSave: boolean) {
+    props.store.editing = undefined;
+    // if (didSave) {
+    //   props.store.
+    // }
+    // todo: Refresh query...
+  }
+  // const onSaved = useCallback(
+  //   (didSave: boolean) => {
+  //     // Unset editing state, which unmounts this component
+  //     // Calling setEditing with undefined exists edit mode,
+  //     // I can't get the type signature to accept undefined argh
+  //     (props as any).setEditing();
 
-      if (didSave) {
-        // hacky way to refresh the query, todo: mobx
-        state.query = { ...state.query };
-      }
-    },
-    [props.setEditing]
-  );
+  //     if (didSave) {
+  //       // hacky way to refresh the query, todo: mobx
+  //       state.query = { ...state.query };
+  //     }
+  //   },
+  //   [props.setEditing]
+  // );
 
   return (
     <Pane margin={50}>
       <Pane display={"flex"} marginBottom={25}>
-        <Header setEditing={props.setEditing} />
+        <Header store={store} />
         <Pane width={15} />
         <ModalEditor
-          setEditing={props.setEditing}
+          setEditing={(args) => (store.editing = args)}
           onSaved={onSaved}
-          editing={props.editing}
+          editing={store.editing}
         />
       </Pane>
       {props.children}
