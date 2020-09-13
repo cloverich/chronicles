@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Heading, Paragraph } from "evergreen-ui";
-import { useJournals, useSearch } from "../hooks/journals";
 import Document from "./document/document";
 import Layout from "./layout";
 import { useViewModel } from "./useViewModel";
