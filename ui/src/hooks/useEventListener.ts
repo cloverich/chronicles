@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 
+// NOTE: Copy pasta from
 // https://usehooks.com/useEventListener/
 export function useEventListener(
   eventName: string,
@@ -20,9 +21,11 @@ export function useEventListener(
   useEffect(
     () => {
       // Make sure element supports addEventListener
-      // On
       const isSupported = element && element.addEventListener;
-      if (!isSupported) return;
+      if (!isSupported)
+        throw new Error(
+          `[useEventListener] addEventListner does not exist on element ${element.name}`
+        );
 
       // Create event listener that calls handler function stored in ref
       const eventListener = (event: any) => savedHandler.current(event);

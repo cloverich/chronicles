@@ -16,25 +16,7 @@ function JournalsLayout(props: PC<Props>) {
 
   function onSaved(didSave: boolean) {
     props.store.editing = undefined;
-    // if (didSave) {
-    //   props.store.
-    // }
-    // todo: Refresh query...
   }
-  // const onSaved = useCallback(
-  //   (didSave: boolean) => {
-  //     // Unset editing state, which unmounts this component
-  //     // Calling setEditing with undefined exists edit mode,
-  //     // I can't get the type signature to accept undefined argh
-  //     (props as any).setEditing();
-
-  //     if (didSave) {
-  //       // hacky way to refresh the query, todo: mobx
-  //       state.query = { ...state.query };
-  //     }
-  //   },
-  //   [props.setEditing]
-  // );
 
   return (
     <Pane margin={50}>

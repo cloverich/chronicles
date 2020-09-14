@@ -4,10 +4,9 @@ import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import remark from "remark";
 import { Header } from "./header";
-const html = require("remark-html");
 import remark2Rehype from "remark-rehype";
 import rehype2React from "rehype-react";
-import { filtermdast, annotateHeadings } from "./filtermdast";
+import { focusHeading, annotateHeadings } from "./mdast";
 import { CustomDetailevent } from "../useViewModel";
 
 interface Props {
@@ -25,13 +24,21 @@ interface HeadingProps {
   node?: {
     children: any; // hast node, I think
     position: any; // { start: { line, column, offset}, end: {...} }
-    tagName: string; // h1
+    tagName: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
     type: string; // element
     properties: Record<string, any>; // { remarkString: string }
   };
 }
 
+/**
+ * Customized heading component that adds a click event with the
+ * raw markdown string, to facilitate searching by heading content.
+ *
+ * Relies on the annotateHeadings implementation. A bit hacky.
+ * @param props
+ */
 function Heading(props: HeadingProps) {
+  // See the `useViewModel` hook for how this is caught. Ugh.
   const handler = (evt: React.MouseEvent<HTMLHeadingElement>) => {
     evt.target.dispatchEvent(
       new CustomEvent("focus-heading", {
@@ -63,6 +70,7 @@ function Heading(props: HeadingProps) {
   }
 }
 
+// Converts markdown to react components.
 // https://github.com/rehypejs/rehype-react
 const compiler = remark()
   .use(remark2Rehype)
@@ -79,6 +87,9 @@ const compiler = remark()
     },
   });
 
+/**
+ * Renders a journal document's content and wrappig containers
+ */
 function Document(props: Props) {
   const docRecord = useDocument(props.journal, props.date);
   const { loading, error, data: document } = docRecord;
@@ -97,9 +108,12 @@ function Document(props: Props) {
   // Walks the tree and adds metadata to heading nodes, so its available in the HAST tree
   annotateHeadings(mdast);
 
+  // NOTE: The compiler.runSync and compiler.stringify calls work,
+  // but I did not verify if this is the right / best way to do this
+
   // Compile entire tree, or only tree under a pinned heading
   const output = store.filter
-    ? compiler.runSync(filtermdast(mdast, toJS(store.filter)))
+    ? compiler.runSync(focusHeading(mdast, toJS(store.filter)))
     : compiler.runSync(mdast);
 
   // Creates React components
