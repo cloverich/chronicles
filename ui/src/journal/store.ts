@@ -1,41 +1,8 @@
 import { observable, computed, reaction } from "mobx";
 import { IJournalStore, ISearchStore } from "../hooks/journals";
-import { useLocalStore } from "mobx-react-lite";
-import { useJournals, useSearch } from "../hooks/journals";
-import { useEventListener } from "../hooks/useEventListener";
+import { EditingArgs, CustomDetailevent } from "./useUiStore";
 
-interface EditingArgs {
-  journal: string;
-  date?: string;
-}
-
-export interface CustomDetailevent {
-  detail: {
-    depth: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-    content: string; // ex: ## todo heading
-  };
-}
-
-export function useViewModel() {
-  const journals = useJournals();
-  const search = useSearch();
-  const store = useLocalStore(() => new JournalsViewModel(journals, search));
-
-  // Extract filter from event, and call setter
-  const setFilterHandler = (ev: CustomDetailevent) => {
-    store.setFilter(ev.detail);
-  };
-
-  // Downstream, setting filter indicated by clicking on
-  // a heading. This fires a custom event, since the component
-  // is disconnected. Probably better to just put a setter into
-  // the context and not use a custom event.
-  useEventListener("focus-heading", setFilterHandler);
-
-  return { store, journals, search };
-}
-
-class JournalsViewModel {
+export class JournalsUiStore {
   constructor(private store: IJournalStore, private searchStore: ISearchStore) {
     // Update query when adding a new document.
     // So... because I stop editing by setting this.editing = null in a few places..
@@ -107,4 +74,4 @@ class JournalsViewModel {
   };
 }
 
-export type IJournalsViewModel = JournalsViewModel;
+export type IJournalsViewModel = JournalsUiStore;

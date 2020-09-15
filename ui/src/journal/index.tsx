@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import { Heading, Paragraph } from "evergreen-ui";
 import Document from "./document/document";
 import Layout from "./layout";
-import { useViewModel } from "./useViewModel";
-import PinnedHeading from "./pinnedheading";
+import { useUiStore } from "./useUiStore";
+import FocusedHeading from "./components/pinnedheading";
 
 function Journal() {
-  const { journals, search, store } = useViewModel();
+  const { journals, search, store } = useUiStore();
 
   if (journals.loading && !search.content) {
     return (
@@ -62,7 +62,7 @@ function Journal() {
     ));
 
   const heaading = store.filter?.content ? (
-    <PinnedHeading
+    <FocusedHeading
       content={store.filter.content}
       clearHeading={() => store.setFilter(undefined)}
     />

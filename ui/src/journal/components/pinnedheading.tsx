@@ -54,7 +54,7 @@ interface PHProps {
   content: string;
 }
 
-export default function PinnedHeading(props: PHProps) {
+export default function FocusedHeading(props: PHProps) {
   // todo: combine lines into one: processSync?
   const parsed = compiler.parse(props.content);
   const out = compiler.stringify(compiler.runSync(parsed));

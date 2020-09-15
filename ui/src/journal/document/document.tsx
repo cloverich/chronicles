@@ -7,7 +7,7 @@ import { Header } from "./header";
 import remark2Rehype from "remark-rehype";
 import rehype2React from "rehype-react";
 import { focusHeading, annotateHeadings } from "./mdast";
-import { CustomDetailevent } from "../useViewModel";
+import { CustomDetailevent } from "../useUiStore";
 
 interface Props {
   journal: string;
