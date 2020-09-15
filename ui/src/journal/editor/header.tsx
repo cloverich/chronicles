@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu, Popover, Position, Button, Badge } from "evergreen-ui";
+import { Button, Badge } from "evergreen-ui";
 
 interface Props {
   selected: string;

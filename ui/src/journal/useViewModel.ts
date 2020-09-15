@@ -1,5 +1,5 @@
-import { observable, computed } from "mobx";
-import { IJournalStore } from "../hooks/journals";
+import { observable, computed, reaction } from "mobx";
+import { IJournalStore, ISearchStore } from "../hooks/journals";
 import { useLocalStore } from "mobx-react-lite";
 import { useJournals, useSearch } from "../hooks/journals";
 import { useEventListener } from "../hooks/useEventListener";
@@ -19,7 +19,7 @@ export interface CustomDetailevent {
 export function useViewModel() {
   const journals = useJournals();
   const search = useSearch();
-  const store = useLocalStore(() => new JournalsViewModel(journals));
+  const store = useLocalStore(() => new JournalsViewModel(journals, search));
 
   // Extract filter from event, and call setter
   const setFilterHandler = (ev: CustomDetailevent) => {
@@ -36,13 +36,28 @@ export function useViewModel() {
 }
 
 class JournalsViewModel {
-  constructor(private store: IJournalStore) {}
+  constructor(private store: IJournalStore, private searchStore: ISearchStore) {
+    // Update query when adding a new document.
+    // So... because I stop editing by setting this.editing = null in a few places..
+    // this reaction re-triggers the search query so new entries are picked up by
+    // the main view's search results. It works and is performant but god this is awful
+    // I am sorry future self.
+    // test: Saving a new document updates the main view
+    // test: Closing editor without updating (or adding) and entry does not re-trigger
+    // a search
+    reaction(
+      () => this.editing,
+      (editing) => {
+        if (!editing) this.searchStore.query = { ...this.searchStore.query };
+      }
+    );
+  }
 
   @observable editing?: EditingArgs;
   @observable filter?: CustomDetailevent["detail"];
 
   @computed get selectedJournal() {
-    return this.store.query.journals[0];
+    return this.searchStore.query.journals[0];
   }
   @computed get hasJournals() {
     return this.store.journals.length;
@@ -55,16 +70,16 @@ class JournalsViewModel {
   setFilter = (detail?: CustomDetailevent["detail"]) => {
     // Clear a pinned heading, "Unfocus" heading
     if (!detail) {
-      this.store.query = {
-        ...this.store.query,
+      this.searchStore.query = {
+        ...this.searchStore.query,
         nodeMatch: undefined,
       };
       this.filter = undefined;
     } else {
       // "Focus" heading
       const { content, depth } = detail;
-      this.store.query = {
-        ...this.store.query,
+      this.searchStore.query = {
+        ...this.searchStore.query,
         nodeMatch: {
           text: content,
           type: "heading",
@@ -77,9 +92,7 @@ class JournalsViewModel {
   };
 
   selectJournal = (journal: string) => {
-    console.log("selectJournal", journal);
-
-    this.store.query = {
+    this.searchStore.query = {
       journals: [journal],
     };
 

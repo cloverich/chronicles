@@ -1,5 +1,13 @@
 import { suite, test } from "mocha";
 
+suite("creating the first journal", function () {
+  test("empty state -- first boot, no journals");
+  test("adding first journal");
+  test("adding first document to empty journal");
+  test("removing only document in only journal");
+  test("removing first (only) journal");
+});
+
 suite("journals", function () {
   test("add invalid directory (does not exist)");
   test("add permissions error");
@@ -22,7 +30,8 @@ suite("startup", function () {
 suite("editing", function () {
   test("opening editor defaults to currently selected journal");
   test("editor pre-populates with selected dates content");
-  test("editing and saving content works... more of an e2e test");
+  test("document can be edited and saved");
+  test("adding a new document updates the search");
 });
 
 suite("journal units", function () {

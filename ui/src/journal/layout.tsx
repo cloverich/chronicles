@@ -1,10 +1,8 @@
-import React, { PropsWithChildren as PC, useCallback } from "react";
+import React, { PropsWithChildren as PC } from "react";
 import { observer } from "mobx-react-lite";
 import { Pane } from "evergreen-ui";
 import ModalEditor from "./editor/modal";
-import { useJournals } from "../hooks/journals";
 import Header from "./header";
-import { Setter } from "../hooks/loadutils";
 import { IJournalsViewModel } from "./useViewModel";
 
 interface Props {

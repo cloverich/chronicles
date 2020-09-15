@@ -4,7 +4,6 @@ const ErrorOverlayPlugin = require('error-overlay-webpack-plugin')
 // const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 // const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 
-// console.log()
 
 module.exports = (env, argv) => {
   // PRODUCTION will trigger optimization and compile all css into one minified file

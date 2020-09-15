@@ -27,13 +27,14 @@ export type SearchState = Loadable & {
 
 import { observable, reaction } from "mobx";
 
-class JournalsStore {
-  private isLoaded: boolean = false;
-  @observable loading: boolean = true;
+export type ISearchStore = SearchStore;
+
+class SearchStore {
+  private client: Client;
+  private journals: IJournalStore;
   @observable saving: boolean = false;
   @observable searching: boolean = false;
   @observable error: Error | null = null;
-  @observable journals: IJournal[];
 
   // todo: see reaction in this.load
   @observable query: SearchRequest = { journals: [] };
@@ -42,43 +43,67 @@ class JournalsStore {
   // todo: this interface needs work
   @observable content: Array<[string, string]> = [];
 
-  constructor(private client: Client) {
-    this.journals = [];
+  constructor(journals: IJournalStore, client: Client) {
+    this.journals = journals;
+    this.client = client;
 
     // When journals are added or removed, configure a reaction
     // to ensure the active search query makes sense
-    reaction(
-      () => this.journals,
-      (journals) => {
-        if (journals.length === 0) {
-          // we removed the last journal, clear cached data
-          if (this.queryReaction) this.queryReaction();
-          this.query = { journals: [] };
-          this.content = [];
-        } else if (journals.length === 1) {
-          // we added or removed, and there is only one journal
-          // set default search etc
-          this.query = { journals: [journals[0].name] };
-          this.watchQuery();
-        } else {
-          // have > 1 journals, whether add or remove ensure
-          // the query does not have a reference to the removed journal.
-          for (const journal of this.query.journals) {
-            if (!journals.find((j) => j.name === journal)) {
-              this.query = { journals: [journals[0].name] };
-            }
-          }
-          this.watchQuery();
-        }
-      }
-    );
+    reaction(() => this.journals.journals, this.onJournalsChanged);
   }
 
+  /**
+   * Reactively update search query when journals are added or removed from
+   * journals store; see implementation notes.
+   *
+   * NOTE: This also handles initialization, e.g. setting up the initial search
+   * when the app starts after the JournalsStore finishes loading. Breaking this out
+   * into a proper initialization step would be easier to follow and test.
+   */
+  private onJournalsChanged = (journals: IJournalStore["journals"]) => {
+    if (journals.length === 0) {
+      // we removed the last journal, clear cached data
+      if (this.queryReaction) this.queryReaction();
+      this.query = { journals: [] };
+      this.content = [];
+    } else if (journals.length === 1) {
+      // we added or removed, and there is only one journal
+      // set default search etc
+
+      // NOTE: This handles both changing to 1 journal, or initialization
+      // where this.query = undefined.
+      this.query = { journals: [journals[0].name] };
+      this.watchQuery();
+    } else {
+      // First, if this is initialization, set the initial query and we are done:
+      // TODO: query: { journals: [] } is a _valid_ query... its just the selectedJournals
+      // computed property is _wrong_. Leave it as is for now... fix when implementing
+      // search
+      if (this.query.journals.length === 0) {
+        this.query = { journals: [journals[0].name] };
+      } else {
+        // Existing query. Ensure it contains no references to removed journals.
+        for (const journal of this.query.journals) {
+          if (!journals.find((j) => j.name === journal)) {
+            this.query = { journals: [journals[0].name] };
+          }
+        }
+      }
+      this.watchQuery();
+    }
+  };
+
+  /**
+   * Reactively execute search when this.query changes
+   *
+   * TODO: I think removing this reaction, and letting client code call
+   * search directly is better. The query update reaction could then
+   * just call this.search(updatedQuery), and this routine goes away.
+   */
   private watchQuery = () => {
     if (this.queryReaction) this.queryReaction();
 
     // This lets components set the query and the search automatically executes.
-    // Probably better to ditch this and let calling `search` be how it all works.
     reaction(
       () => this.query,
       (query) => this.search(query), // todo: confirm... the query is valid?
@@ -86,19 +111,38 @@ class JournalsStore {
     );
   };
 
+  private search = async (query: SearchRequest) => {
+    this.searching = true;
+    try {
+      const results = await this.client.docs.search(query);
+      this.content = results.docs;
+    } catch (err) {
+      this.error = err;
+    }
+    this.searching = false;
+  };
+}
+
+class JournalsStore {
+  private isLoaded: boolean = false;
+  @observable loading: boolean = true;
+  @observable saving: boolean = false;
+  @observable error: Error | null = null;
+  @observable journals: IJournal[];
+
+  constructor(private client: Client) {
+    this.journals = [];
+  }
+
   load = async () => {
     if (this.isLoaded) return;
 
     try {
       this.journals = await this.client.journals.list();
-      if (this.journals.length > 0) {
-        this.query.journals = [this.journals[0].name];
-      }
     } catch (err) {
       this.error = err;
     }
 
-    this.watchQuery();
     this.isLoaded = true;
     this.loading = false;
   };
@@ -122,24 +166,18 @@ class JournalsStore {
     }
     this.saving = false;
   };
-
-  search = async (query: SearchRequest) => {
-    this.searching = true;
-    try {
-      const results = await this.client.docs.search(query);
-      this.content = results.docs;
-    } catch (err) {
-      this.error = err;
-    }
-    this.searching = false;
-  };
 }
 
 export type IJournalStore = JournalsStore;
 
+const journalsStore = new JournalsStore(client);
+const searchStore = new SearchStore(journalsStore, client);
+
 export const JournalsContext = React.createContext<JournalsStore>(
-  new JournalsStore(client)
+  journalsStore
 );
+
+export const SearchContext = React.createContext<SearchStore>(searchStore);
 
 export function useJournals() {
   const store = useContext(JournalsContext);
@@ -176,10 +214,7 @@ export function useJournal(journalName: string) {
 /**
  * ...this is so much simpler than the prior version. Jesus.
  */
-export function useSearch(): Pick<
-  JournalsStore,
-  "search" | "searching" | "query" | "content"
-> {
-  const store = useContext(JournalsContext);
+export function useSearch(): SearchStore {
+  const store = useContext(SearchContext);
   return store;
 }
