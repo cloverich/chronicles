@@ -1,16 +1,10 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  Dispatch,
-  SetStateAction,
-} from "react";
+import { useState, useEffect } from "react";
 import { autorun } from "mobx";
 
 import { withLoading } from "./loadutils";
-import client, { GetDocumentResponse } from "../client";
+import { GetDocumentResponse } from "../client";
 import { useClient } from "../client/context";
-import { useJournal } from "./journals";
+import { useJournal } from "./useJournal";
 import { IJournal } from "../api/journals";
 import { DateTime } from "luxon";
 

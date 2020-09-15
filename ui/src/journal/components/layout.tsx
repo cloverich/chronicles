@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Pane } from "evergreen-ui";
 import ModalEditor from "./editor/modal";
 import Header from "./header";
-import { IJournalsViewModel } from "./store";
+import { IJournalsViewModel } from "../store";
 
 interface Props {
   store: IJournalsViewModel;

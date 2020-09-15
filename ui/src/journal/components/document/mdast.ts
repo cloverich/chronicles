@@ -1,6 +1,6 @@
 import { Root } from "mdast";
 import { toJS } from "mobx";
-import { stringifier } from "../../markdown/index";
+import { stringifier } from "../../../markdown/index";
 
 interface Filter {
   content: string;

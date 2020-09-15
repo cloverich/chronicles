@@ -1,35 +1,10 @@
-import React, { useState, useEffect, useContext } from "react";
-import { withLoading, Loadable, SavingState, Setter } from "./loadutils";
-import client, {
-  IJournal,
-  SearchResponse,
-  SearchRequest,
-  Client,
-} from "../client";
-import { useClient } from "../client/context";
+import { SearchRequest, Client } from "../../client";
 import { IReactionDisposer } from "mobx";
-
-export type JournalsState = SavingState & {
-  journals: IJournal[];
-  addJournal: (journal: IJournal, propagate: boolean) => any;
-  removeJournal: (journal: IJournal) => Promise<void>;
-};
-
-/**
- * Maybe "Journal State" would be a better description, but I
- * already used that name. Revisit later.
- */
-export type SearchState = Loadable & {
-  query: SearchRequest | undefined;
-  setQuery: Setter<SearchRequest | undefined>;
-  content: SearchResponse | undefined;
-};
-
 import { observable, reaction } from "mobx";
+import { IJournalStore } from "./journals";
 
 export type ISearchStore = SearchStore;
-
-class SearchStore {
+export class SearchStore {
   private client: Client;
   private journals: IJournalStore;
   @observable saving: boolean = false;
@@ -37,10 +12,12 @@ class SearchStore {
   @observable error: Error | null = null;
 
   // todo: see reaction in this.load
+
   @observable query: SearchRequest = { journals: [] };
   private queryReaction: IReactionDisposer | null = null;
 
   // todo: this interface needs work
+
   @observable content: Array<[string, string]> = [];
 
   constructor(journals: IJournalStore, client: Client) {
@@ -60,6 +37,7 @@ class SearchStore {
    * when the app starts after the JournalsStore finishes loading. Breaking this out
    * into a proper initialization step would be easier to follow and test.
    */
+
   private onJournalsChanged = (journals: IJournalStore["journals"]) => {
     if (journals.length === 0) {
       // we removed the last journal, clear cached data
@@ -69,7 +47,6 @@ class SearchStore {
     } else if (journals.length === 1) {
       // we added or removed, and there is only one journal
       // set default search etc
-
       // NOTE: This handles both changing to 1 journal, or initialization
       // where this.query = undefined.
       this.query = { journals: [journals[0].name] };
@@ -100,13 +77,14 @@ class SearchStore {
    * search directly is better. The query update reaction could then
    * just call this.search(updatedQuery), and this routine goes away.
    */
+
   private watchQuery = () => {
     if (this.queryReaction) this.queryReaction();
 
     // This lets components set the query and the search automatically executes.
     reaction(
       () => this.query,
-      (query) => this.search(query), // todo: confirm... the query is valid?
+      (query) => this.search(query),
       { delay: 25, fireImmediately: true }
     );
   };
@@ -121,100 +99,4 @@ class SearchStore {
     }
     this.searching = false;
   };
-}
-
-class JournalsStore {
-  private isLoaded: boolean = false;
-  @observable loading: boolean = true;
-  @observable saving: boolean = false;
-  @observable error: Error | null = null;
-  @observable journals: IJournal[];
-
-  constructor(private client: Client) {
-    this.journals = [];
-  }
-
-  load = async () => {
-    if (this.isLoaded) return;
-
-    try {
-      this.journals = await this.client.journals.list();
-    } catch (err) {
-      this.error = err;
-    }
-
-    this.isLoaded = true;
-    this.loading = false;
-  };
-
-  remove = async (journal: IJournal) => {
-    this.saving = true;
-    try {
-      this.journals = await this.client.journals.remove(journal);
-    } catch (err) {
-      this.error = err;
-    }
-    this.saving = false;
-  };
-
-  add = async (journal: IJournal) => {
-    this.saving = true;
-    try {
-      this.journals = await this.client.journals.add(journal);
-    } catch (err) {
-      this.error = err;
-    }
-    this.saving = false;
-  };
-}
-
-export type IJournalStore = JournalsStore;
-
-const journalsStore = new JournalsStore(client);
-const searchStore = new SearchStore(journalsStore, client);
-
-export const JournalsContext = React.createContext<JournalsStore>(
-  journalsStore
-);
-
-export const SearchContext = React.createContext<SearchStore>(searchStore);
-
-export function useJournals() {
-  const store = useContext(JournalsContext);
-  return store;
-}
-
-/**
- * Get a single journal by name.
- *
- * Requires the store be loaded with journals first, but will helpfully throw an error
- * and blow up the UI if it hasn't.
- *
- * @param journalName
- */
-export function useJournal(journalName: string) {
-  const store = useContext(JournalsContext);
-  const [journal, setJournal] = useState(() =>
-    store.journals.find((journal) => journal.name == journalName)
-  );
-  if (!journal)
-    throw new Error(
-      `useJournal called with ${journalName} but that journal was not found in the store. Instead found ${store.journals.map(
-        (j) => j.name
-      )}`
-    );
-
-  useEffect(() => {
-    setJournal(store.journals.find((journal) => journal.name == journalName));
-  }, [journalName]);
-
-  return journal;
-}
-
-/**
- * ...this is so much simpler than the prior version. Jesus.
- */
-export function useSearch(): SearchStore {
-  const store = useContext(SearchContext);
-  return store;
 }

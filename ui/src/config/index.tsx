@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Pane, Table, toaster, Badge } from "evergreen-ui";
 import { IJournal } from "../client";
-import { useJournals } from "../hooks/journals";
+import { useJournals } from "../hooks/useJournals";
 import AddJournal from "./add";
 import ElectronDialog from "./dialog.electron";
 import { observer } from "mobx-react-lite";

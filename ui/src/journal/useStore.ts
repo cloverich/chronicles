@@ -1,5 +1,6 @@
 import { useLocalStore } from "mobx-react-lite";
-import { useJournals, useSearch } from "../hooks/journals";
+import { useJournals } from "../hooks/useJournals";
+import { useSearch } from "../hooks/useSearch";
 import { useEventListener } from "../hooks/useEventListener";
 import { JournalsUiStore } from "./store";
 
@@ -16,7 +17,7 @@ export interface EditingArgs {
  * Event bubbled from heading elements to trigger
  * Focusing a heading.
  */
-export interface CustomDetailevent {
+export interface FocusHeadingEvent {
   detail: {
     depth: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
     content: string; // ex: ## todo heading
@@ -29,8 +30,8 @@ export function useUiStore() {
   const store = useLocalStore(() => new JournalsUiStore(journals, search));
 
   // Extract filter from event, and call setter
-  const setFilterHandler = (ev: CustomDetailevent) => {
-    store.setFilter(ev.detail);
+  const setFilterHandler = (ev: FocusHeadingEvent) => {
+    store.focusHeading(ev.detail);
   };
 
   // Downstream, setting filter indicated by clicking on

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { Dialog, toaster } from "evergreen-ui";
-import { useEditableDocument } from "../../hooks/documents";
-import { Setter } from "../../hooks/loadutils";
+import { useEditableDocument } from "../../../hooks/documents";
+import { Setter } from "../../../hooks/loadutils";
 import Editor from "./editor";
 import DialogHeader from "./header";
 

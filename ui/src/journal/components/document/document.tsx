@@ -1,5 +1,5 @@
 import React from "react";
-import { useDocument } from "../../hooks/documents";
+import { useDocument } from "../../../hooks/documents";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import remark from "remark";
@@ -7,7 +7,7 @@ import { Header } from "./header";
 import remark2Rehype from "remark-rehype";
 import rehype2React from "rehype-react";
 import { focusHeading, annotateHeadings } from "./mdast";
-import { CustomDetailevent } from "../useUiStore";
+import { FocusHeadingEvent } from "../../useStore";
 
 interface Props {
   journal: string;
@@ -15,7 +15,7 @@ interface Props {
 
   store: {
     editing?: { journal: string; date?: string };
-    filter?: CustomDetailevent["detail"];
+    filter?: FocusHeadingEvent["detail"];
   };
 }
 
@@ -111,7 +111,7 @@ function Document(props: Props) {
   // NOTE: The compiler.runSync and compiler.stringify calls work,
   // but I did not verify if this is the right / best way to do this
 
-  // Compile entire tree, or only tree under a pinned heading
+  // Compile entire tree, or only tree under a focused heading
   const output = store.filter
     ? compiler.runSync(focusHeading(mdast, toJS(store.filter)))
     : compiler.runSync(mdast);

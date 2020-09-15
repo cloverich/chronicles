@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Pane, Heading } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import Dropdown from "./search/singleselect";
-import { IJournalsViewModel } from "./store";
+import { IJournalsViewModel } from "../store";
 
 interface EditingArgs {
   journal: string;

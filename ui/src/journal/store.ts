@@ -1,6 +1,7 @@
 import { observable, computed, reaction } from "mobx";
-import { IJournalStore, ISearchStore } from "../hooks/journals";
-import { EditingArgs, CustomDetailevent } from "./useUiStore";
+import { ISearchStore } from "../hooks/stores/search";
+import { IJournalStore } from "../hooks/stores/journals";
+import { EditingArgs, FocusHeadingEvent } from "./useStore";
 
 export class JournalsUiStore {
   constructor(private store: IJournalStore, private searchStore: ISearchStore) {
@@ -21,7 +22,7 @@ export class JournalsUiStore {
   }
 
   @observable editing?: EditingArgs;
-  @observable filter?: CustomDetailevent["detail"];
+  @observable focusedHeading?: FocusHeadingEvent["detail"];
 
   @computed get selectedJournal() {
     return this.searchStore.query.journals[0];
@@ -33,15 +34,14 @@ export class JournalsUiStore {
     return this.store.journals;
   }
 
-  // todo: rename "Focus" heading
-  setFilter = (detail?: CustomDetailevent["detail"]) => {
-    // Clear a pinned heading, "Unfocus" heading
+  focusHeading = (detail?: FocusHeadingEvent["detail"]) => {
+    // Clear a focused heading, "Unfocus" heading
     if (!detail) {
       this.searchStore.query = {
         ...this.searchStore.query,
         nodeMatch: undefined,
       };
-      this.filter = undefined;
+      this.focusedHeading = undefined;
     } else {
       // "Focus" heading
       const { content, depth } = detail;
@@ -54,7 +54,7 @@ export class JournalsUiStore {
         },
       };
 
-      this.filter = detail;
+      this.focusedHeading = detail;
     }
   };
 
@@ -63,7 +63,7 @@ export class JournalsUiStore {
       journals: [journal],
     };
 
-    this.filter = undefined;
+    this.focusedHeading = undefined;
   };
 
   editSelectedJournal = () => {

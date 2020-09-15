@@ -1,11 +1,14 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import { Heading, Paragraph } from "evergreen-ui";
-import Document from "./document/document";
-import Layout from "./layout";
-import { useUiStore } from "./useUiStore";
-import FocusedHeading from "./components/pinnedheading";
+import Document from "./components/document/document";
+import Layout from "./components/layout";
+import { useUiStore } from "./useStore";
+import FocusedHeading from "./components/focusedheading";
 
+/**
+ * Main component for viewing journal documents.
+ */
 function Journal() {
   const { journals, search, store } = useUiStore();
 
@@ -61,10 +64,10 @@ function Journal() {
       />
     ));
 
-  const heaading = store.filter?.content ? (
+  const heaading = store.focusedHeading?.content ? (
     <FocusedHeading
-      content={store.filter.content}
-      clearHeading={() => store.setFilter(undefined)}
+      content={store.focusedHeading.content}
+      clearHeading={() => store.focusHeading(undefined)}
     />
   ) : null;
 

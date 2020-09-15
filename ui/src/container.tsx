@@ -3,7 +3,8 @@ import { observer } from "mobx-react-lite";
 import Layout from "./layout";
 import Config from "./config";
 
-import { useSearch, useJournals, JournalsContext } from "./hooks/journals"; // name not at all confusing
+import { useJournals, JournalsContext } from "./hooks/useJournals"; // name not at all confusing
+import { useSearch } from "./hooks/useSearch";
 // import { useContent } from './hooks/documents';
 import Journal from "./journal";
 
