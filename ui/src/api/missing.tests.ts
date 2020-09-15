@@ -33,3 +33,10 @@ suite("journal units", function () {
   test("(UI) clicking 'new' defaults to the start of the journals unit");
   test("(UI:hooks) getTodaysDate works, maybe same thing as above");
 });
+
+suite("search", function () {
+  test("searching by journal");
+  test("searching by multiple journals");
+  test("searching all journals");
+  test("searching with nodeQuery"); // by text, type, attributes
+});

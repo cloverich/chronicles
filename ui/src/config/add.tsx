@@ -22,7 +22,7 @@ const schema = {
     unit: {
       type: "string",
       title: "unit",
-      pattern: "^[day|week|month|year]$",
+      pattern: "^(day|week|month|year)$",
     },
   },
   required: ["name", "url"],

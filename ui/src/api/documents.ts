@@ -14,7 +14,7 @@ interface DocsQuery {
 
   nodeMatch?: {
     type: string; // type of Node
-    attributes: any; // match one or more attributes of the node, like depth for heading nodes
+    // attributes?: any; // match one or more attributes of the node, like depth for heading nodes
     text: string; // match raw text from within the node
   };
 }
@@ -100,7 +100,8 @@ export class Documents {
     }
 
     if (dq.nodeMatch) {
-      throw new Error("searching documents by nodes not yet supported");
+      q.where.push(`type = '${dq.nodeMatch.type}'`);
+      if (dq.nodeMatch.text) q.where.push(`contents = '${dq.nodeMatch.text}'`);
     }
 
     let finalQuery = q.select;

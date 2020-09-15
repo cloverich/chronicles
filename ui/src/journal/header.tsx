@@ -1,9 +1,8 @@
-import React, { useCallback } from "react";
+import React from "react";
 import { Button, Pane, Heading } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import { useJournals } from "../hooks/journals";
-import { Setter } from "../hooks/loadutils";
 import Dropdown from "./search/singleselect";
+import { IJournalsViewModel } from "./useViewModel";
 
 interface EditingArgs {
   journal: string;
@@ -11,32 +10,16 @@ interface EditingArgs {
 }
 
 interface Props {
-  setEditing: (args?: EditingArgs) => any;
+  store: IJournalsViewModel;
 }
 
 /**
- * Header wraps the search and create entry button....
+ * Header wraps the search and create entry button.
  */
 function Header(props: Props) {
-  const state = useJournals();
+  const store = props.store;
 
-  const selectJournal = (selected: string) => {
-    state.query = {
-      journals: [selected],
-    };
-  };
-
-  // Here, dependendts depend on a journal being
-  // This is handled in the parent container but is fragile...
-  const selectedJournal = state.query.journals[0];
-
-  const setEditing = useCallback(() => {
-    props.setEditing({
-      journal: selectedJournal,
-    });
-  }, [state.journals, selectedJournal]);
-
-  if (!state.journals.length) {
+  if (!store.hasJournals) {
     // really, should be handled above. But this provides some protection
     return (
       <Pane
@@ -60,12 +43,12 @@ function Header(props: Props) {
     >
       <Pane width={304}>
         <Dropdown
-          journals={state.journals.map((j) => j.name)}
-          selected={selectedJournal}
-          onSelect={selectJournal}
+          journals={store.journals.map((j) => j.name)}
+          selected={store.selectedJournal}
+          onSelect={store.selectJournal}
         />
       </Pane>
-      <Button onClick={setEditing}>Add</Button>
+      <Button onClick={store.editSelectedJournal}>Add</Button>
     </Pane>
   );
 }

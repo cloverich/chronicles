@@ -135,6 +135,8 @@ class JournalsStore {
   };
 }
 
+export type IJournalStore = JournalsStore;
+
 export const JournalsContext = React.createContext<JournalsStore>(
   new JournalsStore(client)
 );
