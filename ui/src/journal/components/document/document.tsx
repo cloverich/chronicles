@@ -15,7 +15,7 @@ interface Props {
 
   store: {
     editing?: { journal: string; date?: string };
-    filter?: FocusHeadingEvent["detail"];
+    focusedHeading?: FocusHeadingEvent["detail"];
   };
 }
 
@@ -29,6 +29,8 @@ interface HeadingProps {
     properties: Record<string, any>; // { remarkString: string }
   };
 }
+
+const cursorStyle = { cursor: "pointer" };
 
 /**
  * Customized heading component that adds a click event with the
@@ -51,23 +53,11 @@ function Heading(props: HeadingProps) {
     );
   };
 
-  switch (props.node!.tagName) {
-    case "h1":
-      return <h1 onClick={handler}>{props.children}</h1>;
-    case "h2":
-      return <h2 onClick={handler}>{props.children}</h2>;
-    case "h3":
-      return <h3 onClick={handler}>{props.children}</h3>;
-    case "h4":
-      return <h4 onClick={handler}>{props.children}</h4>;
-    case "h5":
-      return <h5 onClick={handler}>{props.children}</h5>;
-    case "h6":
-      return <h6 onClick={handler}>{props.children}</h6>;
-    default:
-      console.error("Heading component received unknown node", props.node);
-      return <h6>(error){props.children}</h6>;
-  }
+  return React.createElement(
+    props.node!.tagName, // 'h1', 'h2', etc
+    { style: cursorStyle, onClick: handler },
+    props.children
+  );
 }
 
 // Converts markdown to react components.
@@ -112,8 +102,8 @@ function Document(props: Props) {
   // but I did not verify if this is the right / best way to do this
 
   // Compile entire tree, or only tree under a focused heading
-  const output = store.filter
-    ? compiler.runSync(focusHeading(mdast, toJS(store.filter)))
+  const output = store.focusedHeading
+    ? compiler.runSync(focusHeading(mdast, toJS(store.focusedHeading)))
     : compiler.runSync(mdast);
 
   // Creates React components
