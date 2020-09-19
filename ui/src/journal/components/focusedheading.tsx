@@ -2,7 +2,6 @@ import React from "react";
 import remark from "remark";
 import remark2Rehype from "remark-rehype";
 import rehype2React from "rehype-react";
-import { Button } from "evergreen-ui";
 
 interface Props {
   node: any;
@@ -59,12 +58,5 @@ export default function FocusedHeading(props: PHProps) {
   const parsed = compiler.parse(props.content);
   const out = compiler.stringify(compiler.runSync(parsed));
 
-  return (
-    <div>
-      {out}
-      <Button appearance="minimal" onClick={props.clearHeading}>
-        clear
-      </Button>
-    </div>
-  );
+  return <div>{out}</div>;
 }

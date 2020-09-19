@@ -35,10 +35,8 @@ function Journal() {
     if (journals.journals.length) {
       return (
         <Layout store={store}>
-          <Heading>No documents</Heading>
-          <Paragraph>
-            The selected journal has no documents yet. Add one.
-          </Paragraph>
+          <Heading>No documents found</Heading>
+          <Paragraph>Broaden your search, or add more documents.</Paragraph>
         </Layout>
       );
     } else {

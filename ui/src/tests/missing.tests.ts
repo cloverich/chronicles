@@ -44,6 +44,10 @@ suite("journal units", function () {
 });
 
 suite("search", function () {
+  test("empty search results displays empty helper text");
+});
+
+suite("search api", function () {
   test("searching by journal");
   test("searching by multiple journals");
   test("searching all journals");

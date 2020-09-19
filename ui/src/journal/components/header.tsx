@@ -1,16 +1,17 @@
 import React from "react";
-import { Button, Pane, Heading } from "evergreen-ui";
+import {
+  Button,
+  Pane,
+  Heading,
+  AddColumnRightIcon,
+  ManuallyEnteredDataIcon,
+} from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import Dropdown from "./search/singleselect";
-import { IJournalsViewModel } from "../store";
-
-interface EditingArgs {
-  journal: string;
-  date?: string;
-}
+import TagSearch from "./search/tagsearch";
+import { IJournalsUiStore } from "../store";
 
 interface Props {
-  store: IJournalsViewModel;
+  store: IJournalsUiStore;
 }
 
 /**
@@ -35,20 +36,24 @@ function Header(props: Props) {
   }
 
   return (
-    <Pane
-      flex={1}
-      display="flex"
-      alignItems="center"
-      justifyContent="space-between"
-    >
-      <Pane width={304}>
-        <Dropdown
-          journals={store.journals.map((j) => j.name)}
-          selected={store.selectedJournal}
-          onSelect={store.selectJournal}
-        />
+    <Pane flex={1} display="flex" alignItems="flex-end" flexDirection="column">
+      <Pane display="flex" alignSelf="stretch" marginBottom={8}>
+        <TagSearch store={store} />
       </Pane>
-      <Button onClick={store.editSelectedJournal}>Add</Button>
+      <Pane>
+        <Button
+          height={24}
+          marginRight={12}
+          flexGrow={0}
+          onClick={store.editSelectedJournal}
+        >
+          <ManuallyEnteredDataIcon />
+        </Button>
+
+        <Button height={24} onClick={() => (store.sidebarOpen = true)}>
+          <AddColumnRightIcon />
+        </Button>
+      </Pane>
     </Pane>
   );
 }
