@@ -15,7 +15,8 @@ interface DocsQuery {
   nodeMatch?: {
     type: string; // type of Node
     // attributes?: any; // match one or more attributes of the node, like depth for heading nodes
-    text: string; // match raw text from within the node
+    text?: string; // match raw text from within the node
+    attributes?: Record<string, string | number>;
   };
 }
 
@@ -83,12 +84,17 @@ export class Documents {
     return this.db.prepare(sql).raw().all();
   };
 
+  /**
+   * Construct a full SQL select statement from a DocsQuery
+   */
   private makeQuery = (dq: DocsQuery): string => {
+    // buildable query object
     const q = {
       select: `select distinct journal, date from nodes`,
       where: [] as string[],
     };
 
+    // append journal clauses
     if (dq.journals && dq.journals.length > 0) {
       if (dq.journals.length > 1) {
         q.where.push(
@@ -99,9 +105,22 @@ export class Documents {
       }
     }
 
+    // append node clause
     if (dq.nodeMatch) {
       q.where.push(`type = '${dq.nodeMatch.type}'`);
       if (dq.nodeMatch.text) q.where.push(`contents = '${dq.nodeMatch.text}'`);
+      if (dq.nodeMatch.attributes) {
+        Object.keys(dq.nodeMatch.attributes).forEach((key) => {
+          const value = dq.nodeMatch?.attributes![key];
+
+          // If value is a string, wrap it in quotes
+          const sqlValue =
+            typeof value === "string" ? `'${value}'` : `${value}`;
+
+          // https://www.sqlite.org/json1.html
+          q.where.push(`json_extract(attributes, '$.${key}') = ${sqlValue}`);
+        });
+      }
     }
 
     let finalQuery = q.select;

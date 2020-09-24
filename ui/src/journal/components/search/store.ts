@@ -1,19 +1,30 @@
-import { observable, computed, action } from "mobx";
+import { computed, action } from "mobx";
 import { IJournalsUiStore } from "../../store";
+
+// todo: define this type on the IJournalUiStore or the SearchStore, since it
+// manages this query
+import { SearchRequest } from "../../../client";
 
 /**
  * View model for displaying, adding, and removing search tokens
  */
 export class TagSearchStore {
   constructor(private store: IJournalsUiStore) {}
-  // This logic probably goes in a local store, in tag search
-  // ...esp. because it needs to differentiate tokens from initial
-  // tokens yeah... ?
-  @computed get searchTokens() {
+
+  /**
+   * Format the search query for display in the search interface.
+   */
+  @computed
+  get searchTokens() {
+    // Technically, cannot represent both a focus: and a filter: since query.nodeMatch is singular...
+    const filters = this.store.isFiltered
+      ? formatFilter(this.store.searchStore.query.nodeMatch)
+      : undefined;
     return [
+      filters,
       ...this.store.selectedJournals.map((j) => `in:${j}`),
       this.store.focusedHeading
-        ? `focus:${extractText(this.store.focusedHeading.content)}`
+        ? `focus:${parseHeadingText(this.store.focusedHeading.content)}`
         : undefined,
     ].filter((value) => value) as string[];
   }
@@ -26,7 +37,7 @@ export class TagSearchStore {
         console.warn("Ignoring ", token, "because no content found");
         return;
       } else {
-        this.store.focusHeading(extractHeading(text));
+        this.store.focusHeading(parseHeading(text));
       }
     }
 
@@ -52,14 +63,42 @@ export class TagSearchStore {
         }
       }
     }
+
+    // blargh, if cannot support focused heading and filter right now...
+    // So when I do this part.. i need to strip the focused heading.
+    if (token.startsWith("filter:")) {
+      const filter = parseFilter(token);
+      if (!filter) {
+        console.warn("Ignoring ", token, "because no selector found");
+        return;
+      }
+
+      const query = this.store.searchStore.query;
+      this.store.focusHeading();
+      this.store.searchStore.query = {
+        ...query,
+        nodeMatch: filter,
+      };
+    }
   };
 
   @action
   removeToken = (token: string) => {
+    // TODO: removing tokens has too much logic.
+    // It should be easy to identify a token by id and remove it...
+    // Maube the token[] -> query translation is a reaction?
+    // That would allow removeToken to be simple and general
+
     // validate its a journal
     if (token.startsWith("focus:")) {
       this.store.focusHeading();
     }
+
+    if (token.startsWith("filter:")) {
+      const query = this.store.searchStore.query;
+      this.store.searchStore.query = { journals: query.journals };
+    }
+
     if (token.startsWith("in:")) {
       const journal = token.split("in:")[1];
 
@@ -102,16 +141,28 @@ function tagForDepth(text: string): HeadingTag {
 }
 
 /**
- * Get the text part of a heading search
- * @param text -- search token for heading...
+ * Get the text part of a heading search.
+ *
+ * Could be combined with extractHeading because of how I use it, but
+ * good design is unclear to me atm.
+ *
+ * @param text -- search token for heading
  */
-function extractText(text: string): string {
+function parseHeadingText(text: string): string {
   const matches = text.match(hRegex);
   if (!matches) return text;
   return matches[2];
 }
 
-function extractHeading(text: string) {
+/**
+ * Parse a token as a focused heading command, convert
+ * the text part to a node search query (i.e. searchStore.query.node)
+ *
+ * todo: Refactor searchStore.query.node to be more generic, and
+ * to have a first class name (like "node search")
+ * @param text
+ */
+function parseHeading(text: string) {
   // ['##', 'search text']
   const matches = text.match(hRegex);
 
@@ -130,3 +181,104 @@ function extractHeading(text: string) {
     };
   }
 }
+
+/**
+ * Parse filter: tags to generate search queries matching nodes
+ * by type and attributes.
+ *
+ * @param token - search string from the tag search input; no assumptions about its structure.
+ */
+function parseFilter(token: string): SearchRequest["nodeMatch"] {
+  const nodeAttrMatch = token.match(nodeAttributeRegex);
+  if (nodeAttrMatch) {
+    const [nodeType, attribute, value] = nodeAttrMatch.slice(1);
+    if (!value) {
+      console.error(
+        "parseFilter.nodeAttrMatch could not match all segments for",
+        token,
+        "matched:",
+        nodeType,
+        attribute,
+        value
+      );
+      return;
+    }
+    return {
+      type: nodeType,
+      attributes: {
+        [attribute]: value,
+      },
+    };
+  } else {
+    const nodeMatch = token.match(nodeRegex);
+    if (nodeMatch && nodeTypes.includes(nodeMatch[1])) {
+      return {
+        type: nodeMatch[1],
+        text: undefined,
+      };
+    }
+  }
+}
+
+/**
+ * Interpret a node query as a filter command, and stringify it for display.
+ * This is how a node query is represented in the search interface.
+ *
+ * @param filter
+ */
+function formatFilter(filter: SearchRequest["nodeMatch"]) {
+  if (filter?.attributes) {
+    // Right now, a filter token is only capable of specifying a single attribute.
+    // ... this is going to be difficult to keep track of
+    const key = Object.keys(filter.attributes)[0];
+    return `filter:${filter.type}[${key}="${filter.attributes[key]}"]`;
+  } else {
+    return `filter:${filter!.type}`;
+  }
+}
+
+/**
+ * Node types someone might search on
+ * https://github.com/syntax-tree/mdast#nodes
+ */
+const nodeTypes = [
+  "paragraph",
+  "heading",
+  "blockquote",
+  "list",
+  "listItem",
+  "table",
+  "tableRow",
+  "tableCell",
+  "html",
+  "code",
+  "definition",
+  "footnoteDefinition",
+  "text",
+  "emphasis",
+  "strong",
+  "delete",
+  "inlineCode",
+  "break",
+  "link",
+  "image",
+  "linkReference",
+  "imageReference",
+  "footnote",
+  "footnoteReference",
+];
+
+// to match filter:code[lang="sql"]
+/**
+ * filter:code
+filter:code[lang="sql"]
+filter:code[lang=
+filter:code[
+filter:heading[level="2"]:contains("foo bar baz")
+
+ * will match: filter:code[lang="sql"] into [_, code, lang, sql]
+ */
+const nodeAttributeRegex = /^filter:(\w+)\[(.*)="(.*)"\]$/;
+
+// to match filter:code
+const nodeRegex = /^filter:(\w+)$/;

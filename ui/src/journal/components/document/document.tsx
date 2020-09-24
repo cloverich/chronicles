@@ -6,17 +6,19 @@ import remark from "remark";
 import { Header } from "./header";
 import remark2Rehype from "remark-rehype";
 import rehype2React from "rehype-react";
-import { focusHeading, annotateHeadings } from "./mdast";
+import { focusHeading, annotateHeadings, filterMdast } from "./mdast";
 import { FocusHeadingEvent } from "../../useStore";
-
+import { IJournalsUiStore } from "../../store";
 interface Props {
   journal: string;
   date: string;
 
-  store: {
-    editing?: { journal: string; date?: string };
-    focusedHeading?: FocusHeadingEvent["detail"];
-  };
+  // isFiltered and searchStore added for FilteredDocument benefit
+  // todo: too leaky
+  store: Pick<
+    IJournalsUiStore,
+    "editing" | "focusedHeading" | "isFiltered" | "searchStore"
+  >;
 }
 
 interface HeadingProps {
@@ -89,7 +91,10 @@ function Document(props: Props) {
 
   if (loading) return <h1>Loading</h1>;
   if (error) return <h1>ERROR!</h1>;
-  if (!document) return <h1>Content not found :(</h1>;
+  // There's not really a scenario where document would be set but document.mdast not,
+  // but when creating a new document, the DocumentResponse object has "" for content
+  // and null for mdast. Probably worth codifying the two paths into the types at some point
+  if (!document || !document.mdast) return <h1>Content not found :(</h1>;
 
   // Its always good to un-mobx something before passing off to a 3rd party library
   // However here, if you do not, some kind of mobx array out of bounds issue happens
@@ -97,6 +102,18 @@ function Document(props: Props) {
 
   // Walks the tree and adds metadata to heading nodes, so its available in the HAST tree
   annotateHeadings(mdast);
+
+  if (store.isFiltered) {
+    return (
+      <FilteredDocument
+        date={props.date}
+        filter={store.searchStore.query.nodeMatch}
+        journal={props.journal}
+        mdast={mdast}
+        setEditing={(args: any) => (store.editing = args)}
+      />
+    );
+  }
 
   // NOTE: The compiler.runSync and compiler.stringify calls work,
   // but I did not verify if this is the right / best way to do this
@@ -125,3 +142,34 @@ function Document(props: Props) {
 
 // todo: Is React.memo necessary?
 export default React.memo(observer(Document));
+
+function FilteredDocument(props: {
+  mdast: any;
+  filter: any;
+  date: any;
+  journal: any;
+  setEditing: any;
+}) {
+  const output = compiler.runSync(filterMdast(props.mdast, props.filter));
+  // console.log(props.date);
+  // console.log(props.mdast);
+  // console.log(toJS(props.filter));
+  // console.log(filterMdast(props.mdast, props.filter));
+  // console.log("\n\n");
+
+  // Creates React components
+  const rendered = compiler.stringify(output);
+
+  if (!rendered) return <h1>Missing rendered? It should be here...</h1>;
+
+  return (
+    <article style={{ marginTop: 64 }}>
+      <Header
+        date={props.date}
+        journal={props.journal}
+        setEditing={props.setEditing}
+      />
+      {rendered}
+    </article>
+  );
+}

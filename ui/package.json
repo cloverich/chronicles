@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "webpack-dev-server --config webpack.js --hot --inline --colors",
     "dev:electron": "electron src/electron/index.js",
-    "test": "mocha -r ts-node/register -r esm src/**/*.spec.ts"
+    "test": "mocha -r ts-node/register -r esm src/**/*.test.ts"
   },
   "dependencies": {
     "@koa/router": "^9.3.1",

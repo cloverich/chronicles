@@ -1,10 +1,23 @@
 import { Root } from "mdast";
+// import { Node, Parent } from "unist";
 import { toJS } from "mobx";
 import { stringifier } from "../../../markdown/index";
+import { SearchRequest } from "../../../client";
 
 interface Filter {
   content: string;
   depth: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+}
+
+/**
+ * A loosely defined mdast Node.
+ *
+ * Compare with unist.Node, unist.Parent, and mast nodes
+ */
+interface Node {
+  type: string;
+  children?: Node[];
+  [key: string]: any;
 }
 
 /**
@@ -77,4 +90,69 @@ export function annotateHeadings(root: Root) {
       };
     }
   }
+}
+
+/**
+ * Filter an mdast tree to contain only nodes matching `filter`
+ *
+ * @param root
+ * @param filter
+ */
+export function filterMdast(root: Root, filter: SearchRequest["nodeMatch"]) {
+  const children: any[] = [];
+  root.children.forEach((child) =>
+    collectChildren(child as any, filter, children)
+  );
+
+  return {
+    ...root,
+    children,
+  };
+}
+
+/**
+ * Iterate array of child mdast nodes looking for matches
+ *
+ * @param root
+ * @param filter
+ * @param children
+ */
+function collectChildren(
+  child: Node,
+  filter: SearchRequest["nodeMatch"],
+  children: any[]
+) {
+  // If this node does not match, check each child
+  if (child.type !== filter!.type) {
+    if (child.children) {
+      // A child can have children too, unclear if types are wrong or my
+      // usage is.
+      child.children.forEach((child: any) =>
+        collectChildren(child, filter, children)
+      );
+    }
+
+    return;
+  }
+
+  // Otherwise, include this node (conditionally, if attributes match)
+  // ASSUMPTION: A node will never have a child node of same type
+  // ex: If at this point we have a Code block, but it has the wrong attributes (like lang)
+  // it will not have a child node that does
+
+  // If no attributes, match found
+  if (!filter!.attributes) {
+    children.push(child);
+    return;
+  }
+
+  // otherwise, filter on attributes too
+  Object.keys(filter!.attributes).forEach((key) => {
+    const value = filter!.attributes![key];
+    if (key in child && child[key] === value) {
+      children.push(child);
+    }
+  });
+
+  return children;
 }

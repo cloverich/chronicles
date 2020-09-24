@@ -35,6 +35,10 @@ export class JournalsUiStore {
   @computed get journals() {
     return this.store.journals;
   }
+  @computed get isFiltered() {
+    if (this.focusedHeading) return false;
+    return !!this.searchStore.query.nodeMatch;
+  }
 
   focusHeading = (detail?: FocusHeadingEvent["detail"]) => {
     // Clear a focused heading, "Unfocus" heading
@@ -52,7 +56,7 @@ export class JournalsUiStore {
         nodeMatch: {
           text: content,
           type: "heading",
-          attributes: null,
+          attributes: undefined,
         },
       };
 

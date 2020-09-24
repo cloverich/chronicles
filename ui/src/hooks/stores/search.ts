@@ -12,12 +12,10 @@ export class SearchStore {
   @observable error: Error | null = null;
 
   // todo: see reaction in this.load
-
   @observable query: SearchRequest = { journals: [] };
   private queryReaction: IReactionDisposer | null = null;
 
   // todo: this interface needs work
-
   @observable content: Array<[string, string]> = [];
 
   constructor(journals: IJournalStore, client: Client) {
@@ -37,7 +35,6 @@ export class SearchStore {
    * when the app starts after the JournalsStore finishes loading. Breaking this out
    * into a proper initialization step would be easier to follow and test.
    */
-
   private onJournalsChanged = (journals: IJournalStore["journals"]) => {
     if (journals.length === 0) {
       // we removed the last journal, clear cached data
@@ -77,7 +74,6 @@ export class SearchStore {
    * search directly is better. The query update reaction could then
    * just call this.search(updatedQuery), and this routine goes away.
    */
-
   private watchQuery = () => {
     if (this.queryReaction) this.queryReaction();
 

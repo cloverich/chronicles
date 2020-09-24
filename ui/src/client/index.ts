@@ -2,6 +2,7 @@ import ky from "ky-universal";
 import { DocsStore } from "./docstore";
 import { IJournal } from "../api/journals";
 export { IJournal } from "../api/journals";
+import { Root } from "mdast";
 
 class JournalsClient {
   constructor(private api: KyClient) {}
@@ -36,8 +37,7 @@ export interface GetDocument {
 
 export interface GetDocumentResponse {
   raw: string;
-  // todo: MDAST types
-  mdast: any; // Record<string, any>;
+  mdast: Root | null;
 }
 
 /**
@@ -53,9 +53,17 @@ export interface SearchRequest {
   journals: string[];
 
   nodeMatch?: {
+    /**
+     * Type of node
+     *
+     * https://github.com/syntax-tree/mdast#nodes
+     */
     type: string; // type of Node
-    attributes: any; // match one or more attributes of the node, like depth for heading nodes
-    text: string; // match raw text from within the node
+    /**
+     * Match one or more attributes of a node
+     */
+    attributes?: Record<string, string | number>;
+    text?: string; // match raw text from within the node
   };
 }
 
