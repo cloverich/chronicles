@@ -1,7 +1,50 @@
-import { observable, computed, reaction, action } from "mobx";
+import { observable, computed, reaction, IObservableArray } from "mobx";
 import { ISearchStore } from "../hooks/stores/search";
 import { IJournalStore } from "../hooks/stores/journals";
 import { EditingArgs, FocusHeadingEvent } from "./useStore";
+
+// todo: define this type on the IJournalUiStore or the SearchStore, since it
+// manages this query
+import { SearchRequest } from "../client";
+
+// also defined in TagSearchStore
+type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
+// SearchRequest["nodeMatch"]
+type NodeMatch = {
+  /**
+   * Type of node
+   *
+   * https://github.com/syntax-tree/mdast#nodes
+   */
+  type: string; // type of Node
+  /**
+   * Match one or more attributes of a node
+   */
+  attributes?: Record<string, string | number>;
+  text?: string; // match raw text from within the node
+};
+
+export type FilterToken = {
+  type: "filter";
+  value: NodeMatch;
+};
+
+export type JournalToken = {
+  type: "in";
+  value: string; // keyof Journals
+};
+
+export type FocusToken = {
+  type: "focus";
+  value: {
+    type: string;
+    content: string;
+    depth: HeadingTag;
+  };
+};
+
+export type SearchToken = FilterToken | JournalToken | FocusToken;
 
 export class JournalsUiStore {
   // todo: searchStore only public to support tagSeachStore... refactor...
@@ -39,6 +82,12 @@ export class JournalsUiStore {
     if (this.focusedHeading) return false;
     return !!this.searchStore.query.nodeMatch;
   }
+
+  @observable tokens: IObservableArray<SearchToken> = observable([]);
+
+  // setTokens = (tokens: SearchToken[]) => {
+  //   this.tokens = tokens;
+  // };
 
   focusHeading = (detail?: FocusHeadingEvent["detail"]) => {
     // Clear a focused heading, "Unfocus" heading
