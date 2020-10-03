@@ -7,7 +7,7 @@ import {
   ManuallyEnteredDataIcon,
 } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import TagSearch from "./search/tagsearch";
+import TagSearch from "./search";
 import { IJournalsUiStore } from "../store";
 
 interface Props {

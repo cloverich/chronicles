@@ -16,6 +16,8 @@ function makeMock(): [Pick<IJournalsUiStore, "tokens">, TagSearchStore] {
 // store.tokens... I _could_ re-write many of the parser tests to
 // check the parsed token strings in searchTokens instead of
 // store.tokens. Test's would be more readable...
+// ... and also confirms the parse to token -> serialize to string works correctly.
+// In UI testing, I found taht adding `filter:code` serialized to `filter:undefined`
 // A separate routine could confirm the tokens -> searchTokens
 // reaction...
 suite("TagSearchStore", function () {
