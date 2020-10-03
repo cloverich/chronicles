@@ -122,10 +122,10 @@ class EditHelper {
  * ...
  *
  * TODO: Should this logic be in the API? The future client library?
- * @param unit
+ * @param period
  */
-function getLatestDate(unit: IJournal["unit"]): string {
-  switch (unit) {
+function getLatestDate(period: IJournal["period"]): string {
+  switch (period) {
     case "day":
       return getToday();
     case "week":
@@ -135,7 +135,7 @@ function getLatestDate(unit: IJournal["unit"]): string {
     case "year":
       return DateTime.local().startOf("year").toISODate()!;
     default:
-      throw new Error(`getLatestDate called with unknown date type ${unit}`);
+      throw new Error(`getLatestDate called with unknown date type ${period}`);
   }
 }
 
@@ -143,7 +143,7 @@ function getLatestDate(unit: IJournal["unit"]): string {
  * This is how the editor gets a handle on a document which may be edited.
  *
  * @param journal - Name of journal this document belongs to
- * @param date  - Specify a date. But... depends on unit of the journal of course. Kind of...
+ * @param date  - Specify a date. But... depends on period of the journal of course. Kind of...
  * @param isUsing  - Spilling modal details into this hook. Great.
  */
 export function useEditableDocument(
@@ -153,7 +153,7 @@ export function useEditableDocument(
 ) {
   const client = useClient();
   const journal = useJournal(journalName);
-  const [dateToUse] = useState(date || getLatestDate(journal.unit));
+  const [dateToUse] = useState(date || getLatestDate(journal.period));
 
   // this is safe to run on every render
   // TODO: Add validation in useDocument to protect against wrong date?

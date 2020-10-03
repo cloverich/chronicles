@@ -25,11 +25,17 @@ export async function recreateSchema(db: Database, reschema: boolean) {
     db.exec("DROP TABLE IF EXISTS journals");
   }
 
+  // I don't have migrations yet. Or users. Do this for now,
+  // delete this later. Add real migrations.
+  try {
+    db.exec("ALTER TABLE journals RENAME unit TO period");
+  } catch (err) {}
+
   db.exec(`CREATE TABLE IF NOT EXISTS journals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     url TEXT NOT NULL,
-    unit TEXT NOT NULL DEFAULT "day" -- day, month, year
+    period TEXT NOT NULL DEFAULT "day" -- day, month, year
   )`);
 
   db.exec(
@@ -37,7 +43,7 @@ export async function recreateSchema(db: Database, reschema: boolean) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       journal TEXT,
       date TEXT,
-      idx INTEGER, -- not needed if we pk! 
+      idx INTEGER, -- not needed if we pk!
       type TEXT,
       contents TEXT,
       attributes TEXT

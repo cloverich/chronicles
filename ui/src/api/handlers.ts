@@ -32,9 +32,9 @@ export default class Handlers {
       if (!body) return "no body";
       if (!("name" in body)) return "no body.name";
       if (!("url" in body)) return "no body.url";
-      if ("unit" in body) {
-        if (!["day", "week", "month", "year"].includes(body.unit)) {
-          return 'body.unit must be "day", "week", or "month", or "year"';
+      if ("period" in body) {
+        if (!["day", "week", "month", "year"].includes(body.period)) {
+          return 'body.period must be "day", "week", or "month", or "year"';
         }
       }
     }
@@ -52,7 +52,7 @@ export default class Handlers {
       ctx.response.body = await this.journals.add({
         name: body.name,
         url: body.url,
-        unit: body.unit || "day",
+        period: body.period || "day",
       });
 
       ctx.response.status = 200;

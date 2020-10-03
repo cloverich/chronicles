@@ -34,12 +34,12 @@ suite("editing", function () {
   test("adding a new document updates the search");
 });
 
-suite("journal units", function () {
+suite("journal periods", function () {
   test(
     "indexing a journal by week, month, year only loads entries that match start of segment"
   );
-  test("(API) adding an entry with wrong unit fails");
-  test("(UI) clicking 'new' defaults to the start of the journals unit");
+  test("(API) adding an entry with wrong period fails");
+  test("(UI) clicking 'new' defaults to the start of the journals period");
   test("(UI:hooks) getTodaysDate works, maybe same thing as above");
 });
 

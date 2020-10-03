@@ -137,7 +137,7 @@ export class Indexer {
   };
 
   index = async (journal: IJournal) => {
-    const shouldFunc = getShouldFunc(journal.unit);
+    const shouldFunc = getShouldFunc(journal.period);
 
     for await (const entry of Files.walk(journal.url, shouldFunc)) {
       console.debug("[Indexer.index] processing entry", entry.path);
@@ -166,7 +166,7 @@ export class Indexer {
 }
 
 // BELOW: HELPERS FOR DETERMINING IF A FILE SHOULD BE INDEXED, BASED ON FILENAME
-// AND THE JOURNAL'S "unit" -- day, month, year.
+// AND THE JOURNAL'S "period" -- day, month, year.
 // SEE Files.walk usage
 
 // To check for filename structure and directory naming convention
@@ -191,8 +191,8 @@ const shouldIndexWeek = (file: PathStatsFile) => shouldIndex(file, "week");
 const shouldIndexMonth = (file: PathStatsFile) => shouldIndex(file, "month");
 const shouldIndexYear = (file: PathStatsFile) => shouldIndex(file, "year");
 
-function getShouldFunc(unit: IJournal["unit"]) {
-  switch (unit) {
+function getShouldFunc(period: IJournal["period"]) {
+  switch (period) {
     case "day":
       return shouldIndexDay;
     case "week":
@@ -208,9 +208,9 @@ function getShouldFunc(unit: IJournal["unit"]) {
  * Should we index a given file?
  *
  * @param file - A file yielded by our directory walking function
- * @param unit  - The journal "unit"
+ * @param period  - The journal "period"
  */
-function shouldIndex(file: PathStatsFile, unit: IJournal["unit"]): boolean {
+function shouldIndex(file: PathStatsFile, period: IJournal["period"]): boolean {
   if (file.stats.isDirectory()) return false;
 
   const { ext, name } = path.parse(file.path);
@@ -221,15 +221,15 @@ function shouldIndex(file: PathStatsFile, unit: IJournal["unit"]): boolean {
   const parsedDate = DateTime.fromISO(name);
   if (name !== parsedDate.toISODate()) return false;
 
-  if (unit === "week") {
+  if (period === "week") {
     if (!isStartofWeek(parsedDate)) return false;
   }
 
-  if (unit === "month") {
+  if (period === "month") {
     if (!isStartOfMonth(parsedDate)) return false;
   }
 
-  if (unit === "year") {
+  if (period === "year") {
     if (!isStartOfYear(parsedDate)) return false;
   }
 

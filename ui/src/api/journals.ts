@@ -12,7 +12,7 @@ export interface IJournal {
   /**
    * The duration of a single document in a journal.
    */
-  unit: "day" | "week" | "month" | "year";
+  period: "day" | "week" | "month" | "year";
 }
 
 /**
@@ -87,7 +87,7 @@ export class Journals {
     // todo: what if after inserting, the actual indexing fails?
     this.db
       .prepare(
-        "INSERT INTO journals (name, url, unit) VALUES (:name, :url, :unit)"
+        "INSERT INTO journals (name, url, period) VALUES (:name, :url, :period)"
       )
       .run(journal);
 
@@ -142,13 +142,15 @@ export class Journals {
 
   list = async () => {
     let journals: Array<IJournal> = [];
-    const rows = this.db.prepare("SELECT id,name,url,unit FROM journals").all();
+    const rows = this.db
+      .prepare("SELECT id,name,url,period FROM journals")
+      .all();
 
-    for (const { name, url, unit } of rows) {
+    for (const { name, url, period } of rows) {
       journals.push({
         name,
         url,
-        unit,
+        period,
       });
     }
 

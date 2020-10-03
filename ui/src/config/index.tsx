@@ -42,7 +42,7 @@ function Config() {
       <Table>
         <Table.Head>
           <Table.TextHeaderCell>Name</Table.TextHeaderCell>
-          <Table.TextHeaderCell>Unit</Table.TextHeaderCell>
+          <Table.TextHeaderCell>Period</Table.TextHeaderCell>
           <Table.TextHeaderCell>URL</Table.TextHeaderCell>
         </Table.Head>
         <Table.Body height={240}>
@@ -50,7 +50,7 @@ function Config() {
             <Table.Row key={journal.name}>
               <Table.TextCell>{journal.name}</Table.TextCell>
               <Table.TextCell style={{ textAlign: "center" }}>
-                <Badge>{journal.unit}</Badge>
+                <Badge>{journal.period}</Badge>
               </Table.TextCell>
               <Table.TextCell>{journal.url}</Table.TextCell>
               <Table.TextCell>

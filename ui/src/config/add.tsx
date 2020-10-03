@@ -19,9 +19,9 @@ const schema = {
       title: "url",
       minLength: 1,
     },
-    unit: {
+    period: {
       type: "string",
-      title: "unit",
+      title: "period",
       pattern: "^(day|week|month|year)$",
     },
   },
@@ -56,7 +56,7 @@ function AddJournalDialog(props: Props) {
     // name. Did not think through validation much here
     name: props.directory.split("/").pop() || "",
     url: props.directory,
-    unit: "day",
+    period: "day",
   });
 
   const [isShown, setIsShown] = useState(true);
@@ -131,11 +131,11 @@ export function AddJournalForm(props: {
         placeholder="Journal URL"
       />
       <Select
-        label="Journal Unit"
+        label="Journal Period"
         description="The time span of a single document"
         options={["day", "week", "month", "year"]}
-        selected={formState.unit}
-        onSelect={(item) => setState({ ...formState, unit: item })}
+        selected={formState.period}
+        onSelect={(item) => setState({ ...formState, period: item })}
       />
     </Pane>
   );

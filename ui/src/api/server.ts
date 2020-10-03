@@ -6,6 +6,7 @@ import Handlers from "./handlers";
 // i hate myself
 import makePort from "get-port";
 import { ValidationError, NotFoundError } from "./errors";
+import { recreateSchema } from "./database";
 
 /**
  * This process is started by the electron main process
