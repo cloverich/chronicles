@@ -1,11 +1,58 @@
-import { observable, computed, reaction, action } from "mobx";
+import { observable, computed, reaction, IObservableArray } from "mobx";
 import { ISearchStore } from "../hooks/stores/search";
 import { IJournalStore } from "../hooks/stores/journals";
 import { EditingArgs, FocusHeadingEvent } from "./useStore";
 
+// todo: define this type on the IJournalUiStore or the SearchStore, since it
+// manages this query
+import { SearchRequest } from "../client";
+
+// also defined in TagSearchStore
+type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
+// SearchRequest["nodeMatch"]
+export type NodeMatch = {
+  /**
+   * Type of node
+   *
+   * https://github.com/syntax-tree/mdast#nodes
+   */
+  type: string; // type of Node
+  /**
+   * Match one or more attributes of a node
+   */
+  attributes?: Record<string, string | number>;
+  text?: string; // match raw text from within the node
+};
+
+export type FilterToken = {
+  type: "filter";
+  value: NodeMatch;
+};
+
+export type JournalToken = {
+  type: "in";
+  value: string; // keyof Journals
+};
+
+export type FocusToken = {
+  type: "focus";
+  value: {
+    type: string;
+    content: string;
+    depth: HeadingTag;
+  };
+};
+
+type FocusedHeading = {
+  content: string;
+  depth: HeadingTag;
+};
+
+export type SearchToken = FilterToken | JournalToken | FocusToken;
+
 export class JournalsUiStore {
-  // todo: searchStore only public to support tagSeachStore... refactor...
-  constructor(private store: IJournalStore, public searchStore: ISearchStore) {
+  constructor(private store: IJournalStore, private searchStore: ISearchStore) {
     // Update query when adding a new document.
     // So... because I stop editing by setting this.editing = null in a few places..
     // this reaction re-triggers the search query so new entries are picked up by
@@ -17,60 +64,98 @@ export class JournalsUiStore {
     reaction(
       () => this.editing,
       (editing) => {
-        if (!editing) this.searchStore.query = { ...this.searchStore.query };
+        if (!editing) this.tokens = observable(this.tokens.slice());
       }
     );
+
+    // Re-run the search query anytime the tokens change.
+    // fireImmediately -> search as soon as this controller
+    // is created.
+    reaction(() => this.tokens.slice(), this.onTokensChange, {
+      fireImmediately: true,
+    });
   }
 
   @observable sidebarOpen: boolean = false;
   @observable editing?: EditingArgs;
-  @observable focusedHeading?: FocusHeadingEvent["detail"];
+  @computed get focusedHeading() {
+    const token = this.tokens.find((t) => t.type === "focus");
+    if (!token) return;
 
-  @computed get selectedJournals() {
-    return this.searchStore.query.journals.slice();
+    // Typescript thinks `token` can be any SearchToken still
+    return token.value as FocusedHeading;
+  }
+
+  @computed get filterToken() {
+    const token = this.tokens.find((t) => t.type === "filter");
+    if (!token) return;
+
+    // Typescript thinks `token` can be any SearchToken still
+    return token.value as NodeMatch;
+  }
+
+  @computed get selectedJournals(): string[] {
+    return this.tokens
+      .filter((t) => t.type === "in")
+      .map((t) => t.value) as string[];
   }
   @computed get hasJournals() {
-    return this.store.journals.length;
+    return this.store.journals.length > 0;
   }
   @computed get journals() {
     return this.store.journals;
   }
-  @computed get isFiltered() {
-    if (this.focusedHeading) return false;
-    return !!this.searchStore.query.nodeMatch;
-  }
 
-  focusHeading = (detail?: FocusHeadingEvent["detail"]) => {
-    // Clear a focused heading, "Unfocus" heading
-    if (!detail) {
-      this.searchStore.query = {
-        ...this.searchStore.query,
-        nodeMatch: undefined,
-      };
-      this.focusedHeading = undefined;
-    } else {
-      // "Focus" heading
-      const { content, depth } = detail;
-      this.searchStore.query = {
-        ...this.searchStore.query,
-        nodeMatch: {
-          text: content,
-          type: "heading",
-          attributes: undefined,
-        },
-      };
+  @observable tokens: IObservableArray<SearchToken> = observable([]);
 
-      this.focusedHeading = detail;
-    }
-  };
-
-  // Add and remove
-  selectJournal = (journal: string) => {
-    this.searchStore.query = {
-      journals: [journal],
+  /**
+   * React to tokens changing by updating the search query.
+   */
+  private onTokensChange = (tokens: SearchToken[]) => {
+    const query: SearchRequest = {
+      journals: [] as string[],
+      nodeMatch: undefined as any,
     };
 
-    this.focusedHeading = undefined;
+    tokens.forEach((token) => {
+      if (token.type === "in") {
+        query.journals.push(token.value);
+      }
+      if (token.type === "focus") {
+        query.nodeMatch = {
+          type: "heading",
+          text: token.value.content,
+        };
+      }
+
+      if (token.type === "filter") {
+        query.nodeMatch = { ...token.value };
+      }
+    });
+
+    this.searchStore.query = query;
+  };
+
+  focusHeading = (heading?: FocusedHeading) => {
+    // Clear any existing focused headings, as there may be only one
+    this.tokens = observable(this.tokens.filter((t) => t.type !== "focus"));
+
+    if (!heading) return;
+
+    // If a new heading passed, add it
+    // And here it should replace any focus headings with this one...
+    // whichi annoyingly duplicates logic from the TagSearchStore...
+    this.tokens.push({
+      type: "focus",
+      value: { type: "heading", ...heading },
+    });
+  };
+
+  /**
+   * Search a single journal with no filters
+   */
+  selectJournal = (journal: string) => {
+    this.tokens = observable([{ type: "in", value: journal }]);
   };
 
   editSelectedJournal = () => {
@@ -85,9 +170,7 @@ export class JournalsUiStore {
     // useEditableDocument. Not at all confusing :\
     // todo: ¯\_(ツ)_/¯
     this.editing = {
-      journal: this.selectedJournals.length
-        ? this.selectedJournals[0]
-        : this.journals[0].name,
+      journal: this.selectedJournals[0] || this.journals[0].name,
     };
   };
 }

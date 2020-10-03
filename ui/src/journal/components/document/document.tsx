@@ -12,13 +12,7 @@ import { IJournalsUiStore } from "../../store";
 interface Props {
   journal: string;
   date: string;
-
-  // isFiltered and searchStore added for FilteredDocument benefit
-  // todo: too leaky
-  store: Pick<
-    IJournalsUiStore,
-    "editing" | "focusedHeading" | "isFiltered" | "searchStore"
-  >;
+  store: Pick<IJournalsUiStore, "editing" | "focusedHeading" | "filterToken">;
 }
 
 interface HeadingProps {
@@ -103,11 +97,11 @@ function Document(props: Props) {
   // Walks the tree and adds metadata to heading nodes, so its available in the HAST tree
   annotateHeadings(mdast);
 
-  if (store.isFiltered) {
+  if (store.filterToken) {
     return (
       <FilteredDocument
         date={props.date}
-        filter={store.searchStore.query.nodeMatch}
+        filter={store.filterToken}
         journal={props.journal}
         mdast={mdast}
         setEditing={(args: any) => (store.editing = args)}
@@ -151,11 +145,6 @@ function FilteredDocument(props: {
   setEditing: any;
 }) {
   const output = compiler.runSync(filterMdast(props.mdast, props.filter));
-  // console.log(props.date);
-  // console.log(props.mdast);
-  // console.log(toJS(props.filter));
-  // console.log(filterMdast(props.mdast, props.filter));
-  // console.log("\n\n");
 
   // Creates React components
   const rendered = compiler.stringify(output);
