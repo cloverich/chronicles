@@ -18,8 +18,6 @@ All of the application code lives in the `/ui` directory. Ignore the others :)
 The app is a typical Electron dev setup, but serves the UI from webpack dev server while in development. To start the app you'll need to start both the webpack dev server and electron.
 
 ```bash
-cd ui
-
 # install dependencies
 yarn
 
@@ -36,6 +34,6 @@ yarn dev
 
 ## Build and release
 
-- Use the `ui/build.sh` script
+- Use the `build.sh` script
 - Make a Github release
 
