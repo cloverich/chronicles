@@ -9,7 +9,6 @@ import { JournalsContext } from "./useJournals";
  *
  * @param journalName
  */
-
 export function useJournal(journalName: string) {
   const store = useContext(JournalsContext);
   const [journal, setJournal] = useState(() =>

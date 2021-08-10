@@ -3,6 +3,7 @@ import Router from "@koa/router";
 import send from "koa-send";
 const bodyParser = require("koa-bodyparser");
 import Handlers from "./handlers";
+import { Handlers as Handlers2 } from "./handlers/index";
 // i hate myself
 import makePort from "get-port";
 import { ValidationError, NotFoundError } from "./errors";
@@ -23,7 +24,7 @@ process.on("disconnect", () => {
   process.exit();
 });
 
-export async function server(handlers: Handlers) {
+export async function server(handlers: Handlers, handlers2: Handlers2) {
   const app = new Koa();
   app.use(bodyParser());
   const router = new Router();
@@ -74,6 +75,10 @@ export async function server(handlers: Handlers) {
   router.post("/journals/:journal/:date", handlers.save);
   router.post("/search", handlers.search);
 
+  router.get("/v2/journals", handlers2.journals.list);
+  router.post("/v2/journals", handlers2.journals.create);
+  router.delete("/v2/journals", handlers2.journals.remove);
+
   /**
    * This catch all route is for image requests.
    */
@@ -96,13 +101,20 @@ export async function server(handlers: Handlers) {
 
   // Dynamically allocate a free port and listen
   const port = await makePort();
+  console.log("listening on port", port);
   app.listen({ port });
 
   /**
    * Process.send only exists if started by a parent with
-   * ipc, which we do, specifically so this process can
+   * ipc, which we do when embedding in the electron app (but not test),
+   * specifically so this process can
    * send a signal back indicating which port its attaching
    * to.
    */
-  process.send!(JSON.stringify({ name: "server_port", port }));
+  if (process.send) {
+    process.send!(JSON.stringify({ name: "server_port", port }));
+  }
+
+  // so test can get the port:
+  return { port };
 }

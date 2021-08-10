@@ -23,6 +23,7 @@ export async function recreateSchema(db: Database, reschema: boolean) {
     console.log("[recreateSchema] Recreating schema");
     db.exec(`DROP TABLE IF EXISTS nodes`);
     db.exec("DROP TABLE IF EXISTS journals");
+    db.exec("DROP TABLE IF EXISTS documents");
   }
 
   // I don't have migrations yet. Or users. Do this for now,
@@ -51,4 +52,18 @@ export async function recreateSchema(db: Database, reschema: boolean) {
       attributes TEXT
     )`
   );
+
+  db.exec(
+    `CREATE TABLE IF NOT EXISTS documents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      journal TEXT,
+      date TEXT,
+      title TEXT,
+      contents TEXT,
+
+      CONSTRAINT unique_titles UNIQUE (journal, date, title)
+    )`
+  );
+
+  db.exec(`CREATE INDEX IF NOT EXISTS documents_titles on documents (title)`);
 }

@@ -3,6 +3,8 @@ import { DocsStore } from "./docstore";
 import { IJournal } from "../api/journals";
 export { IJournal } from "../api/journals";
 import { Root } from "mdast";
+import { Client as V2Client } from "../api/client";
+import { configure } from "../api/client";
 
 class JournalsClient {
   constructor(private api: KyClient) {}
@@ -117,15 +119,21 @@ class DocsClient {
 }
 
 abstract class KyClient {
-  ky: typeof ky = ((() => {
+  ky: typeof ky = (() => {
     throw new Error("ky not configured yet");
-  }) as unknown) as any;
+  }) as unknown as any;
 }
 
 class ClientImplementation extends KyClient {
   readonly journals: JournalsClient;
   readonly docs: DocsClient;
   readonly cache: DocsStore;
+
+  // This not null assertion is required because of how I wrote the
+  // original setup script. Refactor consumers to use the configure as
+  // defined in the /api/client which seems much simpler? What was I
+  // thinking?
+  v2!: V2Client;
 
   constructor() {
     super();
@@ -142,6 +150,10 @@ class ClientImplementation extends KyClient {
    */
   configure(urlBase: string) {
     this.ky = ky.extend({ prefixUrl: urlBase });
+
+    // TODO: Refactor so it takes an existing ky client, or delete this whole
+    // shebang
+    this.v2 = configure(urlBase);
   }
 }
 

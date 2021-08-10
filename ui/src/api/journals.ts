@@ -83,7 +83,6 @@ export class Journals {
       );
     }
 
-    // todo: prior to this, validate directory
     // todo: what if after inserting, the actual indexing fails?
     this.db
       .prepare(

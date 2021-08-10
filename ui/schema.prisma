@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./pragma.db"
+}
+
+model documents {
+  id       Int     @id @default(autoincrement())
+  journal  String?
+  date     String?
+  title    String?
+  contents String?
+
+  @@unique([journal, date, title], name: "documents_journal_date_title_uniq")
+  @@index([title], name: "documents_titles_idx")
+}
+
+model journals {
+  id     Int    @id @default(autoincrement())
+  name   String
+  url    String
+  period String @default("day")
+}
+
+model nodes {
+  id         Int     @id @default(autoincrement())
+  journal    String?
+  date       String?
+  idx        Int?
+  type       String?
+  contents   String?
+  attributes String?
+}
+
+model Journal2 {
+  id        Int        @id @default(autoincrement())
+  name     String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  Document  Document2[]
+  @@unique([name], name: "journals_name_uniq")
+}
+
+model Document2 {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  title     String?
+  content   String
+  journalId Int
+  journal   Journal2  @relation(fields: [journalId], references: [id])
+  @@index([title], name: "documents_createdat_idx")
+}
