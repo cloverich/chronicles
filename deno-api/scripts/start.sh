@@ -1,1 +1,0 @@
-PRAGMA_DB='./pragma.db' deno run --unstable -A server.ts
