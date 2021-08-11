@@ -12,6 +12,8 @@
   "dependencies": {
     "@koa/router": "^9.3.1",
     "@prisma/client": "^2.28.0",
+    "ajv": "^8.6.2",
+    "ajv-formats": "^2.1.0",
     "better-sqlite3": "^7.1.0",
     "get-port": "^5.1.1",
     "klaw": "^3.0.0",
@@ -45,8 +47,8 @@
     "@types/react": "^16.9.41",
     "@types/react-dom": "^16.9.8",
     "@types/rehype-react": "^4.0.0",
-    "ajv": "^6.12.3",
     "chai": "^4.2.0",
+    "chai-json-schema-ajv": "^5.2.4",
     "css-loader": "^3.6.0",
     "electron": "^9.1.1",
     "electron-packager": "^15.0.0",

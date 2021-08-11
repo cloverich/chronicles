@@ -24,7 +24,7 @@ process.on("disconnect", () => {
   process.exit();
 });
 
-export async function server(handlers: Handlers, handlers2: Handlers2) {
+export async function server(handlers2: Handlers2) {
   const app = new Koa();
   app.use(bodyParser());
   const router = new Router();
@@ -68,16 +68,23 @@ export async function server(handlers: Handlers, handlers2: Handlers2) {
   });
 
   // Make routes
-  router.get("/journals", handlers.findJournals);
-  router.post("/journals", handlers.addJournal);
-  router.delete("/journals/:journal", handlers.removeJournal);
-  router.get("/journals/:journal/:date", handlers.fetchDoc);
-  router.post("/journals/:journal/:date", handlers.save);
-  router.post("/search", handlers.search);
+  // router.get("/journals", handlers.findJournals);
+  // router.post("/journals", handlers.addJournal);
+  // router.delete("/journals/:journal", handlers.removeJournal);
+  // router.get("/journals/:journal/:date", handlers.fetchDoc);
+  // router.post("/journals/:journal/:date", handlers.save);
+  // router.post("/search", handlers.search);
 
   router.get("/v2/journals", handlers2.journals.list);
   router.post("/v2/journals", handlers2.journals.create);
-  router.delete("/v2/journals", handlers2.journals.remove);
+  router.delete("/v2/journals/:id", handlers2.journals.remove);
+
+  router.get("/v2/documents/:id", handlers2.documents.findById);
+  router.post("/v2/documents", handlers2.documents.save);
+
+  // todo: not crazy about this URL, but /documents/search is overloaded
+  // with documents/:id. Think about this later
+  router.post("/v2/search", handlers2.documents.search);
 
   /**
    * This catch all route is for image requests.

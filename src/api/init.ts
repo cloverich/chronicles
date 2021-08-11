@@ -8,13 +8,13 @@ import handlers from "./handlers/index";
 const dbfile = process.argv[2] || "./pragma.db";
 console.log("using db file", dbfile);
 
-async function init() {
-  const db = createDb(dbfile, process.env.CHRONICLES_RESCHEMA != null);
-  const journals = await Journals.create(db);
-  const documents = new Documents(db, journals);
-  return { documents, journals };
-}
+// async function init() {
+//   const db = createDb(dbfile, process.env.CHRONICLES_RESCHEMA != null);
+//   const journals = await Journals.create(db);
+//   const documents = new Documents(db, journals);
+//   return { documents, journals };
+// }
 
 export default async function initServer() {
-  return await server(new Handlers(await init()), handlers());
+  return await server(handlers());
 }

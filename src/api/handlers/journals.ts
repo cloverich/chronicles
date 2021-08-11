@@ -1,12 +1,6 @@
-// import { Database, recreateSchema } from "./database";
-// import { Indexer } from "./indexer";
-// import { Files } from "./files";
-import { ValidationError } from "../errors";
 import { PrismaClient } from "@prisma/client";
-// import { Journals } from "./journals";
-// import { Documents } from "./documents";
 import { RouterContext } from "@koa/router";
-// import { SaveRequest } from "./documents";
+import { Prisma } from "@prisma/client";
 
 export interface IJournal {
   // display name
@@ -54,11 +48,14 @@ export class Journals {
 
       ctx.response.status = 200;
     } catch (err) {
-      if (err instanceof ValidationError) {
-        ctx.response.status = 400;
-        ctx.response.body = {
-          title: err.message,
-        };
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        // The .code property can be accessed in a type-safe manner
+        if (err.code === "P2002") {
+          ctx.response.status = 400;
+          ctx.response.body = {
+            title: "name must be unique",
+          };
+        }
       } else {
         throw err;
       }
@@ -66,19 +63,19 @@ export class Journals {
   };
 
   remove = async (ctx: RouterContext) => {
-    const journal = ctx.params.journal;
-    if (!journal) {
+    // todo: validation
+    const journalId = ctx.params.id;
+    if (!journalId) {
       ctx.response.status = 400;
       ctx.response.body = {
-        title: "Invalid delete journal request",
+        title: "Invalid delete journal request: Missing journal id",
       };
     }
 
-    const remainingJournals = await this.client.journal2.delete({
-      where: { id: journal },
+    await this.client.journal2.delete({
+      where: { id: journalId },
     });
-    ctx.status = 200;
-    ctx.response.body = remainingJournals;
+    ctx.status = 204;
   };
 
   list = async ({ response }: RouterContext) => {

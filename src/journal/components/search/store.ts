@@ -72,7 +72,6 @@ export class TagSearchStore {
     if (!results) return;
 
     const [parser, parsedToken] = results;
-    console.log(results);
     const tokens = parser.add(this.store.tokens, parsedToken);
 
     this.store.tokens = observable(tokens);

@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["referentialActions"]
 }
 
 datasource db {
@@ -8,7 +9,8 @@ datasource db {
 }
 
 model documents {
-  id       Int     @id @default(autoincrement())
+  // this is dumb, should use something suitable for distributed id generation
+  id       String     @id @default(cuid())
   journal  String?
   date     String?
   title    String?
@@ -19,7 +21,7 @@ model documents {
 }
 
 model journals {
-  id     Int    @id @default(autoincrement())
+  id     String    @id @default(cuid())
   name   String
   url    String
   period String @default("day")
@@ -36,7 +38,7 @@ model nodes {
 }
 
 model Journal2 {
-  id        Int        @id @default(autoincrement())
+  id       String     @id @default(cuid())
   name     String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now())
@@ -45,12 +47,12 @@ model Journal2 {
 }
 
 model Document2 {
-  id        Int      @id @default(autoincrement())
+  id       String     @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
   title     String?
   content   String
-  journalId Int
-  journal   Journal2  @relation(fields: [journalId], references: [id])
+  journalId String
+  journal   Journal2  @relation(fields: [journalId], references: [id], onDelete: Cascade)
   @@index([title], name: "documents_createdat_idx")
 }

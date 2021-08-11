@@ -2,15 +2,13 @@ import { Root } from "mdast";
 import ky from "ky-universal";
 type Ky = typeof ky;
 
-export interface GetDocument {
-  journalName: string;
-  date: string;
-  isCreate?: boolean;
-}
-
 export interface GetDocumentResponse {
-  raw: string;
-  mdast: Root | null;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  title?: string;
+  content: string;
+  journalId: string;
 }
 
 /**
@@ -41,8 +39,13 @@ export interface SearchRequest {
 }
 
 export type SearchResponse = {
-  query: SearchRequest;
-  docs: Array<[string, string]>; // journal name, date (string, YYYY-MM-DD)
+  // query: SearchRequest;
+  data: Array<{
+    id: string;
+    createdAt: string;
+    title?: string;
+    journalId: string;
+  }>;
 };
 
 // Now straight up copying from the API layer
@@ -58,32 +61,40 @@ export interface SaveMdastRequest {
   mdast: any;
 }
 
-export type SaveRequest = SaveRawRequest | SaveMdastRequest;
+// export type SaveRequest = SaveRawRequest | SaveMdastRequest;
+
+export interface SaveRequest {
+  id?: string;
+  journalId: string;
+  content: string;
+  title?: string;
+}
 
 export class DocumentsClient {
   constructor(private ky: Ky) {}
 
-  findOne = ({
-    journalName,
-    date,
-  }: GetDocument): Promise<GetDocumentResponse> => {
-    return this.ky.get(`v2/journals/${journalName}/${date}`).json();
+  findById = ({
+    documentId,
+  }: {
+    documentId: string;
+  }): Promise<GetDocumentResponse> => {
+    return this.ky.get(`v2/documents/${documentId}`).json();
   };
 
-  search = (q: SearchRequest): Promise<SearchResponse> => {
+  search = (q?: SearchRequest): Promise<SearchResponse> => {
     return this.ky
-      .post("search", {
+      .post("v2/search", {
         json: q,
       })
       .json();
   };
 
   save = (req: SaveRequest): Promise<GetDocumentResponse> => {
-    const body = "raw" in req ? { raw: req.raw } : { mdast: req.mdast };
+    // const body = "raw" in req ? { raw: req.raw } : { mdast: req.mdast };
 
     return this.ky
-      .post(`v2/journals/${req.journalName}/${req.date}`, {
-        json: body,
+      .post(`v2/documents`, {
+        json: req,
       })
       .json();
   };
