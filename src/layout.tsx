@@ -3,7 +3,7 @@ import { Pane, Tablist, Tab, Text, Icon } from "evergreen-ui";
 
 interface Props<T> {
   tabs: T[];
-  selected: T;
+  selected?: T;
   setSelected: React.Dispatch<React.SetStateAction<T>>;
 }
 
@@ -11,6 +11,7 @@ const monoStyle = {
   fontFamily: "IBM Plex Mono",
 };
 
+// todo: Why did I make this generic?
 export default function Layout<T>(props: PropsWithChildren<Props<T>>) {
   // todo: optimize
   const tabs = props.tabs.map((tab) => {

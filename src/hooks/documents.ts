@@ -94,7 +94,7 @@ function getToday() {
  * These are hacky to get it rolling, not sure what the state is supposed
  * to look like.
  */
-class EditHelper {
+export class EditHelper {
   static stringify(node: Node[]) {
     return node.map((n: any) => Node.string(n)).join("\n");
   }
@@ -197,10 +197,10 @@ export function useEditableDocument(
     setDirty(false);
   };
 
-  const {
-    wrapper: saveDocument,
-    ...savingState
-  } = withLoading(saveDocumentBase, { defaultLoading: false, propagate: true });
+  const { wrapper: saveDocument, ...savingState } = withLoading(
+    saveDocumentBase,
+    { defaultLoading: false, propagate: true }
+  );
 
   return {
     doc,

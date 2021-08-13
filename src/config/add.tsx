@@ -67,7 +67,7 @@ function AddJournalDialog(props: Props) {
     if (!valid) {
       validate.errors &&
         validate.errors.forEach((err) => {
-          toaster.danger(`${err.dataPath} - ${err.message}`);
+          toaster.danger(`${err.data} - ${err.message}`);
         });
       return false;
     }

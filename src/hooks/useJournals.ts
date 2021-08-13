@@ -20,16 +20,24 @@ export type SearchState = Loadable & {
 };
 
 import { JournalsStore } from "./stores/journals";
+import { JournalsStoreV2 } from "./stores/journals2";
 import { SearchStore } from "./stores/search";
-import { journalsStore, searchStore } from "./context";
+import { journalsStore, journalsStoreV2, searchStore } from "./context";
 
-export const JournalsContext = React.createContext<JournalsStore>(
-  journalsStore
-);
+// todo: move these to context.ts
+export const JournalsContext =
+  React.createContext<JournalsStore>(journalsStore);
+
+export const JournalsStoreV2Context =
+  React.createContext<JournalsStoreV2>(journalsStoreV2);
 
 export const SearchContext = React.createContext<SearchStore>(searchStore);
 
 export function useJournals() {
   const store = useContext(JournalsContext);
   return store;
+}
+
+export function useJournalsV2() {
+  return useContext(JournalsStoreV2Context);
 }

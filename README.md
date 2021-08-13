@@ -1,6 +1,6 @@
 # Chronicles
 
-**Status**: In development. Bugs abound. See releases to download the application. 
+**Status**: Hobby project, in development. Prototyping hacks and ideas -- bugs abound. Will post usable(ish) versions as releases when it gets to stopping points. 
 
 
 ## Resetting database
@@ -10,11 +10,6 @@ I haven't setup migrations or database versioning. Between releases, you may nee
 - Start the app with `CHRONICLES_RESCHEMA` to to true
 
 ## Development
-
-All of the application code lives in the `/ui` directory. Ignore the others :)
-
-
-
 The app is a typical Electron dev setup, but serves the UI from webpack dev server while in development. To start the app you'll need to start both the webpack dev server and electron.
 
 ```bash
@@ -25,12 +20,8 @@ yarn
 yarn dev
 
 # start electron
-# yarn dev:electron
+yarn dev:electron
 ```
-
-
-
-
 
 ## Build and release
 

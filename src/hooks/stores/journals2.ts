@@ -1,12 +1,13 @@
 import { IJournal, Client } from "../../client";
+import { JournalResponse } from "../../api/client/journals";
 import { observable } from "mobx";
 
-export class JournalsStore {
+export class JournalsStoreV2 {
   private isLoaded: boolean = false;
   @observable loading: boolean = true;
   @observable saving: boolean = false;
   @observable error: Error | null = null;
-  @observable journals: IJournal[];
+  @observable journals: JournalResponse[];
 
   constructor(private client: Client) {
     this.journals = [];
@@ -16,7 +17,7 @@ export class JournalsStore {
     if (this.isLoaded) return;
 
     try {
-      this.journals = await this.client.journals.list();
+      this.journals = await this.client.v2.journals.list();
     } catch (err) {
       this.error = err;
     }
@@ -25,20 +26,26 @@ export class JournalsStore {
     this.loading = false;
   };
 
-  remove = async (journal: IJournal) => {
+  remove = async (journalId: string) => {
     this.saving = true;
     try {
-      this.journals = await this.client.journals.remove(journal);
+      // todo: update this.journals
+      await this.client.v2.journals.remove({ id: journalId });
+      this.journals = this.journals.filter((j) => j.id !== journalId);
     } catch (err) {
       this.error = err;
     }
     this.saving = false;
   };
 
-  add = async (journal: IJournal) => {
+  create = async ({ name }: { name: string }) => {
     this.saving = true;
+    this.error = null;
     try {
-      this.journals = await this.client.journals.add(journal);
+      const newJournal = await this.client.v2.journals.create({
+        name: name,
+      });
+      this.journals.push(newJournal);
     } catch (err) {
       this.error = err;
     }
@@ -46,4 +53,4 @@ export class JournalsStore {
   };
 }
 
-export type IJournalStore = JournalsStore;
+export type IJournalStore = JournalsStoreV2;

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Layout from "./layout";
 import Config from "./config";
-
-import { useJournals, JournalsContext } from "./hooks/useJournals"; // name not at all confusing
+import Journals from './views/journals';
+import Documents from './views/documents';
+import Editor from './views/editor';
+import { useJournals } from './useJournals';
 import { useSearch } from "./hooks/useSearch";
+import { Alert } from 'evergreen-ui';
 // import { useContent } from './hooks/documents';
 import Journal from "./journal";
 
@@ -36,43 +39,73 @@ export default function ClientInjectingContainer() {
   return <Container />;
 }
 
+
+export type ViewState = 'journals' | 'documents' | { name: 'edit', props: { documentId?: string; journalId?: string; }};
+
 const Container = observer(() => {
-  const [view, setView] = useState<"config" | "journal">("journal");
-  const journals = useJournals();
+  const [view, setView] = useState<ViewState>("documents");
+  const { journals, loading, loadingErr }  = useJournals();
   const searchState = useSearch();
 
-  useEffect(() => {
-    journals.load();
-  }, []);
-
-  // todo: error states :D
-  if (journals.loading) {
-    return <h1>Loading journals...</h1>;
-  }
-
-  if (view === "config") {
+  if (loading) {
     return (
       <Layout
-        tabs={["config", "journal"]}
-        selected={view}
+        tabs={['journals', 'documents']}
         setSelected={setView}
       >
-        <Config />
+       {/* todo: loading state */} 
+      </Layout>
+    )
+  }
+
+  if (loadingErr) {
+    return (
+      <Alert intent="danger" title="Journals failed to load">
+        Journals failed to load: ${JSON.stringify(loadingErr)}
+      </Alert>
+    )
+  }
+
+  if (view === "documents") {
+    return (
+      <Layout
+        tabs={['journals', 'documents']}
+        selected="documents"
+        setSelected={setView}
+      >
+        <Documents setView={setView} />
       </Layout>
     );
   }
 
-  if (view === "journal") {
+  if (typeof view === 'object' && view.name === 'edit') {
     return (
       <Layout
-        tabs={["config", "journal"]}
-        selected={view}
+        tabs={['journals', 'documents']}
+        selected="documents"
         setSelected={setView}
       >
-        <Journal />
+        <Editor 
+          documentId={view.props.documentId} 
+          journalId={view.props.journalId} 
+          setView={setView} 
+        />
       </Layout>
     );
   }
+
+  if (view === "journals") {
+    return (
+      <Layout
+        tabs={['journals', 'documents']}
+        selected={view}
+        setSelected={setView}
+      >
+        <Journals />
+      </Layout>
+    );
+  }
+  
 
   return <div>¯\_(ヅ)_/¯</div>;
 });

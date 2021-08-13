@@ -15,6 +15,9 @@ export class JournalsClient {
   constructor(private ky: Ky) {}
 
   list = (): Promise<JournalResponse[]> => {
+    // todo: should this return { data: JournalResponse[] } to be consistent with search results, leaving
+    // room for pagination? I can't imagine I would ever paginate it. Does consistent API responses matter?
+    // Probably not when there are only a few and they are all typed.
     return this.ky("v2/journals").json();
   };
 
