@@ -82,7 +82,7 @@ function Journals() {
           <Table.TextHeaderCell>Name</Table.TextHeaderCell>
           <Table.TextHeaderCell>Id</Table.TextHeaderCell>
         </Table.Head>
-        <Table.Body height={240}>
+        <Table.Body>
           {store.journals.map((journal) => (
             <Table.Row key={journal.name}>
               <Table.TextCell>{journal.name}</Table.TextCell>

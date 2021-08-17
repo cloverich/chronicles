@@ -62,15 +62,18 @@ async function importChronicles() {
       shouldIndexDay
     )) {
       const parsed = await loadDocument(file.path);
-      // console.log("parsed", parsed);
       if (parsed.mdast.type !== "root") throw new Error("oh my");
 
-      // for await (const document of sections(parsed.mdast as Root)) {
       for await (const document of splitOnTitle(parsed.contents)) {
+        // skip empty documents...
+        if (!document.content.length) continue;
+
         const date = dateFromPrevalidatedFilepath(file.path);
         if (!date) throw new Error(`expected valid date for ${file.path}`);
 
-        // document.createdAt = document.updatedAt = date.toMillis();
+        // todo: consider adding a `date` field, and using that as the definitive date
+        // then createdAt and updatedAt could maintain "When was this document created"
+        // and make back-dating a bit more sensible...
         const doc = await client.document2.create({
           data: {
             journalId: jourrnalModel!.id,
@@ -81,33 +84,8 @@ async function importChronicles() {
           },
         });
         console.log("created", doc.id);
-        // console.log(
-        //   journal,
-        //   jourrnalModel?.id,
-        //   date.toMillis(),
-        //   "title:",
-        //   document.title,
-        //   document.content.length,
-        //   "bytes"
-        // );
       }
     }
-  }
-
-  // for each section
-  // image links? leave in place for now...
-  // create entry (journalId, title if any)
-}
-
-async function testOne() {
-  const parsed = await loadDocument(
-    "/Users/cloverich/Google Drive/notes/chronicles/2020/06/2020-06-30.md"
-  );
-  console.log("parsed", parsed);
-  if (parsed.mdast.type !== "root") throw new Error("oh my");
-
-  for await (const document of sections(parsed.mdast as Root)) {
-    // console.log(document);
   }
 }
 
@@ -120,12 +98,8 @@ async function loadDocument(filepath: string) {
   };
 }
 
+// see notes in splitOnMdastHeading...
 function createDocument(nodes: Content[]) {
-  // console.log(
-  //   "\ncreateDocument\n",
-  //   nodes,
-  //   stringifier.stringify({ type: "root", children: nodes })
-  // );
   const firstNode = nodes[0];
   if (firstNode.type === "heading" && firstNode.depth === 1) {
     return {
@@ -143,21 +117,17 @@ function createDocument(nodes: Content[]) {
   }
 }
 
-function* sections(root: Root) {
+// first attempt at importing, I used the markdown parser to identify
+// headings and split on that. After a few unexpected formatting and content issues
+// I realized... splitting on headsings is just .split('\n') + line.startsWith('# ) ... doh
+function* splitOnMdastHeading(root: Root) {
   // console.log("sections", root);
   if (root.children.length === 0) {
     console.warn("document had no children");
     return;
   }
 
-  // for (const child of root.children) {
-  //   console.log("\n\n");
-  //   console.log(current);
-  //   console.log(stringifier.stringify(child));
-  // }
-
   let currentNodes: Content[] = [root.children[0]];
-  let idx = 1;
 
   for (const node of root.children) {
     if (node.type === "heading" && node.depth === 1) {
@@ -194,10 +164,13 @@ function splitOnTitle(
 
   function makeDocument(lines: string[]) {
     const hasTitle = lines[0].startsWith("# ");
-    return {
+    const document = {
       title: hasTitle ? lines[0].slice(2) : "",
       content: hasTitle ? lines.slice(1).join("\n") : lines.join("\n"),
     };
+
+    document.content = document.content.trim();
+    return document;
   }
 
   let nextDocumentLines: string[] = [];
