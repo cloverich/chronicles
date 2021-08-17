@@ -38,6 +38,7 @@ export class Journals {
 
     try {
       // idk what default is, maybe 10 seconds?
+      // todo: This copy pasta isn't needed... it was from
       // https://stackoverflow.com/questions/40138600/disable-request-timeout-in-koa;
       ctx.request.socket.setTimeout(60 * 1000);
       ctx.response.body = await this.client.journal2.create({

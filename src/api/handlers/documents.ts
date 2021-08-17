@@ -90,6 +90,8 @@ export class DocumentsHandler {
   search = async (ctx: RouterContext) => {
     const journals = ctx.request.body.journals;
 
+    // todo: Pagination
+    // https://www.prisma.io/docs/concepts/components/prisma-client/pagination
     let docs: any;
     if (journals && journals.length > 0) {
       // todo: validate journal names? What's the result if they are invalid?
@@ -108,6 +110,7 @@ export class DocumentsHandler {
           journalId: true,
         },
         orderBy: { createdAt: "desc" },
+        take: 100,
       });
     } else {
       docs = await this.client.document2.findMany({
@@ -118,6 +121,7 @@ export class DocumentsHandler {
           journalId: true,
         },
         orderBy: { createdAt: "desc" },
+        take: 120,
       });
     }
 

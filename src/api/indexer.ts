@@ -186,7 +186,8 @@ function isStartOfYear(d: DateTime) {
   return d.startOf("year").toISODate() === d.toISODate();
 }
 
-const shouldIndexDay = (file: PathStatsFile) => shouldIndex(file, "day");
+// exported for my importChronicles script without much thought
+export const shouldIndexDay = (file: PathStatsFile) => shouldIndex(file, "day");
 const shouldIndexWeek = (file: PathStatsFile) => shouldIndex(file, "week");
 const shouldIndexMonth = (file: PathStatsFile) => shouldIndex(file, "month");
 const shouldIndexYear = (file: PathStatsFile) => shouldIndex(file, "year");

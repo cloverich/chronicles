@@ -86,7 +86,6 @@ export class Files {
 
     // NOTE: Docs say walk is lexicographical but if I log out statements, its not walking in order
     for await (const entry of walking) {
-      console.log("[Files.walk] calling shouldIndex with", entry.path);
       if (shouldIndex(entry)) {
         yield entry as PathStatsFile;
       }
