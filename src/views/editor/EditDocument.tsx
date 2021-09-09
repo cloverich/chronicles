@@ -48,6 +48,7 @@ function EditDocument(props: Props) {
 
       <TextInputField
         name="title"
+        label="" // seems to require empty string to be null and hidden
         placeholder="An optional title for this document"
         disabled={docState?.saving || loading}
         onChange={(e: any) => docState!.title = e.target.value}

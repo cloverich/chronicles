@@ -2950,7 +2950,7 @@ extsprintf@^1.2.0:
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
   integrity sha1-4mifjzVvrWLMplo6kcXfX5VRaS8=
 
-fast-deep-equal@^3.1.1:
+fast-deep-equal@^3.1.1, fast-deep-equal@^3.1.3:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz#3a7d56b559d6cbc3eb512325244e619a65c6c525"
   integrity sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==
@@ -3889,10 +3889,10 @@ immer@1.10.0:
   resolved "https://registry.yarnpkg.com/immer/-/immer-1.10.0.tgz#bad67605ba9c810275d91e1c2a47d4582e98286d"
   integrity sha512-O3sR1/opvCDGLEVcvrGTMtLac8GJ5IwZC4puPrLuRj3l7ICKvkmA0vGuU9OW8mV9WIBRnaxp5GJh9IEAaNOoYg==
 
-immer@^5.0.0:
-  version "5.3.6"
-  resolved "https://registry.yarnpkg.com/immer/-/immer-5.3.6.tgz#51eab8cbbeb13075fe2244250f221598818cac04"
-  integrity sha512-pqWQ6ozVfNOUDjrLfm4Pt7q4Q12cGw2HUZgry4Q5+Myxu9nmHRkWBpI0J4+MK0AxbdFtdMTwEGVl7Vd+vEiK+A==
+immer@^8.0.1:
+  version "8.0.4"
+  resolved "https://registry.yarnpkg.com/immer/-/immer-8.0.4.tgz#3a21605a4e2dded852fb2afd208ad50969737b7a"
+  integrity sha512-jMfL18P+/6P6epANRvRk6q8t+3gGhqsJ9EuJ25AXE+9bNTYtssvzeYbEd0mXRYWCmmXSIbnlpz6vd6iJlmGGGQ==
 
 import-fresh@^3.1.0:
   version "3.2.1"
@@ -6905,18 +6905,17 @@ slash@^1.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-1.0.0.tgz#c41f2f6c39fc16d1cd17ad4b5d896114ae470d55"
   integrity sha1-xB8vbDn8FtHNF61LXYlhFK5HDVU=
 
-slate-history@^0.58.3:
-  version "0.58.3"
-  resolved "https://registry.yarnpkg.com/slate-history/-/slate-history-0.58.3.tgz#c29c65ba0a4189a11f73eeb25b01ba6db0fb0fa6"
-  integrity sha512-aYG8id/OAWGaXmfBqcvlS4I+p1adpDnhUMI4mjeyTfYCTKe7UaXK4g/YliM+t9oRmCdjO8uML6ryUUEiWLrP0Q==
+slate-history@^0.65.3:
+  version "0.65.3"
+  resolved "https://registry.yarnpkg.com/slate-history/-/slate-history-0.65.3.tgz#f6583a6ba042e2abfc97fa0f7ca9cb9098016df2"
+  integrity sha512-9OSZun3Y0OmonTBSe0vw9EK+Gc9/s49i1bB2U0UxhWvc1hMNbvvu4YGr3eWbtb3gX1VBcGVIiJgawDE4foOVAQ==
   dependencies:
-    immer "^5.0.0"
     is-plain-object "^3.0.0"
 
-slate-react@^0.58.3:
-  version "0.58.3"
-  resolved "https://registry.yarnpkg.com/slate-react/-/slate-react-0.58.3.tgz#1513ef3463c17136c7ed2cad20c8094c3607791c"
-  integrity sha512-ZdPcC+GwFU7cYf5eowELEGDEyLUW++4foMob8YRQU4XzG5zVvoS38MUfBxEMGIXTHaZW8hzSdoRqQZLvUzRKBA==
+slate-react@^0.65.3:
+  version "0.65.3"
+  resolved "https://registry.yarnpkg.com/slate-react/-/slate-react-0.65.3.tgz#f652e4780b4304189a8a8ecc8feca723f31173a3"
+  integrity sha512-lyiZD7Rrt0LInvK4xhIemnCEx/N7jt+e/eHlsFor+rif/K0RT9wSPXWajTI9RglbvN9XHTEuB2BFx2cQLKiomw==
   dependencies:
     "@types/is-hotkey" "^0.1.1"
     "@types/lodash" "^4.14.149"
@@ -6925,15 +6924,17 @@ slate-react@^0.58.3:
     is-plain-object "^3.0.0"
     lodash "^4.17.4"
     scroll-into-view-if-needed "^2.2.20"
+    tiny-invariant "1.0.6"
 
-slate@^0.58.3:
-  version "0.58.3"
-  resolved "https://registry.yarnpkg.com/slate/-/slate-0.58.3.tgz#2ebde2e1f2c05217ed418597e9cef74618248136"
-  integrity sha512-WLQceWBMpiKUlz8ObR2RpwbUnG3MoJmCwOgyY8yKcHOCjSQ/JbMIm0F0Y5wWQPUnr/wRgI4Nm1oc2ofRtHtW5g==
+slate@^0.65.3:
+  version "0.65.3"
+  resolved "https://registry.yarnpkg.com/slate/-/slate-0.65.3.tgz#8178cdf28a10a3a4e6858b13bc2ffa7c3d003e7a"
+  integrity sha512-n8wa2MKyWhCMRyVkXuMf67MmOYSeoHnqS1qYivor+/y0puNvQgXDUjC7TJJqUjhVqJ6zg2IeuYd0WfSYdAJs4g==
   dependencies:
     "@types/esrever" "^0.2.0"
     esrever "^0.2.0"
-    immer "^5.0.0"
+    fast-deep-equal "^3.1.3"
+    immer "^8.0.1"
     is-plain-object "^3.0.0"
     tiny-warning "^1.0.3"
 
@@ -7490,6 +7491,11 @@ tiny-emitter@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.1.0.tgz#1d1a56edfc51c43e863cbb5382a72330e3555423"
   integrity sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==
+
+tiny-invariant@1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/tiny-invariant/-/tiny-invariant-1.0.6.tgz#b3f9b38835e36a41c843a3b0907a5a7b3755de73"
+  integrity sha512-FOyLWWVjG+aC0UqG76V53yAWdXfH8bO6FNmyZOuUrzDzK8DI3/JRY25UD7+g49JWM1LXwymsKERB+DzI0dTEQA==
 
 tiny-warning@^1.0.3:
   version "1.0.3"

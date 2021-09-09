@@ -1,6 +1,6 @@
 import Prism from "prismjs";
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Slate, Editable, withReact } from "slate-react";
+import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import { Text, createEditor, Node } from "slate";
 import { withHistory } from "slate-history";
 import { css } from "emotion";
@@ -85,7 +85,10 @@ export interface Props {
 
 const MarkdownPreviewExample = (props: Props) => {
   const renderLeaf = useCallback((props) => <Leaf {...props} />, []);
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+  // as ReactEditor fixes 
+  // Argument of type 'BaseEditor' is not assignable to parameter of type 'ReactEditor'.
+  // Real fix is probably here: https://docs.slatejs.org/concepts/12-typescript
+  const editor = useMemo(() => withHistory(withReact(createEditor() as ReactEditor)), []);
   const decorate = useCallback(([node, path]) => {
     const ranges: any = [];
 
