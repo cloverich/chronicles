@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import Editor from '../../journal/components/editor/editor';
+import Editor from './editor';
 import { Pane, Button, Alert, TextInputField, Select } from 'evergreen-ui';
 import { useNewEditableDocument } from './useEditableDocument';
 

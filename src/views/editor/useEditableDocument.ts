@@ -6,7 +6,7 @@ import { observable, autorun, toJS } from "mobx";
 import { toaster } from "evergreen-ui";
 import client, { Client } from "../../client";
 import { Node } from "slate";
-import { EditHelper } from "../../hooks/documents";
+import { SlateTransformer } from "./util";
 
 interface NewDocument {
   journalId: string;
@@ -14,7 +14,7 @@ interface NewDocument {
   title?: string;
 }
 
-// View model for editing and saving a document
+// View model for tracking save state of a loaded document
 class EditableDocument {
   @observable saving: boolean = false;
   @observable content: string = "";
@@ -34,11 +34,11 @@ class EditableDocument {
     this.content = doc.content;
   }
 
-  save = async (content: string) => {
+  save = async (nodes: Node[]) => {
     if (this.saving) return;
 
     this.saving = true;
-    this.content = content;
+    this.content = SlateTransformer.stringify(nodes);
 
     try {
       // note: I was passing documentId instead of id, and because id is optional in save it wasn't complaining.
@@ -59,7 +59,7 @@ class EditableDocument {
 export function useEditableDocument(documentId: string) {
   // Editor gets a copy of the documents contents.
   const [slateContent, setSlateContent] = React.useState<Node[]>(
-    EditHelper.nodify()
+    SlateTransformer.createEmptyNodes()
   );
   const [docState, setDocState] = React.useState<EditableDocument>();
 
@@ -74,7 +74,7 @@ export function useEditableDocument(documentId: string) {
   };
 
   const save = async () => {
-    docState?.save(EditHelper.stringify(slateContent));
+    docState?.save(slateContent);
   };
 
   // (Re)load document based on documentId
@@ -88,7 +88,7 @@ export function useEditableDocument(documentId: string) {
         if (!isEffectMounted) return;
 
         setDocState(new EditableDocument(client, doc));
-        setSlateContent(EditHelper.nodify(toJS(doc.content)));
+        setSlateContent(SlateTransformer.nodify(toJS(doc.content)));
         setDirty(false);
         setLoading(false);
       } catch (err) {
@@ -118,7 +118,7 @@ export function useEditableDocument(documentId: string) {
 export function useNewEditableDocument() {
   // Editor gets a copy of the documents contents.
   const [slateContent, setSlateContent] = React.useState<Node[]>(
-    EditHelper.nodify()
+    SlateTransformer.createEmptyNodes()
   );
   const [docState, setDocState] = React.useState<EditableDocument>();
 
@@ -168,7 +168,7 @@ export function useNewEditableDocument() {
   };
 
   const save = async () => {
-    docState?.save(EditHelper.stringify(slateContent));
+    docState?.save(slateContent);
   };
 
   return {

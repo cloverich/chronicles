@@ -1,9 +1,11 @@
 import Prism from "prismjs";
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Slate, Editable, withReact, ReactEditor } from "slate-react";
-import { Text, createEditor, Node } from "slate";
+import { Slate, Editable, withReact, ReactEditor, RenderElementProps } from "slate-react";
+import { Text, createEditor, Node, Element } from "slate";
 import { withHistory } from "slate-history";
 import { css } from "emotion";
+import { withImages } from './withImages';
+import { isImageElement, ImageElement } from './util';
 
 Prism.languages.markdown = Prism.languages.extend("markup", {});
 (Prism.languages as any).insertBefore("markdown", "prolog", {
@@ -83,12 +85,51 @@ export interface Props {
   setValue: (n: Node[]) => any;
 }
 
+
+const renderElement = (props: RenderElementProps) => {
+  const { attributes, children, element } = props
+
+  // NOTE: This is being called constantly as text is selected, eww
+  if (isImageElement(element)) {
+    return <Image {...props} element={element} />
+  } else {
+    return <p {...attributes}>{children}</p>
+  }
+}
+
+interface ImageElementProps extends RenderElementProps {
+  element: ImageElement;
+}
+
+const Image = ({ attributes, children, element }: ImageElementProps) => {
+  // Used in the example to conditionally set a drop shadow when image is hovered. 
+  // const selected = useSelected()
+  // const focused = useFocused()
+
+  return (
+    <div {...attributes}>
+      <div contentEditable={false}>
+        <img
+          src={element.url}
+          className={css`
+            display: block;
+            max-width: 100%;
+            max-height: 20em;
+          `}
+        />
+      </div>
+      {children}
+    </div>
+  )
+}
+
 const MarkdownPreviewExample = (props: Props) => {
   const renderLeaf = useCallback((props) => <Leaf {...props} />, []);
+
   // as ReactEditor fixes 
   // Argument of type 'BaseEditor' is not assignable to parameter of type 'ReactEditor'.
   // Real fix is probably here: https://docs.slatejs.org/concepts/12-typescript
-  const editor = useMemo(() => withHistory(withReact(createEditor() as ReactEditor)), []);
+  const editor = useMemo(() => withImages(withHistory(withReact(createEditor() as ReactEditor))), []);
   const decorate = useCallback(([node, path]) => {
     const ranges: any = [];
 
@@ -136,6 +177,7 @@ const MarkdownPreviewExample = (props: Props) => {
       <Editable
         decorate={decorate}
         renderLeaf={renderLeaf}
+        renderElement={renderElement}
         placeholder="Write some markdown..."
       />
     </Slate>

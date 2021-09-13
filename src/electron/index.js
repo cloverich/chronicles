@@ -90,6 +90,10 @@ function createWindow() {
       // Loading the electron requiring scripts in a preload
       // script, then disabling nodeIntegration, would be
       // more secure
+      // NOTE: Right now, loading local images also requires this. 
+      // Loading images via the API would resolve this issue.
+      // ...or using a custom protocol
+      // https://github.com/electron/electron/issues/23393
       nodeIntegration: true,
       // same as above
       enableRemoteModule: true,
