@@ -20,12 +20,13 @@ function EditDocument(props: Props) {
     loading: loadingDoc,
     loadingErr: loadingDocErr,
     docState,
+    initialState,
   } = useEditableDocument(props.documentId);
 
   const { journals, loading: loadingJournals, loadingErr: loadingJournalsErr } = useJournals()
   const loading = loadingDoc || loadingJournals
   const loadingErr = loadingDocErr || loadingJournalsErr
-  const [showAST, setShowAST] = React.useState<boolean>(false);
+  const [showAST, setShowAST] = React.useState<'original' | 'current' | null>(null);
 
 
   function renderError() {
@@ -46,9 +47,11 @@ function EditDocument(props: Props) {
     return journal ? journal.name : 'Unknown journal';
   }
 
-  function showASTOrEditor(showAST: boolean) {
-    if (showAST) {
+  function showASTOrEditor(showAST: 'original' | 'current' | null) {
+    if (showAST === 'current') {
       return <ASTExplorer slateNodes={slateContent} />
+    } else if (showAST === 'original') {
+      return <OriginalASTExplorer initialState={initialState} />
     } else {
       return <Editor saving={docState?.saving || loading} value={slateContent} setValue={setEditorValue} />
     }
@@ -65,9 +68,9 @@ function EditDocument(props: Props) {
         onChange={(e: any) => docState!.title = e.target.value}
         value={docState && docState.title || ''}
         />
-      <Button onClick={() => setShowAST(!showAST)}>Toggle AST</Button>
+      <Button onClick={() => setShowAST(showAST ? null : 'current')}>Toggle AST</Button>
+      <Button onClick={() => setShowAST(showAST ? null : 'original')}>Toggle Original AST</Button>
       <p style={{fontSize: '0.8rem', fontWeight: 'bold'}}>/{getName(docState?.journalId)}</p>
-
       {showASTOrEditor(showAST)}
       <Button onClick={save} disabled={!isDirty} isLoading={docState?.saving || loading}>Save</Button>
     </Pane>
@@ -94,6 +97,16 @@ const ASTExplorer = (p: ASTProps) => {
     <div style={{display: 'flex', flexBasis: 100, flex: 1}}>
       <pre style={{overflow: 'auto', border: '1px solid blue'}}>{JSON.stringify(p.slateNodes, null, 2)}</pre>
       <pre style={{overflow: 'auto', border: '1px solid blue'}}>{slateToMdast(p.slateNodes)}</pre>
+    </div>
+  )
+}
+
+const OriginalASTExplorer = ({ initialState } : any) => {
+  return (
+    <div style={{display: 'flex', flexBasis: 100, flex: 1}}>
+      <pre style={{overflow: 'auto', border: '1px solid blue'}}>{initialState.raw}</pre>
+      <pre style={{overflow: 'auto', border: '1px solid blue'}}>{JSON.stringify(initialState.mdast, null, 2)}</pre>
+      <pre style={{overflow: 'auto', border: '1px solid blue'}}>{JSON.stringify(initialState.slate, null, 2)}</pre>
     </div>
   )
 }
