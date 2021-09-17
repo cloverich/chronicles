@@ -1,5 +1,5 @@
 import Prism from "prismjs";
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, useSlate } from "slate-react";
 import { Text, createEditor, Node, Element as SlateElement, Editor, Selection } from "slate";
 import { withHistory } from "slate-history";
@@ -98,7 +98,11 @@ const renderElement = (props: RenderElementProps) => {
   if (isImageElement(element)) {
     return <Image {...props} element={element} />
   } else if (isLinkElement(element)) { 
-    return <Link {...props} element={element}>{children}</Link>
+    return (
+      <a {...attributes} href={element.url}>
+        {children}
+      </a>
+    )
   } else {
     return <p {...attributes}>{children}</p>
   }
@@ -222,24 +226,76 @@ function printNodes(nodes: any) {
 }
 
 function EditLinkMenus() {
+  // todo: investigate useRef (does not trigger render) instead of useState
   const [isEditing, setEditingState] = useState<boolean>(false);
-  const [linkNode, setLinkNode] = useState<LinkElement | Selection | null>(null);
+  const [isViewing, setIsViewing] = useState<boolean>(false);
+  const [linkNode, setLinkNodeState] = useState<LinkElement | Selection | null>(null);
   const editor = useSlate();
+  const menu = useRef<HTMLDivElement | undefined>()
 
   // url form value
   const [editUrl, setEditUrl] = useState<string>('')
 
+  function setLinkNode(to: LinkElement | Selection) {
+    setLinkNodeState(to);
+    if (isLinkElement(to) && menu.current) {
+      const domNode = ReactEditor.toDOMNode(editor as ReactEditor, to);
+      const rect = domNode.getBoundingClientRect();
+
+      // ok. The rect.top is relative to the window
+      // The menu's top is relative to the container (or maybe the body)
+      // So once we scroll we need to push the menu down by scrollY, in addition to its
+      // normal offset
+      menu.current.style.top = rect.top + 8 + rect.height + window.scrollY + 'px';
+      menu.current.style.left = rect.left + 16 + window.scrollX + 'px';
+      setIsViewing(true);
+    } else {
+      setIsViewing(false);
+      if (!menu.current) return;
+      menu.current.style.left = '-10000px';
+    }
+  }
+
+  useEffect(() => {
+    /**
+     * Alert if clicked on outside of element
+     */
+    function handleClickOutside(event: Event) {
+      // todo: figure out types
+        if (menu.current && !menu.current.contains(event.target as any)) {
+          setIsViewing(false);
+          setEditing(false);
+        }
+    }
+
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keypress", handleClickOutside);
+    return () => {
+        // Unbind the event listener on clean up
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keypress", handleClickOutside);
+    };
+}, [menu]);
+
   function setEditing(editing: boolean) {
+    // todo: viewing state... 
+
+
     // When exiting edit mode, unset the url form value
     // Cancelling or Save completed
     if (!editing) {
-      setEditUrl('');
 
+      setEditUrl('');
+      
       // Intent was to close menu, but the view state re-populates because I think the 
       // re-render pulls the prior selection out of editor.selection (even though there's no 
       // cursor in the UI)
-      setLinkNode(null);
+      // todo: Consider re-enabling viewing when existing editing... 
+      setNull();
     } else {
+      // disable viewing mode when editing. Hmmm...
+      setIsViewing(false);
       if (isLinkElement(linkNode)) {
         setEditUrl(linkNode.url);
       } else {
@@ -257,8 +313,13 @@ function EditLinkMenus() {
   // conditionally nullify stored linkNode
   // I feel like React did this value checking for you ,but I got a loop
   // so shrug
-  function setNull() {
-    if (linkNode !== null) setLinkNode(null);
+  function setNull() { 
+    if (linkNode !== null) {
+      setLinkNodeState(null);
+      // hide menu
+      if (!menu.current) return;
+      menu.current.style.left = '-10000px';
+    }
   }
 
   function save() {
@@ -297,7 +358,7 @@ function EditLinkMenus() {
     // If already editing, stop tracking changes to what's selected
     // and rely on the existing cached selection to be updated after editing is
     // completed
-    if (isEditing) return;
+    if (isEditing || isViewing) return;
 
     // track the selected text so we know if a link is focused
     if (editor.selection) {
@@ -314,6 +375,7 @@ function EditLinkMenus() {
       }
 
       const [parent] = Editor.parent(editor, editor.selection)
+
       if (isLinkElement(parent)) {
         console.log('isLinkElement', parent)
         // is it the same element as the one I stored previously?   
@@ -338,9 +400,9 @@ function EditLinkMenus() {
     }
   })
 
-  return (
-    <Pane display="flex" justifyContent="space-around">
-      <Pane padding={16}>
+  function renderEditing() {
+    return (
+      <div className={css`padding: 16px`}>
         <p>Edit Link Form</p>
         <TextInputField
           label="URL"
@@ -348,23 +410,49 @@ function EditLinkMenus() {
           value={editUrl}
           onChange={(e: any) => setEditUrl(e.target.value)}
         />
-        <Pane>
+        <div>
           <Button onClick={() => save()}>Save</Button>
           <Button marginLeft={8} onClick={() => cancel()}>Cancel</Button>
-        </Pane>
-      </Pane>
-      <Pane padding={16}>
+        </div>
+      </div>
+    )
+  }
+
+  function renderViewing() {
+    return (
+      <div className={css`padding: 16px`}>
         <p>View Link Form</p>
         <p>
           <a href={isLinkElement(linkNode) && linkNode.url || ''}>{isLinkElement(linkNode) && linkNode.url || 'No Url'}</a>
         </p>
-        <Pane>
+        <div>
           <Button onClick={() => setEditing(true)}>Edit</Button>
           <Button marginLeft={8} onClick={() => remove()}>Remove</Button>
-        </Pane>
+        </div>
 
-      </Pane>
-    </Pane>
+      </div>
+    )
+  }
+
+  // todo: fix ref type
+  // todo: review accessibility, set menu as "disabled" when its not in view
+  return (
+    <div ref={menu as any} className={css`
+      padding: 8px;
+      display: flex;
+      justify-content: space-around;
+      position: absolute;
+      background-color: white;
+      left: -10000px;
+      z-index: 2;
+
+      border: 1px solid grey;
+      display: flex;
+      box-shadow: 5px 5px #ccc;
+      `}
+      >
+        {isEditing && renderEditing() || renderViewing() }
+    </div>
   )
 }
 

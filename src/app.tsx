@@ -4,8 +4,16 @@ import Container from "./container";
 import "./app.css";
 import "./typography.css";
 import { listenLinks } from "./utils.electron";
+import { remote } from 'electron';
 
 listenLinks();
+
+// Gives me a quick inspect element for debugging. 
+// todo: When I re-productionize the app, make this a debug only
+// handler
+window.onauxclick = (e) => {
+  remote.getCurrentWindow().webContents.inspectElement(e.x, e.y)
+}
 
 ReactDOM.render(
   <div>

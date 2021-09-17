@@ -10,7 +10,11 @@ import remarkGfm from 'remark-gfm'
 import { remarkToSlate, slateToRemark, mdastToSlate } from "remark-slate-transformer";
 const parser = unified().use(markdown).use(remarkGfm as any)
 import { isTypedElement, isLinkElement } from './util';
+import { insertLink } from './blocks/links';
 
+// todo: move to links
+const urlRegex = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
+const urlMatcher = new RegExp(urlRegex);
 
 export const withImages = (editor: ReactEditor) => {
   const { insertData, isVoid, insertBreak, insertText, normalizeNode, isInline } = editor
@@ -50,9 +54,6 @@ export const withImages = (editor: ReactEditor) => {
     const text = data.getData('text/plain');
     const { files } = data
 
-    console.log('insertData');
-    console.log(editor.selection);
-
     // todo: This is copy pasta from their official examples
     // Implement it for real, once image uploading is decided upon
     if (files && files.length > 0) {
@@ -69,6 +70,9 @@ export const withImages = (editor: ReactEditor) => {
           reader.readAsDataURL(file)
         }
       }
+    } else if (text && text.match(urlMatcher)) {
+      // and isText? 
+      insertLink(editor, text, editor.selection)
     } else {
       // NOTE: Calling this for all pasted data is quite experimental
       // and will need to change.

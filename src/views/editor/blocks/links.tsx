@@ -200,7 +200,6 @@ export const Link = ({ attributes, element, children }: LinkElementProps) => {
       <a {...attributes} href={element.url}>
         {children}
       </a>
-      
     // </div>
   );
 };
@@ -216,11 +215,7 @@ export const Link = ({ attributes, element, children }: LinkElementProps) => {
 //   >
 //   <div 
 //     className={css`
-//       margin-left: 10px;
-//       padding: 5px 5px 5px 5px;
-//       border: 1px solid grey;
-//       display: flex;
-//       box-shadow: 5px 5px #ccc;
+      
       
 //     `} 
 //     contentEditable={false}
