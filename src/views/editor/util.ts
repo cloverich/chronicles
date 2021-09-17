@@ -98,3 +98,18 @@ export function slateToMdast(nodes: SlateNode[]) {
     2
   );
 }
+
+/**
+ * Print the return value from a slate `Editor.nodes` (or comprable) call
+ */
+export function printNodes(nodes: any) {
+  // Slate's retrieval calls return a generator, and `Array.from` wasn't working
+  // Maybe spread syntax?
+  let results = [];
+
+  for (const node of nodes) {
+    results.push(node);
+  }
+
+  console.log(JSON.stringify(results, null, 2));
+}

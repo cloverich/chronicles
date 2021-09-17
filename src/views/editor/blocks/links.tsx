@@ -1,10 +1,13 @@
-// import { useSelected, useFocused, useSlateStatic } from 'slate-react';
-import React from 'react';
-import { ReactEditor, RenderElementProps } from 'slate-react';
-import { Transforms, Editor, Path as SlatePath, Element as SlateElement, Range, Selection } from 'slate';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { ReactEditor, RenderElementProps, useSlate } from "slate-react";
+import { Transforms, Element as SlateElement, Editor, Selection, Range } from "slate";
 import { isLinkElement, LinkElement } from '../util';
-import { IconButton, Tooltip   } from 'evergreen-ui';
 import { css } from "emotion";
+import { TextInputField, Button } from 'evergreen-ui'
+
+
+const urlRegex = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
+export const urlMatcher = new RegExp(urlRegex);
 
 // https://dev.to/koralarts/slatejs-adding-images-and-links-2g93
 const createLinkNode = (href: string, text: string) => ({
@@ -48,19 +51,9 @@ const isLinkActive = (editor: Editor) => {
 
 export const unwrapLink = (editor: Editor, node: SlateElement) => {
   Transforms.unwrapNodes(editor, { match: n => n === node})
-  // Transforms.unwrapNodes(editor, {
-  //   match: n =>
-  //     !Editor.isEditor(n) && isLinkElement(n),
-  // })
 }
 
 export const wrapLink = (editor: Editor, node: SlateElement | Selection, url: string) => {
-  // if (isLinkActive(editor)) {
-  //   unwrapLink(editor)
-  // }
-
-  // hmm.... unwrapLink just modified the node... fuck what now... 
-  // Actually.. 
   if (isLinkElement(node)) {
     Transforms.setNodes(
       editor, 
@@ -77,260 +70,245 @@ export const wrapLink = (editor: Editor, node: SlateElement | Selection, url: st
 
   const selection = node as Selection;
 
-  // todo: refactor
   const isCollapsed = selection && Range.isCollapsed(selection)
-  const link: LinkElement = {
-    type: 'link',
-    url,
-    title: null,
-    children: isCollapsed ? [{ text: url }] : [],
-  }
-
   if (isCollapsed) {
+    const link: LinkElement = {
+      type: 'link',
+      url,
+      title: null,
+      children: [{ text: url }],
+    }
     Transforms.insertNodes(editor, link, { at: selection! })
+
   } else {
+    const link: LinkElement = {
+      type: 'link',
+      url,
+      title: null,
+      children: [],
+    }
     Transforms.wrapNodes(editor, link, { split: true, at: selection! })
     Transforms.collapse(editor, { edge: 'end',  })
   }
 }
 
 
-// const insertLink = (editor: ReactEditor, url: string) => {
-//   if (!url) return;
+export function EditLinkMenus() {
+  // todo: investigate useRef (does not trigger render) instead of useState
+  const [isEditing, setEditingState] = useState<boolean>(false);
+  const [isViewing, setIsViewing] = useState<boolean>(false);
+  const [linkNode, setLinkNodeState] = useState<LinkElement | Selection | null>(null);
+  const editor = useSlate();
+  const menu = useRef<HTMLDivElement | undefined>()
 
-//   const { selection } = editor;
-//   const link = createLinkNode(url, "New Link");
+  // url form value
+  const [editUrl, setEditUrl] = useState<string>('')
 
-//   ReactEditor.focus(editor);
+  function setLinkNode(to: LinkElement | Selection) {
+    setLinkNodeState(to);
+    if (isLinkElement(to) && menu.current) {
+      const domNode = ReactEditor.toDOMNode(editor as ReactEditor, to);
+      const rect = domNode.getBoundingClientRect();
 
-//   if (!!selection) {
-//     const [parentNode, parentPath] = Editor.parent(
-//       editor,
-//       selection.focus?.path
-//     );
-
-//     // Remove the Link node if we're inserting a new link node inside of another
-//     // link.
-//     if (isLinkElement(parentNode)) {
-//       removeLink(editor);
-//     }
-
-//     if (editor.isVoid(parentNode)) {
-//       // Insert the new link after the void node
-//       Transforms.insertNodes(editor, createParagraphNode([link]), {
-//         at: SlatePath.next(parentPath),
-//         select: true
-//       });
-//     } else if (Range.isCollapsed(selection)) {
-//       // Insert the new link in our last known location
-//       Transforms.insertNodes(editor, link, { select: true });
-//     } else {
-//       // Wrap the currently selected range of text into a Link
-//       Transforms.wrapNodes(editor, link, { split: true });
-//       // Remove the highlight and move the cursor to the end of the highlight
-//       Transforms.collapse(editor, { edge: "end" });
-//     }
-//   } else {
-//     // Insert the new link node at the bottom of the Editor when selection
-//     // is falsey
-//     Transforms.insertNodes(editor, createParagraphNode([link]));
-//   }
-// };
-
-// todo: consider moving this and link components to links specific file
-import { useSelected, useFocused, useSlateStatic } from 'slate-react';
-
-
-interface LinkElementProps extends RenderElementProps {
-  element: LinkElement;
-}
-
-export const Link = ({ attributes, element, children }: LinkElementProps) => {
-  const editor = useSlateStatic() as Editor;
-  const selected = useSelected();
-  const focused = useFocused();
-  const ref = useRef<HTMLDivElement>(null)
-
-  // console.log(selected, focused);
-  // focused is, I think, the editor being focused
-  // selected is _this_ node being selected
-  // they are booleans.
-
-  // useEffect(() => {
-  //   const el = ref.current
-  //   const { selection } = editor
-
-  //   if (!el) {
-  //     return
-  //   }
-
-  //   if (
-  //     !selected || !focused
-
-  //     // The Slate example relies on selected text, I want this to pop up
-  //     // if the cursor is even on the text
-  //     // !selection ||
-  //     // !ReactEditor.isFocused(editor) ||
-  //     // Range.isCollapsed(selection) ||
-  //     // Editor.string(editor, selection) === ''
-  //   ) {
-  //     el.removeAttribute('style')
-  //     return
-  //   }
-
-  //   const domSelection = window.getSelection()
-
-  //   // todo: handle null ref
-  //   const domRange = domSelection!.getRangeAt(0)
-  //   const rect = domRange.getBoundingClientRect()
-  //   el.style.opacity = '1'
-  //   // el.style.top = `${window.pageYOffset - el.offsetHeight}px`
-  //   el.style.top = `${rect.top - rect.height + 'px'}`;
-  //   // rect.
-  //   // console.log(el, rect, domRange);
-  //   el.style.left = `${rect.left +
-  //     window.pageXOffset -
-  //     el.offsetWidth / 2 +
-  //     rect.width / 2}px`
-  // })
-
-
-  return (
-    // <div className="element-link">
-      <a {...attributes} href={element.url}>
-        {children}
-      </a>
-    // </div>
-  );
-};
-
-// {selected && focused && (
-//   <div className={css`
-//     position: absolute;
-//     z-index: 2;
-//     opacity: 0;
-//     transition: opacity 0.2s;
-//   `}
-//   ref={ref}
-//   >
-//   <div 
-//     className={css`
-      
-      
-//     `} 
-//     contentEditable={false}
-//   >
-//     <a href={element.url} rel="noreferrer" target="_blank">
-//       {/* <FontAwesomeIcon icon={faExternalLinkAlt} /> */}
-//       {element.url}
-//     </a>
-//     <IconButton style={{marginLeft: '5px'}} icon="remove"  onClick={() => removeLink(editor as ReactEditor)} />
-//   </div>
-//   <div></div>
-//   </div>
-// )}
-
-import { useRef, useEffect } from 'react';
-import { useSlate } from 'slate-react';
-import { Portal, Menu } from './menu';
-
-
-export const HoveringToolbar = () => {
-  const ref = useRef<HTMLDivElement>()
-  const editor = useSlate() as Editor;
-
-  
+      // ok. The rect.top is relative to the window
+      // The menu's top is relative to the container (or maybe the body)
+      // So once we scroll we need to push the menu down by scrollY, in addition to its
+      // normal offset
+      menu.current.style.top = rect.top + 8 + rect.height + window.scrollY + 'px';
+      menu.current.style.left = rect.left + 16 + window.scrollX + 'px';
+      setIsViewing(true);
+    } else {
+      setIsViewing(false);
+      if (!menu.current) return;
+      menu.current.style.left = '-10000px';
+    }
+  }
 
   useEffect(() => {
-    const el = ref.current
-    const { selection } = editor
-
-    if (!el) {
-      return
+    /**
+     * Alert if clicked on outside of element
+     */
+    function handleClickOutside(event: Event) {
+      // todo: figure out types
+        if (menu.current && !menu.current.contains(event.target as any)) {
+          setIsViewing(false);
+          setEditing(false);
+        }
     }
 
-    if (
-      !selection ||
-      !ReactEditor.isFocused(editor as ReactEditor) ||
-      Range.isCollapsed(selection) ||
-      Editor.string(editor, selection) === ''
-    ) {
-      el.removeAttribute('style')
-      return
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keypress", handleClickOutside);
+    return () => {
+        // Unbind the event listener on clean up
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keypress", handleClickOutside);
+    };
+}, [menu]);
+
+  function setEditing(editing: boolean) {
+    // todo: viewing state... 
+
+
+    // When exiting edit mode, unset the url form value
+    // Cancelling or Save completed
+    if (!editing) {
+
+      setEditUrl('');
+      
+      // Intent was to close menu, but the view state re-populates because I think the 
+      // re-render pulls the prior selection out of editor.selection (even though there's no 
+      // cursor in the UI)
+      // todo: Consider re-enabling viewing when existing editing... 
+      setNull();
+    } else {
+      // disable viewing mode when editing. Hmmm...
+      setIsViewing(false);
+      if (isLinkElement(linkNode)) {
+        setEditUrl(linkNode.url);
+      } else {
+        // may need the current selection here...
+        console.log(editor.selection);
+      }
     }
 
-    const domSelection = window.getSelection()
+    setEditingState(editing);
 
-    // todo: handle null ref
-    const domRange = domSelection!.getRangeAt(0)
-    const rect = domRange.getBoundingClientRect()
-    el.style.opacity = '1'
-    el.style.top = `${rect.top + window.pageYOffset - el.offsetHeight}px`
-    el.style.left = `${rect.left +
-      window.pageXOffset -
-      el.offsetWidth / 2 +
-      rect.width / 2}px`
+    // todo: I also think when editing ends... the _last_ editor selection should run through
+    // the "watch selection" so e.g. the view does not still show an old link or something.
+  }
+
+  // conditionally nullify stored linkNode
+  // I feel like React did this value checking for you ,but I got a loop
+  // so shrug
+  function setNull() { 
+    if (linkNode !== null) {
+      setLinkNodeState(null);
+      // hide menu
+      if (!menu.current) return;
+      menu.current.style.left = '-10000px';
+    }
+  }
+
+  function save() {
+    if (!linkNode) {
+      // todo: When we use the edit menu for new links this will need to work
+      // for now you can only add links by highlighting text and pasting from clipboard
+      console.error('save called but linkNode is null. Probably chris did not finish refactoring');
+      return;
+    }
+
+    // Validate URL
+    if (editUrl) {
+      // todo: if editUrl is blank, but linkNode is not... should ac
+      // create or replace a linkNode
+      insertLink(editor, editUrl, linkNode)
+    } else {
+      if (isLinkElement(linkNode)) {
+        removeLink(editor, linkNode);
+      }
+    }
+
+    setEditing(false);
+  }
+
+  function cancel() {
+    // cancel editing... 
+    setEditing(false);
+  }
+
+  function remove() {
+    if (!isLinkElement(linkNode)) return;
+
+    // unwrap link node
+    removeLink(editor, linkNode)
+  }
+
+  useEffect(() => {
+    // If already editing, stop tracking changes to what's selected
+    // and rely on the existing cached selection to be updated after editing is
+    // completed
+    if (isEditing || isViewing) return;
+
+    // track the selected text so we know if a link is focused
+    if (editor.selection) {
+      const [node] = Editor.node(editor, editor.selection);
+
+
+      // calling Editor.parent on root (editor) node throws an exception
+      // This case also passes when I expand a selection beyond the URL in question however
+      if (Editor.isEditor(node)) {
+        setNull();
+        return;
+      }
+
+      const [parent] = Editor.parent(editor, editor.selection)
+
+      if (isLinkElement(parent)) {
+        // Only update state if the element changed
+        if (linkNode !== parent) {
+          setLinkNode(parent);
+        }
+      } else {
+        setLinkNode(editor.selection)
+      }
+    } else {
+      setNull();
+    }
   })
 
+  function renderEditing() {
+    return (
+      <div className={css`padding: 16px`}>
+        <p>Edit Link Form</p>
+        <TextInputField
+          label="URL"
+          placeholder="Enter URL for the link"
+          value={editUrl}
+          onChange={(e: any) => setEditUrl(e.target.value)}
+        />
+        <div>
+          <Button onClick={() => save()}>Save</Button>
+          <Button marginLeft={8} onClick={() => cancel()}>Cancel</Button>
+        </div>
+      </div>
+    )
+  }
+
+  function renderViewing() {
+    return (
+      <div className={css`padding: 16px`}>
+        <p>View Link Form</p>
+        <p>
+          <a href={isLinkElement(linkNode) && linkNode.url || ''}>{isLinkElement(linkNode) && linkNode.url || 'No Url'}</a>
+        </p>
+        <div>
+          <Button onClick={() => setEditing(true)}>Edit</Button>
+          <Button marginLeft={8} onClick={() => remove()}>Remove</Button>
+        </div>
+
+      </div>
+    )
+  }
+
+  // todo: fix ref type
+  // todo: review accessibility, set menu as "disabled" when its not in view
   return (
-    <Portal>
-      <Menu
-        ref={ref as any} // todo: Fix the types
-        className={css`
-          padding: 8px 7px 6px;
-          position: absolute;
-          z-index: 1;
-          top: -10000px;
-          left: -10000px;
-          margin-top: -6px;
-          opacity: 0;
-          background-color: #222;
-          border-radius: 4px;
-          transition: opacity 0.75s;
-        `}
+    <div ref={menu as any} className={css`
+      padding: 8px;
+      display: flex;
+      justify-content: space-around;
+      position: absolute;
+      background-color: white;
+      left: -10000px;
+      z-index: 2;
+
+      border: 1px solid grey;
+      display: flex;
+      box-shadow: 5px 5px #ccc;
+      `}
       >
-        Oh yeah!
-        {/* <FormatButton format="bold" icon="format_bold" />
-        <FormatButton format="italic" icon="format_italic" />
-        <FormatButton format="underlined" icon="format_underlined" /> */}
-      </Menu>
-    </Portal>
+        {isEditing && renderEditing() || renderViewing() }
+    </div>
   )
 }
-
-
-// const FormatButton = ({ format, icon }) => {
-//   const editor = useSlate()
-//   return (
-//     <Button
-//       reversed
-//       active={isFormatActive(editor, format)}
-//       onMouseDown={event => {
-//         event.preventDefault()
-//         toggleFormat(editor, format)
-//       }}
-//     >
-//       <Icon>{icon}</Icon>
-//     </Button>
-//   )
-// }
-
-
-// const toggleFormat = (editor, format) => {
-//   const isActive = isFormatActive(editor, format)
-//   Transforms.setNodes(
-//     editor,
-//     { [format]: isActive ? null : true },
-//     { match: Text.isText, split: true }
-//   )
-// }
-
-// const isFormatActive = (editor, format) => {
-//   const [match] = Editor.nodes(editor, {
-//     match: n => n[format] === true,
-//     mode: 'all',
-//   })
-//   return !!match
-// }
-
-
