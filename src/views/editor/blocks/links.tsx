@@ -9,7 +9,6 @@ import { TextInputField, Button } from 'evergreen-ui'
 const urlRegex = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
 export const urlMatcher = new RegExp(urlRegex);
 
-// https://dev.to/koralarts/slatejs-adding-images-and-links-2g93
 const createLinkNode = (href: string, text: string) => ({
   type: "link",
   href,
@@ -25,43 +24,23 @@ function createParagraphNode(children: any[]) {
 }
 
 export const removeLink = (editor: Editor, node: LinkElement, opts = {}) => {
-  // Hmm... if you pass an existing LinkNode in...
   Transforms.unwrapNodes(editor, {
     ...opts,
-    // todo: does this work?
     match: n => n === node,
-    // match: (n) =>
-    //   !Editor.isEditor(n) && isLinkElement(n)
   });
 };
 
-
 // todo: re-order url for consistency
 export const insertLink = (editor: Editor, url: string, node: SlateElement | Selection) => {
-  wrapLink(editor, node, url)
-}
-
-const isLinkActive = (editor: Editor) => {
-  const [link] = Editor.nodes(editor, {
-    match: n =>
-      !Editor.isEditor(n) && isLinkElement(n),
-  })
-  return !!link
-}
-
-export const unwrapLink = (editor: Editor, node: SlateElement) => {
-  Transforms.unwrapNodes(editor, { match: n => n === node})
-}
-
-export const wrapLink = (editor: Editor, node: SlateElement | Selection, url: string) => {
+  // If selection is already a link, update the URL
   if (isLinkElement(node)) {
     Transforms.setNodes(
       editor, 
       { url } as any, 
       { 
         match: n => n === node,
-        // the active selection may not be correct. Instead, search the whole document for
-        // this node. Probably a better way to do this.
+        // setNodes defaults to current selection, but it likely changed since this was called.
+        // if user clicked through menu's to activate link.
         // todo: investigate whether mutating the node's URL directly accomplishes this
         at: [],
       })
@@ -69,9 +48,12 @@ export const wrapLink = (editor: Editor, node: SlateElement | Selection, url: st
   }
 
   const selection = node as Selection;
-
   const isCollapsed = selection && Range.isCollapsed(selection)
+
   if (isCollapsed) {
+    // todo: This is for linkifying a focused point... does this even make sense?
+    // I think checking for collapsed vs expanding at a higher level might make
+    // more sense
     const link: LinkElement = {
       type: 'link',
       url,
@@ -79,7 +61,6 @@ export const wrapLink = (editor: Editor, node: SlateElement | Selection, url: st
       children: [{ text: url }],
     }
     Transforms.insertNodes(editor, link, { at: selection! })
-
   } else {
     const link: LinkElement = {
       type: 'link',
@@ -92,25 +73,31 @@ export const wrapLink = (editor: Editor, node: SlateElement | Selection, url: st
   }
 }
 
-
+/**
+ * Encompass the link view and edit menu and associated listeners
+ */
 export function EditLinkMenus() {
-  // todo: investigate useRef (does not trigger render) instead of useState
   const [isEditing, setEditingState] = useState<boolean>(false);
   const [isViewing, setIsViewing] = useState<boolean>(false);
-  const [linkNode, setLinkNodeState] = useState<LinkElement | Selection | null>(null);
+  const [editUrl, setEditUrl] = useState<string>('')
+
+  // see setCachedSelection
+  // todo: investigate useRef (does not trigger render) instead of useState
+  const [cachedSelection, setCachedSelectionState] = useState<LinkElement | Selection | null>(null);
+
   const editor = useSlate();
   const menu = useRef<HTMLDivElement | undefined>()
 
-  // url form value
-  const [editUrl, setEditUrl] = useState<string>('')
+  // cache the text selection or link and conditionally toggle viewing menu
+  function setCachedSelection(to: LinkElement | Selection) {
+    setCachedSelectionState(to);
 
-  function setLinkNode(to: LinkElement | Selection) {
-    setLinkNodeState(to);
+    // If existing link, enable the view menu
     if (isLinkElement(to) && menu.current) {
       const domNode = ReactEditor.toDOMNode(editor as ReactEditor, to);
       const rect = domNode.getBoundingClientRect();
 
-      // ok. The rect.top is relative to the window
+      // The rect.top is relative to the window
       // The menu's top is relative to the container (or maybe the body)
       // So once we scroll we need to push the menu down by scrollY, in addition to its
       // normal offset
@@ -118,16 +105,16 @@ export function EditLinkMenus() {
       menu.current.style.left = rect.left + 16 + window.scrollX + 'px';
       setIsViewing(true);
     } else {
+      // Otherwise its highlighted regular text. Eventually we might enable the edit menu
+      // to add a new linke (as of now, you paste from clipboard onto selected text)
       setIsViewing(false);
       if (!menu.current) return;
       menu.current.style.left = '-10000px';
     }
   }
 
+  // Close menus if user clicks or types in the document
   useEffect(() => {
-    /**
-     * Alert if clicked on outside of element
-     */
     function handleClickOutside(event: Event) {
       // todo: figure out types
         if (menu.current && !menu.current.contains(event.target as any)) {
@@ -136,20 +123,16 @@ export function EditLinkMenus() {
         }
     }
 
-    // Bind the event listener
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keypress", handleClickOutside);
     return () => {
-        // Unbind the event listener on clean up
-        document.removeEventListener("mousedown", handleClickOutside);
-        document.removeEventListener("keypress", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keypress", handleClickOutside);
     };
-}, [menu]);
+  }, [menu]);
 
+  // toggle editing and preload or clean-up state
   function setEditing(editing: boolean) {
-    // todo: viewing state... 
-
-
     // When exiting edit mode, unset the url form value
     // Cancelling or Save completed
     if (!editing) {
@@ -162,39 +145,32 @@ export function EditLinkMenus() {
       // todo: Consider re-enabling viewing when existing editing... 
       setNull();
     } else {
-      // disable viewing mode when editing. Hmmm...
       setIsViewing(false);
-      if (isLinkElement(linkNode)) {
-        setEditUrl(linkNode.url);
-      } else {
-        // may need the current selection here...
-        console.log(editor.selection);
+
+      if (isLinkElement(cachedSelection)) {
+        setEditUrl(cachedSelection.url);
       }
     }
 
     setEditingState(editing);
-
-    // todo: I also think when editing ends... the _last_ editor selection should run through
-    // the "watch selection" so e.g. the view does not still show an old link or something.
   }
 
   // conditionally nullify stored linkNode
-  // I feel like React did this value checking for you ,but I got a loop
-  // so shrug
+  // I feel like React did this value checking for you, but I got a loop shrug
   function setNull() { 
-    if (linkNode !== null) {
-      setLinkNodeState(null);
-      // hide menu
+    if (cachedSelection !== null) {
+      setCachedSelectionState(null);
+      // hide menu off screen
       if (!menu.current) return;
       menu.current.style.left = '-10000px';
     }
   }
 
   function save() {
-    if (!linkNode) {
+    if (!cachedSelection) {
       // todo: When we use the edit menu for new links this will need to work
       // for now you can only add links by highlighting text and pasting from clipboard
-      console.error('save called but linkNode is null. Probably chris did not finish refactoring');
+      console.error('save called but linkNode is null. Editing a new link? Need to implement!');
       return;
     }
 
@@ -202,28 +178,28 @@ export function EditLinkMenus() {
     if (editUrl) {
       // todo: if editUrl is blank, but linkNode is not... should ac
       // create or replace a linkNode
-      insertLink(editor, editUrl, linkNode)
+      insertLink(editor, editUrl, cachedSelection)
     } else {
-      if (isLinkElement(linkNode)) {
-        removeLink(editor, linkNode);
+      if (isLinkElement(cachedSelection)) {
+        removeLink(editor, cachedSelection);
       }
     }
 
     setEditing(false);
   }
 
-  function cancel() {
-    // cancel editing... 
+  function cancelEdit() {
     setEditing(false);
   }
 
-  function remove() {
-    if (!isLinkElement(linkNode)) return;
+  function unlink() {
+    if (!isLinkElement(cachedSelection)) return;
 
     // unwrap link node
-    removeLink(editor, linkNode)
+    removeLink(editor, cachedSelection)
   }
 
+  // conditionally cache the editor's selection
   useEffect(() => {
     // If already editing, stop tracking changes to what's selected
     // and rely on the existing cached selection to be updated after editing is
@@ -246,18 +222,18 @@ export function EditLinkMenus() {
 
       if (isLinkElement(parent)) {
         // Only update state if the element changed
-        if (linkNode !== parent) {
-          setLinkNode(parent);
+        if (cachedSelection !== parent) {
+          setCachedSelection(parent);
         }
       } else {
-        setLinkNode(editor.selection)
+        setCachedSelection(editor.selection)
       }
     } else {
       setNull();
     }
   })
 
-  function renderEditing() {
+  function renderEditingForm() {
     return (
       <div className={css`padding: 16px`}>
         <p>Edit Link Form</p>
@@ -269,24 +245,24 @@ export function EditLinkMenus() {
         />
         <div>
           <Button onClick={() => save()}>Save</Button>
-          <Button marginLeft={8} onClick={() => cancel()}>Cancel</Button>
+          <Button marginLeft={8} onClick={() => cancelEdit()}>Cancel</Button>
         </div>
       </div>
     )
   }
 
-  function renderViewing() {
+  // For viewing the URL and toggling edit for existing links
+  function renderViewingForm() {
     return (
       <div className={css`padding: 16px`}>
         <p>View Link Form</p>
         <p>
-          <a href={isLinkElement(linkNode) && linkNode.url || ''}>{isLinkElement(linkNode) && linkNode.url || 'No Url'}</a>
+          <a href={isLinkElement(cachedSelection) && cachedSelection.url || ''}>{isLinkElement(cachedSelection) && cachedSelection.url || ''}</a>
         </p>
         <div>
           <Button onClick={() => setEditing(true)}>Edit</Button>
-          <Button marginLeft={8} onClick={() => remove()}>Remove</Button>
+          <Button marginLeft={8} onClick={() => unlink()}>Remove</Button>
         </div>
-
       </div>
     )
   }
@@ -298,8 +274,8 @@ export function EditLinkMenus() {
       padding: 8px;
       display: flex;
       justify-content: space-around;
-      position: absolute;
       background-color: white;
+      position: absolute;
       left: -10000px;
       z-index: 2;
 
@@ -308,7 +284,7 @@ export function EditLinkMenus() {
       box-shadow: 5px 5px #ccc;
       `}
       >
-        {isEditing && renderEditing() || renderViewing() }
+        {isEditing && renderEditingForm() || renderViewingForm() }
     </div>
   )
 }

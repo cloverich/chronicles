@@ -1,13 +1,7 @@
 import Prism from "prismjs";
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Slate, Editable, withReact, ReactEditor, RenderElementProps, useSlate } from "slate-react";
-import { Text, createEditor, Node, Element as SlateElement, Editor, Selection } from "slate";
-import { withHistory } from "slate-history";
+import React, { useCallback } from "react";
+import { Text } from "slate";
 import { css } from "emotion";
-// import { isImageElement, isLinkElement, ImageElement, LinkElement } from './util';
-// import { Link } from './blocks/links';
-// import { insertLink, removeLink } from './blocks/links';
-import { TextInput, IconButton, Pane, TextInputField, Button } from 'evergreen-ui'
 
 Prism.languages.markdown = Prism.languages.extend("markup", {});
 (Prism.languages as any).insertBefore("markdown", "prolog", {
