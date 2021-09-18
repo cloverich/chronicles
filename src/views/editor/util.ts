@@ -1,6 +1,6 @@
 // https://github.com/inokawa/remark-slate-transformer/
 import unified from "unified";
-import markdown from "remark-parse";
+import remarkParse from "remark-parse";
 import stringify from "remark-stringify";
 import {
   remarkToSlate,
@@ -10,18 +10,27 @@ import {
 import { Element as SlateElement, Node as SlateNode } from "slate";
 
 export const slateToString = unified().use(slateToRemark).use(stringify);
-const stringToSlate = unified().use(markdown).use(remarkToSlate);
-// export const slateToMdast = unified().use(slateToRemark);
+
+// Intermediate markdown parser, exported here so I could store the intermediate
+// mdast state prior to parsing to Slate DOM for debugging purposes
+export const stringToMdast = unified().use(remarkParse);
+const stringToSlate = stringToMdast.use(remarkToSlate);
 
 /**
  * Helper to convert markdown text into Slate nodes, and vice versa
  */
 export class SlateTransformer {
+  /**
+   * Convert raw text to a Slate DOM
+   */
   static nodify(text: string): SlateNode[] {
     // Not sure which plugin adds result but its definitely there...
     return (stringToSlate.processSync(text) as any).result;
   }
 
+  /**
+   * Create an empty Slate DOM, intended for new empty documents.
+   */
   static createEmptyNodes() {
     return [{ children: [{ text: "" }] }];
   }
@@ -52,6 +61,12 @@ export interface ImageElement extends TypedNode {
   // other properties too, like for label
 }
 
+export interface LinkElement extends TypedNode {
+  type: "link";
+  title: string | null;
+  url: string;
+}
+
 // Extend slates isElement check to also check that it has a "type" property,
 // which all custom elements will have
 // https://docs.slatejs.org/concepts/02-nodes#element
@@ -61,6 +76,10 @@ export function isTypedElement(node: any): node is TypedNode {
 
 export function isImageElement(node: any): node is ImageElement {
   return isTypedElement(node) && node.type === "image";
+}
+
+export function isLinkElement(node: any): node is LinkElement {
+  return isTypedElement(node) && node.type === "link";
 }
 
 /**
@@ -78,4 +97,19 @@ export function slateToMdast(nodes: SlateNode[]) {
     null,
     2
   );
+}
+
+/**
+ * Print the return value from a slate `Editor.nodes` (or comprable) call
+ */
+export function printNodes(nodes: any) {
+  // Slate's retrieval calls return a generator, and `Array.from` wasn't working
+  // Maybe spread syntax?
+  let results = [];
+
+  for (const node of nodes) {
+    results.push(node);
+  }
+
+  console.log(JSON.stringify(results, null, 2));
 }

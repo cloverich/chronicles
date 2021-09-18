@@ -6,7 +6,8 @@ import { observable, autorun, toJS } from "mobx";
 import { toaster } from "evergreen-ui";
 import client, { Client } from "../../client";
 import { Node } from "slate";
-import { SlateTransformer } from "./util";
+import { SlateTransformer, stringToMdast } from "./util";
+import { Root as MDASTRoot } from "mdast";
 
 interface NewDocument {
   journalId: string;
@@ -68,6 +69,11 @@ export function useEditableDocument(documentId: string) {
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
 
+  // For debugging, save the original text and conversions
+  const [rawOriginal, setRawOriginal] = React.useState("");
+  const [mdastOriginal, setMdastOriginal] = React.useState<MDASTRoot>();
+  const [slateOriginal, setSlateOriginal] = React.useState<any>();
+
   const setEditorValue = (v: Node[]) => {
     setDirty(true);
     setSlateContent(v);
@@ -88,7 +94,14 @@ export function useEditableDocument(documentId: string) {
         if (!isEffectMounted) return;
 
         setDocState(new EditableDocument(client, doc));
-        setSlateContent(SlateTransformer.nodify(toJS(doc.content)));
+
+        // note: I can't remember if I _needed_ to call toJS here...
+        const content = toJS(doc.content);
+        const slateNodes = SlateTransformer.nodify(content);
+        setSlateContent(slateNodes);
+        setSlateOriginal(slateNodes);
+        setRawOriginal(content);
+        setMdastOriginal(stringToMdast.parse(content) as MDASTRoot);
         setDirty(false);
         setLoading(false);
       } catch (err) {
@@ -112,6 +125,11 @@ export function useEditableDocument(documentId: string) {
     loading,
     loadingErr,
     docState,
+    initialState: {
+      raw: rawOriginal,
+      slate: slateOriginal,
+      mdast: mdastOriginal,
+    },
   };
 }
 
