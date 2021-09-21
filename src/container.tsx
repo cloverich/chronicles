@@ -4,7 +4,7 @@ import Layout from "./layout";
 import Config from "./config";
 import Journals from './views/journals';
 import Documents from './views/documents';
-import Editor from './views/editor';
+import Editor from './views/edit';
 import { useJournals } from './useJournals';
 import { useSearch } from "./hooks/useSearch";
 import { Alert } from 'evergreen-ui';
@@ -87,7 +87,7 @@ const Container = observer(() => {
       >
         <Editor 
           documentId={view.props.documentId} 
-          journalId={view.props.journalId} 
+          // journalId={view.props.journalId} todo: track last selected journal id and pass through
           setView={setView} 
         />
       </Layout>

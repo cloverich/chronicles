@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { ReactEditor, RenderElementProps, useSlate } from "slate-react";
 import { Transforms, Element as SlateElement, Editor, Selection, Range } from "slate";
-import { isLinkElement, LinkElement } from '../util';
+import { isLinkElement, LinkElement } from '../../util';
 import { css } from "emotion";
 import { TextInputField, Button } from 'evergreen-ui'
 
@@ -103,6 +103,7 @@ export function EditLinkMenus() {
       // normal offset
       menu.current.style.top = rect.top + 8 + rect.height + window.scrollY + 'px';
       menu.current.style.left = rect.left + 16 + window.scrollX + 'px';
+      menu.current.style.visibility = 'visible';
       setIsViewing(true);
     } else {
       // Otherwise its highlighted regular text. Eventually we might enable the edit menu
@@ -110,6 +111,7 @@ export function EditLinkMenus() {
       setIsViewing(false);
       if (!menu.current) return;
       menu.current.style.left = '-10000px';
+      menu.current.style.visibility = 'hidden';
     }
   }
 
@@ -269,6 +271,7 @@ export function EditLinkMenus() {
 
   // todo: fix ref type
   // todo: review accessibility, set menu as "disabled" when its not in view
+  // https://www.smashingmagazine.com/2017/11/building-accessible-menu-systems/
   return (
     <div ref={menu as any} className={css`
       padding: 8px;
@@ -282,9 +285,13 @@ export function EditLinkMenus() {
       border: 1px solid grey;
       display: flex;
       box-shadow: 5px 5px #ccc;
+      
+      /* visibility property to ensure tabbing does not unintentionally focus hidden menu */
+      visibility: hidden;
       `}
-      >
-        {isEditing && renderEditingForm() || renderViewingForm() }
+      tabIndex={-1}
+    >
+      {isEditing && renderEditingForm() || renderViewingForm() }
     </div>
   )
 }

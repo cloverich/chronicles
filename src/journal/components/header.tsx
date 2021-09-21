@@ -29,7 +29,7 @@ function Header(props: Props) {
         alignItems="center"
         justifyContent="space-between"
       >
-        <Heading level={2}>No journals</Heading>
+        <Heading is="h2">No journals</Heading>
         <Button disabled={true}>Add</Button>
       </Pane>
     );

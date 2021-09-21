@@ -32,7 +32,7 @@ export default function ElectronDialog(props: P<Props>) {
 
   return (
     <Pane display="flex">
-      <Button onClick={openDialog} label="Select directory">
+      <Button onClick={openDialog}>
         Add journal
       </Button>
     </Pane>

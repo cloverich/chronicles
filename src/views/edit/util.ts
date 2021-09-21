@@ -2,11 +2,7 @@
 import unified from "unified";
 import remarkParse from "remark-parse";
 import stringify from "remark-stringify";
-import {
-  remarkToSlate,
-  slateToRemark,
-  // mdastToSlate,
-} from "remark-slate-transformer";
+import { remarkToSlate, slateToRemark } from "remark-slate-transformer";
 import { Element as SlateElement, Node as SlateNode } from "slate";
 
 export const slateToString = unified().use(slateToRemark).use(stringify);
@@ -24,8 +20,18 @@ export class SlateTransformer {
    * Convert raw text to a Slate DOM
    */
   static nodify(text: string): SlateNode[] {
-    // Not sure which plugin adds result but its definitely there...
-    return (stringToSlate.processSync(text) as any).result;
+    // If content is empty, this call prdouces invalid output
+    // ([{text: ""}]) instead of a paragraph with an empty child
+    // Content should not be empty, but because of UI or other bugs can happen
+    if (!text.trim()) return SlateTransformer.createEmptyNodes();
+
+    // todo: types
+    // note to future self: processSync is the same as
+    // `parse`, `run`, then `stringify`
+    // Stringifies valued would be available on `.value`, while
+    // parsed objects (Slate JSON in this case) is available as
+    // `.result` (after calling process)
+    return (stringToSlate as any).processSync(text).result;
   }
 
   /**
@@ -35,10 +41,25 @@ export class SlateTransformer {
     return [{ children: [{ text: "" }] }];
   }
 
+  /**
+   * Convert Slate JSON into a markdown string for persistence
+   */
   static stringify(nodes: SlateNode[]): string {
+    // todo: For some reason, the Slate text nodes are missing the "type: paragraph" property.
+    // Whether that is expected or not, the parser does not seem to handle that, and
+    // silently drops them. Manually adjusting with a defensive copy gets the job done for now,
+    // but is a hack.
+    const copiedNodes = JSON.parse(JSON.stringify(nodes));
+    copiedNodes.forEach((n: any) => {
+      n.type = n.type || "paragraph";
+    });
+
+    // per documentation https://github.com/inokawa/remark-slate-transformer/
+    // slate value must be wrapped. Remark's parse expects a string while `run`
+    // operates on ASTs
     const ast = slateToString.runSync({
       type: "root",
-      children: nodes,
+      children: copiedNodes,
     });
 
     return slateToString.stringify(ast);
@@ -80,23 +101,6 @@ export function isImageElement(node: any): node is ImageElement {
 
 export function isLinkElement(node: any): node is LinkElement {
   return isTypedElement(node) && node.type === "link";
-}
-
-/**
- * Convert Slate DOM to MDAST for visualization.
- * TODO: This probably should be co-located with the ASTViewer
- */
-export function slateToMdast(nodes: SlateNode[]) {
-  // Wrapping in a root node was done via the example, and seems to work but
-  // I have not formalized my understanding of it
-  return JSON.stringify(
-    slateToString.runSync({
-      type: "root",
-      children: nodes,
-    }),
-    null,
-    2
-  );
 }
 
 /**

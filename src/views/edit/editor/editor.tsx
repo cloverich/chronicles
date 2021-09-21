@@ -4,7 +4,7 @@ import { createEditor, Node } from "slate";
 import { withHistory } from "slate-history";
 import { css } from "emotion";
 import { withHelpers } from './withHelpers';
-import { isImageElement, isLinkElement, ImageElement } from './util';
+import { isImageElement, isLinkElement, ImageElement } from '../util';
 import { EditLinkMenus } from './blocks/links';
 import { useDecorateMarkdown, MarkdownLeaf } from './blocks/markdown';
 
@@ -69,12 +69,15 @@ const FancyPantsEditor = (props: Props) => {
   // Argument of type 'BaseEditor' is not assignable to parameter of type 'ReactEditor'.
   // Real fix is probably here: https://docs.slatejs.org/concepts/12-typescript
   const editor = useMemo(() => withHelpers(withHistory(withReact(createEditor() as ReactEditor))), []);
+  
+  // todo: useCallback necessary here?
+  const onChange = useCallback((value: any) => props.setValue(value), [props.setValue]);
 
   return (
     <Slate
       editor={editor}
       value={props.value}
-      onChange={(value) => props.setValue(value)}
+      onChange={onChange}
     >
       <EditLinkMenus />
       <Editable

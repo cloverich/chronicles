@@ -10,7 +10,7 @@ import markdown from "remark-parse";
 import remarkGfm from 'remark-gfm'
 import { remarkToSlate, slateToRemark, mdastToSlate } from "remark-slate-transformer";
 const parser = unified().use(markdown).use(remarkGfm as any)
-import { isTypedElement, isLinkElement } from './util';
+import { isTypedElement, isLinkElement } from '../util';
 import { insertLink, urlMatcher } from './blocks/links';
 
 

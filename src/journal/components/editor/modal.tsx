@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { Dialog, toaster } from "evergreen-ui";
 import { useEditableDocument } from "../../../hooks/documents";
 import { Setter } from "../../../hooks/loadutils";
-import Editor from "../../../views/editor/editor";
+import Editor from "../../../views/edit/editor/editor";
 import DialogHeader from "./header";
 
 // todo: move this type up its used everywhere
@@ -56,7 +56,7 @@ function ModalEditor(props: ModalEditorProps) {
       setDidSave(true);
       close();
     } catch (err) {
-      toaster.danger("Error saving document", { description: err.message });
+      toaster.danger("Error saving document", { description: (err as Error).message });
     }
   };
 
