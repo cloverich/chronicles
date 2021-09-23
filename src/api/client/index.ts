@@ -1,5 +1,6 @@
 import { JournalsClient } from "./journals";
 import { DocumentsClient, GetDocumentResponse } from "./documents";
+import { PreferencesClient } from "./preferences";
 import ky from "ky-universal";
 
 export { GetDocumentResponse } from "./documents";
@@ -7,6 +8,7 @@ export { GetDocumentResponse } from "./documents";
 export interface Client {
   journals: JournalsClient;
   documents: DocumentsClient;
+  preferences: PreferencesClient;
 }
 
 export function configure(urlBase: string): Client {
@@ -32,6 +34,7 @@ export function configure(urlBase: string): Client {
   return {
     journals: new JournalsClient(myky),
     documents: new DocumentsClient(myky),
+    preferences: new PreferencesClient(myky),
   };
 }
 

@@ -17,7 +17,8 @@ interface Props extends React.PropsWithChildren<{}> {
   setView: React.Dispatch<React.SetStateAction<ViewState>>
 }
 
-
+// Loads journals, with loading and error placeholders
+// todo: move to a higher level after refactoring and removing legacy useJournals code
 function JournalsLoadingContainer(props: Props) {
   const { journals, loadingError } = useJournals();
 
@@ -40,6 +41,7 @@ interface EditDocumentProps {
   setView: React.Dispatch<React.SetStateAction<ViewState>>
 }
 
+// Loads document, with loading and error placeholders
 function DocumentLoadingContainer(props: EditDocumentProps) {
 
   const { document, loadingError } = useEditableDocument(props.journals, props.documentId);

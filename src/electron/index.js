@@ -1,13 +1,55 @@
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
-const path = require("path");
+const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const { spawn, fork } = require("child_process");
+const path = require("path");
+const fs = require('fs');
+const settings = require('electron-settings');
+
+// when packaged, it should be in Library/Application Support/Chronicles/settings.json
+// when in dev, Library/Application Support/Chronicles/settings.json
+console.log('settings.file: ', settings.file());
+
+const DATABASE_URL = 'DATABASE_URL';
+
+// Used by createWindow, but needed in database routine because of the filepicker call
+let mainWindow;
+
+// when not available, dbfile is undefined
+let dbfile = settings.getSync(DATABASE_URL);
+
+/**
+ * Persist the database url to settings file
+ * assumes url is a full, valid filepath
+ */
+function setDatabaseUrl(url) {
+  if (!url) throw new Error('setDatabaseUrl called with null or empty string');
+
+  // https://www.prisma.io/docs/reference/database-reference/connection-urls
+  // Sqlite file must start with `file:`
+  const fileUrl = url.startsWith('file:') ? url : `file:`
+
+  // todo: validate it can be loaded (or created) by Prisma client
+  settings.setSync(DATABASE_URL, fileUrl);
+}
+
+// Provide and set a default DB if one is not found.
+if (!dbfile) {
+  try {
+    dbfile = path.join(app.getPath("userData"), "chronicles.db");
+    setDatabaseUrl(dbfile);
+  } catch (err) {
+    // note: this is defensive (untested)
+    console.error('Error saving DATABASE_URL to settings file after using a default location');
+    console.error('This will result in the user being unable to change the location of the file without an obvious reason why')
+    console.error(err);
+  }
+}
 
 /**
  * Open browser windows on link-click, an event triggered by renderer process.
  * @param {String} link
  */
 ipcMain.on('link-click', (_, link) => {
-  // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/390
+  // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/51
   shell.openExternal(link);
 });
 
@@ -62,27 +104,33 @@ if (app.isPackaged) {
     // This is tsc + build directory set in the build script.
     // Yeah, stupid and confusing. Prototype life for me.
     path.join(__dirname, "/api/index"),
+
+    // todo: Since moving to pragma this is unused by current code paths
     [path.join(app.getPath("userData"), "pragma.db")],
-    { stdio: [0, 1, 2, "ipc"] }
+    { stdio: [0, 1, 2, "ipc"], env: { ...process.env, DATABASE_URL: dbfile} }
   );
 
   setupBackendListener(serverProcess);
 } else {
   const serverProcess = spawn(
     "npx",
+
+    // todo: Since moving to pragma this is unused by current code paths
     ["ts-node", __dirname + "/../api/index", __dirname + "/../../pragma.db"],
     {
       cwd: app.getAppPath(),
       stdio: [0, 1, 2, "ipc"],
+      env: { ...process.env, DATABASE_URL: dbfile}
     }
   );
 
   setupBackendListener(serverProcess);
 }
 
+
 function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -102,14 +150,11 @@ function createWindow() {
 
   // and load the index.html of the app.
   if (app.isPackaged) {
-    win.loadFile("index.html");
+    mainWindow.loadFile("index.html");
   } else {
     // assumes webpack-dev-server is hosting at this url
-    win.loadURL("http://localhost:9000");
+    mainWindow.loadURL("http://localhost:9000");
   }
-
-  // Open the DevTools.
-  // win.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished
@@ -136,3 +181,40 @@ app.on("activate", () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+
+// Preferences in UI allows user to specify database file
+// This section catches the button click and provides the file picking
+// and persisting logic
+// todo: This would be better suited to a preload script
+ipcMain.on('select-database-file', async (event, arg) => {
+  if (!mainWindow) {
+    console.error('received request to open file picker but mainWindow is undefined');
+    return;
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory', 'openFile']
+  });
+
+  const filepath = result.filePaths[0];
+
+  // user selected cancel
+  if (!filepath) return;
+
+  // todo: feedback to user if error
+  // https://github.com/cloverich/chronicles/issues/52
+  try {
+    if (fs.lstatSync(filepath).isDirectory()) {
+      // move existing database file to new location
+      setDatabaseUrl(path.join(filepath, 'chronicles.db'))
+    } else {
+      // use user provided database
+      // todo: validation :grimace
+      setDatabaseUrl(path.join(filepath, filepath))
+    }
+  } catch (err) {
+    console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)
+    console.error(err);
+  }
+})

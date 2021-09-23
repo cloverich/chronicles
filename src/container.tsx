@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Layout from "./layout";
-import Config from "./config";
+import Preferences from "./views/preferences";
 import Journals from './views/journals';
 import Documents from './views/documents';
 import Editor from './views/edit';
@@ -40,7 +40,7 @@ export default function ClientInjectingContainer() {
 }
 
 
-export type ViewState = 'journals' | 'documents' | { name: 'edit', props: { documentId?: string; journalId?: string; }};
+export type ViewState = 'journals' | 'documents' | 'preferences' | { name: 'edit', props: { documentId?: string; journalId?: string; }};
 
 const Container = observer(() => {
   const [view, setView] = useState<ViewState>("documents");
@@ -50,7 +50,6 @@ const Container = observer(() => {
   if (loading) {
     return (
       <Layout
-        tabs={['journals', 'documents']}
         setSelected={setView}
       >
        {/* todo: loading state */} 
@@ -66,10 +65,20 @@ const Container = observer(() => {
     )
   }
 
+  if (view === 'preferences') {
+    return (
+      <Layout
+        selected="preferences"
+        setSelected={setView}
+      >
+        <Preferences setView={setView} />
+      </Layout>
+    )
+  }
+
   if (view === "documents") {
     return (
       <Layout
-        tabs={['journals', 'documents']}
         selected="documents"
         setSelected={setView}
       >
@@ -81,7 +90,6 @@ const Container = observer(() => {
   if (typeof view === 'object' && view.name === 'edit') {
     return (
       <Layout
-        tabs={['journals', 'documents']}
         selected="documents"
         setSelected={setView}
       >
@@ -97,7 +105,6 @@ const Container = observer(() => {
   if (view === "journals") {
     return (
       <Layout
-        tabs={['journals', 'documents']}
         selected={view}
         setSelected={setView}
       >

@@ -55,7 +55,7 @@ export async function server(handlers2: Handlers2) {
       } else {
         ctx.response.status = 500;
         ctx.response.body = {
-          title: err.message,
+          title: (err as Error).message,
         };
       }
     }
@@ -74,6 +74,8 @@ export async function server(handlers2: Handlers2) {
   // router.get("/journals/:journal/:date", handlers.fetchDoc);
   // router.post("/journals/:journal/:date", handlers.save);
   // router.post("/search", handlers.search);
+
+  router.get("/v2/preferences", handlers2.preferences.get);
 
   router.get("/v2/journals", handlers2.journals.list);
   router.post("/v2/journals", handlers2.journals.create);

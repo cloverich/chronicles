@@ -5,7 +5,8 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./pragma.db"
+  // url      = "file:./pragma.db"
+  url = env("DATABASE_URL")
 }
 
 model documents {
