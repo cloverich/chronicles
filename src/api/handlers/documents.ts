@@ -135,7 +135,7 @@ export class DocumentsHandler {
   // and it took a minute to figure it all out...
   save = async (ctx: RouterContext) => {
     // todo: unsure how to coerce empty string (in title) to null
-    const body = { ...ctx.request.body };
+    const body: any = { ...ctx.request.body };
     const isValid = documentValidator(body);
 
     if (!isValid) {

@@ -1,6 +1,7 @@
 import { JournalsClient } from "./journals";
 import { DocumentsClient, GetDocumentResponse } from "./documents";
 import { PreferencesClient } from "./preferences";
+import { FilesClient } from "./files";
 import ky from "ky-universal";
 
 export { GetDocumentResponse } from "./documents";
@@ -9,6 +10,7 @@ export interface Client {
   journals: JournalsClient;
   documents: DocumentsClient;
   preferences: PreferencesClient;
+  files: FilesClient;
 }
 
 export function configure(urlBase: string): Client {
@@ -35,6 +37,7 @@ export function configure(urlBase: string): Client {
     journals: new JournalsClient(myky),
     documents: new DocumentsClient(myky),
     preferences: new PreferencesClient(myky),
+    files: new FilesClient(myky),
   };
 }
 

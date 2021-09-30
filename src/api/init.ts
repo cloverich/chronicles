@@ -15,5 +15,5 @@ import handlers from "./handlers/index";
 // }
 
 export default async function initServer() {
-  return await server(handlers());
+  return await server(await handlers());
 }

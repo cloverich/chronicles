@@ -4,9 +4,10 @@ import { createEditor, Node } from "slate";
 import { withHistory } from "slate-history";
 import { css } from "emotion";
 import { withHelpers } from './withHelpers';
-import { isImageElement, isLinkElement, ImageElement } from '../util';
+import { isImageElement, isLinkElement, isVideoElement } from '../util';
 import { EditLinkMenus } from './blocks/links';
 import { useDecorateMarkdown, MarkdownLeaf } from './blocks/markdown';
+import { Image, Video } from './blocks/images';
 
 export interface Props {
   saving: boolean;
@@ -23,6 +24,8 @@ const renderElement = (props: RenderElementProps) => {
   // type discrimination here to avoid the need for these type checking
   if (isImageElement(element)) {
     return <Image {...props} element={element} />
+  } else if (isVideoElement(element)) {
+    return <Video {...props} element={element} />
   } else if (isLinkElement(element)) { 
     return (
       <a {...attributes} href={element.url}>
@@ -32,29 +35,6 @@ const renderElement = (props: RenderElementProps) => {
   } else {
     return <p {...attributes}>{children}</p>
   }
-}
-
-interface ImageElementProps extends RenderElementProps {
-  element: ImageElement;
-}
-
-
-const Image = ({ attributes, children, element }: ImageElementProps) => {
-  return (
-    <div {...attributes}>
-      <div contentEditable={false}>
-        <img
-          src={element.url}
-          className={css`
-            display: block;
-            max-width: 100%;
-            max-height: 20em;
-          `}
-        />
-      </div>
-      {children}
-    </div>
-  )
 }
 
 

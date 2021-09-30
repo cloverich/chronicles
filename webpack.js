@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ErrorOverlayPlugin = require('error-overlay-webpack-plugin')
+const ErrorOverlayPlugin = require('error-overlay-webpack-plugin');
+const { DefinePlugin } = require('webpack');
 // const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 // const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 // const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
@@ -73,13 +74,17 @@ module.exports = (env, argv) => {
       //   chunkFilename: PRODUCTION ? '[id].[hash].css' : '[id].css'
       // }),
       new HtmlWebpackPlugin({
-        title: 'Pragma',
+        title: 'Chronicles',
         template: __dirname + "/src/app.html",
         filename: "index.html"
       }),
 
       // https://github.com/smooth-code/error-overlay-webpack-plugin
       new ErrorOverlayPlugin(),
+
+      new DefinePlugin({
+        isProduction: JSON.stringify(!!PRODUCTION)
+      })
     ],
 
     // Optimizations are enabled when PRODUCTION is true

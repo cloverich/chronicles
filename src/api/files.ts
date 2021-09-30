@@ -2,11 +2,13 @@ import mkdirp from "mkdirp";
 import walk = require("klaw");
 import path from "path";
 import fs from "fs";
-const { readFile, writeFile } = fs.promises;
+const { readFile, writeFile, access, stat } = fs.promises;
 import { Stats } from "fs";
 import { NotFoundError, ValidationError } from "./errors";
 import { DateTime } from "luxon";
 const readFileStr = (path: string) => readFile(path, "utf8");
+
+import { ClientRequest, IncomingMessage } from "http";
 
 export interface PathStatsFile {
   path: string;
@@ -71,6 +73,40 @@ export class Files {
     return await writeFile(fp, contents);
   }
 
+  static async saveStream(req: IncomingMessage, filePath: string) {
+    // Take in the request & filepath, stream the file to the filePath
+    return new Promise((resolve, reject) => {
+      const stream = fs.createWriteStream(filePath);
+      // With the open - event, data will start being written
+      // from the request to the stream's destination path
+      stream.on("open", () => {
+        console.log("Stream open ...  0.00%");
+        req.pipe(stream);
+      });
+
+      // Drain is fired whenever a data chunk is written.
+      // When that happens, print how much data has been written yet.
+      //  stream.on('drain', () => {
+      //   const written = stream.bytesWritten;
+      //   const total = parseInt(req.headers['content-length']);
+      //   const pWritten = ((written / total) * 100).toFixed(2);
+      //   console.log(`Processing  ...  ${pWritten}% done`);
+      //  });
+
+      // When the stream is finished, print a final message
+      // Also, resolve the location of the file to calling function
+      stream.on("close", () => {
+        console.log("Processing  ...  100%");
+        resolve(filePath);
+      });
+      // If something goes wrong, reject the primise
+      stream.on("error", (err) => {
+        console.error(err);
+        reject(err);
+      });
+    });
+  }
+
   /**
    *
    * @param srcDir - Journal directory to walk,looking for files to index
@@ -90,5 +126,43 @@ export class Files {
         yield entry as PathStatsFile;
       }
     }
+  }
+
+  /**
+   * Check if a directory can be read and written.
+   *
+   * todo: What if it doesn't exist?
+   *
+   * @param filepath
+   * @returns Error if cannot read and write, otherwise null
+   */
+  static async tryReadWrite(filepath: string): Promise<void> {
+    return access(filepath, fs.constants.R_OK | fs.constants.W_OK);
+  }
+
+  /**
+   * Ensure directory exists and can be accessed
+   *
+   * WARN: Logic to handle errors when writing / reading files from directory
+   * are still needed as access check may be innaccurate or could change while
+   * app is running.
+   */
+  static async ensureDir(directory: string): Promise<void> {
+    try {
+      const dir = await stat(directory);
+      if (!dir.isDirectory()) {
+        throw new Error(
+          `ensureDir called but ${directory} already exists as a file`
+        );
+      }
+    } catch (err) {
+      if (err.code !== "ENOENT") throw err;
+      await mkdirp(directory);
+    }
+
+    // NOTE: Documentation suggests Windows may report ok here, but then choke
+    // when actually writing. Better to move this logic to the actual file
+    // upload handlers.
+    await access(directory, fs.constants.R_OK | fs.constants.W_OK);
   }
 }
