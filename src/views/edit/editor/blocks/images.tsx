@@ -4,30 +4,39 @@ import { Transforms } from "slate";
 import { ImageElement, VideoElement } from '../../util';
 import { css } from 'emotion';
 
-// todo: co-locate and organize all parsers this is going to get buggy fast
-// import unified from "unified";
-// import markdown from "remark-parse";
-// import remarkGfm from 'remark-gfm'
-// import { remarkToSlate, slateToRemark, mdastToSlate } from "remark-slate-transformer";
-// const parser = unified().use(markdown).use(remarkGfm as any)
-
-
 /**
  * Create an image node and insert it at the current selection
  */
 function insertImage(editor: ReactEditor, filepath: string) {
   const image = { type: 'image', url: filepath, children: [{ text: '' }] }
   Transforms.insertNodes(editor, image)
+  padDocument(editor);
 }
 
 function insertVideo(editor: ReactEditor, filepath: string) {
   const image = { type: 'video', url: filepath, children: [{ text: '' }] }
   Transforms.insertNodes(editor, image)
+  padDocument(editor);
+
+}
+
+/**
+ * Add an extra paragraph node to protect against video or image elements being
+ * the last element in the document, which currently prevents user from entering
+ * more text. Ideally a listener at a higher level could observe for blocking elements
+ * and if the lsat element is not editable text or something, auto-insert a paragraph block.
+ */
+function padDocument(editor: ReactEditor) {
+  Transforms.insertNodes(editor, { type: 'paragraph', children: [{text: ''}]} as any);
 }
 
 export function insertFile(editor: ReactEditor, filepath: string) {
-  const parts = filepath.split('.');
-  const extension = parts[parts.length - 1];
+  const extension = filepath.split('.').pop();
+  if (!extension) {
+    console.error('insertFile called but filepath did not contain an extension:', filepath);
+    return;
+  }
+
   if (imageExtensions.includes(extension)) {
     return insertImage(editor, filepath)
   }
@@ -42,7 +51,17 @@ export function insertFile(editor: ReactEditor, filepath: string) {
 
 const isFileProtocol = location.protocol.startsWith('file');
 
-function mapUrl(url: string) {
+/**
+ * Conditionally prefix image urls with file:/// depending on how this 
+ * renderer process was loaded:
+ * 
+ * - http: In development, the renderer process is served via webpack over http
+ * - file: In production, the packaged app is loaded from the main process as a file
+ * 
+ * @param url 
+ * @returns 
+ */
+function prefixUrl(url: string) {
   // When you drag and drop an image it's URL is a filepath on the local device
   // To display in the browser, if the app is packaged the page is hosted as a file,
   // meaning <img src="file:///...." />
@@ -74,7 +93,7 @@ export const Image = ({ attributes, children, element }: ImageElementProps) => {
     <div {...attributes}>
       <div contentEditable={false}>
         <img
-          src={mapUrl(element.url)}
+          src={prefixUrl(element.url)}
           className={css`
             display: block;
             max-width: 100%;
@@ -92,7 +111,7 @@ export const Video = ({ attributes, children, element }: VideoElementProps) => {
     <div {...attributes}>
       <div contentEditable={false}>
         <video
-          src={mapUrl(element.url)}
+          src={prefixUrl(element.url)}
           controls
           className={css`
             display: block;
@@ -104,17 +123,17 @@ export const Video = ({ attributes, children, element }: VideoElementProps) => {
       {children}
     </div>
   )
-} 
+}
 
+/**
+ * Does the URL end with a known image extension?
+ */
+export function isImageUrl (filepath: string) {
+  const extension = filepath.split('.').pop();
+  if (!extension) return false;
+  return imageExtensions.includes(extension.toLowerCase());
+}
 
-// const isImageUrl = url => {
-//   if (!url) return false
-//   if (!isUrl(url)) return false
-//   const ext = new URL(url).pathname.split('.').pop()
-//   return imageExtensions.includes(ext)
-// }
-// https://cdn.shopify.com/s/files/1/3106/5828/products/IMG_9385_1024x1024@2x.jpg?v=1577795595
-// const imageExtensionRegex =
 
 // Copied from this repo: https://github.com/arthurvr/image-extensions
 // Which is an npm package that is just a json file 

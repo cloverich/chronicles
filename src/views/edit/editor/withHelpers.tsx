@@ -1,5 +1,6 @@
 import { Text, Transforms, Node as SlateNode, Range, Path as SlatePath, createEditor, Descendant, Editor, Element as SlateElement } from 'slate'
 import { ReactEditor } from 'slate-react';
+import { toaster} from 'evergreen-ui';
 
 // todo: centralize these utilities -- they are also used in a few other places and can get out of sync
 // which would produce weird bugs! 
@@ -10,7 +11,7 @@ import { remarkToSlate, slateToRemark, mdastToSlate } from "remark-slate-transfo
 const parser = unified().use(markdown).use(remarkGfm as any)
 import { isTypedElement, isLinkElement } from '../util';
 import { insertLink, urlMatcher } from './blocks/links';
-import { insertFile } from './blocks/images';
+import { insertFile, isImageUrl } from './blocks/images';
 
 // todo: dont use this here!
 import client from '../../../client';
@@ -64,6 +65,11 @@ export const withHelpers = (editor: ReactEditor) => {
     // Implement it for real, once image uploading is decided upon
     if (files && files.length > 0) {
       for (const file of files) {
+        if (!isImageUrl(file.path)) {
+          toaster.warning('Only images with known image extensions may be added to notes')
+          return;
+        }
+        
         // this works, but the preview in network tab does not. weird.
         // todo: error as a popup, progress and intermediate state
         // todo: handle editor being unmounted, more generally move this 

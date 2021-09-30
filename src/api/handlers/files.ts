@@ -35,6 +35,7 @@ export class FilesHandler {
     // todo: validate path is valid, readable, writeable
     let assetsPath = settings.getSync("USER_FILES_DIR");
 
+    // Create and set a default directory if it does not exist
     if (!assetsPath) {
       const defaultUserFilesDir = path.join(
         userDataDir,
@@ -43,8 +44,6 @@ export class FilesHandler {
       console.log(
         `USER_FILES_DIR not found in settings. Using ${userDataDir} and udpating settings`
       );
-
-      await Files.ensureDir(defaultUserFilesDir);
 
       settings.setSync("USER_FILES_DIR", defaultUserFilesDir);
       assetsPath = defaultUserFilesDir;
@@ -66,7 +65,7 @@ export class FilesHandler {
     console.log("serving user assets from", assetsPath);
 
     try {
-      await Files.tryReadWrite(assetsPath);
+      await Files.ensureDir(assetsPath);
       return new FilesHandler(assetsPath);
     } catch (err) {
       throw new Error(
@@ -88,7 +87,6 @@ export class FilesHandler {
       return;
     }
 
-    console.log("looking for filename", filename);
     await send(ctx, filename, {
       root: this.assetsPath,
     });
@@ -103,7 +101,7 @@ export class FilesHandler {
     const filename = `${cuid()}.${extension || ".unknown"}`;
     const filepath = path.join(this.assetsPath, filename);
 
-    // todo: make more robust, etc
+    // todo: make more robust
     if (filename.endsWith("unknown")) {
       console.log(
         "content-type mime detection failed (",
@@ -132,7 +130,7 @@ export class FilesHandler {
    * 1. Serve app assets from a specific, app controlled location
    * 2. Server image assets from the new image route (above)
    *
-   * (Or, abandont the API and do it all with electron logic in a preload script)
+   * (Or, abandon the API and do it all with electron logic in a preload script)
    */
   getUnsafe = async (ctx: RouterContext) => {
     // Replace url encoded characters, ex: %20 -> space

@@ -8,7 +8,10 @@ const settings = require('electron-settings');
 // when in dev, Library/Application Support/Chronicles/settings.json
 console.log('settings.file: ', settings.file());
 
-// sanity check
+// Ensure the default userData directory is where the active settings file is located. 
+// This is more a reminder of how electron-settings is manually configured in the backend
+// process, since it does not have access to the electron runtime
+// See the handlers setup logic in api/handlers/index.ts
 if (!settings.file().includes(app.getPath("userData"))) {
   console.error('settings.file', settings.file());
   console.error('app.getPath(userData)', app.getPath('userData'));
@@ -121,7 +124,12 @@ if (app.isPackaged) {
 
     // todo: Since moving to pragma this is unused by current code paths
     [path.join(app.getPath("userData"), "pragma.db")],
-    { stdio: [0, 1, 2, "ipc"], env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')} }
+
+    { stdio: [0, 1, 2, "ipc"],
+
+    // NOTE: DATABASE_URL passed as environment variable because that is how Prisma picks it up
+    // see schema.prisma
+    env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')} }
   );
 
   setupBackendListener(serverProcess);
@@ -134,6 +142,9 @@ if (app.isPackaged) {
     {
       cwd: app.getAppPath(),
       stdio: [0, 1, 2, "ipc"],
+
+      // NOTE: DATABASE_URL passed as environment variable because that is how Prisma picks it up
+      // see schema.prisma
       env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')}
     }
   );
