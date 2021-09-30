@@ -110,7 +110,7 @@ export class DocumentsHandler {
           journalId: true,
         },
         orderBy: { createdAt: "desc" },
-        take: 100,
+        // take: 100,
       });
     } else {
       docs = await this.client.document2.findMany({
@@ -121,7 +121,7 @@ export class DocumentsHandler {
           journalId: true,
         },
         orderBy: { createdAt: "desc" },
-        take: 120,
+        // take: 120,
       });
     }
 

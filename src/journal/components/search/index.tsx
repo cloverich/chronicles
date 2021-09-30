@@ -3,9 +3,18 @@ import { TagInput } from "evergreen-ui";
 import { observer, useLocalStore } from "mobx-react-lite";
 import { IJournalsUiStore } from "../../store";
 import { TagSearchStore } from "./store";
+import { TagSearchLoading } from './loading';
 
 interface Props {
-  store: IJournalsUiStore;
+  store: Pick<IJournalsUiStore, "tokens">;
+}
+
+export default function TagSearchContainer(props: Partial<Props>) {
+  if (!props.store) {
+    return <TagSearchLoading />
+  }
+
+  return <ObvsTagSearch store={props.store} />
 }
 
 function TagSearch(props: Props) {
@@ -45,4 +54,4 @@ function TagSearch(props: Props) {
   );
 }
 
-export default observer(TagSearch);
+const ObvsTagSearch = observer(TagSearch);

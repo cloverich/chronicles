@@ -15,6 +15,7 @@ import Journal from "./journal";
 import { ClientContext } from "./client/context";
 import { getClient } from "./loadclient.electron";
 import { Client } from "./client";
+import { JournalsStoreContext } from './useJournals';
 
 /**
  * Wrap the main container and supply the API client, which
@@ -32,6 +33,7 @@ export default function ClientInjectingContainer() {
   }, []);
 
   if (!client) {
+    // todo: better loading state...
     return <div>¯\_(ヅ)_/¯</div>;
   }
 
@@ -44,8 +46,7 @@ export type ViewState = 'journals' | 'documents' | 'preferences' | { name: 'edit
 
 const Container = observer(() => {
   const [view, setView] = useState<ViewState>("documents");
-  const { journals, loading, loadingErr }  = useJournals();
-  const searchState = useSearch();
+  const { journalsStore, loading, loadingErr }  = useJournals();
 
   if (loading) {
     return (
@@ -71,7 +72,9 @@ const Container = observer(() => {
         selected="preferences"
         setSelected={setView}
       >
-        <Preferences setView={setView} />
+        <JournalsStoreContext.Provider value={journalsStore!}>
+          <Preferences setView={setView} />
+        </JournalsStoreContext.Provider>
       </Layout>
     )
   }
@@ -82,7 +85,9 @@ const Container = observer(() => {
         selected="documents"
         setSelected={setView}
       >
-        <Documents setView={setView} />
+        <JournalsStoreContext.Provider value={journalsStore!}>
+          <Documents setView={setView} />
+        </JournalsStoreContext.Provider>        
       </Layout>
     );
   }
@@ -93,11 +98,13 @@ const Container = observer(() => {
         selected="documents"
         setSelected={setView}
       >
-        <Editor 
-          documentId={view.props.documentId} 
-          // journalId={view.props.journalId} todo: track last selected journal id and pass through
-          setView={setView} 
-        />
+        <JournalsStoreContext.Provider value={journalsStore!}>
+          <Editor 
+            documentId={view.props.documentId} 
+            // journalId={view.props.journalId} todo: track last selected journal id and pass through
+            setView={setView} 
+          />
+        </JournalsStoreContext.Provider>
       </Layout>
     );
   }
@@ -108,7 +115,10 @@ const Container = observer(() => {
         selected={view}
         setSelected={setView}
       >
-        <Journals />
+
+        <JournalsStoreContext.Provider value={journalsStore!}>
+          <Journals />
+        </JournalsStoreContext.Provider>
       </Layout>
     );
   }

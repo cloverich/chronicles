@@ -1,24 +1,46 @@
-import React, { useEffect, useContext }  from "react";
+import React, { useEffect, useContext, useState }  from "react";
 // todo: feels a bit like this should be provided via context
 import client, { Client} from "../../client";
 import { SearchResponse } from '../../api/client/documents';
-import { observable } from 'mobx';
+import { observable, IObservableArray, reaction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Heading, Paragraph, Pane, Button } from "evergreen-ui";
-import { useJournals } from '../../useJournals';
+import { useJournals, JournalsStoreContext, JournalsStore } from '../../useJournals';
+import TagSearch from '../../journal/components/search';
+import { SearchToken, JournalToken } from '../../journal/store';
 
 class SearchV2Store {
-  constructor(private client: Client) {}
-
   @observable docs: SearchResponse["data"] = [];
   @observable loading = true;
   @observable error: string | null = null;
+  private journals: JournalsStore;
+
+  // copoied from JournalsUIStore
+  @observable tokens: IObservableArray<SearchToken> = observable([]);
+
+  constructor(private client: Client, journals: JournalsStore) {
+    this.journals = journals;
+
+    // Re-run the search query anytime the tokens change.
+    reaction(() => this.tokens.slice(), this.search, {
+      fireImmediately: false,
+    });
+  }
+
+  // todo: this might be better as a @computed get
+  private tokensToQuery = () => {
+    return this.tokens.filter(t => t.type === 'in').map(token => this.journals.idForName(token.value as string)).filter(token => token) as string[];
+  }
 
   search = async () => {
     this.loading = true;
     this.error = null;
+
+    const query: string[] = this.tokensToQuery();
+    // Hmm -- need to get from journal name to id...
+    // I guess take journals, find by name, convert to id
     try {
-      const res = this.client.v2.documents.search()
+      const res = query.length ? this.client.v2.documents.search({ journals: query }) : this.client.v2.documents.search()
       this.docs = (await res).data;
     } catch (err) {
       this.error = JSON.stringify(err);
@@ -28,38 +50,38 @@ class SearchV2Store {
   }
 }
 
-export const SearchV2Context = React.createContext<SearchV2Store>(new SearchV2Store(client));
-
 
 import { ViewState } from '../../container';
 
 interface Props extends React.PropsWithChildren<{}> {
   setView: React.Dispatch<React.SetStateAction<ViewState>>
+  store?: SearchV2Store;
 }
 
 
-// The old Layout had the modal and some other stuff
-function Layout(props: Partial<Props>) {
+const Layout = observer(function LayoutNaked(props: Partial<Props>) {
   return (
     <Pane>
-      <a onClick={props.setView ? () => props.setView!({ name: 'edit', props: {}}): () => {}}>
-        Create new
-      </a>
+        <Pane marginBottom={8}>
+          <TagSearch store={props.store} />
+        </Pane>
+        <Pane>
+          <a onClick={props.setView ? () => props.setView!({ name: 'edit', props: {}}): () => {}}>
+            Create new
+          </a>
+        </Pane>
+
       <Pane marginTop={24}>
         {props.children}
       </Pane>
     </Pane>
   )
-}
+})
 
 
 function DocumentsContainer(props: Props) {
-  const searchV2Store = useContext(SearchV2Context);
-  const {
-    loadingErr: loadingJournalsErr,
-    loading: loadingJournals,
-    journals
-  } = useJournals();
+  const journalsStore = useContext(JournalsStoreContext);
+  const [searchStore, ] = useState(new SearchV2Store(client, journalsStore));
 
   function edit(docId: string) {
     props.setView({name: 'edit', props: { documentId: docId}})
@@ -67,11 +89,11 @@ function DocumentsContainer(props: Props) {
 
   // execute search on mount
   useEffect(() => {
-    searchV2Store.search()
+    searchStore.search()
   }, [])
 
   // loading states
-  if (loadingJournals || searchV2Store.loading && !searchV2Store.docs.length) {
+  if (searchStore.loading && !searchStore.docs.length) {
     return (
       <Layout>
         <Heading>Loading</Heading>
@@ -80,27 +102,27 @@ function DocumentsContainer(props: Props) {
   }
 
   // todo: I didn't really implement error handling :|
-  if (loadingJournalsErr || searchV2Store.error) {
+  if (searchStore.error) {
     return (
       <Layout>
         <Heading>Error</Heading>
-        <Paragraph>{JSON.stringify(loadingJournalsErr || searchV2Store.error)}</Paragraph>
+        <Paragraph>{JSON.stringify(searchStore.error)}</Paragraph>
       </Layout>
     );
   }
 
   // empty states
-  if (!searchV2Store.docs.length) {
-    if (journals!.length) {
+  if (!searchStore.docs.length) {
+    if (journalsStore.journals.length) {
       return (
-        <Layout>
+        <Layout store={searchStore}>
           <Heading>No documents found</Heading>
           <Paragraph>Broaden your search, or add more documents.</Paragraph>
         </Layout>
       );
     } else {
       return (
-        <Layout>
+        <Layout store={searchStore}>
           <Heading>No journals added</Heading>
           <Paragraph>
             Use the config link in the navbar to create a new journal.
@@ -111,13 +133,13 @@ function DocumentsContainer(props: Props) {
   }
 
   function getName(id: string) {
-    const jrnl = journals?.find(j => j.id === id);
+    const jrnl = journalsStore.journals?.find(j => j.id === id);
     if (!jrnl) return "shrug"
 
     return jrnl.name;
   }
 
-  const docs = searchV2Store.docs.map(doc => {
+  const docs = searchStore.docs.map(doc => {
     return (
     <Pane key={doc.id} style={{display: 'flex',}} onClick={() => edit(doc.id)}>
       <div style={{marginRight: '24px'}}>{doc.createdAt.slice(0,10)}</div>
@@ -128,7 +150,7 @@ function DocumentsContainer(props: Props) {
 
 
   return (
-    <Layout setView={props.setView}>
+    <Layout setView={props.setView} store={searchStore}>
       {docs}
     </Layout>
   )
