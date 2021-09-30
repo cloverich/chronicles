@@ -88,22 +88,13 @@ export async function server(handlers2: Handlers2) {
   // with documents/:id. Think about this later
   router.post("/v2/search", handlers2.documents.search);
 
+  router.get("/v2/images/:key", handlers2.files.get);
+  router.post("/v2/images", handlers2.files.upload);
+
   /**
    * This catch all route is for image requests.
    */
-  router.get("(.*)", async (ctx) => {
-    // Replace url encoded characters, ex: %20 -> space
-    const url = decodeURI(ctx.request.path);
-
-    // Any non-matched request lands here, and atttempts to
-    // serve a file. Obviously a complete hack.
-    // todo: verify request is for a known journal,
-    // or re-write the file requests, or something
-    // else in general
-    await send(ctx, url, {
-      root: "/",
-    });
-  });
+  router.get("(.*)", handlers2.files.getUnsafe);
 
   app.use(router.routes());
   app.use(router.allowedMethods());

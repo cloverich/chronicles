@@ -11,6 +11,7 @@ listenLinks();
 // Gives me a quick inspect element for debugging. 
 // todo: When I re-productionize the app, make this a debug only
 // handler
+// todo: this is middle and right clicks. I just want middle clicks.
 window.onauxclick = (e) => {
   remote.getCurrentWindow().webContents.inspectElement(e.x, e.y)
 }

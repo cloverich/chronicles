@@ -74,12 +74,19 @@ export interface TypedNode extends SlateElement {
 }
 
 /**
- * As defined by withImages wrapper
+ * As defined by blocks/images wrapper
+ * todo: move it there?
  */
 export interface ImageElement extends TypedNode {
   type: "image";
   url: "string";
   // other properties too, like for label
+}
+
+export interface VideoElement extends TypedNode {
+  type: "video";
+  url: "string";
+  // surely other properties too
 }
 
 export interface LinkElement extends TypedNode {
@@ -97,6 +104,10 @@ export function isTypedElement(node: any): node is TypedNode {
 
 export function isImageElement(node: any): node is ImageElement {
   return isTypedElement(node) && node.type === "image";
+}
+
+export function isVideoElement(node: any): node is VideoElement {
+  return isTypedElement(node) && node.type === "video";
 }
 
 export function isLinkElement(node: any): node is LinkElement {

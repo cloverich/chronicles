@@ -2,11 +2,13 @@ import mkdirp from "mkdirp";
 import walk = require("klaw");
 import path from "path";
 import fs from "fs";
-const { readFile, writeFile } = fs.promises;
+const { readFile, writeFile, access, stat } = fs.promises;
 import { Stats } from "fs";
 import { NotFoundError, ValidationError } from "./errors";
 import { DateTime } from "luxon";
 const readFileStr = (path: string) => readFile(path, "utf8");
+
+import { ClientRequest, IncomingMessage } from "http";
 
 export interface PathStatsFile {
   path: string;
@@ -72,6 +74,33 @@ export class Files {
   }
 
   /**
+   * Save the incoming request body as a file
+   *
+   * https://dev.to/tqbit/how-to-use-node-js-streams-for-fileupload-4m1n
+   */
+  static async saveStream(req: IncomingMessage, filePath: string) {
+    // Take in the request & filepath, stream the file to the filePath
+    return new Promise((resolve, reject) => {
+      const stream = fs.createWriteStream(filePath);
+
+      // Not actually sure if I need to setup the listeners this way,
+      // particularly the open listener
+      stream.on("open", () => {
+        req.pipe(stream);
+      });
+
+      stream.on("close", () => {
+        resolve(filePath);
+      });
+
+      // If something goes wrong, reject the primise
+      stream.on("error", (err) => {
+        reject(err);
+      });
+    });
+  }
+
+  /**
    *
    * @param srcDir - Journal directory to walk,looking for files to index
    * @param name - The journal name. Treated as a key to the journals table. Stupid.
@@ -90,5 +119,31 @@ export class Files {
         yield entry as PathStatsFile;
       }
     }
+  }
+
+  /**
+   * Ensure directory exists and can be accessed
+   *
+   * WARN: Logic to handle errors when writing / reading files from directory
+   * are still needed as access check may be innaccurate or could change while
+   * app is running.
+   */
+  static async ensureDir(directory: string): Promise<void> {
+    try {
+      const dir = await stat(directory);
+      if (!dir.isDirectory()) {
+        throw new Error(
+          `ensureDir called but ${directory} already exists as a file`
+        );
+      }
+    } catch (err) {
+      if (err.code !== "ENOENT") throw err;
+      await mkdirp(directory);
+    }
+
+    // NOTE: Documentation suggests Windows may report ok here, but then choke
+    // when actually writing. Better to move this logic to the actual file
+    // upload handlers.
+    await access(directory, fs.constants.R_OK | fs.constants.W_OK);
   }
 }
