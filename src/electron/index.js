@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, protocol } = require("electron");
 const { spawn, fork } = require("child_process");
 const path = require("path");
 const fs = require('fs');
@@ -66,6 +66,21 @@ ipcMain.on('link-click', (_, link) => {
   // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/51
   shell.openExternal(link);
 });
+
+// Allow files to load if using the "chronicles" protocol
+// https://www.electronjs.org/docs/api/protocol
+app.whenReady().then(() => {
+  protocol.registerFileProtocol('chronicles', (request, callback) => {
+    // strip the leading chronicles://
+    const url = decodeURI(request.url.substr(13));
+
+    // todo: Have images read and write to the settings.USER_FILES directory,
+    // then normalize them to be relative and serve from this directory
+    // const filepath = path.normalize(`${app.getPath('userData')}/${url}`);
+    console.log('searching for url: ', url);
+    callback({ path: url })
+  })
+})
 
 
 /**

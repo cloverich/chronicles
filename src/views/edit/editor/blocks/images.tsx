@@ -49,32 +49,25 @@ export function insertFile(editor: ReactEditor, filepath: string) {
 }
 
 
-const isFileProtocol = location.protocol.startsWith('file');
-
 /**
- * Conditionally prefix image urls with file:/// depending on how this 
- * renderer process was loaded:
+ * For absolute image urls, prefix them with chronicles:// which will trigger
+ * the protocol handler in the main process, which as of now merely serves
+ * the file
  * 
- * - http: In development, the renderer process is served via webpack over http
- * - file: In production, the packaged app is loaded from the main process as a file
+ * When implementing drag and drop and accounting for other legacy journals,
+ * many image files were absolute filepaths to various places on the filesystem
+ * 
+ * todo: Upload and host all image files from a single directory
  * 
  * @param url 
  * @returns 
  */
 function prefixUrl(url: string) {
-  // When you drag and drop an image it's URL is a filepath on the local device
-  // To display in the browser, if the app is packaged the page is hosted as a file,
-  // meaning <img src="file:///...." />
+  const isLocalPath = url.startsWith('/')
 
-  // Assume if its not prefixed with http, its just a path to a local file
-  const isLocalPath = !url.startsWith('http');
-
-  if (isFileProtocol && isLocalPath) {
-    return 'file:///' + url;
+  if (isLocalPath) {
+    return 'chronicles://' + url;
   } else {
-    // Regular URLs are always ok to use as is
-    // Filepaths are ok to use as is when in development mode, 
-    // i.e. this app is hosted over http from webpack...
     return url;
   }
 }
