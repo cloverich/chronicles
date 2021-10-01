@@ -8,7 +8,7 @@ export interface Preferences {
 
 interface UploadResponse {
   filename: string;
-  filepath: string;
+  // filepath: string;
 }
 
 export class FilesClient {

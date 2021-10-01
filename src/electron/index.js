@@ -74,11 +74,12 @@ app.whenReady().then(() => {
     // strip the leading chronicles://
     const url = decodeURI(request.url.substr(13));
 
-    // todo: Have images read and write to the settings.USER_FILES directory,
-    // then normalize them to be relative and serve from this directory
-    // const filepath = path.normalize(`${app.getPath('userData')}/${url}`);
-    console.log('searching for url: ', url);
-    callback({ path: url })
+    // add the USER_FILES directory
+    // todo: cache this value. The backend API updates it after start-up, otherwise all updates
+    // happen through main. Refactor so backend api calls through here, or move default user files setup
+    // logic into main, then cache the value
+    const absoluteUrl = path.join(settings.getSync('USER_FILES_DIR'), url);
+    callback({ path: absoluteUrl })
   })
 })
 
@@ -224,9 +225,6 @@ app.on("activate", () => {
 
 
 // Preferences in UI allows user to specify database file
-// This section catches the button click and provides the file picking
-// and persisting logic
-// todo: This would be better suited to a preload script
 ipcMain.on('select-database-file', async (event, arg) => {
   if (!mainWindow) {
     console.error('received request to open file picker but mainWindow is undefined');
@@ -257,4 +255,39 @@ ipcMain.on('select-database-file', async (event, arg) => {
     console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)
     console.error(err);
   }
+
+  event.reply('preferences-updated');
+})
+
+// Preferences in UI allows user to specify user files directory
+ipcMain.on('select-user-files-dir', async (event, arg) => {
+  if (!mainWindow) {
+    console.error('received request to open file picker but mainWindow is undefined');
+    return;
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory']
+  });
+
+  const filepath = result.filePaths[0];
+
+  // user selected cancel
+  if (!filepath) return;
+
+  // todo: feedback to user if error
+  // https://github.com/cloverich/chronicles/issues/52
+  try {
+    if (fs.lstatSync(filepath).isDirectory()) {
+      // move existing database file to new location
+      settings.setSync('USER_FILES_DIR', filepath)
+    } else {
+      throw new Error('User files must be valid directory');
+    }
+  } catch (err) {
+    console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)
+    console.error(err);
+  }
+
+  event.reply('preferences-updated');
 })

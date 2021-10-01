@@ -63,7 +63,7 @@ export function insertFile(editor: ReactEditor, filepath: string) {
  * @returns 
  */
 function prefixUrl(url: string) {
-  const isLocalPath = url.startsWith('/')
+  const isLocalPath = !url.startsWith('http')
 
   if (isLocalPath) {
     return 'chronicles://' + url;

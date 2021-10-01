@@ -75,7 +75,7 @@ export const withHelpers = (editor: ReactEditor) => {
         // todo: handle editor being unmounted, more generally move this 
         // to a higher level abstraction. For now it doesn't really matter.
         client.v2.files.upload(file).then((json) => {
-          insertFile(editor, json.filepath)
+          insertFile(editor, json.filename)
         }, console.error);
       }
     } else if (text && text.match(urlMatcher)) {

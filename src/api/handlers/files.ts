@@ -1,12 +1,8 @@
-import electron, { app } from "electron";
-console.log("handlers.files", electron, app);
-
 import { RouterContext } from "@koa/router";
 import settings from "electron-settings";
 import send from "koa-send";
 import cuid from "cuid";
 import path from "path";
-import fs from "fs";
 import { Files } from "../files";
 import mime from "mime";
 
@@ -16,16 +12,6 @@ import mime from "mime";
  * and insecure settings only.
  */
 export class FilesHandler {
-  assetsPath: string;
-
-  /**
-   *
-   * @param assetsPath A pre-validated path to use for user files (images, etc)
-   */
-  constructor(assetsPath: string) {
-    this.assetsPath = assetsPath;
-  }
-
   /**
    * Validate assets path (in settings) and instantiate a FilesHandler with it.
    */
@@ -66,7 +52,10 @@ export class FilesHandler {
 
     try {
       await Files.ensureDir(assetsPath);
-      return new FilesHandler(assetsPath);
+
+      // todo: no way to keep this cached path in sync if settings changes
+      // since that is performed in the main process
+      return new FilesHandler(/*assetsPath*/);
     } catch (err) {
       throw new Error(
         `FilesHandler cannot read or write ${assetsPath}. Access is necessary to upload and serve user files!`
@@ -88,7 +77,7 @@ export class FilesHandler {
     }
 
     await send(ctx, filename, {
-      root: this.assetsPath,
+      root: settings.getSync("USER_FILES_DIR") as string,
     });
   };
 
@@ -99,7 +88,10 @@ export class FilesHandler {
     // https://github.com/broofa/mime
     const extension = mime.getExtension(ctx.request.headers["content-type"]);
     const filename = `${cuid()}.${extension || ".unknown"}`;
-    const filepath = path.join(this.assetsPath, filename);
+    const filepath = path.join(
+      settings.getSync("USER_FILES_DIR") as string,
+      filename
+    );
 
     // todo: make more robust
     if (filename.endsWith("unknown")) {
@@ -115,7 +107,11 @@ export class FilesHandler {
       ctx.response.status = 200;
       ctx.response.body = {
         filename,
-        filepath,
+
+        // note: Client should only deal in the relatie, not full, filepath
+        // so the USER_FILES_DIR can be changed and the image links in notes
+        // still work.
+        // filepath,
       };
     } catch (err) {
       ctx.response.status = 500;
