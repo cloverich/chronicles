@@ -139,7 +139,7 @@ function DocumentsContainer(props: Props) {
     return jrnl.name;
   }
 
-  const docs = searchStore.docs.map(doc => {
+  const docs = searchStore.docs.slice(0, 100).map(doc => {
     return (
     <Pane key={doc.id} style={{display: 'flex',}} onClick={() => edit(doc.id)}>
       <div style={{marginRight: '24px'}}>{doc.createdAt.slice(0,10)}</div>

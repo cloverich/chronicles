@@ -161,7 +161,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
           `}
           onChange={(e: any) => document.title = e.target.value}
           value={document.title}
-          placeholder="An optional title for this document"
+          placeholder="Untitled"
           disabled={document.saving}
         />
       </div>
