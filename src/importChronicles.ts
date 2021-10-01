@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./prisma/client";
 import { Files } from "./api/files";
 import { parser, stringifier } from "./markdown";
 import { Root, Content } from "mdast";

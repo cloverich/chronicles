@@ -10,6 +10,9 @@ This project is using Prisma. If there are changes to the `schema.prisma` file, 
 npx prisma generate
 ```
 
+...that doesn't migrate the database it just makes the client...
+.... todo: How to migrate in dev, production...
+
 ### Database file
 The SQLite database file is designated by an environment variable (`DATABASE_URL`) specified in the [settings.json](https://github.com/nathanbuchar/electron-settings) file. 
 

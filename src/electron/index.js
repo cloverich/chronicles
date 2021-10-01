@@ -33,16 +33,14 @@ let dbfile = settings.getSync(DATABASE_URL);
 /**
  * Persist the database url to settings file
  * assumes url is a full, valid filepath
+ * 
+ * todo: Add validation here
  */
 function setDatabaseUrl(url) {
   if (!url) throw new Error('setDatabaseUrl called with null or empty string');
 
-  // https://www.prisma.io/docs/reference/database-reference/connection-urls
-  // Sqlite file must start with `file:`
-  const fileUrl = url.startsWith('file:') ? url : `file:`
-
   // todo: validate it can be loaded (or created) by Prisma client
-  settings.setSync(DATABASE_URL, fileUrl);
+  settings.setSync(DATABASE_URL, url);
 }
 
 // Provide and set a default DB if one is not found.
@@ -145,7 +143,14 @@ if (app.isPackaged) {
 
     // NOTE: DATABASE_URL passed as environment variable because that is how Prisma picks it up
     // see schema.prisma
-    env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')} }
+    env: { 
+      ...process.env,
+    
+      // https://www.prisma.io/docs/reference/database-reference/connection-urls
+      // Sqlite file must start with `file:`
+      DATABASE_URL: `file:${dbfile}`,
+      USER_DATA_DIR: app.getPath('userData')} 
+    }
   );
 
   setupBackendListener(serverProcess);
@@ -161,7 +166,14 @@ if (app.isPackaged) {
 
       // NOTE: DATABASE_URL passed as environment variable because that is how Prisma picks it up
       // see schema.prisma
-      env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')}
+      env: { 
+        ...process.env,
+
+        // https://www.prisma.io/docs/reference/database-reference/connection-urls
+        // Sqlite file must start with `file:`
+        DATABASE_URL: `file:${dbfile}`,
+        USER_DATA_DIR: app.getPath('userData')
+      }
     }
   );
 
@@ -244,12 +256,13 @@ ipcMain.on('select-database-file', async (event, arg) => {
   // https://github.com/cloverich/chronicles/issues/52
   try {
     if (fs.lstatSync(filepath).isDirectory()) {
-      // move existing database file to new location
+      // todo: What was I thinking here? This doesn't even make sense... 
+      // its just creating a new database
       setDatabaseUrl(path.join(filepath, 'chronicles.db'))
     } else {
       // use user provided database
       // todo: validation :grimace
-      setDatabaseUrl(path.join(filepath, filepath))
+      setDatabaseUrl(filepath)
     }
   } catch (err) {
     console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)

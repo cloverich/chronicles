@@ -2,7 +2,7 @@ import { Journals } from "./journals";
 import { DocumentsHandler } from "./documents";
 import { PreferencesHandler } from "./preferences";
 import { FilesHandler } from "./files";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../prisma/client";
 import settings from "electron-settings";
 
 export interface Handlers {
