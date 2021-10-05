@@ -1,6 +1,5 @@
 import { PrismaClient } from "../../prisma/client";
 import { RouterContext } from "@koa/router";
-import { parser, stringifier } from "../../markdown";
 
 // My first attempt at JSON schema for validating the document save request
 // todo: clean-up, recycle validators. Research GraphQL o.0

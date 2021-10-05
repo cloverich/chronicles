@@ -1,4 +1,4 @@
-import { IJournal, Client } from "../../client";
+import { Client } from "../../client";
 import { JournalResponse } from "../../api/client/journals";
 import { observable } from "mobx";
 
@@ -18,7 +18,7 @@ export class JournalsStoreV2 {
 
     try {
       this.journals = await this.client.v2.journals.list();
-    } catch (err) {
+    } catch (err: any) {
       this.error = err;
     }
 
@@ -32,7 +32,7 @@ export class JournalsStoreV2 {
       // todo: update this.journals
       await this.client.v2.journals.remove({ id: journalId });
       this.journals = this.journals.filter((j) => j.id !== journalId);
-    } catch (err) {
+    } catch (err: any) {
       this.error = err;
     }
     this.saving = false;
@@ -46,7 +46,7 @@ export class JournalsStoreV2 {
         name: name,
       });
       this.journals.push(newJournal);
-    } catch (err) {
+    } catch (err: any) {
       this.error = err;
     }
     this.saving = false;

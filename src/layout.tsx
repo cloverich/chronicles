@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import { Pane, Tablist, Tab, Text, Icon } from "evergreen-ui";
+import { Pane, Tablist, Tab } from "evergreen-ui";
 
 type View = 'journals' | 'documents' | 'preferences';
 

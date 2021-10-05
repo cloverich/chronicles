@@ -44,7 +44,7 @@ export function useJournals() {
         setJournals(journals);
         setJournalsStore(journalStore);
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         if (!isEffectMounted) return;
 
         setLoadingErr(err);

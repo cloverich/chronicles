@@ -6,13 +6,7 @@ import Journals from './views/journals';
 import Documents from './views/documents';
 import Editor from './views/edit';
 import { useJournals } from './useJournals';
-import { useSearch } from "./hooks/useSearch";
 import { Alert } from 'evergreen-ui';
-// import { useContent } from './hooks/documents';
-import Journal from "./journal";
-
-// todo: less stupid when i have > 20 minutes to do anything
-import { ClientContext } from "./client/context";
 import { getClient } from "./loadclient.electron";
 import { Client } from "./client";
 import { JournalsStoreContext } from './useJournals';

@@ -1,8 +1,8 @@
-import { PrismaClient } from "./prisma/client";
-import { Files } from "./api/files";
+import { PrismaClient } from "../../prisma/client";
+import { Files } from "../files";
 import { parser, stringifier } from "./markdown";
 import { Root, Content } from "mdast";
-import { shouldIndexDay } from "./api/indexer";
+import { shouldIndexDay } from "./indexer";
 import fs from "fs";
 import path from "path";
 import { DateTime } from "luxon";
@@ -19,7 +19,7 @@ async function findOrCreate(name: string) {
         name: name,
       },
     });
-  } catch (err) {
+  } catch (err: any) {
     if (err.code === "P2002") {
       // already exists
       return await client.journal2.findFirst({ where: { name } });

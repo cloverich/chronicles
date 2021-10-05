@@ -1,13 +1,9 @@
 import Koa from "koa";
 import Router from "@koa/router";
-import send from "koa-send";
 const bodyParser = require("koa-bodyparser");
-import Handlers from "./handlers";
 import { Handlers as Handlers2 } from "./handlers/index";
-// i hate myself
 import makePort from "get-port";
 import { ValidationError, NotFoundError } from "./errors";
-import { recreateSchema } from "./database";
 
 /**
  * This process is started by the electron main process
@@ -66,14 +62,6 @@ export async function server(handlers2: Handlers2) {
       `${ctx.request.method} ${ctx.response.status} ${ctx.request.url} - ${ms}`
     );
   });
-
-  // Make routes
-  // router.get("/journals", handlers.findJournals);
-  // router.post("/journals", handlers.addJournal);
-  // router.delete("/journals/:journal", handlers.removeJournal);
-  // router.get("/journals/:journal/:date", handlers.fetchDoc);
-  // router.post("/journals/:journal/:date", handlers.save);
-  // router.post("/search", handlers.search);
 
   router.get("/v2/preferences", handlers2.preferences.get);
 

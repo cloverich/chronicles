@@ -1,35 +1,7 @@
 import ky from "ky-universal";
-import { DocsStore } from "./docstore";
-import { IJournal } from "../api/journals";
-export { IJournal } from "../api/journals";
 import { Root } from "mdast";
 import { Client as V2Client } from "../api/client";
 import { configure } from "../api/client";
-
-class JournalsClient {
-  constructor(private api: KyClient) {}
-
-  list = (): Promise<IJournal[]> => {
-    return this.api.ky("journals").json();
-  };
-
-  add = (journal: IJournal): Promise<IJournal[]> => {
-    return this.api
-      .ky("journals", {
-        method: "post",
-        json: journal,
-      })
-      .json();
-  };
-
-  remove = (journal: IJournal): Promise<IJournal[]> => {
-    return this.api
-      .ky("journals/" + journal.name, {
-        method: "delete",
-      })
-      .json();
-  };
-}
 
 export interface GetDocument {
   journalName: string;
@@ -89,35 +61,6 @@ export interface SaveMdastRequest {
 
 export type SaveRequest = SaveRawRequest | SaveMdastRequest;
 
-class DocsClient {
-  constructor(private api: KyClient) {}
-
-  findOne = ({
-    journalName,
-    date,
-  }: GetDocument): Promise<GetDocumentResponse> => {
-    return this.api.ky.get(`journals/${journalName}/${date}`).json();
-  };
-
-  search = (q: SearchRequest): Promise<SearchResponse> => {
-    return this.api.ky
-      .post("search", {
-        json: q,
-      })
-      .json();
-  };
-
-  save = (req: SaveRequest): Promise<GetDocumentResponse> => {
-    const body = "raw" in req ? { raw: req.raw } : { mdast: req.mdast };
-
-    return this.api.ky
-      .post(`journals/${req.journalName}/${req.date}`, {
-        json: body,
-      })
-      .json();
-  };
-}
-
 abstract class KyClient {
   ky: typeof ky = (() => {
     throw new Error("ky not configured yet");
@@ -125,10 +68,6 @@ abstract class KyClient {
 }
 
 class ClientImplementation extends KyClient {
-  readonly journals: JournalsClient;
-  readonly docs: DocsClient;
-  readonly cache: DocsStore;
-
   // This not null assertion is required because of how I wrote the
   // original setup script. Refactor consumers to use the configure as
   // defined in the /api/client which seems much simpler? What was I
@@ -137,9 +76,6 @@ class ClientImplementation extends KyClient {
 
   constructor() {
     super();
-    this.journals = new JournalsClient(this);
-    this.docs = new DocsClient(this);
-    this.cache = new DocsStore(this);
   }
 
   /**

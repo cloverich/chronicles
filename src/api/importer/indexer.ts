@@ -1,10 +1,21 @@
 import path from "path";
-import { parser, stringifier } from "../markdown";
+import { parser, stringifier } from "./markdown";
 import { Root } from "ts-mdast";
-import { Database } from "./database";
-import { Files, PathStatsFile } from "./files";
-import { IJournal } from "./journals";
+import { Database } from "better-sqlite3";
+import { Files, PathStatsFile } from "../files";
 import { DateTime } from "luxon";
+
+export interface IJournal {
+  // path to root folder
+  url: string;
+  // display name
+  name: string;
+
+  /**
+   * The duration of a single document in a journal.
+   */
+  period: "day" | "week" | "month" | "year";
+}
 
 function isISODate(dateStr: string) {
   const parsedDate = DateTime.fromISO(dateStr);
@@ -28,7 +39,8 @@ class IndexParsingError extends Error {
   }
 }
 
-export class Indexer {
+// legacy
+class Indexer {
   private db: Database;
   constructor(db: Database) {
     this.db = db;
@@ -47,7 +59,7 @@ export class Indexer {
 
     try {
       contents = stringifier.stringify(node);
-    } catch (err) {
+    } catch (err: any) {
       throw new IndexParsingError(err);
     }
 

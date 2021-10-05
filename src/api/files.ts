@@ -5,10 +5,9 @@ import fs from "fs";
 const { readFile, writeFile, access, stat } = fs.promises;
 import { Stats } from "fs";
 import { NotFoundError, ValidationError } from "./errors";
-import { DateTime } from "luxon";
 const readFileStr = (path: string) => readFile(path, "utf8");
 
-import { ClientRequest, IncomingMessage } from "http";
+import { IncomingMessage } from "http";
 
 export interface PathStatsFile {
   path: string;
@@ -42,7 +41,7 @@ export class Files {
   static async read(fp: string) {
     try {
       return await readFileStr(fp);
-    } catch (err) {
+    } catch (err: any) {
       if (err.code === "ENOENT") {
         throw new NotFoundError(`Document at ${fp} does not exist.`);
       } else {
@@ -136,7 +135,7 @@ export class Files {
           `ensureDir called but ${directory} already exists as a file`
         );
       }
-    } catch (err) {
+    } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
       await mkdirp(directory);
     }

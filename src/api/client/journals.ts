@@ -1,5 +1,14 @@
-import { IJournal } from "../journals";
-export { IJournal } from "../journals";
+interface IJournal {
+  // path to root folder
+  url: string;
+  // display name
+  name: string;
+
+  /**
+   * The duration of a single document in a journal.
+   */
+  period: "day" | "week" | "month" | "year";
+}
 
 import ky from "ky-universal";
 type Ky = typeof ky;
