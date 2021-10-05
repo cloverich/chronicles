@@ -34,6 +34,9 @@ fi
 echo "Copying electron folder"
 cp -r src/electron dist/
 
+# todo: inspect database and determine if migrations were generated
+# ...this is a post-build, pre-release integration test
+
 # Generate prisma database client
 # Then copy it to the output directory
 # NOTE: Does this account for native binaries? ¯\_(ツ)_/¯ 
@@ -50,7 +53,10 @@ npx webpack --config webpack.js
 
 # copy package.json, required by electron to know how to start
 cp package.json dist/
+cp yarn.lock dist/
 
+# todo: This is installing dev dependencies which, because of webpack, should not be needed.
+# When I use install --production, the final build complains it cannot find electron. Sigh.
 cd dist/ && yarn
 
 cd ../
