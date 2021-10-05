@@ -7,31 +7,31 @@ import Documents from './views/documents';
 import Editor from './views/edit';
 import { useJournals } from './useJournals';
 import { Alert } from 'evergreen-ui';
-import { getClient } from "./loadclient.electron";
-import { Client } from "./client";
 import { JournalsStoreContext } from './useJournals';
+
+import client, { Client } from "./client";
 
 /**
  * Wrap the main container and supply the API client, which
  * needs to wait for a signal from Electron to be ready.
  */
 export default function ClientInjectingContainer() {
-  const [client, setClient] = useState<Client>();
+  const [ready, setReady] = useState<boolean>();
 
-  async function waitForClient() {
-    const client = await getClient();
-    setClient(client);
-  }
   useEffect(() => {
-    waitForClient();
-  }, []);
+    client.configure(`http://localhost:${2345678}`);
+    setReady(true);
+  }, [])
 
-  if (!client) {
+  if (!ready) {
     // todo: better loading state...
     return <div>¯\_(ヅ)_/¯</div>;
   }
 
   // I don't actually need to inject it... its exported as a singleton...
+  // todo: or any of this, just need a client config step. Just refactored what
+  // I had previously (which was more complex) and made this work, Feel free
+  // to refactor
   return <Container />;
 }
 

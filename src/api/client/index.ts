@@ -3,6 +3,11 @@ import { DocumentsClient, GetDocumentResponse } from "./documents";
 import { PreferencesClient } from "./preferences";
 import { FilesClient } from "./files";
 import ky from "ky-universal";
+import settings from "electron-settings";
+import DB from "better-sqlite3";
+
+// todo: validation, put this somewhere proper
+const db = DB(settings.getSync("DATABASE_URL") as string);
 
 export { GetDocumentResponse } from "./documents";
 
@@ -14,6 +19,7 @@ export interface Client {
 }
 
 export function configure(urlBase: string): Client {
+  // todo: remove ky
   const myky = ky.extend({
     prefixUrl: urlBase,
     hooks: {
@@ -34,8 +40,8 @@ export function configure(urlBase: string): Client {
   });
 
   return {
-    journals: new JournalsClient(myky),
-    documents: new DocumentsClient(myky),
+    journals: new JournalsClient(db),
+    documents: new DocumentsClient(myky, db),
     preferences: new PreferencesClient(myky),
     files: new FilesClient(myky),
   };

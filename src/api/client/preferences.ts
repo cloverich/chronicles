@@ -11,7 +11,7 @@ export class PreferencesClient {
   constructor(private ky: Ky) {}
 
   get = async (): Promise<Preferences> => {
-    const settingsJson = settings.getSync();
+    const settingsJson = await settings.get();
     return settingsJson as unknown as Preferences;
     // return this.ky("v2/preferences").json();
   };

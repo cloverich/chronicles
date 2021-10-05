@@ -14,6 +14,7 @@ module.exports = (env, argv) => {
     entry: __dirname + "/src/app.tsx",
     mode: PRODUCTION ? 'production' : 'development',
     target: 'electron-renderer',
+    externals: { 'better-sqlite3': 'commonjs2 better-sqlite3'},
     output: {
       filename: "app.js",
       path: __dirname + "/dist"

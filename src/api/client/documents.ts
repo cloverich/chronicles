@@ -1,6 +1,8 @@
 import { Root } from "mdast";
 import ky from "ky-universal";
 type Ky = typeof ky;
+import { Database } from "better-sqlite3";
+import cuid from "cuid";
 
 export interface GetDocumentResponse {
   id: string;
@@ -68,34 +70,98 @@ export interface SaveRequest {
   journalId: string;
   content: string;
   title?: string;
+
+  // these included for override, originally,
+  // to support the import process
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export class DocumentsClient {
-  constructor(private ky: Ky) {}
+  constructor(private ky: Ky, private db: Database) {}
 
   findById = ({
     documentId,
   }: {
     documentId: string;
   }): Promise<GetDocumentResponse> => {
-    return this.ky.get(`v2/documents/${documentId}`).json();
+    const doc = this.db
+      .prepare("select * from documents where id = :id")
+      .get({ id: documentId });
+    console.log(doc);
+    return doc;
+    // return this.ky.get(`v2/documents/${documentId}`).json();
   };
 
-  search = (q?: SearchRequest): Promise<SearchResponse> => {
-    return this.ky
-      .post("v2/search", {
-        json: q,
-      })
-      .json();
+  search = async (q?: SearchRequest): Promise<SearchResponse> => {
+    // todo: consider using raw and getting arrays of values rather than
+    // objects for each row
+    if (q?.journals) {
+      return {
+        data: this.db
+          .prepare("select * from documents where id in (:journalIds)")
+          .all({ journalIds: q.journals }),
+      };
+    } else {
+      return {
+        data: this.db.prepare("select * from documents").all(),
+      };
+    }
   };
 
-  save = (req: SaveRequest): Promise<GetDocumentResponse> => {
-    // const body = "raw" in req ? { raw: req.raw } : { mdast: req.mdast };
+  save = ({
+    id,
+    createdAt,
+    updatedAt,
+    journalId,
+    content,
+    title,
+  }: SaveRequest): Promise<GetDocumentResponse> => {
+    if (id) {
+      this.db
+        .prepare(
+          `
+        update documents set
+          journalId=:journalId,
+          content=:content,
+          title=:title,
+          updatedAt=:updatedAt
+        where
+          id=:id
+      `
+        )
+        .run({
+          id,
+          content,
+          title,
+          journalId,
+          updatedAt: new Date().toISOString(),
+        });
 
-    return this.ky
-      .post(`v2/documents`, {
-        json: req,
-      })
-      .json();
+      return this.db
+        .prepare(`select * from documents where id = :id`)
+        .get({ id });
+    } else {
+      const id = cuid();
+      this.db
+        .prepare(
+          `
+        insert into documents (id, journalId, content, title, createdAt, updatedAt) 
+        values (:id, :journalId, :content, :title, :createdAt, :updatedAt)
+      `
+        )
+        .run({
+          id,
+          journalId,
+          content,
+          title,
+          createdAt: createdAt || new Date().toISOString(),
+          updatedAt: updatedAt || new Date().toISOString(),
+        });
+
+      return this.db
+        .prepare(`select * from documents where id = :id`)
+        .get({ id });
+    }
   };
 }

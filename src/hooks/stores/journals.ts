@@ -2,7 +2,7 @@ import { Client } from "../../client";
 import { JournalResponse } from "../../api/client/journals";
 import { observable } from "mobx";
 
-export class JournalsStoreV2 {
+export class JournalsStore {
   private isLoaded: boolean = false;
   @observable loading: boolean = true;
   @observable saving: boolean = false;
@@ -47,10 +47,11 @@ export class JournalsStoreV2 {
       });
       this.journals.push(newJournal);
     } catch (err: any) {
+      console.error(err);
       this.error = err;
     }
     this.saving = false;
   };
 }
 
-export type IJournalStore = JournalsStoreV2;
+export type IJournalStore = JournalsStore;

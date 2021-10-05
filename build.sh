@@ -34,20 +34,6 @@ fi
 echo "Copying electron folder"
 cp -r src/electron dist/
 
-# todo: inspect database and determine if migrations were generated
-# ...this is a post-build, pre-release integration test
-
-# Generate prisma database client
-# Then copy it to the output directory
-# NOTE: Does this account for native binaries? ¯\_(ツ)_/¯ 
-# https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#binarytargets-options
-npx prisma generate
-cp -r src/prisma dist/prisma
-
-# compile server code, which is typescript, to dist
-echo "Compiling backend typescript and outputting to $outdir"
-npx tsc --outDir dist/
-
 # compile ui files to dist
 npx webpack --config webpack.js
 

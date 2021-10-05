@@ -1,4 +1,3 @@
-import { PrismaClient } from "../../prisma/client";
 import { Files } from "../files";
 import { parser, stringifier } from "./markdown";
 import { Root, Content } from "mdast";
@@ -7,26 +6,17 @@ import fs from "fs";
 import path from "path";
 import { DateTime } from "luxon";
 
-const client = new PrismaClient();
-const notesDir = process.argv[2];
-console.log("using notes directory: ", notesDir);
+import { configure } from "../client";
+const client = configure("/who/cares.com");
 
 // Hmmm... maybe this is built in to Prisma client somehow
 async function findOrCreate(name: string) {
-  try {
-    return await client.journals.create({
-      data: {
-        name: name,
-      },
-    });
-  } catch (err: any) {
-    if (err.code === "P2002") {
-      // already exists
-      return await client.journals.findFirst({ where: { name } });
-    } else {
-      throw err;
-    }
-  }
+  const journals = await client.journals.list();
+  // if (journals.includes)
+  const existing = journals.find((j) => j.name === name);
+  if (existing) return existing;
+
+  return await client.journals.create({ name });
 }
 
 // Copy pasta from shouldIndex and exported for my importChronicles script...
@@ -46,7 +36,8 @@ function dateFromPrevalidatedFilepath(filepath: string) {
 
 // Import documents from my old file based system, which used markdown files
 // in a one note per day system: /my-journal/2020/05/01/2020-05-01.md
-async function importChronicles() {
+export async function importChronicles(notesDir: string) {
+  // await new Promise((res) => setTimeout(res, 2000));
   // list all journals in my notes directory
   const journals = fs
     .readdirSync(notesDir)
@@ -74,14 +65,12 @@ async function importChronicles() {
         // todo: consider adding a `date` field, and using that as the definitive date
         // then createdAt and updatedAt could maintain "When was this document created"
         // and make back-dating a bit more sensible...
-        const doc = await client.documents.create({
-          data: {
-            journalId: jourrnalModel!.id,
-            createdAt: date.toJSDate(),
-            updatedAt: date.toJSDate(),
-            content: document.content,
-            title: document.title,
-          },
+        const doc = await client.documents.save({
+          journalId: jourrnalModel!.id,
+          createdAt: date.toISO()!,
+          updatedAt: date.toISO()!,
+          content: document.content,
+          title: document.title,
         });
         console.log("created", doc.id);
       }
@@ -194,12 +183,16 @@ function splitOnTitle(
   return documents;
 }
 
-importChronicles().then(
-  () => {
-    process.exit(0);
-  },
-  (err) => {
-    console.error(err);
-    process.exit(1);
-  }
-);
+// Now that I import stuff that uses electron uhh...
+// this must be called from an electron process...
+// ... but I also use typescript...
+// call from renderer? lmao.
+// importChronicles().then(
+//   () => {
+//     process.exit(0);
+//   },
+//   (err) => {
+//     console.error(err);
+//     process.exit(1);
+//   }
+// );
