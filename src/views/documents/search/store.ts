@@ -1,6 +1,6 @@
-import { computed, action, observable } from "mobx";
+import { computed, action, observable, IObservableArray } from "mobx";
 import _ from "lodash";
-import { IJournalsUiStore, SearchToken } from "../../store";
+import { SearchToken } from "./tokens";
 import { FocusTokenParser } from "./parsers/focus";
 import { JournalTokenParser } from "./parsers/in";
 import { FilterTokenParser } from "./parsers/filter";
@@ -24,10 +24,17 @@ const parsers: Record<SearchToken["type"], TokenParser<any>> = {
 };
 
 /**
+ * Any object holding observable tokens can be used
+ */
+export interface ITokensStore {
+  tokens: IObservableArray<SearchToken>;
+}
+
+/**
  * View model for displaying, adding, and removing search tokens
  */
 export class TagSearchStore {
-  constructor(private store: Pick<IJournalsUiStore, "tokens">) {}
+  constructor(private store: ITokensStore) {}
 
   // TODO: Rename. These are stringified tokens, not SearchToken's
   // which is confusing?

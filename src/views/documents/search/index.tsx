@@ -1,12 +1,11 @@
 import React from "react";
 import { TagInput } from "evergreen-ui";
 import { observer, useLocalStore } from "mobx-react-lite";
-import { IJournalsUiStore } from "../../store";
-import { TagSearchStore } from "./store";
+import { TagSearchStore, ITokensStore } from "./store";
 import { TagSearchLoading } from './loading';
 
 interface Props {
-  store: Pick<IJournalsUiStore, "tokens">;
+  store: ITokensStore;
 }
 
 export default function TagSearchContainer(props: Partial<Props>) {

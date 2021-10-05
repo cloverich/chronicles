@@ -1,4 +1,4 @@
-import { JournalToken, SearchToken } from "../../../store";
+import { JournalToken, SearchToken } from "../tokens";
 
 export class JournalTokenParser {
   prefix = "in:";

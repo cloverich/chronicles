@@ -2,9 +2,13 @@ import { suite, test } from "mocha";
 import { assert } from "chai";
 import { observable, IObservableArray } from "mobx";
 import { TagSearchStore } from "./store";
-import { SearchToken, IJournalsUiStore } from "../../store";
+import { SearchToken } from "./tokens";
 
-function makeMock(): [Pick<IJournalsUiStore, "tokens">, TagSearchStore] {
+interface TokensStore {
+  tokens: IObservableArray<SearchToken>;
+}
+
+function makeMock(): [TokensStore, TagSearchStore] {
   const mockStore = observable({
     tokens: observable([]) as IObservableArray<SearchToken>,
   });

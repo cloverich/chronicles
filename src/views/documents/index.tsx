@@ -6,8 +6,8 @@ import { observable, IObservableArray, reaction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Heading, Paragraph, Pane, Button } from "evergreen-ui";
 import { useJournals, JournalsStoreContext, JournalsStore } from '../../useJournals';
-import TagSearch from '../../journal/components/search';
-import { SearchToken, JournalToken } from '../../journal/store';
+import TagSearch from './search';
+import { SearchToken, JournalToken } from "./search/tokens";
 
 class SearchV2Store {
   @observable docs: SearchResponse["data"] = [];

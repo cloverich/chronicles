@@ -1,4 +1,4 @@
-import { FocusToken, SearchToken } from "../../../store";
+import { FocusToken, SearchToken } from "../tokens";
 
 export class FocusTokenParser {
   prefix = "focus:";

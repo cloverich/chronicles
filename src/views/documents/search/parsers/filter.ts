@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { FilterToken, SearchToken, NodeMatch } from "../../../store";
+import { FilterToken, SearchToken, NodeMatch } from "../tokens";
 
 export class FilterTokenParser {
   prefix = "filter:";
