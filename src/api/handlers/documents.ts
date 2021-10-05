@@ -70,7 +70,7 @@ export class DocumentsHandler {
       };
     }
 
-    const doc = await this.client.document2.findFirst({
+    const doc = await this.client.documents.findFirst({
       where: { id: ctx.params.id },
     });
 
@@ -95,7 +95,7 @@ export class DocumentsHandler {
       // todo: validate journal names? What's the result if they are invalid?
       // no search results. Hrmph
       // todo: test -- search with invalid journal(s) returns no search results
-      docs = await this.client.document2.findMany({
+      docs = await this.client.documents.findMany({
         where: {
           journalId: {
             in: journals,
@@ -111,7 +111,7 @@ export class DocumentsHandler {
         // take: 100,
       });
     } else {
-      docs = await this.client.document2.findMany({
+      docs = await this.client.documents.findMany({
         select: {
           id: true,
           createdAt: true,
@@ -146,7 +146,7 @@ export class DocumentsHandler {
     }
 
     if (body.id) {
-      const doc = await this.client.document2.update({
+      const doc = await this.client.documents.update({
         where: { id: body.id },
         data: body,
       });
@@ -154,7 +154,7 @@ export class DocumentsHandler {
       ctx.response.body = doc;
       ctx.response.status = 200;
     } else {
-      const doc = await this.client.document2.create({
+      const doc = await this.client.documents.create({
         data: body,
       });
       ctx.response.body = doc;

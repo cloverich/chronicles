@@ -10,25 +10,6 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-model documents {
-  // this is dumb, should use something suitable for distributed id generation
-  id       String     @id @default(cuid())
-  journal  String?
-  date     String?
-  title    String?
-  contents String?
-
-  @@unique([journal, date, title], name: "documents_journal_date_title_uniq")
-  @@index([title], name: "documents_titles_idx")
-}
-
-model journals {
-  id     String    @id @default(cuid())
-  name   String
-  url    String
-  period String @default("day")
-}
-
 model nodes {
   id         Int     @id @default(autoincrement())
   journal    String?
@@ -39,22 +20,23 @@ model nodes {
   attributes String?
 }
 
-model Journal2 {
+model journals {
   id       String     @id @default(cuid())
   name     String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now())
-  Document  Document2[]
+  Document  documents[]
   @@unique([name], name: "journals_name_uniq")
 }
 
-model Document2 {
+model documents {
   id       String     @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
   title     String?
   content   String
   journalId String
-  journal   Journal2  @relation(fields: [journalId], references: [id], onDelete: Cascade)
-  @@index([title], name: "documents_createdat_idx")
+  journal   journals  @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  @@index([title], name: "documents_title_idx")
+  @@index([createdAt], name: "documents_createdat_idx")
 }

@@ -40,7 +40,7 @@ export class Journals {
       // todo: This copy pasta isn't needed... it was from
       // https://stackoverflow.com/questions/40138600/disable-request-timeout-in-koa;
       ctx.request.socket.setTimeout(60 * 1000);
-      ctx.response.body = await this.client.journal2.create({
+      ctx.response.body = await this.client.journals.create({
         data: {
           name: body.name,
         },
@@ -72,14 +72,14 @@ export class Journals {
       };
     }
 
-    await this.client.journal2.delete({
+    await this.client.journals.delete({
       where: { id: journalId },
     });
     ctx.status = 204;
   };
 
   list = async ({ response }: RouterContext) => {
-    const body = await this.client.journal2.findMany();
+    const body = await this.client.journals.findMany();
     response.status = 200;
     response.body = body;
   };

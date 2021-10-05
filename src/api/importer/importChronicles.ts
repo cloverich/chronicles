@@ -14,7 +14,7 @@ console.log("using notes directory: ", notesDir);
 // Hmmm... maybe this is built in to Prisma client somehow
 async function findOrCreate(name: string) {
   try {
-    return await client.journal2.create({
+    return await client.journals.create({
       data: {
         name: name,
       },
@@ -22,7 +22,7 @@ async function findOrCreate(name: string) {
   } catch (err: any) {
     if (err.code === "P2002") {
       // already exists
-      return await client.journal2.findFirst({ where: { name } });
+      return await client.journals.findFirst({ where: { name } });
     } else {
       throw err;
     }
@@ -74,7 +74,7 @@ async function importChronicles() {
         // todo: consider adding a `date` field, and using that as the definitive date
         // then createdAt and updatedAt could maintain "When was this document created"
         // and make back-dating a bit more sensible...
-        const doc = await client.document2.create({
+        const doc = await client.documents.create({
           data: {
             journalId: jourrnalModel!.id,
             createdAt: date.toJSDate(),
