@@ -1,5 +1,4 @@
 import { RouterContext } from "@koa/router";
-import settings from "electron-settings";
 import send from "koa-send";
 import cuid from "cuid";
 import path from "path";
@@ -12,55 +11,11 @@ import mime from "mime";
  * and insecure settings only.
  */
 export class FilesHandler {
-  /**
-   * Validate assets path (in settings) and instantiate a FilesHandler with it.
-   */
-  static async create(userDataDir: string) {
-    // I would prefer to do this in a formal start-up routine, although I suppose creating
-    // api handlers is a reasonable place to have that logic.
-    // todo: validate path is valid, readable, writeable
-    let assetsPath = settings.getSync("USER_FILES_DIR");
+  // todo: keep this in sync or abandon the backend...
+  private USER_FILES_DIR: string;
 
-    // Create and set a default directory if it does not exist
-    if (!assetsPath) {
-      const defaultUserFilesDir = path.join(
-        userDataDir,
-        "chronicles_user_images"
-      );
-      console.log(
-        `USER_FILES_DIR not found in settings. Using ${userDataDir} and udpating settings`
-      );
-
-      settings.setSync("USER_FILES_DIR", defaultUserFilesDir);
-      assetsPath = defaultUserFilesDir;
-    }
-
-    // Not sure, but better something than silence
-    if (typeof assetsPath !== "string") {
-      console.error(
-        "assets path is not a string",
-        assetsPath,
-        "typeof: ",
-        typeof assetsPath
-      );
-      throw new Error(
-        "Assets path is not a string, FilesHandler cannot proceed without the assetsPath directory being a string pointing to a valid, accessible file path"
-      );
-    }
-
-    console.log("serving user assets from", assetsPath);
-
-    try {
-      await Files.ensureDir(assetsPath);
-
-      // todo: no way to keep this cached path in sync if settings changes
-      // since that is performed in the main process
-      return new FilesHandler(/*assetsPath*/);
-    } catch (err) {
-      throw new Error(
-        `FilesHandler cannot read or write ${assetsPath}. Access is necessary to upload and serve user files!`
-      );
-    }
+  constructor(USER_FILES_DIR: string) {
+    this.USER_FILES_DIR = USER_FILES_DIR;
   }
 
   /**
@@ -77,7 +32,7 @@ export class FilesHandler {
     }
 
     await send(ctx, filename, {
-      root: settings.getSync("USER_FILES_DIR") as string,
+      root: this.USER_FILES_DIR,
     });
   };
 
@@ -88,10 +43,7 @@ export class FilesHandler {
     // https://github.com/broofa/mime
     const extension = mime.getExtension(ctx.request.headers["content-type"]);
     const filename = `${cuid()}.${extension || ".unknown"}`;
-    const filepath = path.join(
-      settings.getSync("USER_FILES_DIR") as string,
-      filename
-    );
+    const filepath = path.join(this.USER_FILES_DIR, filename);
 
     // todo: make more robust
     if (filename.endsWith("unknown")) {

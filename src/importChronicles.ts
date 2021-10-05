@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./prisma/client";
 import { Files } from "./api/files";
 import { parser, stringifier } from "./markdown";
 import { Root, Content } from "mdast";
@@ -194,6 +194,12 @@ function splitOnTitle(
   return documents;
 }
 
-importChronicles().then(() => {
-  process.exit(0);
-}, console.error);
+importChronicles().then(
+  () => {
+    process.exit(0);
+  },
+  (err) => {
+    console.error(err);
+    process.exit(1);
+  }
+);

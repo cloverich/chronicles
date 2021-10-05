@@ -1,25 +1,21 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, protocol } = require("electron");
-const { spawn, fork } = require("child_process");
+const { spawn, fork, execSync } = require("child_process");
 const path = require("path");
 const fs = require('fs');
 const settings = require('electron-settings');
+const { initUserFilesDir } =  require('./userFilesInit');
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
 console.log('settings.file: ', settings.file());
 
-// Ensure the default userData directory is where the active settings file is located. 
-// This is more a reminder of how electron-settings is manually configured in the backend
-// process, since it does not have access to the electron runtime
-// See the handlers setup logic in api/handlers/index.ts
-if (!settings.file().includes(app.getPath("userData"))) {
-  console.error('settings.file', settings.file());
-  console.error('app.getPath(userData)', app.getPath('userData'));
 
-  // This process passes app.getPath('userData') to the backend API which uses that to 
-  // configure settings in its process, so they need to match.
-  // todo: Ditch the API server so you don't have to build assumptions around hacks
-  throw new Error('settings.file() is not in the directory app.getPath(userData)?');
+initUserFilesDir(app.getPath("userData"));
+console.log('settings', settings.getSync());
+
+const USER_FILES_DIR = settings.getSync('USER_FILES_DIR');
+if (!USER_FILES_DIR) {
+  throw new Error('USER_FILES_DIR missing in main tooo after calling initUserFilesDir');
 }
 
 const DATABASE_URL = 'DATABASE_URL';
@@ -33,16 +29,14 @@ let dbfile = settings.getSync(DATABASE_URL);
 /**
  * Persist the database url to settings file
  * assumes url is a full, valid filepath
+ * 
+ * todo: Add validation here
  */
 function setDatabaseUrl(url) {
   if (!url) throw new Error('setDatabaseUrl called with null or empty string');
 
-  // https://www.prisma.io/docs/reference/database-reference/connection-urls
-  // Sqlite file must start with `file:`
-  const fileUrl = url.startsWith('file:') ? url : `file:`
-
   // todo: validate it can be loaded (or created) by Prisma client
-  settings.setSync(DATABASE_URL, fileUrl);
+  settings.setSync(DATABASE_URL, url);
 }
 
 // Provide and set a default DB if one is not found.
@@ -79,6 +73,17 @@ app.whenReady().then(() => {
     // happen through main. Refactor so backend api calls through here, or move default user files setup
     // logic into main, then cache the value
     const absoluteUrl = path.join(settings.getSync('USER_FILES_DIR'), url);
+
+    // NOTE: If the file does not exist... ELECTRON WILL MAKE AN HTTP REQUEST WITH THE FULL URL???
+    // Seems like... odd fallback behavior.
+    // This isn't performant but is for my sanity. 
+    // todo: Upgrade libraries, see if this behavior is fixed or can be disabled somehow?
+    if (!fs.existsSync(absoluteUrl)) {
+      console.warn('chronicles:// file handler could not find file:', absoluteUrl, 'Maybe you need to set the USER_FILES or update broken file links?')
+    }
+
+    // todo: santize URL: Prevent ../, ensure it points to USER_FILES directory
+    // https://github.com/cloverich/chronicles/issues/53
     callback({ path: absoluteUrl })
   })
 })
@@ -127,12 +132,32 @@ function setupBackendListener(serverProcess) {
   });
 }
 
+
+// Run migrations. NOTE: This isn't smart and doesn't work in production,
+// you just have to point production at a db you setup in dev, for now...
+if (app.isPackaged) {
+  // We don't have node in production, and prisma migrate requires CLI usage
+  // So long as prisma is listed as as production dependency... should be able to
+  // rely on the script although it likely has platform native dependencies
+  // https://github.com/prisma/prisma/issues/4703
+
+  // Even this won't work with dev dependencies installed... either .bin gets stripped 
+  // or it can't resolve it. For now 
+  // execSync(`DATABASE_URL="file:${dbfile}" ./node_modules/.bin/prisma migrate deploy`, )
+} else {
+  // Don't forget to create migration after making changes
+  // `prisma migrate dev --name added_job_title`
+  // https://www.prisma.io/docs/guides/database/prototyping-schema-db-push
+  execSync(`DATABASE_URL="file:${dbfile}" npx prisma db push`, { cwd: path.join(__dirname, '/../../')});
+}
+
 // Start the backend server. 
 // todo: This API server is a legacy from before I was using Electron and is
 // how file persistence and database operations happen. Better to abandon it
 // and move the logic to a preload script
 // https://www.matthewslipper.com/2019/09/22/everything-you-wanted-electron-child-process.html
 if (app.isPackaged) {
+  console.log('packaged app setting USER_FILES_DIR to ....', USER_FILES_DIR);
   const serverProcess = fork(
     // This is tsc + build directory set in the build script.
     // Yeah, stupid and confusing. Prototype life for me.
@@ -145,8 +170,16 @@ if (app.isPackaged) {
 
     // NOTE: DATABASE_URL passed as environment variable because that is how Prisma picks it up
     // see schema.prisma
-    env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')} }
-  );
+    env: { 
+      ...process.env,
+    
+      // https://www.prisma.io/docs/reference/database-reference/connection-urls
+      // Sqlite file must start with `file:`
+      DATABASE_URL: `file:${dbfile}`,
+      USER_DATA_DIR: app.getPath('userData'),
+      USER_FILES_DIR: USER_FILES_DIR, 
+    }
+  });
 
   setupBackendListener(serverProcess);
 } else {
@@ -161,7 +194,17 @@ if (app.isPackaged) {
 
       // NOTE: DATABASE_URL passed as environment variable because that is how Prisma picks it up
       // see schema.prisma
-      env: { ...process.env, DATABASE_URL: dbfile, USER_DATA_DIR: app.getPath('userData')}
+      env: { 
+        ...process.env,
+
+        // https://www.prisma.io/docs/reference/database-reference/connection-urls
+        // Sqlite file must start with `file:`
+        DATABASE_URL: `file:${dbfile}`,
+
+        // todo: these are now redundant...
+        USER_DATA_DIR: app.getPath('userData'),
+        USER_FILES_DIR: USER_FILES_DIR, 
+      }
     }
   );
 
@@ -244,12 +287,13 @@ ipcMain.on('select-database-file', async (event, arg) => {
   // https://github.com/cloverich/chronicles/issues/52
   try {
     if (fs.lstatSync(filepath).isDirectory()) {
-      // move existing database file to new location
+      // todo: What was I thinking here? This doesn't even make sense... 
+      // its just creating a new database
       setDatabaseUrl(path.join(filepath, 'chronicles.db'))
     } else {
       // use user provided database
       // todo: validation :grimace
-      setDatabaseUrl(path.join(filepath, filepath))
+      setDatabaseUrl(filepath)
     }
   } catch (err) {
     console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)

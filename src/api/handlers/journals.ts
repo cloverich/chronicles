@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "../../prisma/client";
 import { RouterContext } from "@koa/router";
-import { Prisma } from "@prisma/client";
 
 export interface IJournal {
   // display name

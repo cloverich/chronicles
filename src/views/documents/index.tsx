@@ -56,20 +56,32 @@ import { ViewState } from '../../container';
 interface Props extends React.PropsWithChildren<{}> {
   setView: React.Dispatch<React.SetStateAction<ViewState>>
   store?: SearchV2Store;
+  disableDocCreate?: boolean;
 }
 
 
 const Layout = observer(function LayoutNaked(props: Partial<Props>) {
-  return (
-    <Pane>
+  // conditionally show document create button.
+  function createDocumentsView() {
+    if (!props.setView || props.disableDocCreate) return;
+
+    return (
+      <>
         <Pane marginBottom={8}>
           <TagSearch store={props.store} />
         </Pane>
         <Pane>
-          <a onClick={props.setView ? () => props.setView!({ name: 'edit', props: {}}): () => {}}>
+          <a onClick={() => props.setView!({ name: 'edit', props: {}})}>
             Create new
           </a>
         </Pane>
+      </>
+    )
+  }
+
+  return (
+    <Pane>
+      {createDocumentsView()}
 
       <Pane marginTop={24}>
         {props.children}
@@ -115,17 +127,17 @@ function DocumentsContainer(props: Props) {
   if (!searchStore.docs.length) {
     if (journalsStore.journals.length) {
       return (
-        <Layout store={searchStore}>
+        <Layout store={searchStore} setView={props.setView}>
           <Heading>No documents found</Heading>
           <Paragraph>Broaden your search, or add more documents.</Paragraph>
         </Layout>
       );
     } else {
       return (
-        <Layout store={searchStore}>
+        <Layout store={searchStore} disableDocCreate>
           <Heading>No journals added</Heading>
           <Paragraph>
-            Use the config link in the navbar to create a new journal.
+            Use the preferences link in the navbar to create a new journal.
           </Paragraph>
         </Layout>
       );

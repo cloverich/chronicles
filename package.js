@@ -40,6 +40,7 @@ packager({
   dir: srcDir,
   out: outDir,
   // … other options
+  // Documentation does this in afterCopy. Why did I do this in afterPrune?
   afterPrune: [(buildPath, electronVersion, platform, arch, callback) => {
     console.log('rebuilding...', buildPath, electronVersion, platform, arch);
     rebuild({ buildPath, electronVersion, arch })

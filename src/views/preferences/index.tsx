@@ -73,7 +73,7 @@ export default function Preferences(props: Props) {
         <p>Chronicles images and other user files are stored in the `USER_FILES` directory</p>
         <p>This file is located at:</p>
         <p><code>{preferences.USER_FILES_DIR}</code></p>
-        <p>To change the direcotory location, <b>first</b> move the existing directory to the desired location, and then select the new location with th ebutton below</p>
+        <p>To change the directory location, <b>first</b> move the existing directory to the desired location, and then select the new location with th ebutton below</p>
 
         {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
         <Button isLoading={loading} disabled={loading} onClick={openDialogUserFiles}>Select new directory</Button>

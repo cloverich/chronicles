@@ -1,5 +1,5 @@
 import { RouterContext } from "@koa/router";
-import settings from "electron-settings";
+// import settings from "electron-settings";
 
 /**
  * The Preferences handler provides an API into electron-settings.
@@ -8,7 +8,7 @@ export class PreferencesHandler {
   get = async ({ response }: RouterContext) => {
     response.status = 200;
     response.body = {
-      ...settings.getSync(),
+      // ...settings.getSync(),
       // The schema.prisma file declares this environment variable as
       // where it looks for the database, and its provided by the start-up
       // process
