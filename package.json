@@ -7,14 +7,16 @@
     "dev": "webpack-dev-server --config webpack.js --hot --inline --colors",
     "dev:electron": "electron src/electron/index.js",
     "test": "mocha -r ts-node/register -r esm src/**/*.test.ts",
-    "test:one": "mocha -r ts-node/register -r esm"
+    "test:one": "mocha -r ts-node/register -r esm",
+    "postinstall": "./rebuild-better-sqlite3.sh"
   },
   "dependencies": {
+    "@electron/remote": "^2.0.1",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
-    "better-sqlite3": "^7.1.0",
+    "better-sqlite3": "^7.4.3",
     "cuid": "^2.1.8",
-    "electron-settings": "^4.0.2",
+    "electron-store": "^8.0.1",
     "get-port": "^5.1.1",
     "klaw": "^3.0.0",
     "ky": "^0.20.0",
@@ -44,7 +46,7 @@
     "chai": "^4.2.0",
     "chai-json-schema-ajv": "^5.2.4",
     "css-loader": "^3.6.0",
-    "electron": "^9.1.1",
+    "electron": "^15.1.1",
     "electron-packager": "^15.0.0",
     "electron-rebuild": "^3.2.3",
     "emotion": "^10.0.27",

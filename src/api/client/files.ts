@@ -1,7 +1,8 @@
 import ky from "ky-universal";
 type Ky = typeof ky;
 
-import settings from "electron-settings";
+import Store from "electron-store";
+
 import fs from "fs";
 import path from "path";
 import cuid from "cuid";
@@ -17,10 +18,10 @@ interface UploadResponse {
 }
 
 export class FilesClient {
-  constructor(private ky: Ky) {}
+  constructor(private ky: Ky, private settings: Store) {}
 
   upload = async (file: File): Promise<UploadResponse> => {
-    const dir = await settings.get("USER_FILES_DIR");
+    const dir = await this.settings.get("USER_FILES_DIR");
     const ext = path.parse(file.name).ext;
     const filename = `${cuid()}.${ext || ".unknown"}`;
     const filepath = path.join(dir as string, filename);

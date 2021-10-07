@@ -43,12 +43,18 @@ packager({
   // Documentation does this in afterCopy. Why did I do this in afterPrune?
   afterPrune: [(buildPath, electronVersion, platform, arch, callback) => {
     console.log('rebuilding...', buildPath, electronVersion, platform, arch);
-    rebuild({ buildPath, electronVersion, arch })
-      .then(() => callback())
-      .catch((error) => {
-        console.error('Error rebuilding native dependencies!');
-        console.error(error);
-        callback(error)
-      });
+    
+    // While better-sqlite3 and prebuild-install are borked
+    // https://github.com/cloverich/chronicles/issues/66
+    callback()
+
+    // Previously, and after they are fixed:
+    // rebuild({ buildPath, electronVersion, arch })
+    //   .then(() => callback())
+    //   .catch((error) => {
+    //     console.error('Error rebuilding native dependencies!');
+    //     console.error(error);
+    //     callback(error)
+    //   });
   }],
 });

@@ -41,9 +41,14 @@ npx webpack --config webpack.js
 cp package.json dist/
 cp yarn.lock dist/
 
+# see package.js
+# Could embed here but it is already setup as a postinstall script
+cp ./rebuild-better-sqlite3.sh dist/
+
 # todo: This is installing dev dependencies which, because of webpack, should not be needed.
 # When I use install --production, the final build complains it cannot find electron. Sigh.
-cd dist/ && yarn
+cd dist/
+yarn
 
 cd ../
 

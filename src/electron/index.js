@@ -1,19 +1,22 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, protocol } = require("electron");
-const { spawn, fork, execSync } = require("child_process");
 const path = require("path");
 const fs = require('fs');
-const settings = require('electron-settings');
 const { initUserFilesDir } =  require('./userFilesInit');
+const settings = require('./settings');
+
+// Newer versions of Electron require this to enable remote in the renderer
+// todo: After cleaning up dependencies, determine if it is needed
+require('@electron/remote/main').initialize()
+
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
-console.log('settings.file: ', settings.file());
 
 
 initUserFilesDir(app.getPath("userData"));
-console.log('settings', settings.getSync());
+console.log('application settings at startup:', settings.store);
 
-const USER_FILES_DIR = settings.getSync('USER_FILES_DIR');
+const USER_FILES_DIR = settings.get('USER_FILES_DIR');
 if (!USER_FILES_DIR) {
   throw new Error('USER_FILES_DIR missing in main tooo after calling initUserFilesDir');
 }
@@ -24,7 +27,7 @@ const DATABASE_URL = 'DATABASE_URL';
 let mainWindow;
 
 // when not available, dbfile is undefined
-let dbfile = settings.getSync(DATABASE_URL);
+let dbfile = settings.get(DATABASE_URL);
 
 /**
  * Persist the database url to settings file
@@ -36,7 +39,7 @@ function setDatabaseUrl(url) {
   if (!url) throw new Error('setDatabaseUrl called with null or empty string');
 
   // todo: validate it can be loaded (or created) by Prisma client
-  settings.setSync(DATABASE_URL, url);
+  settings.set(DATABASE_URL, url);
 }
 
 // Provide and set a default DB if one is not found.
@@ -72,7 +75,7 @@ app.whenReady().then(() => {
     // todo: cache this value. The backend API updates it after start-up, otherwise all updates
     // happen through main. Refactor so backend api calls through here, or move default user files setup
     // logic into main, then cache the value
-    const absoluteUrl = path.join(settings.getSync('USER_FILES_DIR'), url);
+    const absoluteUrl = path.join(settings.get('USER_FILES_DIR'), url);
 
     // NOTE: If the file does not exist... ELECTRON WILL MAKE AN HTTP REQUEST WITH THE FULL URL???
     // Seems like... odd fallback behavior.
@@ -103,17 +106,22 @@ function createWindow() {
       // ...or using a custom protocol
       // https://github.com/electron/electron/issues/23393
       nodeIntegration: true,
+      sandbox: false,
+      contextIsolation: false,
       // same as above
       enableRemoteModule: true,
     },
+    
   });
 
   // and load the index.html of the app.
   if (app.isPackaged) {
     mainWindow.loadFile("index.html");
+    mainWindow.webContents.openDevTools();
   } else {
     // assumes webpack-dev-server is hosting at this url
     mainWindow.loadURL("http://localhost:9000");
+    mainWindow.webContents.openDevTools();
   }
 }
 
@@ -200,7 +208,7 @@ ipcMain.on('select-user-files-dir', async (event, arg) => {
   try {
     if (fs.lstatSync(filepath).isDirectory()) {
       // move existing database file to new location
-      settings.setSync('USER_FILES_DIR', filepath)
+      settings.set('USER_FILES_DIR', filepath)
     } else {
       throw new Error('User files must be valid directory');
     }

@@ -1,6 +1,6 @@
 import ky from "ky-universal";
 type Ky = typeof ky;
-import settings from "electron-settings";
+import Store from "electron-store";
 
 export interface Preferences {
   DATABASE_URL: string;
@@ -8,10 +8,10 @@ export interface Preferences {
 }
 
 export class PreferencesClient {
-  constructor(private ky: Ky) {}
+  constructor(private ky: Ky, private settings: Store) {}
 
   get = async (): Promise<Preferences> => {
-    const settingsJson = await settings.get();
+    const settingsJson = this.settings.store;
     return settingsJson as unknown as Preferences;
     // return this.ky("v2/preferences").json();
   };

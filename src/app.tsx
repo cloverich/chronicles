@@ -4,7 +4,7 @@ import Container from "./container";
 import "./app.css";
 import "./typography.css";
 import { listenLinks } from "./utils.electron";
-import { remote } from 'electron';
+import remote from '@electron/remote';
 
 listenLinks();
 

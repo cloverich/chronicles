@@ -1,13 +1,13 @@
-const settings = require('electron-settings');
 const path = require('path');
 const fs = require("fs");
 const mkdirp = require("mkdirp");
+const settings = require('./settings');
 
 exports.initUserFilesDir = function initUserFilesDir(userDataDir) {
   // I would prefer to do this in a formal start-up routine, although I suppose creating
   // api handlers is a reasonable place to have that logic.
   // todo: validate path is valid, readable, writeable
-  let assetsPath = settings.getSync("USER_FILES_DIR");
+  let assetsPath = settings.get("USER_FILES_DIR");
 
   // Create and set a default directory if it does not exist
   if (!assetsPath) {
@@ -19,7 +19,7 @@ exports.initUserFilesDir = function initUserFilesDir(userDataDir) {
       `USER_FILES_DIR not found in settings. Using ${userDataDir} and udpating settings`
     );
 
-    settings.setSync("USER_FILES_DIR", defaultUserFilesDir);
+    settings.set("USER_FILES_DIR", defaultUserFilesDir);
     assetsPath = defaultUserFilesDir;
   }
 

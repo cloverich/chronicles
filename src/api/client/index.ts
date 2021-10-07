@@ -3,11 +3,15 @@ import { DocumentsClient, GetDocumentResponse } from "./documents";
 import { PreferencesClient } from "./preferences";
 import { FilesClient } from "./files";
 import ky from "ky-universal";
-import settings from "electron-settings";
 import DB from "better-sqlite3";
 
+import Store from "electron-store";
+const settings = new Store({
+  name: "settings",
+});
+
 // todo: validation, put this somewhere proper
-const db = DB(settings.getSync("DATABASE_URL") as string);
+const db = DB(settings.get("DATABASE_URL") as string);
 
 export { GetDocumentResponse } from "./documents";
 
@@ -42,8 +46,8 @@ export function configure(urlBase: string): Client {
   return {
     journals: new JournalsClient(db),
     documents: new DocumentsClient(myky, db),
-    preferences: new PreferencesClient(myky),
-    files: new FilesClient(myky),
+    preferences: new PreferencesClient(myky, settings),
+    files: new FilesClient(myky, settings),
   };
 }
 

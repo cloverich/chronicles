@@ -2,7 +2,8 @@ import React, { useState, useEffect, PropsWithChildren }  from 'react';
 import { ViewState } from '../../container';
 import { Pane, Button } from 'evergreen-ui';
 import client from "../../client";
-const { ipcRenderer } = require('electron')
+import { ipcRenderer } from 'electron';
+
 
 interface Props extends React.PropsWithChildren<{}> {
   setView: React.Dispatch<React.SetStateAction<ViewState>>

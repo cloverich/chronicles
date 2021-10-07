@@ -96,11 +96,21 @@ export class DocumentsClient {
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
     // todo: consider using raw and getting arrays of values rather than
     // objects for each row
-    if (q?.journals) {
+
+    if (q?.journals && q.journals.length) {
       return {
         data: this.db
-          .prepare("select * from documents where id in (:journalIds)")
-          .all({ journalIds: q.journals }),
+          // SQLite doesn't support binding arrays, and this library
+          // doesn't help you.
+          // https://github.com/JoshuaWise/better-sqlite3/issues/460
+          // Expression below generates:
+          // select * from documents where journalId in (?,?,?)
+          .prepare(
+            `select * from documents where journalId in (${q.journals
+              .map(() => "?")
+              .join(",")})`
+          )
+          .all(q.journals),
       };
     } else {
       return {

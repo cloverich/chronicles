@@ -43,7 +43,8 @@ class SearchV2Store {
       const res = query.length ? this.client.v2.documents.search({ journals: query }) : this.client.v2.documents.search()
       this.docs = (await res).data;
     } catch (err) {
-      this.error = JSON.stringify(err);
+      console.error('Error with documents.search results', err);
+      this.error = err instanceof Error ? err.message : JSON.stringify(err);
     }
 
     this.loading = false;
