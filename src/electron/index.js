@@ -4,11 +4,6 @@ const fs = require('fs');
 const { initUserFilesDir } =  require('./userFilesInit');
 const settings = require('./settings');
 
-// Newer versions of Electron require this to enable remote in the renderer
-// todo: After cleaning up dependencies, determine if it is needed
-require('@electron/remote/main').initialize()
-
-
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
 
@@ -109,7 +104,7 @@ function createWindow() {
       sandbox: false,
       contextIsolation: false,
       // same as above
-      enableRemoteModule: true,
+      enableRemoteModule: false,
     },
     
   });
@@ -117,7 +112,6 @@ function createWindow() {
   // and load the index.html of the app.
   if (app.isPackaged) {
     mainWindow.loadFile("index.html");
-    mainWindow.webContents.openDevTools();
   } else {
     // assumes webpack-dev-server is hosting at this url
     mainWindow.loadURL("http://localhost:9000");
@@ -218,4 +212,13 @@ ipcMain.on('select-user-files-dir', async (event, arg) => {
   }
 
   event.reply('preferences-updated');
+})
+
+ipcMain.on('inspect-element', async (event, arg) => {
+  if (!mainWindow) {
+    console.error('received request to open file picker but mainWindow is undefined');
+    return;
+  }
+
+  mainWindow.webContents.inspectElement(arg.x, arg.y)
 })

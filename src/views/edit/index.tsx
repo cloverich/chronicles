@@ -5,7 +5,7 @@ import Editor from './editor/editor';
 import { Pane, Button,Popover, Menu, Position } from 'evergreen-ui';
 import { useEditableDocument, useJournals, EditableDocument } from './useEditableDocument';
 import { css } from 'emotion';
-import { JournalResponse } from "../../api/client/journals";
+import { JournalResponse } from "../../preload/client/journals";
 import { toJS } from 'mobx';
 import { EditLoadingComponent } from './loading';
 

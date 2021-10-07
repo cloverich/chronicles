@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useState }  from "react";
 // todo: feels a bit like this should be provided via context
 import client, { Client} from "../../client";
-import { SearchResponse } from '../../api/client/documents';
+import { SearchResponse } from '../../preload/client/documents';
 import { observable, IObservableArray, reaction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Heading, Paragraph, Pane, Button } from "evergreen-ui";

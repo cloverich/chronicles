@@ -1,8 +1,8 @@
 import ky from "ky-universal";
 import { Root } from "mdast";
-import { Client as V2Client } from "../api/client";
-import { configure } from "../api/client";
-import { importChronicles } from "../api/importer/importChronicles";
+import { Client as V2Client } from "../preload/client";
+import { configure } from "../preload/client";
+import { importChronicles } from "../preload/importer/importChronicles";
 
 // don't ask
 (window as any).doit = (notesDir: string) => importChronicles(notesDir);

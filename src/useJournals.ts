@@ -1,7 +1,7 @@
 import React from "react";
 // todo: feels a bit like this should be provided via context
 import client, { Client } from "./client";
-import { JournalResponse } from "./api/client/journals";
+import { JournalResponse } from "./preload/client/journals";
 
 export class JournalsStore {
   journals: JournalResponse[];

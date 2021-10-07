@@ -1,6 +1,6 @@
 import React from "react";
-import { JournalResponse } from "../../api/client/journals";
-import { GetDocumentResponse } from "../../api/client/documents";
+import { JournalResponse } from "../../preload/client/journals";
+import { GetDocumentResponse } from "../../preload/client/documents";
 import { pick } from "lodash";
 import { observable, autorun, toJS, computed } from "mobx";
 import { toaster } from "evergreen-ui";

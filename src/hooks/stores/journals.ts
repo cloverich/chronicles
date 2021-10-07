@@ -1,5 +1,5 @@
 import { Client } from "../../client";
-import { JournalResponse } from "../../api/client/journals";
+import { JournalResponse } from "../../preload/client/journals";
 import { observable } from "mobx";
 
 export class JournalsStore {
