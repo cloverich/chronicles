@@ -33,7 +33,7 @@ const renderElement = (props: RenderElementProps) => {
       </a>
     )
   } else {
-    return <p {...attributes}>{children}</p>
+    return <div className="paragraph" {...attributes}>{children}</div>
   }
 }
 

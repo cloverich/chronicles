@@ -427,7 +427,8 @@ dd {
 	margin-bottom: 0.8125rem;
 }
 
-p {
+/* .paragraph for div elements in Slate editor, since <p> cannot have nested block elements */
+p, .paragraph {
 	margin-left: 0;
 	margin-right: 0;
 	margin-top: 0;
@@ -436,6 +437,15 @@ p {
 	padding-right: 0;
 	padding-top: 0;
 	margin-bottom: 0.8125rem;
+}
+
+/* additional, default p styles */
+.paragraph {
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
 }
 
 figure {

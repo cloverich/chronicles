@@ -88,9 +88,8 @@ export class DocumentsClient {
     const doc = this.db
       .prepare("select * from documents where id = :id")
       .get({ id: documentId });
-    console.log(doc);
+
     return doc;
-    // return this.ky.get(`v2/documents/${documentId}`).json();
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
