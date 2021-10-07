@@ -107,13 +107,17 @@ export class DocumentsClient {
           .prepare(
             `select * from documents where journalId in (${q.journals
               .map(() => "?")
-              .join(",")})`
+              .join(",")})
+             order by "createdAt" desc
+            `
           )
           .all(q.journals),
       };
     } else {
       return {
-        data: this.db.prepare("select * from documents").all(),
+        data: this.db
+          .prepare(`select * from documents order by "createdAt" desc`)
+          .all(),
       };
     }
   };
@@ -148,7 +152,9 @@ export class DocumentsClient {
         });
 
       return this.db
-        .prepare(`select * from documents where id = :id`)
+        .prepare(
+          `select * from documents where id = :id order by "createdAt" desc`
+        )
         .get({ id });
     } else {
       const id = cuid();
@@ -169,7 +175,9 @@ export class DocumentsClient {
         });
 
       return this.db
-        .prepare(`select * from documents where id = :id`)
+        .prepare(
+          `select * from documents where id = :id order by "createdAt" desc`
+        )
         .get({ id });
     }
   };
