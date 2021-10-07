@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Button, Pane, Table, toaster, Badge, Alert, TextInputField } from "evergreen-ui";
 import { useJournalsV2 } from "../../hooks/useJournals";
 import { JournalResponse } from '../../preload/client/journals';
-// import AddJournal from "./add";
 import { autorun } from 'mobx'
 import { observer } from "mobx-react-lite";
 
