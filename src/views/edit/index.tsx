@@ -1,5 +1,5 @@
 import { ViewState } from '../../container';
-import React, { ComponentPropsWithRef} from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import Editor from './editor/editor';
 import { Pane, Button,Popover, Menu, Position } from 'evergreen-ui';
@@ -135,9 +135,15 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     )
   }
 
+  function goBack() {
+    if (!document.dirty || confirm('Document is unsaved, exiting will discard document. Stop editing anyways?')) {
+      props.setView('documents')
+    }
+  }
+
   return (
     <Pane>
-    <a onClick={() => props.setView('documents')}>Back</a>
+    <a onClick={goBack}>Back</a>
     <Pane marginTop={24}>
       <div className={css`display: flex; justify-content: flex-start;`}>
         <div className={css`margin-right: 4px;`}>{document.createdAt.slice(0,10)}/</div>
@@ -170,7 +176,9 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
       <Editor saving={document.saving} value={toJS(document.slateContent)} setValue={document.setSlateContent} />
 
       <Pane marginTop={24}>
-        <Button onClick={() => document.save()} disabled={!document.dirty} isLoading={document.saving}>Save</Button>
+        <Button onClick={() => document.save()} disabled={!document.dirty} isLoading={document.saving}>
+          {document.saving ? "Saving" : document.dirty ? "Save" : "Saved"}
+        </Button>
       </Pane>
     </Pane>
   </Pane>

@@ -2,12 +2,13 @@ import React from "react";
 import { JournalResponse } from "../../preload/client/journals";
 import { GetDocumentResponse } from "../../preload/client/documents";
 import { pick } from "lodash";
-import { observable, autorun, toJS, computed } from "mobx";
+import { observable, reaction, toJS, computed, IReactionDisposer } from "mobx";
 import { toaster } from "evergreen-ui";
 import client, { Client } from "../../client";
 import { Node as SlateNode } from "slate";
 import { SlateTransformer, stringToMdast } from "./util";
 import { Root as MDASTRoot } from "mdast";
+import { debounce } from "lodash";
 
 interface NewDocument {
   journalId: string;
@@ -27,7 +28,7 @@ export class EditableDocument {
   @observable saving: boolean = false;
   @observable savingError: Error | null = null;
   @computed get isNew(): boolean {
-    return !!this.id;
+    return !this.id;
   }
 
   // todo: Autorun this, or review how mobx-utils/ViewModel works
@@ -43,6 +44,8 @@ export class EditableDocument {
 
   // editor properties
   @observable slateContent: SlateNode[];
+  // reaction clean-up when component unmounts
+  teardown?: IReactionDisposer;
 
   constructor(private client: Client, doc: NewDocument | GetDocumentResponse) {
     this.title = doc.title;
@@ -61,18 +64,49 @@ export class EditableDocument {
       this.updatedAt = new Date().toISOString();
       this.slateContent = SlateTransformer.createEmptyNodes();
     }
+
+    // Auto-save
+    // todo: performance -- ingestigate putting draft state into storage,
+    // and using a webworker to do the stringify and save step
+    this.teardown = reaction(
+      () => {
+        return {
+          createdAt: this.createdAt,
+          // todo: Investigate whether this is too expensive. If so, setContent
+          // could increment a counter to trigger the reaction instead. shrug
+          // Interestingly, slateContent changes as I move the mouse cursor around,
+          // even if I do not change anyhthing
+          // Most likely its tracking far more state here than we care about, we just
+          // care that the underlying text changed.
+          slateContent: this.slateContent,
+          title: this.title,
+          journal: this.journalId,
+        };
+      },
+      () => {
+        this.dirty = true;
+
+        // only auto-save existing documents
+        if (!this.isNew) this.save();
+      }
+      // I tried delay here, but it works like throttle.
+      // So, I put a debounce on save instead
+    );
   }
 
-  // todo: all properties need a setter (dirty tracking) OR need autorun
   setSlateContent = (nodes: SlateNode[]) => {
     this.slateContent = nodes;
-    this.dirty = true;
   };
 
-  save = async () => {
-    if (this.saving) return;
-
+  save = debounce(async () => {
+    if (this.saving || !this.dirty) return;
     this.saving = true;
+
+    // note: Immediately reset dirty so if edits happen while (auto) saving,
+    // it can call save again on completion
+    // Error case is kind of hacky but unlikely an issue in practice
+    this.dirty = false;
+
     this.content = SlateTransformer.stringify(toJS(this.slateContent));
 
     try {
@@ -84,11 +118,15 @@ export class EditableDocument {
       this.id = res.id;
     } catch (err) {
       this.saving = false;
+      this.dirty = true;
       toaster.danger(JSON.stringify(err));
     } finally {
       this.saving = false;
+
+      // if edits made after last save attempt, re-run
+      if (this.dirty) this.save();
     }
-  };
+  }, 1000);
 }
 
 // todo: consolidate with existing useJournals hooks once that's refactored
@@ -162,6 +200,7 @@ export function useEditableDocument(
     load();
     return () => {
       isEffectMounted = false;
+      if (document?.teardown) document.teardown();
     };
   }, [documentId]);
 
