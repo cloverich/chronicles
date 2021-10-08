@@ -8,6 +8,8 @@ import { css } from 'emotion';
 import { JournalResponse } from "../../preload/client/journals";
 import { toJS } from 'mobx';
 import { EditLoadingComponent } from './loading';
+import DayPicker from 'react-day-picker';
+import 'react-day-picker/lib/style.css';
 
 
 interface Props extends React.PropsWithChildren<{}> {
@@ -107,7 +109,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     })
   }
 
-  function makeMenu() {
+  function journalPicker() {
     return (
       <Popover
         position={Position.BOTTOM}
@@ -124,13 +126,53 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         )}
       >
         <span
-      className={css`
-        border-bottom: 1px dotted purple;
-        color: purple;
-        cursor: pointer;
-      `}>
-      {getName(document.journalId)}
-    </span>
+          className={css`
+            border-bottom: 1px dotted purple;
+            line-height: 1.3rem;
+            cursor: pointer;
+          `}>
+          {getName(document.journalId)}
+        </span>
+      </Popover>
+    )
+  }
+
+  function onDayPick(day: Date, callback: () => void) {
+    document.createdAt = day.toISOString();
+    callback();
+  }
+
+  // tests: when changing date, documents date is highlighted
+  // when changing date, currently selected date's month is the active one
+  // document auto-saves when changing date
+  function datePicker() {
+    return (
+      <Popover
+        position={Position.BOTTOM}
+        content={({close}) => (
+          <div
+            className={css`max-height: 400px; overflow: auto;`}
+          >
+            {/* todo: How to disable styling for today? classNames={{ today: '' }} wants the whole classNames object */}
+          <DayPicker
+            initialMonth={new Date(document.createdAt)}
+            selectedDays={new Date(document.createdAt)}
+            onDayClick={(day) => onDayPick(day, close)}
+            // This was causing menu to close when two different things inside
+            // the calendar were clicked. Instead, user 
+            // onBlur={close}
+          />
+          </div>
+        )}
+      >
+        <span
+          className={css`
+            border-bottom: 1px dotted purple;
+            line-height: 1.3rem;
+            cursor: pointer;
+          `}>
+          {document.createdAt.slice(0,10)}
+        </span>
       </Popover>
     )
   }
@@ -143,11 +185,12 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
 
   return (
     <Pane>
-    <a onClick={goBack}>Back</a>
+    <a onClick={goBack} className={css`cursor: pointer;`}>Back</a>
     <Pane marginTop={24}>
       <div className={css`display: flex; justify-content: flex-start;`}>
-        <div className={css`margin-right: 4px;`}>{document.createdAt.slice(0,10)}/</div>
-        {makeMenu()}
+        { datePicker() }
+        &nbsp;/&nbsp;
+        {journalPicker()}
       </div>
       <div className={css`
         margin-bottom: 16px;
@@ -166,7 +209,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
             }
           `}
           onChange={(e: any) => document.title = e.target.value}
-          value={document.title}
+          value={document.title || ''} // OR '' prevents react complaining about uncontrolled component
           placeholder="Untitled"
           disabled={document.saving}
         />

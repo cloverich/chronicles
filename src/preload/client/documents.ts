@@ -138,7 +138,8 @@ export class DocumentsClient {
           journalId=:journalId,
           content=:content,
           title=:title,
-          updatedAt=:updatedAt
+          updatedAt=:updatedAt,
+          createdAt=:createdAt
         where
           id=:id
       `
@@ -149,6 +150,7 @@ export class DocumentsClient {
           title,
           journalId,
           updatedAt: new Date().toISOString(),
+          createdAt,
         });
 
       return this.db
