@@ -142,35 +142,6 @@ export class EditableDocument {
   };
 }
 
-// todo: consolidate with existing useJournals hooks once that's refactored
-export function useJournals() {
-  const [journals, setJournals] = React.useState<JournalResponse[] | null>(
-    null
-  );
-  const [loadingError, setloadingError] = React.useState<Error | null>(null);
-
-  React.useEffect(() => {
-    let isEffectMounted = true;
-    async function load() {
-      try {
-        const journals = await client.v2.journals.list();
-        if (!isEffectMounted) return;
-        setJournals(journals);
-      } catch (err) {
-        if (!isEffectMounted) return;
-        setloadingError(err as Error);
-      }
-    }
-
-    load();
-    return () => {
-      isEffectMounted = false;
-    };
-  }, []);
-
-  return { journals, loadingError };
-}
-
 /**
  * Load a new or existing document into a view model
  */

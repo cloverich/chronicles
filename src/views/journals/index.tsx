@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Pane, Table, toaster, Badge, Alert, TextInputField } from "evergreen-ui";
-import { useJournalsV2 } from "../../hooks/useJournals";
+import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { JournalResponse } from '../../preload/client/journals';
 import { autorun } from 'mobx'
 import { observer } from "mobx-react-lite";
@@ -13,7 +13,7 @@ import { observer } from "mobx-react-lite";
 // journal added after successful save
 // journals load and are displayed
 function Journals() {
-  const store = useJournalsV2();
+  const store = useContext(JournalsStoreContext);
   const [name, setName] = useState<string>("");
 
   function save() {

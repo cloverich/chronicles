@@ -1,31 +1,19 @@
 import React from "react";
-// todo: feels a bit like this should be provided via context
-import client, { Client } from "./client";
-import { JournalResponse } from "./preload/client/journals";
-
-export class JournalsStore {
-  journals: JournalResponse[];
-  constructor(journals: JournalResponse[]) {
-    this.journals = journals;
-  }
-
-  static async create() {
-    const journals = await client.v2.journals.list();
-    return new JournalsStore(journals);
-  }
-
-  idForName = (name: string) => {
-    const nameLower = name.toLowerCase();
-    const match = this.journals.find((j) => j.name === nameLower);
-    if (match) return match.id;
-  };
-}
+import { JournalsStore } from "./stores/journals";
+import { JournalResponse } from "../preload/client/journals";
+import client from "../client";
 
 export const JournalsStoreContext = React.createContext<JournalsStore>(
+  // This cast combines with the top-level container ensuring journals are loaded,
+  // so all downstream components that need journals (most of the app) can rely
+  // on them being preloaded and avoid the null checks
   null as any
 );
 
-export function useJournals() {
+/**
+ * Loads this journal store. After loading it should be passed down in context
+ */
+export function useJournalsLoader() {
   const [journals, setJournals] = React.useState<JournalResponse[]>();
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
   const [loading, setLoading] = React.useState(true);

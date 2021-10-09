@@ -1,4 +1,4 @@
-import { Client } from "../../client";
+import client, { Client } from "../../client";
 import { JournalResponse } from "../../preload/client/journals";
 import { observable } from "mobx";
 
@@ -9,9 +9,21 @@ export class JournalsStore {
   @observable error: Error | null = null;
   @observable journals: JournalResponse[];
 
-  constructor(private client: Client) {
-    this.journals = [];
+  constructor(private client: Client, journals: JournalResponse[]) {
+    this.journals = journals;
   }
+
+  // create instance of store...
+  static async create() {
+    const journals = await client.v2.journals.list();
+    return new JournalsStore(client, journals);
+  }
+
+  idForName = (name: string) => {
+    const nameLower = name.toLowerCase();
+    const match = this.journals.find((j) => j.name === nameLower);
+    if (match) return match.id;
+  };
 
   load = async () => {
     if (this.isLoaded) return;

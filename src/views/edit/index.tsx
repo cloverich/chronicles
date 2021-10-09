@@ -1,9 +1,9 @@
 import { ViewState } from '../../container';
-import React from 'react';
+import React, { useContext } from 'react';
 import { observer } from 'mobx-react-lite';
 import Editor from './editor/editor';
 import { Pane, Button,Popover, Menu, Position } from 'evergreen-ui';
-import { useEditableDocument, useJournals, EditableDocument } from './useEditableDocument';
+import { useEditableDocument, EditableDocument } from './useEditableDocument';
 import { css } from 'emotion';
 import { JournalResponse } from "../../preload/client/journals";
 import { toJS } from 'mobx';
@@ -11,44 +11,18 @@ import { EditLoadingComponent } from './loading';
 import DayPicker from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
 import { useIsMounted } from '../../hooks/useIsMounted';
+import { JournalsStoreContext } from '../../hooks/useJournalsLoader';
 
-
-interface Props extends React.PropsWithChildren<{}> {
-  documentId?: string;
-  // todo: use this to set the default journal on new documents
-  // journalId?: string;
-  setView: React.Dispatch<React.SetStateAction<ViewState>>
-}
-
-// Loads journals, with loading and error placeholders
-// todo: move to a higher level after refactoring and removing legacy useJournals code
-function JournalsLoadingContainer(props: Props) {
-  const { journals, loadingError } = useJournals();
-
-
-  if (loadingError) {
-    return (
-      <EditLoadingComponent setView={props.setView} error={loadingError} />
-      )
-  }
-
-  if (!journals) {
-    return <EditLoadingComponent setView={props.setView} />
-  }
-
-  return <DocumentLoadingContainer journals={journals} documentId={props.documentId} setView={props.setView} />
-}
 
 interface EditDocumentProps {
-  journals: JournalResponse[];
   documentId?: string;
   setView: React.Dispatch<React.SetStateAction<ViewState>>
 }
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer(props: EditDocumentProps) {
-
-  const { document, loadingError } = useEditableDocument(props.journals, props.documentId);
+  const journals = useContext(JournalsStoreContext)
+  const { document, loadingError } = useEditableDocument(journals.journals, props.documentId);
 
   if (loadingError) {
     return (
@@ -63,7 +37,7 @@ function DocumentLoadingContainer(props: EditDocumentProps) {
     )
   }
 
-  return <DocumentEditView document={document} journals={props.journals} setView={props.setView} />
+  return <DocumentEditView document={document} journals={journals.journals} setView={props.setView} />
 }
 
 
@@ -254,4 +228,4 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   )
 })
 
-export default observer(JournalsLoadingContainer)
+export default observer(DocumentLoadingContainer)

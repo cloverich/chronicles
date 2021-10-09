@@ -5,7 +5,8 @@ import { SearchResponse } from '../../preload/client/documents';
 import { observable, IObservableArray, reaction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Heading, Paragraph, Pane, Button } from "evergreen-ui";
-import { useJournals, JournalsStoreContext, JournalsStore } from '../../useJournals';
+import { JournalsStoreContext } from '../../hooks/useJournalsLoader';
+import { JournalsStore } from '../../hooks/stores/journals';
 import TagSearch from './search';
 import { SearchToken, JournalToken } from "./search/tokens";
 
@@ -152,6 +153,7 @@ function DocumentsContainer(props: Props) {
     return jrnl.name;
   }
 
+  // .slice(0, 100) until pagination and persistent search state are implemented
   const docs = searchStore.docs.slice(0, 100).map(doc => {
     return (
     <Pane key={doc.id} style={{display: 'flex',}} onClick={() => edit(doc.id)}>

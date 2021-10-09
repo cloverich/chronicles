@@ -5,9 +5,8 @@ import Preferences from "./views/preferences";
 import Journals from './views/journals';
 import Documents from './views/documents';
 import Editor from './views/edit';
-import { useJournals } from './useJournals';
+import { useJournalsLoader, JournalsStoreContext } from './hooks/useJournalsLoader';
 import { Alert } from 'evergreen-ui';
-import { JournalsStoreContext } from './useJournals';
 
 import client, { Client } from "./client";
 
@@ -40,7 +39,7 @@ export type ViewState = 'journals' | 'documents' | 'preferences' | { name: 'edit
 
 const Container = observer(() => {
   const [view, setView] = useState<ViewState>("documents");
-  const { journalsStore, loading, loadingErr }  = useJournals();
+  const { journalsStore, loading, loadingErr }  = useJournalsLoader();
 
   if (loading) {
     return (
@@ -109,14 +108,12 @@ const Container = observer(() => {
         selected={view}
         setSelected={setView}
       >
-
         <JournalsStoreContext.Provider value={journalsStore!}>
           <Journals />
         </JournalsStoreContext.Provider>
       </Layout>
     );
   }
-  
 
   return <div>¯\_(ヅ)_/¯</div>;
 });
