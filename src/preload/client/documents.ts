@@ -92,6 +92,10 @@ export class DocumentsClient {
     return doc;
   };
 
+  del = async (id: string) => {
+    this.db.prepare("delete from documents where id = :id").run({ id });
+  };
+
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
     // todo: consider using raw and getting arrays of values rather than
     // objects for each row

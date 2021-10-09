@@ -10,6 +10,7 @@ import { toJS } from 'mobx';
 import { EditLoadingComponent } from './loading';
 import DayPicker from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
+import { useIsMounted } from '../../hooks/useIsMounted';
 
 
 interface Props extends React.PropsWithChildren<{}> {
@@ -23,6 +24,7 @@ interface Props extends React.PropsWithChildren<{}> {
 // todo: move to a higher level after refactoring and removing legacy useJournals code
 function JournalsLoadingContainer(props: Props) {
   const { journals, loadingError } = useJournals();
+
 
   if (loadingError) {
     return (
@@ -76,6 +78,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     document,
     journals
   } = props;
+  const isMounted = useIsMounted();
 
   // Autofocus the heading input
   const onInputRendered = React.useCallback((inputElement: HTMLInputElement) => {
@@ -183,6 +186,14 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
+  async function deleteDocument() {
+    if (!document.canDelete) return;
+    if (confirm('Are you sure?')) {
+      await document.del()
+      if (isMounted()) props.setView('documents')
+    }
+  }
+
   return (
     <Pane>
     <a onClick={goBack} className={css`cursor: pointer;`}>Back</a>
@@ -216,11 +227,26 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
       </div>
       
       {/* note: its not actually clear to me whether toJS is necessary here. */}
-      <Editor saving={document.saving} value={toJS(document.slateContent)} setValue={document.setSlateContent} />
+      <Editor
+        saving={document.saving}
+        value={toJS(document.slateContent)}
+        setValue={document.setSlateContent}
+      />
 
       <Pane marginTop={24}>
-        <Button onClick={() => document.save()} disabled={!document.dirty} isLoading={document.saving}>
+        <Button 
+          marginRight={16} 
+          onClick={() => document.save()} 
+          disabled={!document.dirty} 
+          isLoading={document.saving}
+        >
           {document.saving ? "Saving" : document.dirty ? "Save" : "Saved"}
+        </Button>
+        <Button 
+          onClick={deleteDocument} 
+          disabled={!document.canDelete}
+        >
+            Delete
         </Button>
       </Pane>
     </Pane>

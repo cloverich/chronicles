@@ -127,6 +127,19 @@ export class EditableDocument {
       if (this.dirty) this.save();
     }
   }, 1000);
+
+  @computed get canDelete() {
+    return !this.isNew && !this.saving;
+  }
+
+  del = async () => {
+    // redundant id check to satisfy type checker
+    if (!this.canDelete || !this.id) return;
+
+    // overload saving for deleting
+    this.saving = true;
+    await this.client.v2.documents.del(this.id);
+  };
 }
 
 // todo: consolidate with existing useJournals hooks once that's refactored
