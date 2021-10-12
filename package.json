@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "webpack-dev-server --config webpack.js --hot --inline --colors",
+    "start": "yarn dev:webpack & yarn dev:electron",
+    "dev:webpack": "webpack-dev-server --config webpack.js --hot --inline --colors",
     "dev:electron": "electron src/electron/index.js",
     "test": "mocha -r ts-node/register -r esm src/**/*.test.ts",
     "test:one": "mocha -r ts-node/register -r esm",
