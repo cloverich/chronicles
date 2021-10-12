@@ -1,5 +1,5 @@
 import ky from "ky-universal";
-import { Root } from "mdast";
+import { Root } from "../markdown";
 import { Client as V2Client } from "../preload/client";
 import { configure } from "../preload/client";
 import { importChronicles } from "../preload/importer/importChronicles";

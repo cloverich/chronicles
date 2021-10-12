@@ -1,4 +1,3 @@
-import { Root } from "mdast";
 import ky from "ky-universal";
 type Ky = typeof ky;
 import { Database } from "better-sqlite3";

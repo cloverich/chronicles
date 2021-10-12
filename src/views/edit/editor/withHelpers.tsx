@@ -1,17 +1,10 @@
 import { Text, Transforms, Node as SlateNode, Range, Path as SlatePath, createEditor, Descendant, Editor, Element as SlateElement } from 'slate'
 import { ReactEditor } from 'slate-react';
 import { toaster} from 'evergreen-ui';
-
-// todo: centralize these utilities -- they are also used in a few other places and can get out of sync
-// which would produce weird bugs! 
-import unified from "unified";
-import markdown from "remark-parse";
-import remarkGfm from 'remark-gfm'
-import { remarkToSlate, slateToRemark, mdastToSlate } from "remark-slate-transformer";
-const parser = unified().use(markdown).use(remarkGfm as any)
 import { isTypedElement, isLinkElement } from '../util';
 import { insertLink, urlMatcher } from './blocks/links';
 import { insertFile, isImageUrl } from './blocks/images';
+import { stringToSlate } from '../../../markdown';
 
 // todo: dont use this here!
 import client from '../../../client';
@@ -116,7 +109,5 @@ export const withHelpers = (editor: ReactEditor) => {
  * Convert text to mdast -> SlateJSON, then insert into the document
  */
 function convertAndInsert(editor: ReactEditor, text: string) {
-  const mdast = parser.parse(text);
-  const slateNodes = mdastToSlate(mdast as any)
-  Transforms.insertNodes(editor, slateNodes);
+  Transforms.insertNodes(editor, stringToSlate(text));
 }

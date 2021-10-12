@@ -1,16 +1,5 @@
-// https://github.com/inokawa/remark-slate-transformer/
-import unified from "unified";
-import remarkParse from "remark-parse";
-import stringify from "remark-stringify";
-import { remarkToSlate, slateToRemark } from "remark-slate-transformer";
 import { Element as SlateElement, Node as SlateNode } from "slate";
-
-export const slateToString = unified().use(slateToRemark).use(stringify);
-
-// Intermediate markdown parser, exported here so I could store the intermediate
-// mdast state prior to parsing to Slate DOM for debugging purposes
-export const stringToMdast = unified().use(remarkParse);
-const stringToSlate = stringToMdast.use(remarkToSlate);
+import { stringToSlate, slateToString } from "../../markdown";
 
 /**
  * Helper to convert markdown text into Slate nodes, and vice versa
@@ -25,13 +14,7 @@ export class SlateTransformer {
     // Content should not be empty, but because of UI or other bugs can happen
     if (!text.trim()) return SlateTransformer.createEmptyNodes();
 
-    // todo: types
-    // note to future self: processSync is the same as
-    // `parse`, `run`, then `stringify`
-    // Stringifies valued would be available on `.value`, while
-    // parsed objects (Slate JSON in this case) is available as
-    // `.result` (after calling process)
-    return (stringToSlate as any).processSync(text).result;
+    return stringToSlate(text);
   }
 
   /**
@@ -49,20 +32,14 @@ export class SlateTransformer {
     // Whether that is expected or not, the parser does not seem to handle that, and
     // silently drops them. Manually adjusting with a defensive copy gets the job done for now,
     // but is a hack.
+    // todo: extend the slateToString library if that becomes possible
+    // https://github.com/inokawa/remark-slate-transformer/issues/31
     const copiedNodes = JSON.parse(JSON.stringify(nodes));
     copiedNodes.forEach((n: any) => {
       n.type = n.type || "paragraph";
     });
 
-    // per documentation https://github.com/inokawa/remark-slate-transformer/
-    // slate value must be wrapped. Remark's parse expects a string while `run`
-    // operates on ASTs
-    const ast = slateToString.runSync({
-      type: "root",
-      children: copiedNodes,
-    });
-
-    return slateToString.stringify(ast);
+    return slateToString(copiedNodes);
   }
 }
 

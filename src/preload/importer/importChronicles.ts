@@ -1,6 +1,5 @@
 import { Files } from "../files";
-import { parser, stringifier } from "./markdown";
-import { Root, Content } from "mdast";
+import { parser } from "../../markdown";
 import { shouldIndexDay } from "./indexer";
 import fs from "fs";
 import path from "path";
@@ -85,51 +84,6 @@ async function loadDocument(filepath: string) {
     contents: contents,
     mdast: parser.parse(contents),
   };
-}
-
-// see notes in splitOnMdastHeading...
-function createDocument(nodes: Content[]) {
-  const firstNode = nodes[0];
-  if (firstNode.type === "heading" && firstNode.depth === 1) {
-    return {
-      title: stringifier.stringify(firstNode).slice(2),
-      content: stringifier.stringify({
-        type: "root",
-        children: nodes.slice(1),
-      }),
-    };
-  } else {
-    return {
-      title: "",
-      content: stringifier.stringify({ type: "root", children: nodes }),
-    };
-  }
-}
-
-// first attempt at importing, I used the markdown parser to identify
-// headings and split on that. After a few unexpected formatting and content issues
-// I realized... splitting on headsings is just .split('\n') + line.startsWith('# ) ... doh
-function* splitOnMdastHeading(root: Root) {
-  // console.log("sections", root);
-  if (root.children.length === 0) {
-    console.warn("document had no children");
-    return;
-  }
-
-  let currentNodes: Content[] = [root.children[0]];
-
-  for (const node of root.children) {
-    if (node.type === "heading" && node.depth === 1) {
-      // start a new document...
-      yield createDocument(currentNodes);
-      currentNodes = [node];
-    } else {
-      currentNodes.push(node);
-    }
-  }
-
-  // if remaining items on buffer, yield a document
-  if (currentNodes.length) yield createDocument(currentNodes);
 }
 
 // Split a document into multiple documents by presence of a top-level
