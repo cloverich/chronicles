@@ -1,6 +1,5 @@
 import path from "path";
-import { parser, stringifier } from "../../markdown";
-import { Root } from "../../markdown";
+import { parser, stringifier, Root } from "../../markdown";
 import { Database } from "better-sqlite3";
 import { Files, PathStatsFile } from "../files";
 import { DateTime } from "luxon";

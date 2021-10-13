@@ -3,11 +3,12 @@ import remarkParse, { RemarkParseOptions } from "remark-parse";
 import remarkStringify, { RemarkStringifyOptions } from "remark-stringify";
 import { Root } from "ts-mdast";
 // https://github.com/inokawa/remark-slate-transformer/
+// import { slateToRemark } from "remark-slate-transformer";
 import {
   remarkToSlate,
   slateToRemark,
-  mdastToSlate,
-} from "remark-slate-transformer";
+  slateToMdast,
+} from "./remark-slate-transformer";
 import { Node as SNode } from "slate";
 
 export * from "ts-mdast";

@@ -14,6 +14,8 @@ export class SlateTransformer {
     // Content should not be empty, but because of UI or other bugs can happen
     if (!text.trim()) return SlateTransformer.createEmptyNodes();
 
+    console.log("SlateTransformer.nodify: before string to slate: ", text);
+    console.log("SlateTransformer.nodify.stringToSlate", stringToSlate(text));
     return stringToSlate(text);
   }
 
@@ -21,7 +23,8 @@ export class SlateTransformer {
    * Create an empty Slate DOM, intended for new empty documents.
    */
   static createEmptyNodes() {
-    return [{ children: [{ text: "" }] }];
+    // todo: type: ELEMENT_P from plate, or better yet createParagraphElement if it exists!
+    return [{ type: "p", children: [{ text: "" }] }];
   }
 
   /**
@@ -34,11 +37,20 @@ export class SlateTransformer {
     // but is a hack.
     // todo: extend the slateToString library if that becomes possible
     // https://github.com/inokawa/remark-slate-transformer/issues/31
+    console.log("SlateTransformer.stringify.nodes-argument:", nodes);
     const copiedNodes = JSON.parse(JSON.stringify(nodes));
+    // console.log(
+    //   "SlateTransformer.stringify.copiedNodes (JSON Stringified):",
+    //   JSON.parse(JSON.stringify(copiedNodes))
+    // ); // another copy
     copiedNodes.forEach((n: any) => {
       n.type = n.type || "paragraph";
     });
-
+    // console.log("copiedNodes post transform with paragraphs", copiedNodes);
+    console.log(
+      "SlateTransformer.stringify.slateToString",
+      slateToString(copiedNodes)
+    );
     return slateToString(copiedNodes);
   }
 }
