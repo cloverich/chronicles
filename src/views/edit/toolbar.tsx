@@ -22,6 +22,7 @@ import {
   UnderlineIcon,
   StrikethroughIcon,
   CodeIcon,
+  Pane,
 } from "evergreen-ui";
 // import { css } from "emotion";
 /**
@@ -32,7 +33,7 @@ export default function FormattingToolbar() {
   const editor = useStoreEditorRef(useEventEditorId("focus"));
 
   return (
-    <HeadingToolbar>
+    <Pane display="flex" alignItems="center">
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_BOLD)}
         icon={<BoldIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
@@ -65,6 +66,6 @@ export default function FormattingToolbar() {
           <NumberedListIcon style={{ width: "0.8rem", height: "0.8rem" }} />
         }
       />
-    </HeadingToolbar>
+    </Pane>
   );
 }

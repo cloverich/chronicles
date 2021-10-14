@@ -18,9 +18,13 @@ import {
   createPlateOptions,
 
   // images
-  createImagePlugin,
+  // createImagePlugin, // made my own
   createSelectOnBackspacePlugin,
   ELEMENT_IMAGE,
+
+  // So document always has a trailing paragraph
+  createTrailingBlockPlugin,
+  ELEMENT_PARAGRAPH,
 
   // links
   createLinkPlugin,
@@ -39,40 +43,12 @@ import {
   optionsResetBlockTypePlugin,
 } from "./pluginOptions";
 
+import { createImagePlugin } from "./createImagePlugin";
+
 export interface Props {
   saving: boolean;
   value: SNode[];
   setValue: (n: SNode[]) => any;
-}
-
-import {
-  HeadingToolbar,
-  ToolbarList,
-  useStoreEditorRef,
-  useEventEditorId,
-  getPlatePluginType,
-  ELEMENT_UL,
-  ELEMENT_OL,
-} from "@udecode/plate";
-import { ListIcon, NumberedListIcon } from "evergreen-ui";
-
-function ToolbarButtonsList({ editor }: { editor: any }) {
-  const editor2 = useStoreEditorRef(useEventEditorId("focus"));
-  console.log("editor2", editor2 === editor, editor2);
-
-  return (
-    <HeadingToolbar>
-      <ToolbarList
-        type={getPlatePluginType(editor, ELEMENT_UL)}
-        icon={<ListIcon />}
-      />
-      <ToolbarList
-        type={getPlatePluginType(editor, ELEMENT_OL)}
-        icon={<NumberedListIcon />}
-      />
-      <ListIcon onClick={() => toggleList(editor, { type: ELEMENT_UL })} />
-    </HeadingToolbar>
-  );
 }
 
 export default observer((props: Props) => {
@@ -82,7 +58,6 @@ export default observer((props: Props) => {
       padding: "15px",
     },
   };
-  const editor = useStoreEditorRef(useEventEditorId("focus"));
 
   const plugins = [
     // editor
@@ -112,14 +87,12 @@ export default observer((props: Props) => {
     createExitBreakPlugin(optionsExitBreakPlugin),
     createResetNodePlugin(optionsResetBlockTypePlugin),
     createListPlugin(),
+
+    // This works, but my trailing image is wrapped in a p already!
+    createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
   ];
   const components = createPlateComponents();
   const options = createPlateOptions();
-
-  React.useEffect(() => {
-    console.log("initialValue: ", props.value);
-    console.log(editor);
-  }, []);
 
   return (
     <>
