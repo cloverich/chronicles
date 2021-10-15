@@ -11,6 +11,7 @@ import {
   ELEMENT_OL,
   ELEMENT_TODO_LI,
   ELEMENT_UL,
+  ELEMENT_CODE_BLOCK,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
 export type Decoration = {
@@ -254,7 +255,7 @@ export type Code = ReturnType<typeof createCode>;
 function createCode(node: mdast.Code) {
   const { type, value, lang, meta } = node;
   return {
-    type,
+    type: ELEMENT_CODE_BLOCK,
     lang,
     meta,
     children: [{ text: value }],

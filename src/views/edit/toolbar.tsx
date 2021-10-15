@@ -8,6 +8,8 @@ import {
   getPlatePluginType,
   ELEMENT_UL,
   ELEMENT_OL,
+  ELEMENT_CODE_BLOCK,
+  ELEMENT_CODE_LINE,
   MARK_BOLD,
   MARK_ITALIC,
   MARK_UNDERLINE,
@@ -22,6 +24,8 @@ import {
   UnderlineIcon,
   StrikethroughIcon,
   CodeIcon,
+  CodeBlockIcon,
+  CogIcon,
   Pane,
 } from "evergreen-ui";
 // import { css } from "emotion";
@@ -57,6 +61,10 @@ export default function FormattingToolbar() {
         icon={<CodeIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
       />
       <ToolbarList
+        type={getPlatePluginType(editor, ELEMENT_CODE_LINE)}
+        icon={<CogIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+      />
+      <ToolbarList
         type={getPlatePluginType(editor, ELEMENT_UL)}
         icon={<ListIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
       />
@@ -65,6 +73,10 @@ export default function FormattingToolbar() {
         icon={
           <NumberedListIcon style={{ width: "0.8rem", height: "0.8rem" }} />
         }
+      />
+      <ToolbarList
+        type={getPlatePluginType(editor, ELEMENT_CODE_BLOCK)}
+        icon={<CodeBlockIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
       />
     </Pane>
   );

@@ -3,6 +3,8 @@ import * as slate from "../models/slate";
 import * as mdast from "../models/mdast";
 import * as slateInternal from "./mdast-to-slate";
 
+import { Node as SNode } from "slate";
+
 // NOTE: added
 import { unPrefixUrl } from "../util";
 
@@ -13,6 +15,7 @@ import {
   ELEMENT_OL,
   ELEMENT_TODO_LI,
   ELEMENT_UL,
+  ELEMENT_CODE_BLOCK,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
 // NOTE: Changed these, they were just mirroring mdasts' before
@@ -203,7 +206,8 @@ function createMdastNode(
       return createTableCell(node);
     case "html":
       return createHtml(node);
-    case "code":
+    case "code": // NOTE: don't think this is used by plate
+    case ELEMENT_CODE_BLOCK:
       return createCode(node);
     case "yaml":
       return createYaml(node);
@@ -360,12 +364,14 @@ function createHtml(node: slateInternal.Html): mdast.HTML {
 }
 
 function createCode(node: slateInternal.Code): mdast.Code {
-  const { type, lang, meta, children } = node;
+  const { lang, meta } = node;
   return {
-    type,
+    type: "code",
     lang,
     meta,
-    value: children[0].text,
+    // NOTE: Added this .. the code as existed doesn't make sense?
+    // code is handled as marks in other parts of the codebase. Hmm.
+    value: SNode.string(node), //[0].text,
   };
 }
 
