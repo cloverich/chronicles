@@ -433,7 +433,7 @@ function createLink(node: slateInternal.Link): mdast.Link {
   } as any;
 }
 
-function createImage(node: slateInternal.Image): mdast.Image {
+function createImage(node: slateInternal.Image | any): mdast.Image {
   const { type, url, title, alt } = node;
   return {
     // NOTE: added this @ts-ignore line
@@ -442,7 +442,9 @@ function createImage(node: slateInternal.Image): mdast.Image {
     type: "image", // NOTE: added here because createImage may be called with type: 'img" -- convert to something mdast understands
     url: unPrefixUrl(url),
     title,
-    alt,
+    alt: node.caption
+      ? node.caption.map((c: any) => SNode.string(c)).join("\n")
+      : undefined,
   };
 }
 

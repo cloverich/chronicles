@@ -373,6 +373,9 @@ function createImage(node: mdast.Image) {
     url: prefixUrl(url),
     title,
     alt,
+    // NOTE: Plate uses "caption" for alt
+    caption: [{ text: alt || "" }],
+    // NOTE: All slate nodes need text children
     children: [{ text: "" }],
   };
 }
