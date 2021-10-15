@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Layout from "./layout";
 import Preferences from "./views/preferences";
-import Journals from './views/journals';
-import Documents from './views/documents';
-import Editor from './views/edit';
-import { useJournalsLoader, JournalsStoreContext } from './hooks/useJournalsLoader';
-import { Alert } from 'evergreen-ui';
+import Journals from "./views/journals";
+import Documents from "./views/documents";
+import Editor from "./views/edit";
+import {
+  useJournalsLoader,
+  JournalsStoreContext,
+} from "./hooks/useJournalsLoader";
+import { Alert, Pane } from "evergreen-ui";
 
 import client, { Client } from "./client";
 
@@ -20,7 +23,7 @@ export default function ClientInjectingContainer() {
   useEffect(() => {
     client.configure(`http://localhost:${2345678}`);
     setReady(true);
-  }, [])
+  }, []);
 
   if (!ready) {
     // todo: better loading state...
@@ -34,21 +37,18 @@ export default function ClientInjectingContainer() {
   return <Container />;
 }
 
-
-export type ViewState = 'journals' | 'documents' | 'preferences' | { name: 'edit', props: { documentId?: string; journalId?: string; }};
+export type ViewState =
+  | "journals"
+  | "documents"
+  | "preferences"
+  | { name: "edit"; props: { documentId?: string; journalId?: string } };
 
 const Container = observer(() => {
   const [view, setView] = useState<ViewState>("documents");
-  const { journalsStore, loading, loadingErr }  = useJournalsLoader();
+  const { journalsStore, loading, loadingErr } = useJournalsLoader();
 
   if (loading) {
-    return (
-      <Layout
-        setSelected={setView}
-      >
-       {/* todo: loading state */} 
-      </Layout>
-    )
+    return <Layout setSelected={setView}>{/* todo: loading state */}</Layout>;
   }
 
   if (loadingErr) {
@@ -56,58 +56,46 @@ const Container = observer(() => {
       <Alert intent="danger" title="Journals failed to load">
         Journals failed to load: ${JSON.stringify(loadingErr)}
       </Alert>
-    )
+    );
   }
 
-  if (view === 'preferences') {
+  if (view === "preferences") {
     return (
-      <Layout
-        selected="preferences"
-        setSelected={setView}
-      >
+      <Layout selected="preferences" setSelected={setView}>
         <JournalsStoreContext.Provider value={journalsStore!}>
           <Preferences setView={setView} />
         </JournalsStoreContext.Provider>
       </Layout>
-    )
+    );
   }
 
   if (view === "documents") {
     return (
-      <Layout
-        selected="documents"
-        setSelected={setView}
-      >
+      <Layout selected="documents" setSelected={setView}>
         <JournalsStoreContext.Provider value={journalsStore!}>
           <Documents setView={setView} />
-        </JournalsStoreContext.Provider>        
+        </JournalsStoreContext.Provider>
       </Layout>
     );
   }
 
-  if (typeof view === 'object' && view.name === 'edit') {
+  if (typeof view === "object" && view.name === "edit") {
     return (
-      <Layout
-        selected="documents"
-        setSelected={setView}
-      >
+      <Pane padding={50}>
         <JournalsStoreContext.Provider value={journalsStore!}>
-          <Editor 
-            documentId={view.props.documentId} 
+          <Editor
+            documentId={view.props.documentId}
             // journalId={view.props.journalId} todo: track last selected journal id and pass through
-            setView={setView} 
+            setView={setView}
           />
         </JournalsStoreContext.Provider>
-      </Layout>
+      </Pane>
     );
   }
 
   if (view === "journals") {
     return (
-      <Layout
-        selected={view}
-        setSelected={setView}
-      >
+      <Layout selected={view} setSelected={setView}>
         <JournalsStoreContext.Provider value={journalsStore!}>
           <Journals />
         </JournalsStoreContext.Provider>
