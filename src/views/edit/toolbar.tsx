@@ -9,7 +9,6 @@ import {
   ELEMENT_UL,
   ELEMENT_OL,
   ELEMENT_CODE_BLOCK,
-  ELEMENT_CODE_LINE,
   MARK_BOLD,
   MARK_ITALIC,
   MARK_UNDERLINE,
@@ -25,7 +24,6 @@ import {
   StrikethroughIcon,
   CodeIcon,
   CodeBlockIcon,
-  CogIcon,
   Pane,
 } from "evergreen-ui";
 // import { css } from "emotion";
@@ -59,10 +57,6 @@ export default function FormattingToolbar() {
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_CODE)}
         icon={<CodeIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
-      />
-      <ToolbarList
-        type={getPlatePluginType(editor, ELEMENT_CODE_LINE)}
-        icon={<CogIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
       />
       <ToolbarList
         type={getPlatePluginType(editor, ELEMENT_UL)}

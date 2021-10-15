@@ -42,7 +42,8 @@ export class EditableDocument {
   @observable updatedAt: string; // read-only outside this class
 
   // editor properties
-  @observable slateContent: SlateNode[];
+  slateContent: SlateNode[];
+  @observable private changeCount = 0;
   // reaction clean-up when component unmounts
   teardown?: IReactionDisposer;
 
@@ -71,13 +72,9 @@ export class EditableDocument {
       () => {
         return {
           createdAt: this.createdAt,
-          // todo: Investigate whether this is too expensive. If so, setContent
-          // could increment a counter to trigger the reaction instead. shrug
-          // Interestingly, slateContent changes as I move the mouse cursor around,
-          // even if I do not change anyhthing
-          // Most likely its tracking far more state here than we care about, we just
-          // care that the underlying text changed.
-          slateContent: this.slateContent,
+          // Watch a counter instead of content, so I don't have to wrap and unwrap
+          // the underlying nodes. See setSlateContent for additional context.
+          changeCount: this.changeCount,
           title: this.title,
           journal: this.journalId,
         };
@@ -92,7 +89,14 @@ export class EditableDocument {
   }
 
   setSlateContent = (nodes: SlateNode[]) => {
-    this.slateContent = nodes;
+    // NOTE: This is called when the cursor moves, but the content appears to be unchanged
+    // It seems like the slate nodes always change if any content changes, so this is
+    // hopefully safe :|
+    // (if not, people's changes would be unsaved in those cases)
+    if (nodes !== this.slateContent) {
+      this.slateContent = nodes;
+      this.changeCount++;
+    }
   };
 
   save = debounce(async () => {

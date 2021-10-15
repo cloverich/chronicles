@@ -6,7 +6,6 @@ import { Pane, Button, Popover, Menu, Position } from "evergreen-ui";
 import { useEditableDocument, EditableDocument } from "./useEditableDocument";
 import { css } from "emotion";
 import { JournalResponse } from "../../preload/client/journals";
-import { toJS } from "mobx";
 import { EditLoadingComponent } from "./loading";
 import DayPicker from "react-day-picker";
 import "react-day-picker/lib/style.css";
@@ -235,7 +234,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         {/* note: its not actually clear to me whether toJS is necessary here. */}
         <Editor
           saving={document.saving}
-          value={toJS(document.slateContent)}
+          value={document.slateContent}
           setValue={document.setSlateContent}
         />
 
