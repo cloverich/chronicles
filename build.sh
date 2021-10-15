@@ -42,13 +42,15 @@ cp package.json dist/
 cp yarn.lock dist/
 
 # see package.js
-# Could embed here but it is already setup as a postinstall script
 cp ./rebuild-better-sqlite3.sh dist/
 
 # todo: This is installing dev dependencies which, because of webpack, should not be needed.
 # When I use install --production, the final build complains it cannot find electron. Sigh.
 cd dist/
 yarn
+# todo: this only handles sqlite3... electron-rebuild (once fixed) would address all
+# modules w/ native dependencies
+yarn rebuild
 
 cd ../
 
