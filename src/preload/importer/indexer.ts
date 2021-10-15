@@ -1,6 +1,5 @@
 import path from "path";
-import { parser, stringifier } from "../../markdown";
-import { Root } from "../../markdown";
+import { stringToMdast, mdastToString, Root } from "../../markdown";
 import { Database } from "better-sqlite3";
 import { Files, PathStatsFile } from "../files";
 import { DateTime } from "luxon";
@@ -58,7 +57,7 @@ class Indexer {
     let contents: string;
 
     try {
-      contents = stringifier.stringify(node);
+      contents = mdastToString(node);
     } catch (err: any) {
       throw new IndexParsingError(err);
     }
@@ -94,7 +93,7 @@ class Indexer {
    * @param contents
    */
   update = async (journal: string, date: string, contents: string) => {
-    const parsed = parser.parse(contents);
+    const parsed = stringToMdast(contents);
     const stmt = this.db.prepare(
       "DELETE FROM nodes where journal = :journal and date = :date"
     );
@@ -158,7 +157,7 @@ class Indexer {
       // todo: track parsing errors so you understand why your content
       // isn't showing up in your journal view (failed to index).
       try {
-        const parsed = parser.parse(contents);
+        const parsed = stringToMdast(contents);
 
         // BUG ALERT: I was passing `entry.path` as second argument, when it wanted the
         // filename, because it wants an ISODate: 2020-05-01, which is how we name files.

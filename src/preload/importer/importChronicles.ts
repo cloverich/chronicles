@@ -1,5 +1,5 @@
 import { Files } from "../files";
-import { parser } from "../../markdown";
+import { stringToMdast } from "../../markdown";
 import { shouldIndexDay } from "./indexer";
 import fs from "fs";
 import path from "path";
@@ -8,7 +8,6 @@ import { DateTime } from "luxon";
 import { configure } from "../client";
 const client = configure("/who/cares.com");
 
-// Hmmm... maybe this is built in to Prisma client somehow
 async function findOrCreate(name: string) {
   const journals = await client.journals.list();
   // if (journals.includes)
@@ -82,7 +81,7 @@ async function loadDocument(filepath: string) {
   const contents = await Files.read(filepath);
   return {
     contents: contents,
-    mdast: parser.parse(contents),
+    mdast: stringToMdast(contents),
   };
 }
 

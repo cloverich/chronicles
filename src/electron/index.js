@@ -33,7 +33,6 @@ let dbfile = settings.get(DATABASE_URL);
 function setDatabaseUrl(url) {
   if (!url) throw new Error('setDatabaseUrl called with null or empty string');
 
-  // todo: validate it can be loaded (or created) by Prisma client
   settings.set(DATABASE_URL, url);
 }
 
