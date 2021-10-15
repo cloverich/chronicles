@@ -39,7 +39,7 @@ export class EditableDocument {
   @observable journalId: string;
   @observable id?: string;
   @observable createdAt: string;
-  readonly updatedAt: string;
+  @observable updatedAt: string; // read-only outside this class
 
   // editor properties
   @observable slateContent: SlateNode[];
@@ -84,9 +84,7 @@ export class EditableDocument {
       },
       () => {
         this.dirty = true;
-
-        // only auto-save existing documents
-        if (!this.isNew) this.save();
+        this.save();
       }
       // I tried delay here, but it works like throttle.
       // So, I put a debounce on save instead
@@ -115,6 +113,8 @@ export class EditableDocument {
         pick(toJS(this), "title", "content", "journalId", "id", "createdAt")
       );
       this.id = res.id;
+      this.createdAt = res.createdAt;
+      this.updatedAt = res.updatedAt;
     } catch (err) {
       this.saving = false;
       this.dirty = true;
