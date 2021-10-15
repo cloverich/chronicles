@@ -1,5 +1,5 @@
 import { Files } from "../files";
-import { parser } from "../../markdown";
+import { stringToMdast } from "../../markdown";
 import { shouldIndexDay } from "./indexer";
 import fs from "fs";
 import path from "path";
@@ -82,7 +82,7 @@ async function loadDocument(filepath: string) {
   const contents = await Files.read(filepath);
   return {
     contents: contents,
-    mdast: parser.parse(contents),
+    mdast: stringToMdast(contents),
   };
 }
 
