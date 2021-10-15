@@ -11,9 +11,9 @@ import { ReactEditor } from "slate-react";
 
 // todo: would be nice to inject these...
 import { toaster } from "evergreen-ui";
-import client from "../../../client";
+import client from "../../../../client";
 
-import { insertFile, isImageUrl } from "./blocks/images";
+import { insertFile, isImageUrl } from "./images";
 
 /**
  * Enables support for images.

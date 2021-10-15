@@ -10,28 +10,11 @@ import { css } from "emotion";
 function insertImage(editor: ReactEditor, filepath: string) {
   const image = { type: "img", url: filepath, children: [{ text: "" }] };
   Transforms.insertNodes(editor, image);
-  // padDocument(editor);
 }
 
 function insertVideo(editor: ReactEditor, filepath: string) {
   const image = { type: "video", url: filepath, children: [{ text: "" }] };
   Transforms.insertNodes(editor, image);
-  // padDocument(editor);
-}
-
-/**
- * Add an extra paragraph node to protect against video or image elements being
- * the last element in the document, which currently prevents user from entering
- * more text. Ideally a listener at a higher level could observe for blocking elements
- * and if the lsat element is not editable text or something, auto-insert a paragraph block.
- *
- * NOTE: This is better done with normalization, which the createTrailingBlock plate plugin does
- */
-function padDocument(editor: ReactEditor) {
-  Transforms.insertNodes(editor, {
-    type: "paragraph",
-    children: [{ text: "" }],
-  } as any);
 }
 
 export function insertFile(editor: ReactEditor, filepath: string) {
@@ -89,7 +72,9 @@ interface VideoElementProps extends RenderElementProps {
   element: VideoElement;
 }
 
-export const Image = ({ attributes, children, element }: ImageElementProps) => {
+// todo: Now using plate's built-in image display, but need to have to prefix URL
+// like this one does so I don't need to do it in the remark transform steps
+const Image = ({ attributes, children, element }: ImageElementProps) => {
   return (
     <div {...attributes}>
       <div contentEditable={false}>
@@ -107,7 +92,8 @@ export const Image = ({ attributes, children, element }: ImageElementProps) => {
   );
 };
 
-export const Video = ({ attributes, children, element }: VideoElementProps) => {
+// note: unused
+const Video = ({ attributes, children, element }: VideoElementProps) => {
   return (
     <div {...attributes}>
       <div contentEditable={false}>

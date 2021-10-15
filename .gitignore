@@ -13,7 +13,3 @@ tmp/
 # build output
 dist/
 packaged/
-
-# Generated prisma client
-# Configured in schema.prisma
-prisma/

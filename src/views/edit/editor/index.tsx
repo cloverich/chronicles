@@ -41,9 +41,9 @@ import {
   optionsSoftBreakPlugin,
   optionsExitBreakPlugin,
   optionsResetBlockTypePlugin,
-} from "./pluginOptions";
+} from "./plugins/pluginOptions";
 
-import { createImagePlugin } from "./createImagePlugin";
+import { createImagePlugin } from "./plugins/createImagePlugin";
 
 export interface Props {
   saving: boolean;
@@ -99,10 +99,7 @@ export default observer((props: Props) => {
       <Plate
         editableProps={editableProps}
         initialValue={props.value}
-        onChange={(newValue: any) => {
-          console.log("setValue", newValue);
-          props.setValue(newValue);
-        }}
+        onChange={props.setValue}
         plugins={plugins}
         components={components}
         options={options}

@@ -5,7 +5,7 @@ import { useState, useCallback } from "react";
 import { toaster } from "evergreen-ui";
 
 // For errror handling. Also doesn't really need to be here
-import ky from "ky-universal";
+import ky, { HTTPError } from "ky-universal";
 
 // https://stackoverflow.com/questions/53215285/how-can-i-force-component-to-re-render-with-hooks-in-react
 function useForceUpdate() {
@@ -106,7 +106,7 @@ export function withLoading<T extends any[], U>(
       // Extract the API error message, if any.
       // todo: A convention for error structure (like title/details)
       // would probably support moving this logic into the client library
-      if (err instanceof ky.HTTPError) {
+      if (err instanceof HTTPError) {
         try {
           // Basically if the error comes from my backend, pull out the
           // error title then propagate. Client library should handle this.
