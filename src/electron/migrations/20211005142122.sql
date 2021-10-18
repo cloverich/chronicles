@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "nodes" (
+CREATE TABLE IF NOT EXISTS "nodes" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "journal" TEXT,
     "date" TEXT,
@@ -10,7 +10,7 @@ CREATE TABLE "nodes" (
 );
 
 -- CreateTable
-CREATE TABLE "journals" (
+CREATE TABLE IF NOT EXISTS "journals" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -18,7 +18,7 @@ CREATE TABLE "journals" (
 );
 
 -- CreateTable
-CREATE TABLE "documents" (
+CREATE TABLE  IF NOT EXISTS "documents" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -29,10 +29,10 @@ CREATE TABLE "documents" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "journals_name_uniq" ON "journals"("name");
+CREATE UNIQUE INDEX  IF NOT EXISTS "journals_name_uniq" ON "journals"("name");
 
 -- CreateIndex
-CREATE INDEX "documents_title_idx" ON "documents"("title");
+CREATE INDEX  IF NOT EXISTS "documents_title_idx" ON "documents"("title");
 
 -- CreateIndex
-CREATE INDEX "documents_createdat_idx" ON "documents"("createdAt");
+CREATE INDEX  IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");

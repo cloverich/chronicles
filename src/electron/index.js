@@ -3,11 +3,11 @@ const path = require("path");
 const fs = require('fs');
 const { initUserFilesDir } =  require('./userFilesInit');
 const settings = require('./settings');
+const migrate = require('./migrations');
+
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
-
-
 initUserFilesDir(app.getPath("userData"));
 console.log('application settings at startup:', settings.store);
 
@@ -28,25 +28,32 @@ let dbfile = settings.get(DATABASE_URL);
  * Persist the database url to settings file
  * assumes url is a full, valid filepath
  * 
- * todo: Add validation here
+ * todo: Add validation here; call migration scripts
  */
 function setDatabaseUrl(url) {
   if (!url) throw new Error('setDatabaseUrl called with null or empty string');
 
+  dbfile = url;
   settings.set(DATABASE_URL, url);
 }
 
 // Provide and set a default DB if one is not found.
 if (!dbfile) {
   try {
-    dbfile = path.join(app.getPath("userData"), "chronicles.db");
-    setDatabaseUrl(dbfile);
+    setDatabaseUrl(path.join(app.getPath("userData"), "chronicles.db"));
   } catch (err) {
     // note: this is defensive (untested)
     console.error('Error saving DATABASE_URL to settings file after using a default location');
     console.error('This will result in the user being unable to change the location of the file without an obvious reason why')
     console.error(err);
   }
+}
+
+try {
+  migrate(dbfile);
+} catch (err) {
+  console.error('Error migrating the database:', err);
+  throw new Error('Error migrating the database. This is required for initial app setup');
 }
 
 /**
