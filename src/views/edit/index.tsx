@@ -224,7 +224,6 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
             onChange={(e: any) => (document.title = e.target.value)}
             value={document.title || ""} // OR '' prevents react complaining about uncontrolled component
             placeholder="Untitled"
-            disabled={document.saving}
           />
         </div>
         <div>
