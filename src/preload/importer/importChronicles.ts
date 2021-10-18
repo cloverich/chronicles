@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 import { DateTime } from "luxon";
 
-import { configure } from "../client";
-const client = configure("/who/cares.com");
+import { create } from "../client";
+const client = create();
 
 async function findOrCreate(name: string) {
   const journals = await client.journals.list();

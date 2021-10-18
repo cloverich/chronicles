@@ -1,7 +1,7 @@
 import React from "react";
 import { JournalsStore } from "./stores/journals";
 import { JournalResponse } from "../preload/client/journals";
-import client from "../client";
+import useClient from "./useClient";
 
 export const JournalsStoreContext = React.createContext<JournalsStore>(
   // This cast combines with the top-level container ensuring journals are loaded,
@@ -18,6 +18,7 @@ export function useJournalsLoader() {
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
+  const client = useClient();
 
   React.useEffect(() => {
     let isEffectMounted = true;
@@ -25,8 +26,8 @@ export function useJournalsLoader() {
 
     async function load() {
       try {
-        const journalStore = await JournalsStore.create();
-        const journals = await client.v2.journals.list();
+        const journalStore = await JournalsStore.create(client);
+        const journals = await client.journals.list();
         if (!isEffectMounted) return;
 
         setJournals(journals);

@@ -1,13 +1,11 @@
-import React, { useEffect, useContext, useState }  from "react";
-// todo: feels a bit like this should be provided via context
-import client, { Client} from "../../client";
-import { SearchResponse } from '../../preload/client/documents';
-import { observable, IObservableArray, reaction } from 'mobx';
-import { observer } from 'mobx-react-lite';
+import React, { useEffect, useContext, useState } from "react";
+import useClient, { Client, SearchResponse } from "../../hooks/useClient";
+import { observable, IObservableArray, reaction } from "mobx";
+import { observer } from "mobx-react-lite";
 import { Heading, Paragraph, Pane, Button } from "evergreen-ui";
-import { JournalsStoreContext } from '../../hooks/useJournalsLoader';
-import { JournalsStore } from '../../hooks/stores/journals';
-import TagSearch from './search';
+import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import { JournalsStore } from "../../hooks/stores/journals";
+import TagSearch from "./search";
 import { SearchToken, JournalToken } from "./search/tokens";
 
 class SearchV2Store {
@@ -30,8 +28,11 @@ class SearchV2Store {
 
   // todo: this might be better as a @computed get
   private tokensToQuery = () => {
-    return this.tokens.filter(t => t.type === 'in').map(token => this.journals.idForName(token.value as string)).filter(token => token) as string[];
-  }
+    return this.tokens
+      .filter((t) => t.type === "in")
+      .map((token) => this.journals.idForName(token.value as string))
+      .filter((token) => token) as string[];
+  };
 
   search = async () => {
     this.loading = true;
@@ -41,26 +42,26 @@ class SearchV2Store {
     // Hmm -- need to get from journal name to id...
     // I guess take journals, find by name, convert to id
     try {
-      const res = query.length ? this.client.v2.documents.search({ journals: query }) : this.client.v2.documents.search()
+      const res = query.length
+        ? this.client.documents.search({ journals: query })
+        : this.client.documents.search();
       this.docs = (await res).data;
     } catch (err) {
-      console.error('Error with documents.search results', err);
+      console.error("Error with documents.search results", err);
       this.error = err instanceof Error ? err.message : JSON.stringify(err);
     }
 
     this.loading = false;
-  }
+  };
 }
 
-
-import { ViewState } from '../../container';
+import { ViewState } from "../../container";
 
 interface Props extends React.PropsWithChildren<{}> {
-  setView: React.Dispatch<React.SetStateAction<ViewState>>
+  setView: React.Dispatch<React.SetStateAction<ViewState>>;
   store?: SearchV2Store;
   disableDocCreate?: boolean;
 }
-
 
 const Layout = observer(function LayoutNaked(props: Partial<Props>) {
   // conditionally show document create button.
@@ -73,38 +74,36 @@ const Layout = observer(function LayoutNaked(props: Partial<Props>) {
           <TagSearch store={props.store} />
         </Pane>
         <Pane>
-          <a onClick={() => props.setView!({ name: 'edit', props: {}})}>
+          <a onClick={() => props.setView!({ name: "edit", props: {} })}>
             Create new
           </a>
         </Pane>
       </>
-    )
+    );
   }
 
   return (
     <Pane>
       {createDocumentsView()}
 
-      <Pane marginTop={24}>
-        {props.children}
-      </Pane>
+      <Pane marginTop={24}>{props.children}</Pane>
     </Pane>
-  )
-})
-
+  );
+});
 
 function DocumentsContainer(props: Props) {
   const journalsStore = useContext(JournalsStoreContext);
-  const [searchStore, ] = useState(new SearchV2Store(client, journalsStore));
+  const client = useClient();
+  const [searchStore] = useState(new SearchV2Store(client, journalsStore));
 
   function edit(docId: string) {
-    props.setView({name: 'edit', props: { documentId: docId}})
+    props.setView({ name: "edit", props: { documentId: docId } });
   }
 
   // execute search on mount
   useEffect(() => {
-    searchStore.search()
-  }, [])
+    searchStore.search();
+  }, []);
 
   // loading states
   if (searchStore.loading && !searchStore.docs.length) {
@@ -147,28 +146,33 @@ function DocumentsContainer(props: Props) {
   }
 
   function getName(id: string) {
-    const jrnl = journalsStore.journals?.find(j => j.id === id);
-    if (!jrnl) return "shrug"
+    const jrnl = journalsStore.journals?.find((j) => j.id === id);
+    if (!jrnl) return "shrug";
 
     return jrnl.name;
   }
 
   // .slice(0, 100) until pagination and persistent search state are implemented
-  const docs = searchStore.docs.slice(0, 100).map(doc => {
+  const docs = searchStore.docs.slice(0, 100).map((doc) => {
     return (
-    <Pane key={doc.id} style={{display: 'flex',}} onClick={() => edit(doc.id)}>
-      <div style={{marginRight: '24px'}}>{doc.createdAt.slice(0,10)}</div>
-      <div>/{getName(doc.journalId)}/{doc.title}</div>
-    </Pane>
-    )
-  })
-
+      <Pane
+        key={doc.id}
+        style={{ display: "flex" }}
+        onClick={() => edit(doc.id)}
+      >
+        <div style={{ marginRight: "24px" }}>{doc.createdAt.slice(0, 10)}</div>
+        <div>
+          /{getName(doc.journalId)}/{doc.title}
+        </div>
+      </Pane>
+    );
+  });
 
   return (
     <Layout setView={props.setView} store={searchStore}>
       {docs}
     </Layout>
-  )
+  );
 }
 
 export default observer(DocumentsContainer);

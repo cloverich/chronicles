@@ -13,9 +13,6 @@ interface IJournal {
   period: "day" | "week" | "month" | "year";
 }
 
-import ky from "ky-universal";
-type Ky = typeof ky;
-
 export interface JournalResponse {
   id: string;
   name: string;

@@ -9,9 +9,12 @@ import {
 } from "@udecode/plate";
 import { ReactEditor } from "slate-react";
 
-// todo: would be nice to inject these...
+// todo: ideally this layer should not know about this...
 import { toaster } from "evergreen-ui";
-import client from "../../../../client";
+
+// todo: dont use this here! Find a way to inject this somehow
+import { create } from "../../../../preload/client";
+const client = create();
 
 import { insertFile, isImageUrl } from "./images";
 
@@ -49,7 +52,7 @@ const imageOverrides =
           // todo: error as a popup, progress and intermediate state
           // todo: handle editor being unmounted, more generally move this
           // to a higher level abstraction. For now it doesn't really matter.
-          client.v2.files.upload(file).then((json) => {
+          client.files.upload(file).then((json) => {
             // todo: This hack ensures images have a chronicles:// prefix
             // for saved documents, i insert this in the mdast->slate transform step
             // Before using plate, I simply had the Image rendering element handle this logic,

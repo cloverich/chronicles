@@ -4,9 +4,6 @@ import { useState, useCallback } from "react";
 // but que hueva
 import { toaster } from "evergreen-ui";
 
-// For errror handling. Also doesn't really need to be here
-import ky, { HTTPError } from "ky-universal";
-
 // https://stackoverflow.com/questions/53215285/how-can-i-force-component-to-re-render-with-hooks-in-react
 function useForceUpdate() {
   const [, setTick] = useState(0);

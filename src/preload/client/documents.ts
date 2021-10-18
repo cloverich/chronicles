@@ -1,5 +1,3 @@
-import ky from "ky-universal";
-type Ky = typeof ky;
 import { Database } from "better-sqlite3";
 import cuid from "cuid";
 
@@ -77,7 +75,7 @@ export interface SaveRequest {
 }
 
 export class DocumentsClient {
-  constructor(private ky: Ky, private db: Database) {}
+  constructor(private db: Database) {}
 
   findById = ({
     documentId,

@@ -1,6 +1,5 @@
-import client, { Client } from "../../client";
-import { JournalResponse } from "../../preload/client/journals";
 import { observable } from "mobx";
+import { Client, JournalResponse } from "../useClient";
 
 export class JournalsStore {
   private isLoaded: boolean = false;
@@ -14,8 +13,8 @@ export class JournalsStore {
   }
 
   // create instance of store...
-  static async create() {
-    const journals = await client.v2.journals.list();
+  static async create(client: Client) {
+    const journals = await client.journals.list();
     return new JournalsStore(client, journals);
   }
 
@@ -29,7 +28,7 @@ export class JournalsStore {
     if (this.isLoaded) return;
 
     try {
-      this.journals = await this.client.v2.journals.list();
+      this.journals = await this.client.journals.list();
     } catch (err: any) {
       this.error = err;
     }
@@ -42,7 +41,7 @@ export class JournalsStore {
     this.saving = true;
     try {
       // todo: update this.journals
-      await this.client.v2.journals.remove({ id: journalId });
+      await this.client.journals.remove({ id: journalId });
       this.journals = this.journals.filter((j) => j.id !== journalId);
     } catch (err: any) {
       this.error = err;
@@ -54,7 +53,7 @@ export class JournalsStore {
     this.saving = true;
     this.error = null;
     try {
-      const newJournal = await this.client.v2.journals.create({
+      const newJournal = await this.client.journals.create({
         name: name,
       });
       this.journals.push(newJournal);

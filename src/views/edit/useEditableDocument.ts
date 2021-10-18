@@ -4,7 +4,7 @@ import { GetDocumentResponse } from "../../preload/client/documents";
 import { pick } from "lodash";
 import { observable, reaction, toJS, computed, IReactionDisposer } from "mobx";
 import { toaster } from "evergreen-ui";
-import client, { Client } from "../../client";
+import useClient, { Client } from "../../hooks/useClient";
 import { Node as SlateNode } from "slate";
 import { SlateTransformer } from "./util";
 import { debounce } from "lodash";
@@ -113,7 +113,7 @@ export class EditableDocument {
     try {
       // note: I was passing documentId instead of id, and because id is optional in save it wasn't complaining.
       // Maybe 'save' and optional, unvalidated params is a bad idea :|
-      const res = await this.client.v2.documents.save(
+      const res = await this.client.documents.save(
         pick(toJS(this), "title", "content", "journalId", "id", "createdAt")
       );
       this.id = res.id;
@@ -141,7 +141,7 @@ export class EditableDocument {
 
     // overload saving for deleting
     this.saving = true;
-    await this.client.v2.documents.del(this.id);
+    await this.client.documents.del(this.id);
   };
 }
 
@@ -154,6 +154,7 @@ export function useEditableDocument(
 ) {
   const [document, setDocument] = React.useState<EditableDocument | null>(null);
   const [loadingError, setLoadingError] = React.useState<Error | null>(null);
+  const client = useClient();
 
   // (Re)load document based on documentId
   React.useEffect(() => {
@@ -164,7 +165,7 @@ export function useEditableDocument(
       try {
         // if documentId -> This is an existing document
         if (documentId) {
-          const doc = await client.v2.documents.findById({ documentId });
+          const doc = await client.documents.findById({ documentId });
           if (!isEffectMounted) return;
           setDocument(new EditableDocument(client, doc));
         } else {

@@ -16,8 +16,9 @@ import { insertLink, urlMatcher } from "./links";
 import { insertFile, isImageUrl } from "./images";
 import { stringToSlate } from "../../../../markdown";
 
-// todo: dont use this here!
-import client from "../../../../client";
+// todo: dont use this here! Find a way to inject this somehow
+import { create } from "../../../../preload/client";
+const client = create();
 
 /**
  * Image and link helpers. Maybe more.
@@ -80,7 +81,7 @@ export const withHelpers = (editor: ReactEditor) => {
         // todo: error as a popup, progress and intermediate state
         // todo: handle editor being unmounted, more generally move this
         // to a higher level abstraction. For now it doesn't really matter.
-        client.v2.files.upload(file).then((json) => {
+        client.files.upload(file).then((json) => {
           insertFile(editor, json.filename);
         }, console.error);
       }

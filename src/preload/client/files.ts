@@ -1,6 +1,3 @@
-import ky from "ky-universal";
-type Ky = typeof ky;
-
 import Store from "electron-store";
 
 import fs from "fs";
@@ -18,7 +15,7 @@ interface UploadResponse {
 }
 
 export class FilesClient {
-  constructor(private ky: Ky, private settings: Store) {}
+  constructor(private settings: Store) {}
 
   upload = async (file: File): Promise<UploadResponse> => {
     const dir = await this.settings.get("USER_FILES_DIR");
