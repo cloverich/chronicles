@@ -1,7 +1,8 @@
-import { JournalsClient } from "./journals";
+import { JournalsClient, IJournalsClient } from "./journals";
 import { DocumentsClient, GetDocumentResponse } from "./documents";
-import { PreferencesClient } from "./preferences";
+import { PreferencesClient, IPreferencesClient } from "./preferences";
 import { FilesClient } from "./files";
+import { IClient } from "./types";
 import DB from "better-sqlite3";
 
 import Store from "electron-store";
@@ -14,15 +15,8 @@ const db = DB(settings.get("DATABASE_URL") as string);
 
 export { GetDocumentResponse } from "./documents";
 
-export interface Client {
-  journals: JournalsClient;
-  documents: DocumentsClient;
-  preferences: PreferencesClient;
-  files: FilesClient;
-}
-
-let client: Client;
-export function create(): Client {
+let client: IClient;
+export function create(): IClient {
   if (!client) {
     client = {
       journals: new JournalsClient(db),

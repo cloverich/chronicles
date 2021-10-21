@@ -1,11 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import Container from "./container";
-import "./app.css";
+import "./index.css";
 import "./typography.css";
-import { listenLinks } from "./preload/utils.electron";
-
-listenLinks();
 
 ReactDOM.render(
   <div>

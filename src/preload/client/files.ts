@@ -14,6 +14,8 @@ interface UploadResponse {
   // filepath: string;
 }
 
+export type IFilesClient = FilesClient;
+
 export class FilesClient {
   constructor(private settings: Store) {}
 

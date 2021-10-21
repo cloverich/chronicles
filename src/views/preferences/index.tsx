@@ -2,7 +2,6 @@ import React, { useState, useEffect, PropsWithChildren } from "react";
 import { ViewState } from "../../container";
 import { Pane, Button } from "evergreen-ui";
 import useClient from "../../hooks/useClient";
-import { ipcRenderer } from "electron";
 
 interface Props extends React.PropsWithChildren<{}> {
   setView: React.Dispatch<React.SetStateAction<ViewState>>;
@@ -17,16 +16,19 @@ export default function Preferences(props: Props) {
   // see the main script (electron/index) for the other half
   function openDialog() {
     setLoading(true);
-    ipcRenderer.send("select-database-file");
+    // todo: lol this name
+    client.preferences.openDialog();
+    // ipcRenderer.send("select-database-file");
 
-    // todo: replace this hack with a timeout button, or implement
+    // todo: replace  this hack with a timeout button, or implement
     // a listener for the results (overkill imho)
     setTimeout(() => setLoading(false), 1500);
   }
 
   function openDialogUserFiles() {
     setLoading(true);
-    ipcRenderer.send("select-user-files-dir");
+    client.preferences.openDialogUserFiles();
+    // ipcRenderer.send("select-user-files-dir");
 
     // todo: replace this hack with a timeout button, or implement
     // a listener for the results (overkill imho)
@@ -41,11 +43,11 @@ export default function Preferences(props: Props) {
     }
 
     // reload anytime preferences update
-    ipcRenderer.on("preferences-updated", load);
+    // ipcRenderer.on("preferences-updated", load);
     load();
 
     return () => {
-      ipcRenderer.removeListener("preferences-updated", load);
+      // ipcRenderer.removeListener("preferences-updated", load);
     };
   }, []);
 
