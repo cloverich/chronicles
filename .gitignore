@@ -13,3 +13,7 @@ tmp/
 # build output
 dist/
 packaged/
+
+# bundler (dev) outputs .bundle files
+# along-side src files, used during development
+*.bundle.*

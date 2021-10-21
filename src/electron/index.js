@@ -62,6 +62,7 @@ try {
  */
 ipcMain.on('link-click', (_, link) => {
   // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/51
+  // https://www.electronjs.org/docs/latest/tutorial/security#15-do-not-use-openexternal-with-untrusted-content
   shell.openExternal(link);
 });
 
@@ -106,21 +107,17 @@ function createWindow() {
       // Loading images via the API would resolve this issue.
       // ...or using a custom protocol
       // https://github.com/electron/electron/issues/23393
-      nodeIntegration: true,
+      nodeIntegration: false,
       sandbox: false,
-      contextIsolation: false,
+      contextIsolation: true,
+      // preload: app.isPackaged ? path.join(__dirname, 'preload.js') : path.join(__dirname, '../preload.js'),
+      preload: path.join(__dirname, 'preload.bundle.js'),
     },
     
   });
 
-  // and load the index.html of the app.
-  if (app.isPackaged) {
-    mainWindow.loadFile("index.html");
-  } else {
-    // assumes webpack-dev-server is hosting at this url
-    mainWindow.loadURL("http://localhost:9000");
-    mainWindow.webContents.openDevTools();
-  }
+  mainWindow.loadFile("index.html");
+  if (!app.isPackaged) mainWindow.webContents.openDevTools();
 }
 
 // This method will be called when Electron has finished

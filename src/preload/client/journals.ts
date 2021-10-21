@@ -20,6 +20,8 @@ export interface JournalResponse {
   updatedAt: string;
 }
 
+export type IJournalsClient = JournalsClient;
+
 export class JournalsClient {
   constructor(private db: Database) {}
 

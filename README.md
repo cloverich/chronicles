@@ -3,28 +3,31 @@
 **Status**: Hobby project, in development. Prototyping hacks and ideas -- bugs abound. Will post usable(ish) versions as releases when it gets to stopping points. 
 
 
-## Migrating the database
-:|
-
-### Database file
-The SQLite database file is specified in the [settings.json](https://github.com/nathanbuchar/electron-settings) file. It can be configured in preferences. 
 
 ## Development
-The app is a typical Electron dev setup, but serves the UI from webpack dev server while in development. To start the app you'll need to start both the webpack dev server and electron.
+The app is a typical Electron dev setup, excepting the use of [esbuild][1]. 
 
 ```bash
 # install dependencies
 yarn
 
-# start webpack
-yarn dev
-
-# start electron
-yarn dev:electron
+# start the development build and watch script
+yarn start
 ```
 
-## Build and release
+See scripts/dev.js for specifics on how the source files are compiled and re-loaded in development. Settings 
 
-- Use the `build.sh` script
+## Build and release
+- Read and use the `build.sh` script
 - Make a Github release
 
+At a high level, the build is comprised of:
+- generate bundles ([esbuild][1]) from source files
+- install production dependencies
+- [re-build][2] native dependencies for the targeted electron version
+- [package][3] the app
+
+
+[1]: https://esbuild.github.io
+[2]: https://github.com/electron/electron-rebuild
+[3]: https://github.com/electron/electron-packager

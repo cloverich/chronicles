@@ -1,12 +1,15 @@
 import React, { useContext } from "react";
-import { create, Client } from "../preload/client";
-export { Client } from "../preload/client";
+import { IClient } from "../preload/client/types";
+export { IClient } from "../preload/client/types";
+
 export { JournalResponse } from "../preload/client/journals";
 export { SearchResponse } from "../preload/client/documents";
 
-export const ClientContext = React.createContext<Client>(create());
+export const ClientContext = React.createContext<any>(
+  (window as any).chronicles.createClient()
+);
 ClientContext.displayName = "ClientContext";
 
-export default function useClient() {
+export default function useClient(): IClient {
   return useContext(ClientContext);
 }

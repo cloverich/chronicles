@@ -74,6 +74,8 @@ export interface SaveRequest {
   updatedAt?: string;
 }
 
+export type IDocumentsClient = DocumentsClient;
+
 export class DocumentsClient {
   constructor(private db: Database) {}
 

@@ -17,9 +17,8 @@ import { insertFile, isImageUrl } from "./images";
 import { stringToSlate } from "../../../../markdown";
 
 // todo: dont use this here! Find a way to inject this somehow
-import { create } from "../../../../preload/client";
-const client = create();
-
+import { IClient } from "../../../../hooks/useClient";
+const client: IClient = (window as any).chronicles.createClient();
 /**
  * Image and link helpers. Maybe more.
  *
@@ -81,7 +80,7 @@ export const withHelpers = (editor: ReactEditor) => {
         // todo: error as a popup, progress and intermediate state
         // todo: handle editor being unmounted, more generally move this
         // to a higher level abstraction. For now it doesn't really matter.
-        client.files.upload(file).then((json) => {
+        client.files.upload(file).then((json: any) => {
           insertFile(editor, json.filename);
         }, console.error);
       }
