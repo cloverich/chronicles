@@ -1,22 +1,36 @@
 #!/bin/sh
 set -e
 
+# Ensure final artifact directory exists:
+mkdir -p ./packaged
+
 # Pardon the comments, my shell is weak
 # leaving myself lots of syntax reminders
 # https://stackoverflow.com/questions/4341630/checking-for-the-correct-number-of-arguments
 
 # Fail if incorrect number of arguments
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 BUILD NUMBER" >&2
-  exit 1
+# if [ "$#" -ne 1 ]; then
+#   echo "Usage: $0 BUILD NUMBER" >&2
+#   exit 1
+# fi
+
+# Actually... conditionally accept a build number as an argument,
+# Or just grab the highest number from the packaged directory as a kind of auto-increment
+
+BUILD_NUM=$(ls packaged | sort -n | tail -1)
+BUILD_NUM=$((BUILD_NUM+1))
+
+if [ -n "$1" ]; then
+  BUILD_NUM=$1
 fi
 
+echo "Using build number $BUILD_NUM"
 
+# Clear build directory:
 rm -rf dist/
 
-mkdir -p ./packaged
-outdir="./packaged/${1}"
-echo "Creating build directory at $outdir"
+outdir="./packaged/${BUILD_NUM}"
+echo "Building package in: $outdir"
 
 # Build out directory already exists
 if [ -e outdir ]; then
@@ -24,7 +38,7 @@ if [ -e outdir ]; then
   exit 1
 fi
 
-# Found but not directory
+# Found but not directory; seems unneccessary
 # if ! [ -d "$1" ]; then
 #   echo "$1 not a directory" >&2
 #   exit 1

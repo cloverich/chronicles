@@ -1,7 +1,7 @@
 {
   "name": "chronicles",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.bundle.js",
   "license": "UNLICENSED",
   "scripts": {
     "start": "node ./scripts/dev.js",
