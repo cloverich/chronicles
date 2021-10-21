@@ -1,5 +1,5 @@
 import { observable } from "mobx";
-import { JournalResponse } from "../useClient";
+import { JournalResponse, IClient } from "../useClient";
 
 export class JournalsStore {
   private isLoaded: boolean = false;
@@ -8,12 +8,12 @@ export class JournalsStore {
   @observable error: Error | null = null;
   @observable journals: JournalResponse[];
 
-  constructor(private client: any, journals: JournalResponse[]) {
+  constructor(private client: IClient, journals: JournalResponse[]) {
     this.journals = journals;
   }
 
   // create instance of store...
-  static async create(client: any) {
+  static async create(client: IClient) {
     const journals = await client.journals.list();
     return new JournalsStore(client, journals);
   }
