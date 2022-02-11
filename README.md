@@ -1,7 +1,13 @@
 # Chronicles
+Electron based markdown journaling application, in the spirit of [incremental note taking][incr-notes]. 
 
-**Status**: Hobby project, in development. Prototyping hacks and ideas -- bugs abound. Will post usable(ish) versions as releases when it gets to stopping points. 
+**Status**: Hobby project, prototyping and re-working UX to try out various concepts with little regard for usability, stability, or appearances. Will remove this clause when I can guarantee your notes won't *poof* and the experience isn't confusing. Reach out if you are interested in journaling concepts and I'll provide a tour.
 
+Tech stack:
+- Electron and esbuild
+- Typescript
+- React and mobx
+- Slate and Plate (Notion style WSYIWYG)
 
 
 ## Development
@@ -31,3 +37,4 @@ At a high level, the build is comprised of:
 [1]: https://esbuild.github.io
 [2]: https://github.com/electron/electron-rebuild
 [3]: https://github.com/electron/electron-packager
+[incr-notes]: https://thesephist.com/posts/inc/
