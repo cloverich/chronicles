@@ -32,7 +32,7 @@ export default function Layout(props: PropsWithChildren<Props>) {
 
   return (
     <ErrorBoundary>
-      <Pane>
+      <Pane minWidth={480}>
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
             <span style={monoStyle}>#</span>

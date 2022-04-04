@@ -1,61 +1,13 @@
 import React, { useEffect, useContext, useState } from "react";
-import useClient, { Client, SearchResponse } from "../../hooks/useClient";
-import { observable, IObservableArray, reaction } from "mobx";
+import useClient from "../../hooks/useClient";
 import { observer } from "mobx-react-lite";
-import { Heading, Paragraph, Pane, Button } from "evergreen-ui";
+import { Heading, Paragraph, Pane } from "evergreen-ui";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { JournalsStore } from "../../hooks/stores/journals";
 import TagSearch from "./search";
-import { SearchToken, JournalToken } from "./search/tokens";
-
-class SearchV2Store {
-  @observable docs: SearchResponse["data"] = [];
-  @observable loading = true;
-  @observable error: string | null = null;
-  private journals: JournalsStore;
-
-  // copoied from JournalsUIStore
-  @observable tokens: IObservableArray<SearchToken> = observable([]);
-
-  constructor(private client: Client, journals: JournalsStore) {
-    this.journals = journals;
-
-    // Re-run the search query anytime the tokens change.
-    reaction(() => this.tokens.slice(), this.search, {
-      fireImmediately: false,
-    });
-  }
-
-  // todo: this might be better as a @computed get
-  private tokensToQuery = () => {
-    return this.tokens
-      .filter((t) => t.type === "in")
-      .map((token) => this.journals.idForName(token.value as string))
-      .filter((token) => token) as string[];
-  };
-
-  search = async () => {
-    this.loading = true;
-    this.error = null;
-
-    const query: string[] = this.tokensToQuery();
-    // Hmm -- need to get from journal name to id...
-    // I guess take journals, find by name, convert to id
-    try {
-      const res = query.length
-        ? this.client.documents.search({ journals: query })
-        : this.client.documents.search();
-      this.docs = (await res).data;
-    } catch (err) {
-      console.error("Error with documents.search results", err);
-      this.error = err instanceof Error ? err.message : JSON.stringify(err);
-    }
-
-    this.loading = false;
-  };
-}
 
 import { ViewState } from "../../container";
+import { SearchV2Store } from "./SearchStore";
+import { DocumentItem } from "./DocumentItem";
 
 interface Props extends React.PropsWithChildren<{}> {
   setView: React.Dispatch<React.SetStateAction<ViewState>>;
@@ -154,18 +106,7 @@ function DocumentsContainer(props: Props) {
 
   // .slice(0, 100) until pagination and persistent search state are implemented
   const docs = searchStore.docs.slice(0, 100).map((doc) => {
-    return (
-      <Pane
-        key={doc.id}
-        style={{ display: "flex" }}
-        onClick={() => edit(doc.id)}
-      >
-        <div style={{ marginRight: "24px" }}>{doc.createdAt.slice(0, 10)}</div>
-        <div>
-          /{getName(doc.journalId)}/{doc.title}
-        </div>
-      </Pane>
-    );
+    return <DocumentItem doc={doc} getName={getName} edit={edit} />;
   });
 
   return (

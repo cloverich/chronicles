@@ -10,6 +10,9 @@
   color: rgb(41, 58, 242);;
 }
 
+.hover-underline:hover {
+  text-decoration: underline;
+}
 /**
  * When first elements of each note have margin-top,
  * like heading elements, it acts like extra padding in the

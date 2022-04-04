@@ -38,14 +38,15 @@ export interface SearchRequest {
 }
 
 export type SearchResponse = {
-  // query: SearchRequest;
-  data: Array<{
-    id: string;
-    createdAt: string;
-    title?: string;
-    journalId: string;
-  }>;
+  data: SearchItem[];
 };
+
+export interface SearchItem {
+  id: string;
+  createdAt: string;
+  title?: string;
+  journalId: string;
+}
 
 // Now straight up copying from the API layer
 export interface SaveRawRequest {
