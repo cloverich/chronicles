@@ -185,7 +185,15 @@ function createMdastNode(
     case "paragraph":
     case "p":
       return createParagraph(node);
+
+    // NOTE: Slate claims type is only ever "heading", but
+    // I see  "h1", "h2", etc, for type. Maybe Plate plugin doing this.
     case "heading":
+    case "h1":
+    case "h2":
+    case "h3":
+    case "h4":
+    case "h5":
       return createHeading(node);
     case "thematicBreak":
       return createThematicBreak(node);
@@ -286,8 +294,10 @@ function createParagraph(node: slateInternal.Paragraph): mdast.Paragraph {
 function createHeading(node: slateInternal.Heading): mdast.Heading {
   const { type, depth, children } = node;
   return {
-    type,
-    depth,
+    type: "heading",
+    // Slate claims "type" will always be "Heading", but its coming through as
+    // "h1", "h2", etc. Probably the Plate plugin encoding it that way.
+    depth: (type as string) === "h1" ? 1 : 2,
     children: convertNodes(children) as any as mdast.Heading["children"],
   };
 }

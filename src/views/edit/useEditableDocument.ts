@@ -4,7 +4,7 @@ import { GetDocumentResponse } from "../../preload/client/documents";
 import { pick } from "lodash";
 import { observable, reaction, toJS, computed, IReactionDisposer } from "mobx";
 import { toaster } from "evergreen-ui";
-import useClient, { Client } from "../../hooks/useClient";
+import useClient, { IClient } from "../../hooks/useClient";
 import { Node as SlateNode } from "slate";
 import { SlateTransformer } from "./util";
 import { debounce } from "lodash";
@@ -47,7 +47,7 @@ export class EditableDocument {
   // reaction clean-up when component unmounts
   teardown?: IReactionDisposer;
 
-  constructor(private client: Client, doc: NewDocument | GetDocumentResponse) {
+  constructor(private client: IClient, doc: NewDocument | GetDocumentResponse) {
     this.title = doc.title;
     this.journalId = doc.journalId;
     this.content = doc.content;

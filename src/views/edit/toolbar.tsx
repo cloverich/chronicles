@@ -1,14 +1,18 @@
 import React from "react";
 import {
   HeadingToolbar,
+  ToolbarElement,
   ToolbarList,
   ToolbarMark,
+  ToolbarCodeBlock,
   useStoreEditorRef,
   useEventEditorId,
   getPlatePluginType,
   ELEMENT_UL,
   ELEMENT_OL,
   ELEMENT_CODE_BLOCK,
+  ELEMENT_H1,
+  ELEMENT_H2,
   MARK_BOLD,
   MARK_ITALIC,
   MARK_UNDERLINE,
@@ -16,6 +20,8 @@ import {
   MARK_CODE,
 } from "@udecode/plate";
 import {
+  HeaderOneIcon,
+  HeaderTwoIcon,
   ListIcon,
   NumberedListIcon,
   BoldIcon,
@@ -27,6 +33,9 @@ import {
   Pane,
 } from "evergreen-ui";
 // import { css } from "emotion";
+
+const iconStyle = { width: "0.8rem", height: "0.8rem" };
+
 /**
  * Buttons for formatting text in the document
  * todo: consider styled-component-icons or remix-icons -- there are more
@@ -36,41 +45,45 @@ export default function FormattingToolbar() {
 
   return (
     <Pane display="flex" alignItems="center">
+      <ToolbarElement
+        type={getPlatePluginType(editor, ELEMENT_H1)}
+        icon={<HeaderOneIcon style={iconStyle} />}
+      />
+      <ToolbarElement
+        type={getPlatePluginType(editor, ELEMENT_H2)}
+        icon={<HeaderTwoIcon style={iconStyle} />}
+      />
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_BOLD)}
-        icon={<BoldIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+        icon={<BoldIcon style={iconStyle} />}
       />
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_ITALIC)}
-        icon={<ItalicIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+        icon={<ItalicIcon style={iconStyle} />}
       />
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_UNDERLINE)}
-        icon={<UnderlineIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+        icon={<UnderlineIcon style={iconStyle} />}
       />
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_STRIKETHROUGH)}
-        icon={
-          <StrikethroughIcon style={{ width: "0.8rem", height: "0.8rem" }} />
-        }
+        icon={<StrikethroughIcon style={iconStyle} />}
       />
       <ToolbarMark
         type={getPlatePluginType(editor, MARK_CODE)}
-        icon={<CodeIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+        icon={<CodeIcon style={iconStyle} />}
       />
       <ToolbarList
         type={getPlatePluginType(editor, ELEMENT_UL)}
-        icon={<ListIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+        icon={<ListIcon style={iconStyle} />}
       />
       <ToolbarList
         type={getPlatePluginType(editor, ELEMENT_OL)}
-        icon={
-          <NumberedListIcon style={{ width: "0.8rem", height: "0.8rem" }} />
-        }
+        icon={<NumberedListIcon style={iconStyle} />}
       />
-      <ToolbarList
+      <ToolbarCodeBlock
         type={getPlatePluginType(editor, ELEMENT_CODE_BLOCK)}
-        icon={<CodeBlockIcon style={{ width: "0.8rem", height: "0.8rem" }} />}
+        icon={<CodeBlockIcon style={iconStyle} />}
       />
     </Pane>
   );
