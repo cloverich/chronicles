@@ -7,8 +7,8 @@ import { useEditableDocument, EditableDocument } from "./useEditableDocument";
 import { css } from "emotion";
 import { JournalResponse } from "../../preload/client/journals";
 import { EditLoadingComponent } from "./loading";
-import DayPicker from "react-day-picker";
-import "react-day-picker/lib/style.css";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import Toolbar from "./toolbar";
@@ -138,14 +138,11 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
               overflow: auto;
             `}
           >
-            {/* todo: How to disable styling for today? classNames={{ today: '' }} wants the whole classNames object */}
             <DayPicker
-              initialMonth={new Date(document.createdAt)}
-              selectedDays={new Date(document.createdAt)}
+              selected={new Date(document.createdAt)}
+              defaultMonth={new Date(document.createdAt)}
               onDayClick={(day) => onDayPick(day, close)}
-              // This was causing menu to close when two different things inside
-              // the calendar were clicked. Instead, user
-              // onBlur={close}
+              mode="single"
             />
           </div>
         )}
