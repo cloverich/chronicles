@@ -8,9 +8,10 @@
 export npm_config_target=$(npx electron -v)
 
 # The architecture of Electron, see https://electronjs.org/docs/tutorial/support#supported-platforms
-# for supported architectures.
-export npm_config_arch=x64
-export npm_config_target_arch=x64
+# for supported architectures. This is effectively hard-coded to my _current_ architecture (Apple silicon)
+# when it should be parameterized for cross platform builds; this is documented in Github issues
+export npm_config_arch=arm64
+export npm_config_target_arch=arm64
 
 # Download headers for Electron.
 export npm_config_disturl=https://electronjs.org/headers
