@@ -1,48 +1,15 @@
 import React, { useEffect, useContext, useState } from "react";
 import useClient from "../../hooks/useClient";
 import { observer } from "mobx-react-lite";
-import { Heading, Paragraph, Pane } from "evergreen-ui";
+import { Heading, Paragraph } from "evergreen-ui";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import TagSearch from "./search";
 
 import { SearchV2Store } from "./SearchStore";
 import { DocumentItem } from "./DocumentItem";
-import { RouteProps, useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Layout, LayoutEmpty } from "./Layout";
 
-interface Props extends RouteProps {
-  store?: SearchV2Store;
-  disableDocCreate?: boolean;
-}
-
-const Layout = observer(function LayoutNaked(props: Partial<Props>) {
-  // conditionally show document create button.
-  function createDocumentsView() {
-    if (props.disableDocCreate) return;
-
-    return (
-      <>
-        <Pane marginBottom={8}>
-          <TagSearch store={props.store} />
-        </Pane>
-        <Pane>
-          <Link to="/edit/new">
-            Create new
-          </Link>
-        </Pane>
-      </>
-    );
-  }
-
-  return (
-    <Pane>
-      {createDocumentsView()}
-
-      <Pane marginTop={24}>{props.children}</Pane>
-    </Pane>
-  );
-});
-
-function DocumentsContainer(props: Props) {
+function DocumentsContainer() {
   const journalsStore = useContext(JournalsStoreContext);
   const client = useClient();
   const [searchStore] = useState(new SearchV2Store(client, journalsStore));
@@ -60,19 +27,19 @@ function DocumentsContainer(props: Props) {
   // loading states
   if (searchStore.loading && !searchStore.docs.length) {
     return (
-      <Layout>
+      <LayoutEmpty>
         <Heading>Loading</Heading>
-      </Layout>
+      </LayoutEmpty>
     );
   }
 
   // todo: I didn't really implement error handling :|
   if (searchStore.error) {
     return (
-      <Layout>
+      <LayoutEmpty>
         <Heading>Error</Heading>
         <Paragraph>{JSON.stringify(searchStore.error)}</Paragraph>
-      </Layout>
+      </LayoutEmpty>
     );
   }
 
@@ -87,12 +54,12 @@ function DocumentsContainer(props: Props) {
       );
     } else {
       return (
-        <Layout store={searchStore} disableDocCreate>
+        <LayoutEmpty>
           <Heading>No journals added</Heading>
           <Paragraph>
             Use the preferences link in the navbar to create a new journal.
           </Paragraph>
-        </Layout>
+        </LayoutEmpty>
       );
     }
   }

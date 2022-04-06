@@ -2,32 +2,38 @@ import React from "react";
 import { TagInput } from "evergreen-ui";
 import { observer, useLocalStore } from "mobx-react-lite";
 import { TagSearchStore, ITokensStore } from "./store";
-import { TagSearchLoading } from './loading';
+import { useSearchParams } from 'react-router-dom';
 
 interface Props {
   store: ITokensStore;
 }
 
-export default function TagSearchContainer(props: Partial<Props>) {
-  if (!props.store) {
-    return <TagSearchLoading />
-  }
-
-  return <ObvsTagSearch store={props.store} />
-}
-
-function TagSearch(props: Props) {
+export default observer(function TagSearch(props: Props) {
   const store = useLocalStore(() => {
     return new TagSearchStore(props.store);
   });
 
+  const [params, setParams] = useSearchParams();
+
+  // Restore search from URL params on mount
+  // NOTE: If user (can) manipulate URL, or once saved
+  // searches are implemented, this will need to be extended
+  React.useEffect(() => {
+    const tokens = params.getAll('search');
+    for (const token of tokens) {
+      store.addToken(token);
+    }
+  }, [])
+
   function onRemove(tag: string | React.ReactNode, idx: number) {
     if (typeof tag !== "string") return;
     store.removeToken(tag);
+    setParams({ search: store.searchTokens }, { replace: true });
   }
 
   function onAdd(tokens: string[]) {
     if (tokens.length > 1) {
+      // https://evergreen.segment.com/components/tag-input
       // Documents say this is single value, Type says array
       // Testing says array but with only one value... unsure how multiple
       // values end up in the array.
@@ -40,6 +46,7 @@ function TagSearch(props: Props) {
 
     const token = tokens[0];
     store.addToken(token);
+    setParams({ search: store.searchTokens }, { replace: true });
   }
 
   return (
@@ -51,6 +58,4 @@ function TagSearch(props: Props) {
       onRemove={onRemove}
     />
   );
-}
-
-const ObvsTagSearch = observer(TagSearch);
+})

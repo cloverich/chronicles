@@ -15,7 +15,6 @@ export class SearchV2Store {
   @observable error: string | null = null;
   private journals: JournalsStore;
 
-  // copoied from JournalsUIStore
   @observable tokens: IObservableArray<SearchToken> = observable([]);
 
   constructor(private client: IClient, journals: JournalsStore) {
@@ -30,6 +29,8 @@ export class SearchV2Store {
   // todo: this might be better as a @computed get
   private tokensToQuery = () => {
     return this.tokens
+      // for now limit to "in" tag searches
+      // https://github.com/cloverich/chronicles/issues/39
       .filter((t) => t.type === "in")
       .map((token) => this.journals.idForName(token.value as string))
       .filter((token) => token) as string[];
