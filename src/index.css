@@ -3,6 +3,11 @@
   margin: auto;
 }
 
+.mono {
+  font-family: "IBM Plex Mono", 'SF Mono', SFMono-Regular, ui-monospace,
+    'DejaVu Sans Mono', Menlo, Consolas, monospace;
+}
+
 .doc-date {
   margin-left: -150px;
   font-family: "IBM Plex Mono";

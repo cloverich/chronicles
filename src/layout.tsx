@@ -7,10 +7,6 @@ interface Props2 {
   children: any;
 }
 
-const monoStyle = {
-  fontFamily: "IBM Plex Mono",
-};
-
 function classnameFunc({ isActive }: any) {
   return isActive ? 'link-active' : 'link-inactive'
 }
@@ -33,8 +29,7 @@ export default function Layout(props: Props2) {
       <Pane minWidth={480} minHeight="100vh">
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
-            <span style={monoStyle}>#</span>
-            <span style={monoStyle}>chronicles</span>
+            <span className="mono" style={{ color: '#6E62B6' }}>chronicles</span>
           </Pane>
           <Pane flexGrow={1} marginRight={24}>
             <NavLink to="documents" className={classnameFunc}>documents</NavLink>
@@ -54,8 +49,7 @@ export function LayoutDummy({ children }: any) {
       <Pane minWidth={480}>
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
-            <span style={monoStyle}>#</span>
-            <span style={monoStyle}>chronicles</span>
+            <span className="mono" style={{ color: '#6E62B6' }}>chronicles</span>
           </Pane>
           <Pane flexGrow={1} marginRight={24}>
             <a href="">documents</a>

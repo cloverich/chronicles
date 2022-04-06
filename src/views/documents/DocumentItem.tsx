@@ -17,7 +17,8 @@ export function DocumentItem(props: {
       cursor="default"
       className="hover-underline"
     >
-      <div style={{ flexShrink: 0, marginRight: "24px" }}>
+      {/* Without mono font, dates won't be a uniform width */}
+      <div className="mono" style={{ flexShrink: 0, marginRight: "24px" }}>
         {doc.createdAt.slice(0, 10)}
       </div>
       <div>
@@ -33,6 +34,6 @@ export function DocumentItem(props: {
           </Badge>
         </small>
       </div>
-    </Pane>
+    </Pane >
   );
 }
