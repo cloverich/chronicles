@@ -6,10 +6,10 @@ import "./typography.css";
 import { HashRouter } from 'react-router-dom';
 
 ReactDOM.render(
-  <div>
+  <>
     <HashRouter>
       <Container />
     </HashRouter>
-  </div>,
+  </>,
   document.getElementById("app")
 );

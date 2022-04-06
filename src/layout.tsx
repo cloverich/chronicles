@@ -21,12 +21,16 @@ export default function Layout(props: Props2) {
   // hence we have this hack here. What could go wrong?
   const location = useLocation();
   if (location.pathname.startsWith('/edit')) {
-    return <Pane margin={50}>{props.children}</Pane>
+    return (
+      <Pane padding={50} display="flex" flexDirection="column" minHeight="100vh">
+        {props.children}
+      </Pane>
+    )
   }
 
   return (
     <ErrorBoundary>
-      <Pane minWidth={480}>
+      <Pane minWidth={480} minHeight="100vh">
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
             <span style={monoStyle}>#</span>
@@ -38,7 +42,7 @@ export default function Layout(props: Props2) {
             <NavLink to="preferences" className={classnameFunc} >preferences</NavLink>
           </Pane>
         </Pane>
-        <Pane margin={50}>{props.children}</Pane>
+        <Pane padding={50}>{props.children}</Pane>
       </Pane>
     </ErrorBoundary>
   );

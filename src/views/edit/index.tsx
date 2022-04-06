@@ -174,17 +174,21 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
+  // flexGrows are needed so save / edit buttons are at bottom on both empty documents
+  // and scrollable documents
   return (
-    <Pane>
-      <a
-        onClick={goBack}
-        className={css`
+    <Pane flexGrow={1} display="flex" flexDirection="column">
+      <Pane flexGrow={1}>
+        <div style={{ marginBottom: '24px' }}>
+          <a
+            onClick={goBack}
+            className={css`
           cursor: pointer;
-        `}
-      >
-        Back
-      </a>
-      <Pane marginTop={24}>
+          `}
+          >
+            Back
+          </a>
+        </div>
         <div
           className={css`
             display: flex;
@@ -229,19 +233,19 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
           setValue={document.setSlateContent}
         />
 
-        <Pane marginTop={24}>
-          <Button
-            marginRight={16}
-            onClick={() => document.save()}
-            disabled={!document.dirty}
-            isLoading={document.saving}
-          >
-            {document.saving ? "Saving" : document.dirty ? "Save" : "Saved"}
-          </Button>
-          <Button onClick={deleteDocument} disabled={!document.canDelete}>
-            Delete
-          </Button>
-        </Pane>
+      </Pane>
+      <Pane marginTop={24} display="flex" justifyContent="flex-end">
+        <Button
+          onClick={() => document.save()}
+          disabled={!document.dirty}
+          isLoading={document.saving}
+        >
+          {document.saving ? "Saving" : document.dirty ? "Save" : "Saved"}
+        </Button>
+        <Button
+          marginLeft={16} onClick={deleteDocument} disabled={!document.canDelete}>
+          Delete
+        </Button>
       </Pane>
     </Pane>
   );
