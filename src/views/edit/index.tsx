@@ -1,4 +1,3 @@
-import { ViewState } from "../../container";
 import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import Editor from "./editor";
@@ -12,35 +11,31 @@ import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import Toolbar from "./toolbar";
-
-interface EditDocumentProps {
-  documentId?: string;
-  setView: React.Dispatch<React.SetStateAction<ViewState>>;
-}
+import { RouteProps, useParams, useNavigate } from 'react-router-dom';
 
 // Loads document, with loading and error placeholders
-function DocumentLoadingContainer(props: EditDocumentProps) {
+function DocumentLoadingContainer() {
   const journals = useContext(JournalsStoreContext);
+  const { document: documentId, ...rest } = useParams();
   const { document, loadingError } = useEditableDocument(
     journals.journals,
-    props.documentId
+    documentId
   );
 
   if (loadingError) {
     return (
-      <EditLoadingComponent setView={props.setView} error={loadingError} />
+      <EditLoadingComponent error={loadingError} />
     );
   }
 
   if (!document) {
-    return <EditLoadingComponent setView={props.setView} />;
+    return <EditLoadingComponent />;
   }
 
   return (
     <DocumentEditView
       document={document}
       journals={journals.journals}
-      setView={props.setView}
     />
   );
 }
@@ -48,12 +43,12 @@ function DocumentLoadingContainer(props: EditDocumentProps) {
 interface DocumentEditProps {
   document: EditableDocument;
   journals: JournalResponse[];
-  setView: React.Dispatch<React.SetStateAction<ViewState>>;
 }
 
 const DocumentEditView = observer((props: DocumentEditProps) => {
   const { document, journals } = props;
   const isMounted = useIsMounted();
+  const navigate = useNavigate();
 
   // Autofocus the heading input
   const onInputRendered = React.useCallback(
@@ -167,7 +162,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         "Document is unsaved, exiting will discard document. Stop editing anyways?"
       )
     ) {
-      props.setView("documents");
+      navigate(-1);
     }
   }
 
@@ -175,7 +170,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     if (!document.canDelete) return;
     if (confirm("Are you sure?")) {
       await document.del();
-      if (isMounted()) props.setView("documents");
+      if (isMounted()) navigate(-1);
     }
   }
 

@@ -5,12 +5,11 @@ import { Heading, Paragraph, Pane } from "evergreen-ui";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import TagSearch from "./search";
 
-import { ViewState } from "../../container";
 import { SearchV2Store } from "./SearchStore";
 import { DocumentItem } from "./DocumentItem";
+import { RouteProps, useNavigate, Link } from 'react-router-dom';
 
-interface Props extends React.PropsWithChildren<{}> {
-  setView: React.Dispatch<React.SetStateAction<ViewState>>;
+interface Props extends RouteProps {
   store?: SearchV2Store;
   disableDocCreate?: boolean;
 }
@@ -18,7 +17,7 @@ interface Props extends React.PropsWithChildren<{}> {
 const Layout = observer(function LayoutNaked(props: Partial<Props>) {
   // conditionally show document create button.
   function createDocumentsView() {
-    if (!props.setView || props.disableDocCreate) return;
+    if (props.disableDocCreate) return;
 
     return (
       <>
@@ -26,9 +25,9 @@ const Layout = observer(function LayoutNaked(props: Partial<Props>) {
           <TagSearch store={props.store} />
         </Pane>
         <Pane>
-          <a onClick={() => props.setView!({ name: "edit", props: {} })}>
+          <Link to="/edit/new">
             Create new
-          </a>
+          </Link>
         </Pane>
       </>
     );
@@ -47,9 +46,10 @@ function DocumentsContainer(props: Props) {
   const journalsStore = useContext(JournalsStoreContext);
   const client = useClient();
   const [searchStore] = useState(new SearchV2Store(client, journalsStore));
+  const navigate = useNavigate();
 
   function edit(docId: string) {
-    props.setView({ name: "edit", props: { documentId: docId } });
+    navigate(`/edit/${docId}`)
   }
 
   // execute search on mount
@@ -80,7 +80,7 @@ function DocumentsContainer(props: Props) {
   if (!searchStore.docs.length) {
     if (journalsStore.journals.length) {
       return (
-        <Layout store={searchStore} setView={props.setView}>
+        <Layout store={searchStore}>
           <Heading>No documents found</Heading>
           <Paragraph>Broaden your search, or add more documents.</Paragraph>
         </Layout>
@@ -106,11 +106,11 @@ function DocumentsContainer(props: Props) {
 
   // .slice(0, 100) until pagination and persistent search state are implemented
   const docs = searchStore.docs.slice(0, 100).map((doc) => {
-    return <DocumentItem doc={doc} getName={getName} edit={edit} />;
+    return <DocumentItem key={doc.id} doc={doc} getName={getName} edit={edit} />;
   });
 
   return (
-    <Layout setView={props.setView} store={searchStore}>
+    <Layout store={searchStore}>
       {docs}
     </Layout>
   );

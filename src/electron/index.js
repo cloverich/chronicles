@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, protocol } = require("electron");
 const path = require("path");
 const fs = require('fs');
-const { initUserFilesDir } =  require('./userFilesInit');
+const { initUserFilesDir } = require('./userFilesInit');
 const settings = require('./settings');
 const migrate = require('./migrations');
 
@@ -93,10 +93,16 @@ app.whenReady().then(() => {
   })
 })
 
+
+// use a wider width in dev to support attached debugger, since it re-opens on changes
+// NOTE: In production this could be more sophisticated, remembering the users
+// last width while also doing some sanity checks in case they change screen
+const width = app.isPackaged ? 800 : 1400;
+
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
+    width,
     height: 600,
     webPreferences: {
       // This is needed to load electron modules
@@ -113,7 +119,7 @@ function createWindow() {
       // preload: app.isPackaged ? path.join(__dirname, 'preload.js') : path.join(__dirname, '../preload.js'),
       preload: path.join(__dirname, 'preload.bundle.js'),
     },
-    
+
   });
 
   mainWindow.loadFile("index.html");

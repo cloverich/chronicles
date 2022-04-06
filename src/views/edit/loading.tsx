@@ -2,20 +2,21 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import { Pane, Button, Alert } from "evergreen-ui";
 import { css } from "emotion";
-import { ViewState } from "../../container";
+import { useNavigate } from 'react-router-dom';
 
 export interface LoadingComponentProps {
-  setView: React.Dispatch<React.SetStateAction<ViewState>>;
   error?: Error;
 }
 
 export const placeholderDate = new Date().toISOString().slice(0, 10);
-export const noop: any = () => {};
+export const noop: any = () => { };
 
 export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
+  const navigate = useNavigate();
+
   return (
     <Pane>
-      <a onClick={() => props.setView("documents")}>Back</a>
+      <a onClick={() => navigate("/documents")}>Back</a>
       <Pane marginTop={24}>
         <div
           className={css`

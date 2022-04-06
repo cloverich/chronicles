@@ -4,6 +4,7 @@ import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { JournalResponse } from '../../preload/client/journals';
 import { autorun } from 'mobx'
 import { observer } from "mobx-react-lite";
+import { RouteProps } from 'react-router-dom';
 
 // todo: TEST CASES
 // button is disabled by default and when no text is present
@@ -12,7 +13,7 @@ import { observer } from "mobx-react-lite";
 // errors are displayed
 // journal added after successful save
 // journals load and are displayed
-function Journals() {
+function Journals(props: RouteProps) {
   const store = useContext(JournalsStoreContext);
   const [name, setName] = useState<string>("");
 
@@ -39,13 +40,14 @@ function Journals() {
       await store.remove(journal.id);
       toaster.success(`Successfully removed ${journal.name}`);
     } catch (err) {
-      toaster.danger(err);
+      // todo: validate and coerce the type
+      toaster.danger(err as any);
     }
   }
 
   function renderError() {
     if (store.error) return (
-      <Alert intent="danger" 
+      <Alert intent="danger"
         title="Error saving journal"
       >
         {JSON.stringify(store.error)}
@@ -67,13 +69,13 @@ function Journals() {
           placeholder="A short display name for the journal"
           onChange={(e: any) => setName(e.target.value)}
           value={name}
-          />
+        />
         <Button
           isLoading={store.saving}
           disabled={name.trim().length === 0}
           // disabled={}
           onClick={save}
-          >Create new journal</Button>
+        >Create new journal</Button>
       </Pane>
 
       <Table>

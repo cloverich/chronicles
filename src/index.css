@@ -7,19 +7,20 @@
   margin-left: -150px;
   font-family: "IBM Plex Mono";
   font-size: 18px;
-  color: rgb(41, 58, 242);;
+  color: rgb(41, 58, 242);
 }
 
 .hover-underline:hover {
   text-decoration: underline;
 }
+
 /**
  * When first elements of each note have margin-top,
  * like heading elements, it acts like extra padding in the
  * note.
  */
-.content-section > :first-child {
-  margin-top: 0; 
+.content-section> :first-child {
+  margin-top: 0;
 }
 
 article {
@@ -31,6 +32,35 @@ article {
 article img {
   max-width: 64%;
 }
+
+/* see link styling in Layout */
+.link-active {
+  font-weight: 700;
+  margin: 1rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.link-inactive {
+  margin: 1rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.link-active::after {
+  content: " }"
+}
+
+.link-active::before {
+  content: "{ "
+}
+
+.link-inactive::after {
+  content: "  "
+}
+
+.link-inactive::before {
+  content: "  "
+}
+
 
 /* 
 removed dthis one from typography.js
