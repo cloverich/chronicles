@@ -1,5 +1,5 @@
 import { Element as SlateElement, Node as SlateNode } from "slate";
-import { stringToSlate, slateToString } from "../../markdown";
+import { stringToSlate, slateToString, slateToMdast } from "../../markdown";
 
 /**
  * Helper to convert markdown text into Slate nodes, and vice versa
@@ -52,6 +52,10 @@ export class SlateTransformer {
     //   slateToString(copiedNodes)
     // );
     return slateToString(copiedNodes);
+  }
+
+  static mdastify(nodes: SlateNode[]): any {
+    return slateToMdast(nodes);
   }
 }
 

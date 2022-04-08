@@ -44,6 +44,18 @@ export function stringToSlate(text: string) {
   return output as any;
 }
 
+
+/**
+ * debug helper function to see the slate to mdast conversion
+ * before stringifying
+ */
+export function slateToMdast(nodes: SNode[]): any {
+  return slateToStringProcessor.runSync({
+    type: "root",
+    children: nodes,
+  });
+}
+
 export function slateToString(nodes: SNode[]): string {
   // per documentation https://github.com/inokawa/remark-slate-transformer/
   // slate value must be wrapped. Remark's parse expects a string while `run`

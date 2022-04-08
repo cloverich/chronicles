@@ -31,16 +31,21 @@ import {
   CodeIcon,
   CodeBlockIcon,
   Pane,
+  RigIcon
 } from "evergreen-ui";
 // import { css } from "emotion";
 
 const iconStyle = { width: "0.8rem", height: "0.8rem" };
 
+interface Props {
+  toggleDebug: any;
+}
+
 /**
  * Buttons for formatting text in the document
  * todo: consider styled-component-icons or remix-icons -- there are more
  */
-export default function FormattingToolbar() {
+export default function FormattingToolbar(props: Props) {
   const editor = useStoreEditorRef(useEventEditorId("focus"));
 
   return (
@@ -81,10 +86,12 @@ export default function FormattingToolbar() {
         type={getPlatePluginType(editor, ELEMENT_OL)}
         icon={<NumberedListIcon style={iconStyle} />}
       />
+      {/* This disappears in debug mode?  */}
       <ToolbarCodeBlock
         type={getPlatePluginType(editor, ELEMENT_CODE_BLOCK)}
         icon={<CodeBlockIcon style={iconStyle} />}
       />
+      <RigIcon style={iconStyle} onClick={props.toggleDebug} />
     </Pane>
   );
 }

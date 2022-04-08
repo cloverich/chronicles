@@ -2,7 +2,8 @@ import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import Editor from "./editor";
 import { Pane, Button, Popover, Menu, Position } from "evergreen-ui";
-import { useEditableDocument, EditableDocument } from "./useEditableDocument";
+import { useEditableDocument } from "./useEditableDocument";
+import { EditableDocument } from "./EditableDocument";
 import { css } from "emotion";
 import { JournalResponse } from "../../preload/client/journals";
 import { EditLoadingComponent } from "./loading";
@@ -11,12 +12,13 @@ import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import Toolbar from "./toolbar";
-import { RouteProps, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { DebugView } from './DebugView';
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
   const journals = useContext(JournalsStoreContext);
-  const { document: documentId, ...rest } = useParams();
+  const { document: documentId } = useParams();
   const { document, loadingError } = useEditableDocument(
     journals.journals,
     documentId
@@ -49,6 +51,11 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   const { document, journals } = props;
   const isMounted = useIsMounted();
   const navigate = useNavigate();
+  const [debugView, setDebugView] = React.useState(false);
+
+  function toggleDebugView() {
+    setDebugView(!debugView);
+  }
 
   // Autofocus the heading input
   const onInputRendered = React.useCallback(
@@ -174,6 +181,24 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
+  // Ideally debug content could be viewed in a totally separate
+  // window
+  function renderEditorOrDebug() {
+    if (debugView) {
+      return (
+        <DebugView doc={document} />
+      )
+    } else {
+      return (
+        <Editor
+          saving={document.saving}
+          value={document.slateContent}
+          setValue={document.setSlateContent}
+        />
+      )
+    }
+  }
+
   // flexGrows are needed so save / edit buttons are at bottom on both empty documents
   // and scrollable documents
   return (
@@ -223,15 +248,10 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
           />
         </div>
         <div>
-          <Toolbar />
+          <Toolbar toggleDebug={toggleDebugView} />
         </div>
 
-        {/* note: its not actually clear to me whether toJS is necessary here. */}
-        <Editor
-          saving={document.saving}
-          value={document.slateContent}
-          setValue={document.setSlateContent}
-        />
+        {renderEditorOrDebug()}
 
       </Pane>
       <Pane marginTop={24} display="flex" justifyContent="flex-end">

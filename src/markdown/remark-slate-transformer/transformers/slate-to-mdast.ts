@@ -375,13 +375,21 @@ function createHtml(node: slateInternal.Html): mdast.HTML {
 
 function createCode(node: slateInternal.Code): mdast.Code {
   const { lang, meta } = node;
+
+  // The slateInternal.Code type says its children are text nodes. However the
+  // Plate code block is giving wrapping each of those in a `code_line` element.
+  // MDAST (seems to) expect just text in its code block element. This code 
+  // implements that.
+  // SNode.texts returns a generator that yields [{text: "foo"}, path] for each line
+  // which looks like: [ { type: code_line, children : { text: ''}}]
+  // TODO: Update Plate, then change the node's type
+  const value = Array.from(SNode.texts(node)).map(item => item[0].text).join('\n');
+
   return {
     type: "code",
     lang,
     meta,
-    // NOTE: Added this .. the code as existed doesn't make sense?
-    // code is handled as marks in other parts of the codebase. Hmm.
-    value: SNode.string(node), //[0].text,
+    value,
   };
 }
 
