@@ -4,7 +4,11 @@ import { SearchToken } from "./tokens";
 import { FocusTokenParser } from "./parsers/focus";
 import { JournalTokenParser } from "./parsers/in";
 import { FilterTokenParser } from "./parsers/filter";
+import { TitleTokenParser } from "./parsers/title";
+import { TextTokenParser } from "./parsers/text";
 
+// NOTE: This won't allow searching where value has colon in it
+// Feel free to improe this
 const tokenRegex = /^(.*):(.*)/;
 
 interface TokenParser<T = any> {
@@ -21,6 +25,8 @@ const parsers: Record<SearchToken["type"], TokenParser<any>> = {
   focus: new FocusTokenParser(),
   in: new JournalTokenParser(),
   filter: new FilterTokenParser(),
+  title: new TitleTokenParser(),
+  text: new TextTokenParser(),
 };
 
 /**
@@ -34,7 +40,7 @@ export interface ITokensStore {
  * View model for displaying, adding, and removing search tokens
  */
 export class TagSearchStore {
-  constructor(private store: ITokensStore) {}
+  constructor(private store: ITokensStore) { }
 
   // TODO: Rename. These are stringified tokens, not SearchToken's
   // which is confusing?
@@ -58,8 +64,13 @@ export class TagSearchStore {
     if (!tokenStr) return;
     const matches = tokenStr.match(tokenRegex);
 
-    // todo: indicate to user we are discarding
-    if (!matches) return;
+
+    // accept free text and convert to text: token types
+    // ex: "banana pudding" -> "text:banana pudding"
+    if (!matches) {
+      return [parsers.text, parsers.text.parse(tokenStr)]
+    };
+
     const [, prefix, value] = matches;
     // todo: same todo as above
     if (!value) return;

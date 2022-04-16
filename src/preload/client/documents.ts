@@ -1,4 +1,5 @@
 import { Database } from "better-sqlite3";
+import { Knex } from 'knex';
 import cuid from "cuid";
 
 export interface GetDocumentResponse {
@@ -12,8 +13,6 @@ export interface GetDocumentResponse {
 
 /**
  * Structure for searching journal content.
- *
- * todo: DocsQuery in the API. Refactor, re-name, merge
  */
 export interface SearchRequest {
   /**
@@ -21,6 +20,16 @@ export interface SearchRequest {
    * rather than None.
    */
   journals: string[];
+
+  /**
+   * Filter to documents matching one of these titles
+   */
+  titles?: string[];
+
+  /**
+   * Search document body text
+   */
+  texts?: string[];
 
   nodeMatch?: {
     /**
@@ -78,7 +87,7 @@ export interface SaveRequest {
 export type IDocumentsClient = DocumentsClient;
 
 export class DocumentsClient {
-  constructor(private db: Database) {}
+  constructor(private db: Database, private knex: Knex) { }
 
   findById = ({
     documentId,
@@ -96,34 +105,43 @@ export class DocumentsClient {
     this.db.prepare("delete from documents where id = :id").run({ id });
   };
 
+
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
     // todo: consider using raw and getting arrays of values rather than
-    // objects for each row
+    // objects for each row, for performance
+    let query = this.knex('documents')
 
-    if (q?.journals && q.journals.length) {
-      return {
-        data: this.db
-          // SQLite doesn't support binding arrays, and this library
-          // doesn't help you.
-          // https://github.com/JoshuaWise/better-sqlite3/issues/460
-          // Expression below generates:
-          // select * from documents where journalId in (?,?,?)
-          .prepare(
-            `select * from documents where journalId in (${q.journals
-              .map(() => "?")
-              .join(",")})
-             order by "createdAt" desc
-            `
-          )
-          .all(q.journals),
-      };
-    } else {
-      return {
-        data: this.db
-          .prepare(`select * from documents order by "createdAt" desc`)
-          .all(),
-      };
+    // filter by journal
+    if (q?.journals?.length) {
+      query = query.whereIn('journalId', q.journals);
     }
+
+    // filter by title
+    if (q?.titles?.length) {
+      for (const title of q.titles) {
+        // note: andWhereILike throws a SQL syntax error in SQLite.
+        // It seems case insensitie without it?
+        query = query.andWhereLike('title', `%${title}%`);
+      }
+    }
+
+    // filter by raw text
+    if (q?.texts?.length) {
+      for (const rawTxt of q.texts) {
+        query = query.andWhereLike('content', `%${rawTxt}%`)
+      }
+    }
+
+    query.orderBy('createdAt', 'desc')
+
+    try {
+      const results = await query;
+      return { data: results as unknown as SearchItem[] }
+    } catch (err) {
+      console.error('error in clinet.documents.search', err);
+    }
+
+    return { data: [] }
   };
 
   save = ({

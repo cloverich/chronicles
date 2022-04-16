@@ -17,7 +17,7 @@ function afterRebuild(name, cb) {
 
 // After successful build, log results
 function afterBuild(name) {
-  return ({errors, warnings, ...rest}) => {
+  return ({ errors, warnings, ...rest }) => {
     if (errors.length) {
       console.error(`${name} bundle completed with errors`, errors);
     } else if (warnings.length) {
@@ -48,7 +48,7 @@ esbuild.build({
   outfile: 'src/preload.bundle.js',
   bundle: true,
   platform: 'node',
-  external: ['electron', 'electron-store', 'better-sqlite3'],
+  external: ['knex', 'electron', 'electron-store', 'better-sqlite3'],
   watch: {
     onRebuild: afterRebuild('preload')
   },
@@ -79,9 +79,9 @@ function startElectron() {
   // main bundle completes quickest
   startCounter++
   if (startCounter < 3) return;
-  
+
   console.log('starting electron')
-  eprocess = cp.spawn(`${electron}`, ['src/main.bundle.js'], { stdio: 'inherit'});
+  eprocess = cp.spawn(`${electron}`, ['src/main.bundle.js'], { stdio: 'inherit' });
 
   eprocess.on('error', (error) => {
     console.error('electron error', error, error.message)
@@ -94,7 +94,7 @@ const restartElectron = lodash.debounce(function startElectron() {
   if (eprocess) eprocess.kill('SIGTERM');
 
   console.log('starting electron')
-  eprocess = cp.spawn(`${electron}`, ['src/main.bundle.js'], { stdio: 'inherit'});
+  eprocess = cp.spawn(`${electron}`, ['src/main.bundle.js'], { stdio: 'inherit' });
 
   eprocess.on('error', (error) => {
     console.error('electron error', error, error.message)

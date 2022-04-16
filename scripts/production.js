@@ -4,7 +4,7 @@ const electron = require('electron');
 
 // After successful build, log results
 function afterBuild(name) {
-  return ({errors, warnings, ...rest}) => {
+  return ({ errors, warnings, ...rest }) => {
     console.log(rest);
     if (errors.length) {
       console.error(`${name} bundle completed with errors`, errors);
@@ -31,7 +31,7 @@ esbuild.build({
   outfile: 'src/preload.bundle.js',
   bundle: true,
   platform: 'node',
-  external: ['electron', 'electron-store', 'better-sqlite3'],
+  external: ['knex', 'electron', 'electron-store', 'better-sqlite3'],
 }).then(afterBuild('preload'), console.error);
 
 // build electron main bundle

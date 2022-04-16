@@ -28,25 +28,26 @@ export class SearchV2Store {
 
   // todo: this might be better as a @computed get
   private tokensToQuery = () => {
-    return this.tokens
-      // for now limit to "in" tag searches
-      // https://github.com/cloverich/chronicles/issues/39
+    const journals = this.tokens
       .filter((t) => t.type === "in")
       .map((token) => this.journals.idForName(token.value as string))
       .filter((token) => token) as string[];
+
+    // todo: Typescript doesn't know when I filter to type === 'title' its TitleTokens
+    // its confused by the nodeMatch type
+    const titles = this.tokens.filter((t) => t.type === 'title').map(t => t.value) as any as string[]
+    const texts = this.tokens.filter((t => t.type === 'text')).map(t => t.value) as any as string[]
+    return { journals, titles, texts }
   };
 
   search = async () => {
     this.loading = true;
     this.error = null;
 
-    const query: string[] = this.tokensToQuery();
-    // Hmm -- need to get from journal name to id...
-    // I guess take journals, find by name, convert to id
+    const query = this.tokensToQuery();
+
     try {
-      const res = query.length
-        ? this.client.documents.search({ journals: query })
-        : this.client.documents.search();
+      const res = this.client.documents.search(query);
       this.docs = (await res).data;
     } catch (err) {
       console.error("Error with documents.search results", err);
