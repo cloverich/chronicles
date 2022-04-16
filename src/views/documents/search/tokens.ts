@@ -16,16 +16,25 @@ export type NodeMatch = {
   text?: string; // match raw text from within the node
 };
 
+/**
+ * NOTE: This is not currently implemented, but used to be
+ */
 export type FilterToken = {
   type: "filter";
   value: NodeMatch;
 };
 
+/**
+ * Filter to documents in a particular journal
+ */
 export type JournalToken = {
   type: "in";
   value: string; // keyof Journals
 };
 
+/**
+ * NOTE: This is not currently implemented, but used to be
+ */
 export type FocusToken = {
   type: "focus";
   value: {
@@ -35,4 +44,20 @@ export type FocusToken = {
   };
 };
 
-export type SearchToken = FilterToken | JournalToken | FocusToken;
+/**
+ * Searching documents by title
+ */
+export type TitleToken = {
+  type: "title";
+  value: string;
+};
+
+/**
+ * Searching documents for raw text
+ */
+export type TextToken = {
+  type: "text";
+  value: string;
+}
+
+export type SearchToken = FilterToken | JournalToken | FocusToken | TitleToken | TextToken;

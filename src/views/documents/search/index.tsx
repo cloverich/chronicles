@@ -1,7 +1,7 @@
 import React from "react";
 import { TagInput } from "evergreen-ui";
 import { observer, useLocalStore } from "mobx-react-lite";
-import { TagSearchStore, ITokensStore } from "./store";
+import { TagSearchStore, ITokensStore } from "./TagSearchStore";
 import { useSearchParams } from 'react-router-dom';
 
 interface Props {
@@ -18,6 +18,7 @@ export default observer(function TagSearch(props: Props) {
   // Restore search from URL params on mount
   // NOTE: If user (can) manipulate URL, or once saved
   // searches are implemented, this will need to be extended
+  // todo: All input tests should also test via the URL
   React.useEffect(() => {
     const tokens = params.getAll('search');
     for (const token of tokens) {

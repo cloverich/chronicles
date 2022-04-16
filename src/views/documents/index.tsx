@@ -33,17 +33,20 @@ function DocumentsContainer() {
     );
   }
 
-  // todo: I didn't really implement error handling :|
+  // todo: Improve error handling
+  // case: can re-attempt search when searchStore has error (works)
   if (searchStore.error) {
     return (
-      <LayoutEmpty>
+      <Layout store={searchStore}>
         <Heading>Error</Heading>
         <Paragraph>{JSON.stringify(searchStore.error)}</Paragraph>
-      </LayoutEmpty>
+      </Layout>
     );
   }
 
   // empty states
+  // todo: maintain search input focus when result set is empty, currently
+  // it loses focus
   if (!searchStore.docs.length) {
     if (journalsStore.journals.length) {
       return (

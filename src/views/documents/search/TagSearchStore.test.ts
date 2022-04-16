@@ -1,7 +1,7 @@
 import { suite, test } from "mocha";
 import { assert } from "chai";
 import { observable, IObservableArray } from "mobx";
-import { TagSearchStore } from "./store";
+import { TagSearchStore } from "./TagSearchStore";
 import { SearchToken } from "./tokens";
 
 interface TokensStore {
@@ -21,7 +21,7 @@ function makeMock(): [TokensStore, TagSearchStore] {
 // check the parsed token strings in searchTokens instead of
 // store.tokens. Test's would be more readable...
 // ... and also confirms the parse to token -> serialize to string works correctly.
-// In UI testing, I found taht adding `filter:code` serialized to `filter:undefined`
+// In UI testing, I found that adding `filter:code` serialized to `filter:undefined`
 // A separate routine could confirm the tokens -> searchTokens
 // reaction...
 suite("TagSearchStore", function () {
@@ -97,26 +97,67 @@ suite("TagSearchStore", function () {
       value: "chronicles",
     });
 
+    // Re-adding 
     store.addToken("in:chronicles");
-    assert.equal(mock.tokens.length, 1);
+    assert.equal(mock.tokens.length, 1, 'Adding the same text twice should produce only one token');
 
+    // Remove a token that isn't there should not throw an error
     store.removeToken("in:random");
     assert.equal(mock.tokens.length, 1);
 
+    // Removing a token
     store.removeToken("in:chronicles");
     assert.equal(mock.tokens.length, 0);
 
+    // Adding multiple tokens
     store.addToken("in:chronicles");
     store.addToken("in:foobar the best");
     assert.equal(mock.tokens.length, 2);
 
-    // FUCK: How will this work?
-    // Could pass valid journals to the store,
-    // or operate through a setter
-    // adding a fake one does nothing
-    // removing a fake one does nothing
-    // remove last one
+    // todo: adding only valid journals
   });
+
+  test("title:", function () {
+    const [mock, store] = makeMock();
+    store.addToken("title:foo bar");
+    assert.equal(mock.tokens.length, 1);
+    assert.deepEqual(mock.tokens[0], {
+      type: "title",
+      value: "foo bar",
+    });
+
+    store.addToken("title:foo bar");
+    assert.equal(mock.tokens.length, 1);
+
+    store.removeToken("title:random");
+    assert.equal(mock.tokens.length, 1);
+
+    store.removeToken("title:foo bar");
+    assert.equal(mock.tokens.length, 0);
+  })
+
+  test("text:", function () {
+    const [mock, store] = makeMock();
+    store.addToken("text:foo bar");
+    assert.equal(mock.tokens.length, 1);
+    assert.deepEqual(mock.tokens[0], {
+      type: "text",
+      value: "foo bar",
+    });
+
+    store.addToken("text:foo bar");
+    assert.equal(mock.tokens.length, 1);
+
+    store.removeToken("text:random");
+    assert.equal(mock.tokens.length, 1);
+
+    store.removeToken("text:foo bar");
+    assert.equal(mock.tokens.length, 0);
+  })
+
+  test("free text", function () {
+    // todo: replicate text: tests
+  })
 
   test("mix and match", function () {
     // add two journals
