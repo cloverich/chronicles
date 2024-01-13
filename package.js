@@ -16,7 +16,7 @@
  * This is also true for any additional architecture beyond whatever macos supports.
  */
 const packager = require('electron-packager');
-const { rebuild } = require('electron-rebuild');
+const { rebuild } = require('@electron/rebuild');
 
 // These arguments are provided by build.sh
 const srcDir = process.argv[2];
@@ -44,17 +44,13 @@ packager({
   afterPrune: [(buildPath, electronVersion, platform, arch, callback) => {
     console.log('rebuilding...', buildPath, electronVersion, platform, arch);
     
-    // While better-sqlite3 and prebuild-install are borked
-    // https://github.com/cloverich/chronicles/issues/66
-    callback()
-
     // Previously, and after they are fixed:
-    // rebuild({ buildPath, electronVersion, arch })
-    //   .then(() => callback())
-    //   .catch((error) => {
-    //     console.error('Error rebuilding native dependencies!');
-    //     console.error(error);
-    //     callback(error)
-    //   });
+    rebuild({ buildPath, electronVersion, arch })
+      .then(() => callback())
+      .catch((error) => {
+        console.error('Error rebuilding native dependencies!');
+        console.error(error);
+        callback(error)
+      });
   }],
 });

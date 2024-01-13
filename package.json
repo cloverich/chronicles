@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node ./scripts/dev.js",
     "test": "mocha -r esm -r ts-node/register src/**/*.test.ts",
-    "test:one": "mocha -r ts-node/register -r esm",
-    "postinstall": "./rebuild-better-sqlite3.sh"
+    "test:one": "mocha -r ts-node/register -r esm"
   },
   "dependencies": {
     "ajv": "^8.6.2",
