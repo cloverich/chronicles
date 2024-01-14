@@ -1,7 +1,7 @@
 import { suite, test } from "mocha";
 import { assert } from "chai";
 import { observable, IObservableArray } from "mobx";
-import { TagSearchStore } from "./TagSearchStore";
+import { TagSearchStore } from "../TagSearchStore";
 import { SearchToken } from "./tokens";
 
 interface TokensStore {
@@ -158,6 +158,11 @@ suite("TagSearchStore", function () {
   test("free text", function () {
     // todo: replicate text: tests
   })
+
+  test("after:", function () {
+    // todo: adding a new one replaces existing token
+
+  });
 
   test("mix and match", function () {
     // add two journals

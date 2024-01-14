@@ -1,35 +1,17 @@
 import React from "react";
 import { TagInput } from "evergreen-ui";
-import { observer, useLocalStore } from "mobx-react-lite";
-import { TagSearchStore, ITokensStore } from "./TagSearchStore";
-import { useSearchParams } from 'react-router-dom';
+import { observer } from "mobx-react-lite";
+import { SearchV2Store } from "../SearchStore";
 
 interface Props {
-  store: ITokensStore;
+  store: SearchV2Store;
 }
 
-export default observer(function TagSearch(props: Props) {
-  const store = useLocalStore(() => {
-    return new TagSearchStore(props.store);
-  });
-
-  const [params, setParams] = useSearchParams();
-
-  // Restore search from URL params on mount
-  // NOTE: If user (can) manipulate URL, or once saved
-  // searches are implemented, this will need to be extended
-  // todo: All input tests should also test via the URL
-  React.useEffect(() => {
-    const tokens = params.getAll('search');
-    for (const token of tokens) {
-      store.addToken(token);
-    }
-  }, [])
+const TagSearch = (props: Props) => {
 
   function onRemove(tag: string | React.ReactNode, idx: number) {
     if (typeof tag !== "string") return;
-    store.removeToken(tag);
-    setParams({ search: store.searchTokens }, { replace: true });
+    props.store.removeToken(tag);
   }
 
   function onAdd(tokens: string[]) {
@@ -46,17 +28,18 @@ export default observer(function TagSearch(props: Props) {
     }
 
     const token = tokens[0];
-    store.addToken(token);
-    setParams({ search: store.searchTokens }, { replace: true });
+    props.store.addToken(token);
   }
 
   return (
     <TagInput
       flexGrow={1}
       inputProps={{ placeholder: "Search journals" }}
-      values={store.searchTokens}
+      values={props.store.searchTokens}
       onAdd={onAdd}
       onRemove={onRemove}
     />
   );
-})
+}
+
+export default observer(TagSearch);

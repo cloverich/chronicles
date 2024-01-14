@@ -1,11 +1,12 @@
 import { computed, action, observable, IObservableArray } from "mobx";
 import _ from "lodash";
-import { SearchToken } from "./tokens";
-import { FocusTokenParser } from "./parsers/focus";
-import { JournalTokenParser } from "./parsers/in";
-import { FilterTokenParser } from "./parsers/filter";
-import { TitleTokenParser } from "./parsers/title";
-import { TextTokenParser } from "./parsers/text";
+import { SearchToken } from "./search/tokens";
+import { FocusTokenParser } from "./search/parsers/focus";
+import { JournalTokenParser } from "./search/parsers/in";
+import { FilterTokenParser } from "./search/parsers/filter";
+import { TitleTokenParser } from "./search/parsers/title";
+import { TextTokenParser } from "./search/parsers/text";
+import { BeforeTokenParser } from './search/parsers/before';
 
 // NOTE: This won't allow searching where value has colon in it
 // Feel free to improe this
@@ -27,6 +28,7 @@ const parsers: Record<SearchToken["type"], TokenParser<any>> = {
   filter: new FilterTokenParser(),
   title: new TitleTokenParser(),
   text: new TextTokenParser(),
+  before: new BeforeTokenParser(),
 };
 
 /**
@@ -84,6 +86,19 @@ export class TagSearchStore {
     return [parser, parsedToken];
   }
 
+  /**
+   * Add a raw array of (search string) tokens to the store
+   * 
+   * @param tokens - An array of strings representing tokens
+   */
+  @action
+  addTokens = (tokens: string[]) => {
+    // todo: Why am I not doing this atomically?
+    for (const token of tokens) {
+      this.addToken(token);
+    }
+  }
+
   @action
   addToken = (tokenStr: string) => {
     const results = this.parserFor(tokenStr);
@@ -91,7 +106,6 @@ export class TagSearchStore {
 
     const [parser, parsedToken] = results;
     const tokens = parser.add(this.store.tokens, parsedToken);
-
     this.store.tokens = observable(tokens);
   };
 

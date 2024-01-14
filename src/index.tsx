@@ -4,6 +4,7 @@ import Container from "./container";
 import "./index.css";
 import "./typography.css";
 import { HashRouter } from 'react-router-dom';
+import 'mobx-react-lite/batchingForReactDom'
 
 ReactDOM.render(
   <>
