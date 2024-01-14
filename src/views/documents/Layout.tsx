@@ -8,6 +8,7 @@ import { SearchV2Store } from './SearchStore';
 interface Props {
     store: SearchV2Store;
     children: any;
+    empty?: boolean;
 }
 
 export function Layout(props: Props) {
@@ -24,12 +25,4 @@ export function Layout(props: Props) {
             <Pane marginTop={24}>{props.children}</Pane>
         </Pane>
     );
-}
-
-export function LayoutEmpty({ children }: any) {
-    return (
-        <Pane>
-            <Pane marginTop={24}>{children}</Pane>
-        </Pane>
-    )
 }

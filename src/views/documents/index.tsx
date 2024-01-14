@@ -7,29 +7,46 @@ import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { SearchV2Store } from "./SearchStore";
 import { DocumentItem } from "./DocumentItem";
 import { useNavigate } from 'react-router-dom';
-import { Layout, LayoutEmpty } from "./Layout";
+import { Layout } from "./Layout";
+import { useSearchParams } from 'react-router-dom';
 
 function DocumentsContainer() {
   const journalsStore = useContext(JournalsStoreContext);
   const client = useClient();
-  const [searchStore] = useState(new SearchV2Store(client, journalsStore));
+  const [params, setParams] = useSearchParams();
+  const [searchStore] = useState(new SearchV2Store(client, journalsStore, setParams));
   const navigate = useNavigate();
 
   function edit(docId: string) {
     navigate(`/edit/${docId}`)
   }
 
-  // execute search on mount
-  useEffect(() => {
-    searchStore.search();
-  }, []);
+
+  // NOTE: If user (can) manipulate URL, or once saved
+  // searches are implemented, this will need to be extended
+  // todo: All input tests should also test via the URL
+  React.useEffect(() => {
+    console.log('Documents.index.useEffect')
+    const tokens = params.getAll('search');
+
+    // Ok, this does not trigger initial search reaction because there are no
+    // tokens and the change is based on length, and there fireImmediately is false
+    // This whole thing is dumb.
+    if (tokens.length) {
+      console.log('Documents.index passing tokens to searchStore', tokens)
+      searchStore.addTokens(tokens);
+    } else {
+      console.log('Documents.index calling search directly')
+      searchStore.search();
+    }
+  }, [])
 
   // loading states
   if (searchStore.loading && !searchStore.docs.length) {
     return (
-      <LayoutEmpty>
+      <Layout store={searchStore} empty>
         <Heading>Loading</Heading>
-      </LayoutEmpty>
+      </Layout>
     );
   }
 
@@ -57,12 +74,12 @@ function DocumentsContainer() {
       );
     } else {
       return (
-        <LayoutEmpty>
+        <Layout store={searchStore} empty>
           <Heading>No journals added</Heading>
           <Paragraph>
             Use the preferences link in the navbar to create a new journal.
           </Paragraph>
-        </LayoutEmpty>
+        </Layout>
       );
     }
   }

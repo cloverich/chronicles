@@ -60,4 +60,12 @@ export type TextToken = {
   value: string;
 }
 
-export type SearchToken = FilterToken | JournalToken | FocusToken | TitleToken | TextToken;
+/**
+ * Searching documents created after the given date string
+ */
+export type BeforeToken = {
+  type: "before";
+  value: string;
+}
+
+export type SearchToken = FilterToken | JournalToken | FocusToken | TitleToken | TextToken | BeforeToken;

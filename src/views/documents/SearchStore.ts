@@ -1,7 +1,8 @@
 import { IClient } from "../../hooks/useClient";
-import { observable, IObservableArray, reaction } from "mobx";
+import { observable, IObservableArray, reaction, computed } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { SearchToken } from "./search/tokens";
+import { TagSearchStore } from "./TagSearchStore";
 
 export interface SearchItem {
   id: string;
@@ -9,16 +10,21 @@ export interface SearchItem {
   title?: string;
   journalId: string;
 }
+
 export class SearchV2Store {
   @observable docs: SearchItem[] = [];
   @observable loading = true;
   @observable error: string | null = null;
   private journals: JournalsStore;
+  private tagSeachStore: TagSearchStore;
+  private setTokensUrl: any; // todo: This is react-router-dom's setUrl; type it
 
   @observable tokens: IObservableArray<SearchToken> = observable([]);
 
-  constructor(private client: IClient, journals: JournalsStore) {
+  constructor(private client: IClient, journals: JournalsStore, setTokensUrl: any) {
     this.journals = journals;
+    this.tagSeachStore = new TagSearchStore(this);
+    this.setTokensUrl = setTokensUrl;
 
     // Re-run the search query anytime the tokens change.
     reaction(() => this.tokens.slice(), this.search, {
@@ -37,7 +43,14 @@ export class SearchV2Store {
     // its confused by the nodeMatch type
     const titles = this.tokens.filter((t) => t.type === 'title').map(t => t.value) as any as string[]
     const texts = this.tokens.filter((t => t.type === 'text')).map(t => t.value) as any as string[]
-    return { journals, titles, texts }
+    let before: string = '';
+
+    const beforeToken = this.tokens.find(t => t.type === 'before');
+    if (beforeToken) {
+      before = beforeToken.value as string;
+    }
+
+    return { journals, titles, texts, before }
   };
 
   search = async () => {
@@ -56,4 +69,25 @@ export class SearchV2Store {
 
     this.loading = false;
   };
+
+  // TODO: I refactored SearchStore to wrap TagSearchStore after some design issues;
+  // do a full refactor pass after the key search features are working.
+  addTokens = (searchStr: string[]) => {
+    this.tagSeachStore.addTokens(searchStr);
+  }
+
+  addToken = (searchStr: string) => {
+    this.tagSeachStore.addToken(searchStr);
+    this.setTokensUrl({ search: this.searchTokens }, { replace: true });
+  }
+
+  removeToken = (token: string) => {
+    this.tagSeachStore.removeToken(token);
+    this.setTokensUrl({ search: this.searchTokens }, { replace: true });
+  }
+
+  @computed
+  get searchTokens() {
+    return this.tagSeachStore.searchTokens;
+  }
 }

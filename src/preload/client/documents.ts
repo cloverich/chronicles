@@ -27,6 +27,11 @@ export interface SearchRequest {
   titles?: string[];
 
   /**
+   * Filter documents to those older than a given date
+   */
+  before?: string;
+
+  /**
    * Search document body text
    */
   texts?: string[];
@@ -130,6 +135,10 @@ export class DocumentsClient {
       for (const rawTxt of q.texts) {
         query = query.andWhereLike('content', `%${rawTxt}%`)
       }
+    }
+
+    if (q?.before) {
+      query.andWhere('createdAt', '<', q.before);
     }
 
     query.orderBy('createdAt', 'desc')
