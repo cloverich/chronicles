@@ -8,8 +8,7 @@ import { TitleTokenParser } from "./search/parsers/title";
 import { TextTokenParser } from "./search/parsers/text";
 import { BeforeTokenParser } from './search/parsers/before';
 
-// NOTE: This won't allow searching where value has colon in it
-// Feel free to improe this
+// TODO: This won't allow searching where value has colon in it
 const tokenRegex = /^(.*):(.*)/;
 
 interface TokenParser<T = any> {
@@ -36,6 +35,7 @@ const parsers: Record<SearchToken["type"], TokenParser<any>> = {
  */
 export interface ITokensStore {
   tokens: IObservableArray<SearchToken>;
+  setTokens: (tokens: SearchToken[]) => void;
 }
 
 /**
@@ -106,7 +106,7 @@ export class TagSearchStore {
 
     const [parser, parsedToken] = results;
     const tokens = parser.add(this.store.tokens, parsedToken);
-    this.store.tokens = observable(tokens);
+    this.store.setTokens(tokens);
   };
 
   @action
@@ -116,6 +116,6 @@ export class TagSearchStore {
 
     const [parser, parsedToken] = results;
     const tokens = parser.remove(this.store.tokens.slice(), parsedToken);
-    this.store.tokens = observable(tokens);
+    this.store.setTokens(tokens);
   };
 }

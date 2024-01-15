@@ -1,5 +1,5 @@
 import { IClient } from "../../hooks/useClient";
-import { observable, IObservableArray, reaction, computed } from "mobx";
+import { observable, IObservableArray, reaction, computed, action } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { SearchToken } from "./search/tokens";
 import { TagSearchStore } from "./TagSearchStore";
@@ -19,7 +19,7 @@ export class SearchV2Store {
   private tagSeachStore: TagSearchStore;
   private setTokensUrl: any; // todo: This is react-router-dom's setUrl; type it
 
-  @observable tokens: IObservableArray<SearchToken> = observable([]);
+  @observable private _tokens: IObservableArray<SearchToken> = observable([]);
 
   constructor(private client: IClient, journals: JournalsStore, setTokensUrl: any) {
     this.journals = journals;
@@ -27,9 +27,26 @@ export class SearchV2Store {
     this.setTokensUrl = setTokensUrl;
 
     // Re-run the search query anytime the tokens change.
-    reaction(() => this.tokens.slice(), this.search, {
+    reaction(() => this._tokens.slice(), this.search, {
       fireImmediately: false,
     });
+  }
+
+  @action
+  setTokens = (tokens: SearchToken[]) => {
+    // Filter out invalid in: journal tokens
+    // Additional validation can go here as well
+    tokens = tokens.filter((t) => {
+      if (t.type !== "in") return true;
+      const journal = this.journals.idForName(t.value as string);
+      return !!journal;
+    });
+
+    this.tokens.replace(tokens);
+  }
+
+  @computed get tokens(): IObservableArray<SearchToken> {
+    return this._tokens;
   }
 
   // todo: this might be better as a @computed get

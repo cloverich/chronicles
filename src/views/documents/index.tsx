@@ -29,14 +29,12 @@ function DocumentsContainer() {
     console.log('Documents.index.useEffect')
     const tokens = params.getAll('search');
 
-    // Ok, this does not trigger initial search reaction because there are no
+    // does not trigger initial search reaction because there are no
     // tokens and the change is based on length, and there fireImmediately is false
-    // This whole thing is dumb.
+    // Make this more elegant.
     if (tokens.length) {
-      console.log('Documents.index passing tokens to searchStore', tokens)
       searchStore.addTokens(tokens);
     } else {
-      console.log('Documents.index calling search directly')
       searchStore.search();
     }
   }, [])
@@ -51,7 +49,7 @@ function DocumentsContainer() {
   }
 
   // todo: Improve error handling
-  // case: can re-attempt search when searchStore has error (works)
+  // test case: can re-attempt search when searchStore has error (works)
   if (searchStore.error) {
     return (
       <Layout store={searchStore}>
