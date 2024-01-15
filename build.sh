@@ -67,9 +67,6 @@ cp -r src/*.bundle.* dist/
 cp package.json dist/
 cp yarn.lock dist/
 
-# Called from yarn postinstall; more context in the rebuild script
-cp ./rebuild-better-sqlite3.sh dist/
-
 # todo: This is installing dev dependencies which, because of esbuild, should not be needed.
 # When I use install --production, the final build complains it cannot find electron
 # Could probably just install --production then manually add electron? Or munge the copied
