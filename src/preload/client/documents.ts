@@ -125,7 +125,7 @@ export class DocumentsClient {
     if (q?.titles?.length) {
       for (const title of q.titles) {
         // note: andWhereILike throws a SQL syntax error in SQLite.
-        // It seems case insensitie without it?
+        // It seems case insensitive without it?
         query = query.andWhereLike('title', `%${title}%`);
       }
     }

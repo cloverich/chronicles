@@ -13,12 +13,7 @@ export class BeforeTokenParser {
     };
 
     add = (tokens: SearchToken[], token: BeforeToken) => {
-        // TODO: I dont remember what these comments were about
         // replace existing after token
-        // this.remove(tokens, token);
-        // TRY: What if URL syncing does "has" before "add"?
-
-
         const existing = tokens.find(t => t.type === 'before');
         if (existing) {
             if (existing.value !== token.value) {
@@ -43,8 +38,8 @@ export class BeforeTokenParser {
 
     remove = (tokens: SearchToken[], token: BeforeToken) => {
         return tokens.filter((t) => {
-            // since we can have only one after token; keep 
-            // everything that isn't an after token
+            // since we can have only one before token; keep
+            // everything that isn't an before token
             return t.type !== "before";
         });
     };
