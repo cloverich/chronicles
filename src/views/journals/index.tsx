@@ -36,12 +36,13 @@ function Journals(props: RouteProps) {
   })
 
   async function removeJournal(journal: JournalResponse) {
-    try {
-      await store.remove(journal.id);
-      toaster.success(`Successfully removed ${journal.name}`);
-    } catch (err) {
-      // todo: validate and coerce the type
-      toaster.danger(err as any);
+    if (confirm(`Are you sure you want to remove ${journal.name}?`)) {
+      try {
+        await store.remove(journal.id);
+        toaster.success(`Successfully removed ${journal.name}`);
+      } catch (err) {
+        toaster.danger(err as any);
+      }
     }
   }
 
