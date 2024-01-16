@@ -1,6 +1,6 @@
-import { JournalsClient, IJournalsClient } from "./journals";
-import { DocumentsClient, GetDocumentResponse } from "./documents";
-import { PreferencesClient, IPreferencesClient } from "./preferences";
+import { JournalsClient } from "./journals";
+import { DocumentsClient } from "./documents";
+import { PreferencesClient } from "./preferences";
 import { FilesClient } from "./files";
 import { IClient } from "./types";
 import DB from "better-sqlite3";

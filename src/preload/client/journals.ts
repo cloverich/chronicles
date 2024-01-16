@@ -1,4 +1,4 @@
-import cuid from "cuid";
+import { uuidv7 } from "uuidv7";
 import { Database } from "better-sqlite3";
 
 interface IJournal {
@@ -30,12 +30,11 @@ export class JournalsClient {
   };
 
   create = (journal: { name: string }): Promise<JournalResponse> => {
-    const id = cuid();
+    const id = uuidv7();
 
-    this.db.prepare("insert into journals (id, name) values (:id, :name)").run({
+    this.db.prepare("insert into journals (id, name, createdAt, updatedAt) values (:id, :name, :createdAt, :updatedAt)").run({
       name: journal.name,
       id,
-      // todo: let databaset set these defaults
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

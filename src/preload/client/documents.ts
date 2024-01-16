@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
 import { Knex } from 'knex';
-import cuid from "cuid";
+import { uuidv7 } from "uuidv7";
 
 export interface GetDocumentResponse {
   id: string;
@@ -190,7 +190,7 @@ export class DocumentsClient {
         )
         .get({ id });
     } else {
-      const id = cuid();
+      const id = uuidv7();
       this.db
         .prepare(
           `

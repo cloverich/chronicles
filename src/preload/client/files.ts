@@ -2,7 +2,7 @@ import Store from "electron-store";
 
 import fs from "fs";
 import path from "path";
-import cuid from "cuid";
+import { uuidv7 } from "uuidv7";
 
 export interface Preferences {
   DATABASE_URL: string;
@@ -22,7 +22,7 @@ export class FilesClient {
   upload = async (file: File): Promise<UploadResponse> => {
     const dir = await this.settings.get("USER_FILES_DIR");
     const ext = path.parse(file.name).ext;
-    const filename = `${cuid()}.${ext || ".unknown"}`;
+    const filename = `${uuidv7()}.${ext || ".unknown"}`;
     const filepath = path.join(dir as string, filename);
 
     return new Promise<UploadResponse>((res, rej) => {

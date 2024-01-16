@@ -12,12 +12,13 @@
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^9.2.2",
-    "cuid": "^2.1.8",
     "electron-store": "^8.0.1",
     "knex": "^1.0.5",
-    "mkdirp": "^1.0.4"
+    "mkdirp": "^1.0.4",
+    "uuidv7": "^0.6.3"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.4.1",
     "@types/better-sqlite3": "^5.4.0",
     "@types/chai": "^4.2.11",
     "@types/klaw": "^3.0.1",
@@ -33,7 +34,6 @@
     "date-fns": "^2.28.0",
     "electron": "^15.3.5",
     "electron-packager": "^15.4.0",
-    "@electron/rebuild": "^3.4.1",
     "emotion": "^10.0.27",
     "esbuild": "^0.13.8",
     "esm": "^3.2.25",

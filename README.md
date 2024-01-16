@@ -19,9 +19,12 @@ yarn
 
 # start the development build and watch script
 yarn start
+
+# If error with sqlite library versions
+yarn run electron-rebuild
 ```
 
-See scripts/dev.js for specifics on how the source files are compiled and re-loaded in development. Settings 
+See scripts/dev.js for specifics on how the source files are compiled and re-loaded in development. 
 
 ## Build and release
 - Read and use the `build.sh` script
