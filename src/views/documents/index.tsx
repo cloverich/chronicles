@@ -1,7 +1,6 @@
-import React, { useEffect, useContext, useState } from "react";
-import useClient from "../../hooks/useClient";
+import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
-import { Heading, Paragraph } from "evergreen-ui";
+import { Heading, Paragraph, Pane} from "evergreen-ui";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 
 import { SearchV2Store } from "./SearchStore";
@@ -10,31 +9,26 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from "./Layout";
 import { useSearchParams } from 'react-router-dom';
 
-function DocumentsContainer() {
+function DocumentsContainer(props: { store: SearchV2Store}) {
   const journalsStore = useContext(JournalsStoreContext);
-  const client = useClient();
-  const [params, setParams] = useSearchParams();
-  const [searchStore] = useState(new SearchV2Store(client, journalsStore, setParams));
+  const [params,] = useSearchParams();
+
+  const searchStore = props.store
   const navigate = useNavigate();
 
   function edit(docId: string) {
     navigate(`/edit/${docId}`)
   }
 
-
-  // NOTE: If user (can) manipulate URL, or once saved
-  // searches are implemented, this will need to be extended
-  // todo: All input tests should also test via the URL
   React.useEffect(() => {
-    console.log('Documents.index.useEffect')
     const tokens = params.getAll('search');
 
-    // does not trigger initial search reaction because there are no
-    // tokens and the change is based on length, and there fireImmediately is false
-    // Make this more elegant.
-    if (tokens.length) {
-      searchStore.addTokens(tokens);
-    } else {
+    // When hitting "back" from an edit note, the search state is maintained.
+    // When navigating to other pages (preferences) and back, the search
+    // state needs reset. This resets the state in that case. This is
+    // not the correct place to do this.
+    if (!tokens.length) {
+      searchStore.setTokens([]);
       searchStore.search();
     }
   }, [])
@@ -89,15 +83,45 @@ function DocumentsContainer() {
     return jrnl.name;
   }
 
-  // .slice(0, 100) until pagination and persistent search state are implemented
-  const docs = searchStore.docs.slice(0, 100).map((doc) => {
+  const docs = searchStore.docs.map((doc) => {
     return <DocumentItem key={doc.id} doc={doc} getName={getName} edit={edit} />;
   });
+
 
   return (
     <Layout store={searchStore}>
       {docs}
+      <Pagination store={searchStore} />
     </Layout>
+  );
+}
+
+function Pagination(props: {store: SearchV2Store}) {
+  const nextButton = (() => {
+    if (props.store.hasNext) {
+      return <a style={{marginLeft: '8px'}} href="" onClick={() => {
+        props.store.next()
+        window.scrollTo(0, 0);
+        return false;
+      }}>Next</a>
+    }
+  })();
+
+  const prevButton = (() => {
+    if (props.store.hasPrev) {
+      return <a  style={{marginLeft: '8px'}} href="" onClick={() => {
+        props.store.prev()
+        window.scrollTo(0, 0);
+        return false;
+      }}>Prev</a>
+    }
+  })();
+
+  return (
+    <Pane display='flex' justifyContent='flex-end' marginTop='24px'>
+      {prevButton}
+      {nextButton}
+    </Pane>
   );
 }
 

@@ -1,5 +1,5 @@
 import { IClient } from "../../hooks/useClient";
-import { observable, IObservableArray, reaction, computed, action } from "mobx";
+import { observable, IObservableArray, computed, action } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { SearchToken } from "./search/tokens";
 import { TagSearchStore } from "./TagSearchStore";
@@ -11,25 +11,29 @@ export interface SearchItem {
   journalId: string;
 }
 
+interface SearchQuery {
+  journals: string[];
+  titles?: string[];
+  before?: string;
+  texts?: string[];
+  limit?: number;
+}
+
 export class SearchV2Store {
   @observable docs: SearchItem[] = [];
   @observable loading = true;
   @observable error: string | null = null;
   private journals: JournalsStore;
   private tagSeachStore: TagSearchStore;
-  private setTokensUrl: any; // todo: This is react-router-dom's setUrl; type it
+  setTokensUrl: any; // todo: This is react-router-dom's setUrl; type it
 
   @observable private _tokens: IObservableArray<SearchToken> = observable([]);
 
-  constructor(private client: IClient, journals: JournalsStore, setTokensUrl: any) {
+  constructor(private client: IClient, journals: JournalsStore, setTokensUrl: any, tokens: string[]) {
     this.journals = journals;
     this.tagSeachStore = new TagSearchStore(this);
     this.setTokensUrl = setTokensUrl;
-
-    // Re-run the search query anytime the tokens change.
-    reaction(() => this._tokens.slice(), this.search, {
-      fireImmediately: false,
-    });
+    this.tagSeachStore.addTokens(tokens);
   }
 
   @action
@@ -50,7 +54,7 @@ export class SearchV2Store {
   }
 
   // todo: this might be better as a @computed get
-  private tokensToQuery = () => {
+  private tokensToQuery = (): SearchQuery => {
     const journals = this.tokens
       .filter((t) => t.type === "in")
       .map((token) => this.journals.idForName(token.value as string))
@@ -70,15 +74,39 @@ export class SearchV2Store {
     return { journals, titles, texts, before }
   };
 
-  search = async () => {
+  /**
+   * Execute a search with the current tokens.
+   * 
+   * @param limit 
+   * @param resetPagination - By default execute a fresh search. When paginating,
+   *  we don't want to reset the pagination state.
+   */
+  search = async (limit=100, resetPagination=true) => {
     this.loading = true;
     this.error = null;
 
-    const query = this.tokensToQuery();
+    const q = this.tokensToQuery();
+
+    // For determining if there is a next, add one to the limit
+    // and see if we get it back.
+    q.limit = limit + 1;
 
     try {
-      const res = this.client.documents.search(query);
-      this.docs = (await res).data;
+      const res = this.client.documents.search(q);
+      const docs = (await res).data;
+
+      if (docs.length > limit) {
+        this.nextId = docs[docs.length - 1].id;
+        docs.pop();
+      } else {
+        this.nextId = null;
+      }
+
+      if (resetPagination) {
+        this.lastIds = [];
+      }
+
+      this.docs = docs;
     } catch (err) {
       console.error("Error with documents.search results", err);
       this.error = err instanceof Error ? err.message : JSON.stringify(err);
@@ -91,20 +119,75 @@ export class SearchV2Store {
   // do a full refactor pass after the key search features are working.
   addTokens = (searchStr: string[]) => {
     this.tagSeachStore.addTokens(searchStr);
+    this.search();
   }
 
-  addToken = (searchStr: string) => {
+  addToken = (searchStr: string, resetPagination = true) => {
     this.tagSeachStore.addToken(searchStr);
+
+    // TODO: I think updating the url should be a reaction to the tokens changing,
+    // perhaps TagSearchStore does this as part of refactor above?
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
+    this.search(100, resetPagination);
   }
 
-  removeToken = (token: string) => {
+  removeToken = (token: string, resetPagination = true) => {
     this.tagSeachStore.removeToken(token);
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
+    this.search(100, resetPagination);
   }
 
   @computed
   get searchTokens() {
     return this.tagSeachStore.searchTokens;
+  }
+
+  // TODO:Test cases, sigh
+  // When < limit, there is no next
+  // When click next, next doc is correct, lastId works as expected
+  // When next to last page, there is no next
+  // When back to prior page, next and last id are correct
+  // When back to first page, there is no last Id
+  // New searches clear pagination data
+  @observable nextId: string | null = null;
+  @observable lastIds: (string|undefined)[] = [];
+  @computed get hasNext() { return !!this.nextId }
+  @computed get hasPrev() { return !!this.lastIds.length }
+
+
+  @action
+  next = () => {
+    if (!this.nextId) return;
+
+    const lastBefore = this._tokens.find(t => t.type === 'before')?.value;
+
+    // This doesn't infer that lastBefore will be a token with a string value;
+    // it thinks NodeMatch is possible here. Undefined indicates no prior page,
+    // and logic above handles that.
+    this.lastIds.push(lastBefore as string | undefined);
+    this.addToken(`before:${this.nextId}`, false) 
+  }
+
+  @action
+  prev = () => {
+    if (!this.hasPrev) return;
+
+    const lastId = this.lastIds.pop();
+
+    if (lastId) {
+      this.addToken(`before:${lastId}`, false)
+    } else {
+
+      // Indicates this is the first next page, and clickign prev 
+      // takes us to the first page, i.e. no before: token
+      const lastBefore = this._tokens.find(t => t.type === 'before');
+
+      if (lastBefore) {
+        this.removeToken(`before:${lastBefore.value}`, false);
+      } else {
+        // Didn't come up in testing, but this is a good sanity check
+        console.error('Called prev but no before: token found?');
+      }
+    }
   }
 }

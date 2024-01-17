@@ -11,14 +11,37 @@ import {
 } from "./hooks/useJournalsLoader";
 import { Alert, Pane } from "evergreen-ui";
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import useClient from "./hooks/useClient";
+import { SearchV2Store } from "./views/documents/SearchStore";
 
 export default observer(function Container() {
   const { journalsStore, loading, loadingErr } = useJournalsLoader();
+  const client = useClient();
+  const [params, setParams] = useSearchParams();
+  const [searchStore, setSearchStore] = useState<null | SearchV2Store>(null);
 
-  if (loading) {
+  // This is more like an effect. This smells. Maybe just roll this all up into
+  // a hook.
+  if (journalsStore && !loading && !searchStore) {
+    const store = new SearchV2Store(client, journalsStore, setParams, params.getAll('search'));
+    store.search();
+    setSearchStore(store);
+  }
+
+  // The identity of this function changes on every render
+  // The store is not re-created, so needs updated. 
+  // This is a bit of a hack, but it works.
+  useEffect(() => {
+    if (searchStore) {
+      searchStore.setTokensUrl = setParams;
+    }
+  }, [setParams])
+
+  if (loading || !searchStore) {
     return (
       <LayoutDummy>
-        <h1>TODO LOADING STATE</h1>
+        <h1>Loading Journals...</h1>
       </LayoutDummy>
     )
   }
@@ -41,7 +64,7 @@ export default observer(function Container() {
           <Route element={<Preferences />} path="preferences" />
           <Route element={<Editor />} path="edit/new" />
           <Route element={<Editor />} path="edit/:document" />
-          <Route element={<Documents />} path="documents" />
+          <Route element={<Documents store={searchStore}/>} path="documents" />
           <Route
             path="*"
             element={<Navigate to="documents" replace />}
