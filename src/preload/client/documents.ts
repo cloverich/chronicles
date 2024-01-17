@@ -36,6 +36,8 @@ export interface SearchRequest {
    */
   texts?: string[];
 
+  limit?: number;
+
   nodeMatch?: {
     /**
      * Type of node
@@ -137,8 +139,17 @@ export class DocumentsClient {
       }
     }
 
+    // todo: test id, date, and unknown formats
     if (q?.before) {
-      query.andWhere('createdAt', '<', q.before);
+      if (this.beforeTokenFormat(q.before) === 'date') {
+        query = query.andWhere('createdAt', '<', q.before);
+      } else {
+        query = query.andWhere('id', '<', q.before);
+      }
+    }
+
+    if (q?.limit) {
+      query = query.limit(q.limit);
     }
 
     query.orderBy('createdAt', 'desc')
@@ -214,4 +225,26 @@ export class DocumentsClient {
         .get({ id });
     }
   };
+
+  /**
+   * For a given before: token, determine if the value is a date, an ID, or
+   * unknown. This allows paginating / ordering off of before using either
+   * createdAt or ID.
+   * 
+   * @param input - The value of the before: token
+   */
+  beforeTokenFormat = (input: string): 'date' | 'id' | 'unknown' => {
+    // Regular expression for ISO date formats: full, year-month, year only
+    const dateRegex = /^(?:\d{4}(?:-\d{2}(?:-\d{2})?)?)$/;
+    // Regular expression for the specific ID format
+    const idRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (dateRegex.test(input)) {
+        return 'date';
+    } else if (idRegex.test(input)) {
+        return 'id';
+    } else {
+        return 'unknown';
+    }
+  }
 }
