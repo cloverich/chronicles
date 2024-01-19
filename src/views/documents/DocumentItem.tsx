@@ -34,6 +34,6 @@ export function DocumentItem(props: {
           </Badge>
         </small>
       </div>
-    </Pane >
+    </Pane>
   );
 }

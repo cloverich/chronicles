@@ -4,7 +4,7 @@ import { PreferencesClient } from "./preferences";
 import { FilesClient } from "./files";
 import { IClient } from "./types";
 import DB from "better-sqlite3";
-import Knex from 'knex';
+import Knex from "knex";
 
 import Store from "electron-store";
 const settings = new Store({
@@ -19,10 +19,10 @@ const db = DB(settings.get("DATABASE_URL") as string);
 // todo: migrate codebase to prefer knex to directly using
 // the better-sqlite3 client
 const knex = Knex({
-  client: 'better-sqlite3', // or 'better-sqlite3'
+  client: "better-sqlite3", // or 'better-sqlite3'
   connection: {
-    filename: settings.get("DATABASE_URL") as string
-  }
+    filename: settings.get("DATABASE_URL") as string,
+  },
 });
 
 export { GetDocumentResponse } from "./documents";

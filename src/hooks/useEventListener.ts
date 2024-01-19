@@ -5,7 +5,7 @@ import { useRef, useEffect } from "react";
 export function useEventListener(
   eventName: string,
   handler: any,
-  element = window
+  element = window,
 ) {
   // Create a ref that stores handler
   const savedHandler = useRef<any>();
@@ -24,7 +24,7 @@ export function useEventListener(
       const isSupported = element && element.addEventListener;
       if (!isSupported)
         throw new Error(
-          `[useEventListener] addEventListner does not exist on element ${element.name}`
+          `[useEventListener] addEventListner does not exist on element ${element.name}`,
         );
 
       // Create event listener that calls handler function stored in ref
@@ -38,6 +38,6 @@ export function useEventListener(
         element.removeEventListener(eventName, eventListener);
       };
     },
-    [eventName, element] // Re-run if eventName or element changes
+    [eventName, element], // Re-run if eventName or element changes
   );
 }

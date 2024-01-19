@@ -43,7 +43,7 @@ const imageOverrides =
         for (const file of files) {
           if (!isImageUrl(file.path)) {
             toaster.warning(
-              "Only images with known image extensions may be added to notes"
+              "Only images with known image extensions may be added to notes",
             );
             return;
           }

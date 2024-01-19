@@ -8,7 +8,6 @@ interface Props {
 }
 
 const TagSearch = (props: Props) => {
-
   function onRemove(tag: string | React.ReactNode, idx: number) {
     if (typeof tag !== "string") return;
     props.store.removeToken(tag);
@@ -23,7 +22,7 @@ const TagSearch = (props: Props) => {
       console.warn(
         "TagInput.onAdd called with > 1 token? ",
         tokens,
-        "ignoring extra tokens"
+        "ignoring extra tokens",
       );
     }
 
@@ -40,6 +39,6 @@ const TagSearch = (props: Props) => {
       onRemove={onRemove}
     />
   );
-}
+};
 
 export default observer(TagSearch);

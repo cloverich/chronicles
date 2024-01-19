@@ -48,7 +48,7 @@ export async function importChronicles(notesDir: string) {
 
     for await (const file of Files.walk(
       path.join(notesDir, journal),
-      shouldIndexDay
+      shouldIndexDay,
     )) {
       const parsed = await loadDocument(file.path);
       if (parsed.mdast.type !== "root") throw new Error("oh my");
@@ -88,7 +88,7 @@ async function loadDocument(filepath: string) {
 // Split a document into multiple documents by presence of a top-level
 // markdown heading, i.e. "# This is a heading"
 function splitOnTitle(
-  content: string
+  content: string,
 ): Array<{ title: string; content: string }> {
   const lines = content.split("\n");
 

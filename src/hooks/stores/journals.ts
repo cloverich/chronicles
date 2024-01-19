@@ -8,7 +8,10 @@ export class JournalsStore {
   @observable error: Error | null = null;
   @observable journals: JournalResponse[];
 
-  constructor(private client: IClient, journals: JournalResponse[]) {
+  constructor(
+    private client: IClient,
+    journals: JournalResponse[],
+  ) {
     this.journals = journals;
   }
 

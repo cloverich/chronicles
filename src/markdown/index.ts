@@ -44,7 +44,6 @@ export function stringToSlate(text: string) {
   return output as any;
 }
 
-
 /**
  * debug helper function to see the slate to mdast conversion
  * before stringifying

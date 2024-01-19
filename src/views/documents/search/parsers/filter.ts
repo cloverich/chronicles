@@ -73,7 +73,7 @@ function parseFilter(token: string): NodeMatch | undefined {
         "matched:",
         nodeType,
         attribute,
-        value
+        value,
       );
       return;
     }

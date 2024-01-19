@@ -12,8 +12,8 @@ import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import Toolbar from "./toolbar";
-import { useParams, useNavigate } from 'react-router-dom';
-import { DebugView } from './DebugView';
+import { useParams, useNavigate } from "react-router-dom";
+import { DebugView } from "./DebugView";
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
@@ -21,25 +21,18 @@ function DocumentLoadingContainer() {
   const { document: documentId } = useParams();
   const { document, loadingError } = useEditableDocument(
     journals.journals,
-    documentId
+    documentId,
   );
 
   if (loadingError) {
-    return (
-      <EditLoadingComponent error={loadingError} />
-    );
+    return <EditLoadingComponent error={loadingError} />;
   }
 
   if (!document) {
     return <EditLoadingComponent />;
   }
 
-  return (
-    <DocumentEditView
-      document={document}
-      journals={journals.journals}
-    />
-  );
+  return <DocumentEditView document={document} journals={journals.journals} />;
 }
 
 interface DocumentEditProps {
@@ -67,7 +60,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         inputElement.focus();
       }
     },
-    []
+    [],
   );
 
   function getName(journalId?: string) {
@@ -166,7 +159,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     if (
       !document.dirty ||
       confirm(
-        "Document is unsaved, exiting will discard document. Stop editing anyways?"
+        "Document is unsaved, exiting will discard document. Stop editing anyways?",
       )
     ) {
       navigate(-1);
@@ -185,9 +178,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   // window
   function renderEditorOrDebug() {
     if (debugView) {
-      return (
-        <DebugView doc={document} />
-      )
+      return <DebugView doc={document} />;
     } else {
       return (
         <Editor
@@ -195,7 +186,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
           value={document.slateContent}
           setValue={document.setSlateContent}
         />
-      )
+      );
     }
   }
 
@@ -204,12 +195,12 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   return (
     <Pane flexGrow={1} display="flex" flexDirection="column">
       <Pane flexGrow={1}>
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: "24px" }}>
           <a
             onClick={goBack}
             className={css`
-          cursor: pointer;
-          `}
+              cursor: pointer;
+            `}
           >
             Back
           </a>
@@ -252,7 +243,6 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         </div>
 
         {renderEditorOrDebug()}
-
       </Pane>
       <Pane marginTop={24} display="flex" justifyContent="flex-end">
         <Button
@@ -263,7 +253,10 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
           {document.saving ? "Saving" : document.dirty ? "Save" : "Saved"}
         </Button>
         <Button
-          marginLeft={16} onClick={deleteDocument} disabled={!document.canDelete}>
+          marginLeft={16}
+          onClick={deleteDocument}
+          disabled={!document.canDelete}
+        >
           Delete
         </Button>
       </Pane>

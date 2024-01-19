@@ -31,7 +31,7 @@ import {
   CodeIcon,
   CodeBlockIcon,
   Pane,
-  RigIcon
+  RigIcon,
 } from "evergreen-ui";
 // import { css } from "emotion";
 

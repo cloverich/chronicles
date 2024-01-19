@@ -178,7 +178,7 @@ function convertNodes(nodes: slate.Node[]): unistLib.Node[] {
 }
 
 function createMdastNode(
-  node: any //Exclude<slateInternal.SlateNode, slateInternal.Text> --> as any because the switch thinks node.type is a string
+  node: any, //Exclude<slateInternal.SlateNode, slateInternal.Text> --> as any because the switch thinks node.type is a string
 ): Exclude<mdast.Content, TextOrDecoration> | null {
   switch (node.type) {
     case ELEMENT_LIC: // NOTE: added.
@@ -271,8 +271,8 @@ function mergeTexts(nodes: TextOrDecoration[]): TextOrDecoration[] {
       } else {
         last.children = mergeTexts(
           last.children.concat(
-            (cur as typeof last).children
-          ) as TextOrDecoration[]
+            (cur as typeof last).children,
+          ) as TextOrDecoration[],
         );
       }
     } else {
@@ -303,7 +303,7 @@ function createHeading(node: slateInternal.Heading): mdast.Heading {
 }
 
 function createThematicBreak(
-  node: slateInternal.ThematicBreak
+  node: slateInternal.ThematicBreak,
 ): mdast.ThematicBreak {
   const { type } = node;
   return {
@@ -378,12 +378,14 @@ function createCode(node: slateInternal.Code): mdast.Code {
 
   // The slateInternal.Code type says its children are text nodes. However the
   // Plate code block is giving wrapping each of those in a `code_line` element.
-  // MDAST (seems to) expect just text in its code block element. This code 
+  // MDAST (seems to) expect just text in its code block element. This code
   // implements that.
   // SNode.texts returns a generator that yields [{text: "foo"}, path] for each line
   // which looks like: [ { type: code_line, children : { text: ''}}]
   // TODO: Update Plate, then change the node's type
-  const value = Array.from(SNode.texts(node)).map(item => item[0].text).join('\n');
+  const value = Array.from(SNode.texts(node))
+    .map((item) => item[0].text)
+    .join("\n");
 
   return {
     type: "code",
@@ -421,7 +423,7 @@ function createDefinition(node: slateInternal.Definition): mdast.Definition {
 }
 
 function createFootnoteDefinition(
-  node: slateInternal.FootnoteDefinition
+  node: slateInternal.FootnoteDefinition,
 ): mdast.FootnoteDefinition {
   const { type, identifier, label, children } = node;
   return {
@@ -429,7 +431,7 @@ function createFootnoteDefinition(
     identifier,
     label,
     children: convertNodes(
-      children
+      children,
     ) as any as mdast.FootnoteDefinition["children"],
   };
 }
@@ -467,7 +469,7 @@ function createImage(node: slateInternal.Image | any): mdast.Image {
 }
 
 function createLinkReference(
-  node: slateInternal.LinkReference
+  node: slateInternal.LinkReference,
 ): mdast.LinkReference {
   const { type, identifier, label, referenceType, children } = node;
   return {
@@ -480,7 +482,7 @@ function createLinkReference(
 }
 
 function createImageReference(
-  node: slateInternal.ImageReference
+  node: slateInternal.ImageReference,
 ): mdast.ImageReference {
   const { type, identifier, label, alt, referenceType } = node;
   return {
@@ -501,7 +503,7 @@ function createFootnote(node: slateInternal.Footnote): mdast.Footnote {
 }
 
 function creatFootnoteReference(
-  node: slateInternal.FootnoteReference
+  node: slateInternal.FootnoteReference,
 ): mdast.FootnoteReference {
   const { type, identifier, label } = node;
   return {

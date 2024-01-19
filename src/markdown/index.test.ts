@@ -172,6 +172,6 @@ This works! _Seriously_, no **complaints**.
 describe("Heading conversion", function () {
   it('parses markdown headings from type: "heading" sections to "h1" or "h2');
   it(
-    'serializes markdown headings from type: "h1", "h2", to type: "heading" with correct depth'
+    'serializes markdown headings from type: "h1", "h2", to type: "heading" with correct depth',
   );
 });

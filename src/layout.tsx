@@ -1,14 +1,14 @@
 import React, { PropsWithChildren } from "react";
 import { Pane, Tablist, Tab } from "evergreen-ui";
 import ErrorBoundary from "./error";
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from "react-router-dom";
 
 interface Props2 {
   children: any;
 }
 
 function classnameFunc({ isActive }: any) {
-  return isActive ? 'link-active' : 'link-inactive'
+  return isActive ? "link-active" : "link-inactive";
 }
 
 export default function Layout(props: Props2) {
@@ -16,12 +16,17 @@ export default function Layout(props: Props2) {
   // layout, since only the edit view(s) don't use the normal layout
   // hence we have this hack here. What could go wrong?
   const location = useLocation();
-  if (location.pathname.startsWith('/edit')) {
+  if (location.pathname.startsWith("/edit")) {
     return (
-      <Pane padding={50} display="flex" flexDirection="column" minHeight="100vh">
+      <Pane
+        padding={50}
+        display="flex"
+        flexDirection="column"
+        minHeight="100vh"
+      >
         {props.children}
       </Pane>
-    )
+    );
   }
 
   return (
@@ -29,12 +34,20 @@ export default function Layout(props: Props2) {
       <Pane minWidth={480} minHeight="100vh">
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
-            <span className="mono" style={{ color: '#6E62B6' }}>chronicles</span>
+            <span className="mono" style={{ color: "#6E62B6" }}>
+              chronicles
+            </span>
           </Pane>
           <Pane flexGrow={1} marginRight={24}>
-            <NavLink to="documents" className={classnameFunc}>documents</NavLink>
-            <NavLink to="journals" className={classnameFunc} >journals</NavLink>
-            <NavLink to="preferences" className={classnameFunc} >preferences</NavLink>
+            <NavLink to="documents" className={classnameFunc}>
+              documents
+            </NavLink>
+            <NavLink to="journals" className={classnameFunc}>
+              journals
+            </NavLink>
+            <NavLink to="preferences" className={classnameFunc}>
+              preferences
+            </NavLink>
           </Pane>
         </Pane>
         <Pane padding={50}>{props.children}</Pane>
@@ -49,7 +62,9 @@ export function LayoutDummy({ children }: any) {
       <Pane minWidth={480}>
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
-            <span className="mono" style={{ color: '#6E62B6' }}>chronicles</span>
+            <span className="mono" style={{ color: "#6E62B6" }}>
+              chronicles
+            </span>
           </Pane>
           <Pane flexGrow={1} marginRight={24}>
             <a href="">documents</a>
@@ -60,5 +75,5 @@ export function LayoutDummy({ children }: any) {
         <Pane margin={50}>{children}</Pane>
       </Pane>
     </ErrorBoundary>
-  )
+  );
 }

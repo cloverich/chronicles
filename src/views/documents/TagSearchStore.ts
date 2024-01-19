@@ -6,7 +6,7 @@ import { JournalTokenParser } from "./search/parsers/in";
 import { FilterTokenParser } from "./search/parsers/filter";
 import { TitleTokenParser } from "./search/parsers/title";
 import { TextTokenParser } from "./search/parsers/text";
-import { BeforeTokenParser } from './search/parsers/before';
+import { BeforeTokenParser } from "./search/parsers/before";
 
 // TODO: This won't allow searching where value has colon in it
 const tokenRegex = /^(.*):(.*)/;
@@ -42,7 +42,7 @@ export interface ITokensStore {
  * View model for displaying, adding, and removing search tokens
  */
 export class TagSearchStore {
-  constructor(private store: ITokensStore) { }
+  constructor(private store: ITokensStore) {}
 
   // TODO: Rename. These are stringified tokens, not SearchToken's
   // which is confusing?
@@ -61,17 +61,16 @@ export class TagSearchStore {
    * @param tokenStr - The raw string from the search input
    */
   private parserFor<SearchToken>(
-    tokenStr: string
+    tokenStr: string,
   ): [TokenParser<SearchToken>, SearchToken] | undefined {
     if (!tokenStr) return;
     const matches = tokenStr.match(tokenRegex);
 
-
     // accept free text and convert to text: token types
     // ex: "banana pudding" -> "text:banana pudding"
     if (!matches) {
-      return [parsers.text, parsers.text.parse(tokenStr)]
-    };
+      return [parsers.text, parsers.text.parse(tokenStr)];
+    }
 
     const [, prefix, value] = matches;
     // todo: same todo as above
@@ -88,7 +87,7 @@ export class TagSearchStore {
 
   /**
    * Add a raw array of (search string) tokens to the store
-   * 
+   *
    * @param tokens - An array of strings representing tokens
    */
   @action
@@ -97,7 +96,7 @@ export class TagSearchStore {
     for (const token of tokens) {
       this.addToken(token);
     }
-  }
+  };
 
   @action
   addToken = (tokenStr: string) => {

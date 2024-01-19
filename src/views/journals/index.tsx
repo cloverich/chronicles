@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Button, Pane, Table, toaster, Badge, Alert, TextInputField } from "evergreen-ui";
+import {
+  Button,
+  Pane,
+  Table,
+  toaster,
+  Badge,
+  Alert,
+  TextInputField,
+} from "evergreen-ui";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { JournalResponse } from '../../preload/client/journals';
-import { autorun } from 'mobx'
+import { JournalResponse } from "../../preload/client/journals";
+import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
-import { RouteProps } from 'react-router-dom';
+import { RouteProps } from "react-router-dom";
 
 // todo: TEST CASES
 // button is disabled by default and when no text is present
@@ -23,17 +31,17 @@ function Journals(props: RouteProps) {
 
   // Reset text box after a successful save
   useEffect(() => {
-    // This works but feels all kinds of absurd. 
+    // This works but feels all kinds of absurd.
     return autorun(() => {
-      if (!store.saving && !store.error) setName('')
-    })
-  }, [])
+      if (!store.saving && !store.error) setName("");
+    });
+  }, []);
 
   // Load journals on mount
   // todo: The app load itself should handle this
   useEffect(() => {
     store.load();
-  })
+  });
 
   async function removeJournal(journal: JournalResponse) {
     if (confirm(`Are you sure you want to remove ${journal.name}?`)) {
@@ -47,13 +55,12 @@ function Journals(props: RouteProps) {
   }
 
   function renderError() {
-    if (store.error) return (
-      <Alert intent="danger"
-        title="Error saving journal"
-      >
-        {JSON.stringify(store.error)}
-      </Alert>
-    )
+    if (store.error)
+      return (
+        <Alert intent="danger" title="Error saving journal">
+          {JSON.stringify(store.error)}
+        </Alert>
+      );
 
     return null;
   }
@@ -76,7 +83,9 @@ function Journals(props: RouteProps) {
           disabled={name.trim().length === 0}
           // disabled={}
           onClick={save}
-        >Create new journal</Button>
+        >
+          Create new journal
+        </Button>
       </Pane>
 
       <Table>

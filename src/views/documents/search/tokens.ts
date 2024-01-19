@@ -58,7 +58,7 @@ export type TitleToken = {
 export type TextToken = {
   type: "text";
   value: string;
-}
+};
 
 /**
  * Searching documents created after the given date string
@@ -66,6 +66,12 @@ export type TextToken = {
 export type BeforeToken = {
   type: "before";
   value: string;
-}
+};
 
-export type SearchToken = FilterToken | JournalToken | FocusToken | TitleToken | TextToken | BeforeToken;
+export type SearchToken =
+  | FilterToken
+  | JournalToken
+  | FocusToken
+  | TitleToken
+  | TextToken
+  | BeforeToken;

@@ -32,12 +32,16 @@ export class JournalsClient {
   create = (journal: { name: string }): Promise<JournalResponse> => {
     const id = uuidv7();
 
-    this.db.prepare("insert into journals (id, name, createdAt, updatedAt) values (:id, :name, :createdAt, :updatedAt)").run({
-      name: journal.name,
-      id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    this.db
+      .prepare(
+        "insert into journals (id, name, createdAt, updatedAt) values (:id, :name, :createdAt, :updatedAt)",
+      )
+      .run({
+        name: journal.name,
+        id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
     return this.db.prepare("select * from journals where id = :id").get({ id });
   };

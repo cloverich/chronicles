@@ -92,7 +92,7 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
       const { type, children } = node;
       return children.reduce<SlateNode[]>((acc, n) => {
         acc.push(
-          ...createSlateNode(n, { ...deco, [DECORATION_MAPPING[type]]: true })
+          ...createSlateNode(n, { ...deco, [DECORATION_MAPPING[type]]: true }),
         );
         return acc;
       }, []);
@@ -326,7 +326,7 @@ export type FootnoteDefinition = ReturnType<typeof createFootnoteDefinition>;
 
 function createFootnoteDefinition(
   node: mdast.FootnoteDefinition,
-  deco: Decoration
+  deco: Decoration,
 ) {
   const { type, children, identifier, label } = node;
   return {
