@@ -37,7 +37,7 @@ export default class ErrorBoundary extends React.Component<any, State> {
       errStr = JSON.stringify(this.state.error, null, 2);
     } catch (err) {
       console.error(
-        "Error parsing error to string in top-level Error boundary"
+        "Error parsing error to string in top-level Error boundary",
       );
     }
 

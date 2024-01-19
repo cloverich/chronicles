@@ -29,7 +29,12 @@ export class SearchV2Store {
 
   @observable private _tokens: IObservableArray<SearchToken> = observable([]);
 
-  constructor(private client: IClient, journals: JournalsStore, setTokensUrl: any, tokens: string[]) {
+  constructor(
+    private client: IClient,
+    journals: JournalsStore,
+    setTokensUrl: any,
+    tokens: string[],
+  ) {
     this.journals = journals;
     this.tagSeachStore = new TagSearchStore(this);
     this.setTokensUrl = setTokensUrl;
@@ -47,7 +52,7 @@ export class SearchV2Store {
     });
 
     this.tokens.replace(tokens);
-  }
+  };
 
   @computed get tokens(): IObservableArray<SearchToken> {
     return this._tokens;
@@ -62,26 +67,30 @@ export class SearchV2Store {
 
     // todo: Typescript doesn't know when I filter to type === 'title' its TitleTokens
     // its confused by the nodeMatch type
-    const titles = this.tokens.filter((t) => t.type === 'title').map(t => t.value) as any as string[]
-    const texts = this.tokens.filter((t => t.type === 'text')).map(t => t.value) as any as string[]
-    let before: string = '';
+    const titles = this.tokens
+      .filter((t) => t.type === "title")
+      .map((t) => t.value) as any as string[];
+    const texts = this.tokens
+      .filter((t) => t.type === "text")
+      .map((t) => t.value) as any as string[];
+    let before: string = "";
 
-    const beforeToken = this.tokens.find(t => t.type === 'before');
+    const beforeToken = this.tokens.find((t) => t.type === "before");
     if (beforeToken) {
       before = beforeToken.value as string;
     }
 
-    return { journals, titles, texts, before }
+    return { journals, titles, texts, before };
   };
 
   /**
    * Execute a search with the current tokens.
-   * 
-   * @param limit 
+   *
+   * @param limit
    * @param resetPagination - By default execute a fresh search. When paginating,
    *  we don't want to reset the pagination state.
    */
-  search = async (limit=100, resetPagination=true) => {
+  search = async (limit = 100, resetPagination = true) => {
     this.loading = true;
     this.error = null;
 
@@ -120,7 +129,7 @@ export class SearchV2Store {
   addTokens = (searchStr: string[]) => {
     this.tagSeachStore.addTokens(searchStr);
     this.search();
-  }
+  };
 
   addToken = (searchStr: string, resetPagination = true) => {
     this.tagSeachStore.addToken(searchStr);
@@ -129,13 +138,13 @@ export class SearchV2Store {
     // perhaps TagSearchStore does this as part of refactor above?
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
     this.search(100, resetPagination);
-  }
+  };
 
   removeToken = (token: string, resetPagination = true) => {
     this.tagSeachStore.removeToken(token);
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
     this.search(100, resetPagination);
-  }
+  };
 
   @computed
   get searchTokens() {
@@ -150,23 +159,26 @@ export class SearchV2Store {
   // When back to first page, there is no last Id
   // New searches clear pagination data
   @observable nextId: string | null = null;
-  @observable lastIds: (string|undefined)[] = [];
-  @computed get hasNext() { return !!this.nextId }
-  @computed get hasPrev() { return !!this.lastIds.length }
-
+  @observable lastIds: (string | undefined)[] = [];
+  @computed get hasNext() {
+    return !!this.nextId;
+  }
+  @computed get hasPrev() {
+    return !!this.lastIds.length;
+  }
 
   @action
   next = () => {
     if (!this.nextId) return;
 
-    const lastBefore = this._tokens.find(t => t.type === 'before')?.value;
+    const lastBefore = this._tokens.find((t) => t.type === "before")?.value;
 
     // This doesn't infer that lastBefore will be a token with a string value;
     // it thinks NodeMatch is possible here. Undefined indicates no prior page,
     // and logic above handles that.
     this.lastIds.push(lastBefore as string | undefined);
-    this.addToken(`before:${this.nextId}`, false) 
-  }
+    this.addToken(`before:${this.nextId}`, false);
+  };
 
   @action
   prev = () => {
@@ -175,19 +187,18 @@ export class SearchV2Store {
     const lastId = this.lastIds.pop();
 
     if (lastId) {
-      this.addToken(`before:${lastId}`, false)
+      this.addToken(`before:${lastId}`, false);
     } else {
-
-      // Indicates this is the first next page, and clickign prev 
+      // Indicates this is the first next page, and clickign prev
       // takes us to the first page, i.e. no before: token
-      const lastBefore = this._tokens.find(t => t.type === 'before');
+      const lastBefore = this._tokens.find((t) => t.type === "before");
 
       if (lastBefore) {
         this.removeToken(`before:${lastBefore.value}`, false);
       } else {
         // Didn't come up in testing, but this is a good sanity check
-        console.error('Called prev but no before: token found?');
+        console.error("Called prev but no before: token found?");
       }
     }
-  }
+  };
 }

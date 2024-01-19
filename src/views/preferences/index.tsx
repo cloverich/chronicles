@@ -1,7 +1,7 @@
 import React, { useState, useEffect, PropsWithChildren } from "react";
 import { Pane, Button } from "evergreen-ui";
 import useClient from "../../hooks/useClient";
-import { RouteProps } from 'react-router-dom';
+import { RouteProps } from "react-router-dom";
 
 interface Props extends RouteProps {
   setView?: React.Dispatch<React.SetStateAction<ViewState>>;

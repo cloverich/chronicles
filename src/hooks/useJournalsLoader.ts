@@ -7,7 +7,7 @@ export const JournalsStoreContext = React.createContext<JournalsStore>(
   // This cast combines with the top-level container ensuring journals are loaded,
   // so all downstream components that need journals (most of the app) can rely
   // on them being preloaded and avoid the null checks
-  null as any
+  null as any,
 );
 
 /**

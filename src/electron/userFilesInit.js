@@ -1,7 +1,7 @@
-const path = require('path');
+const path = require("path");
 const fs = require("fs");
 const mkdirp = require("mkdirp");
-const settings = require('./settings');
+const settings = require("./settings");
 
 exports.initUserFilesDir = function initUserFilesDir(userDataDir) {
   // I would prefer to do this in a formal start-up routine, although I suppose creating
@@ -13,10 +13,10 @@ exports.initUserFilesDir = function initUserFilesDir(userDataDir) {
   if (!assetsPath) {
     const defaultUserFilesDir = path.join(
       userDataDir,
-      "chronicles_user_images"
+      "chronicles_user_images",
     );
     console.log(
-      `USER_FILES_DIR not found in settings. Using ${userDataDir} and udpating settings`
+      `USER_FILES_DIR not found in settings. Using ${userDataDir} and udpating settings`,
     );
 
     settings.set("USER_FILES_DIR", defaultUserFilesDir);
@@ -29,10 +29,10 @@ exports.initUserFilesDir = function initUserFilesDir(userDataDir) {
       "assets path is not a string",
       assetsPath,
       "typeof: ",
-      typeof assetsPath
+      typeof assetsPath,
     );
     throw new Error(
-      "Assets path is not a string, FilesHandler cannot proceed without the assetsPath directory being a string pointing to a valid, accessible file path"
+      "Assets path is not a string, FilesHandler cannot proceed without the assetsPath directory being a string pointing to a valid, accessible file path",
     );
   }
 
@@ -46,32 +46,30 @@ exports.initUserFilesDir = function initUserFilesDir(userDataDir) {
     // return new FilesHandler(/*assetsPath*/);
   } catch (err) {
     throw new Error(
-      `FilesHandler cannot read or write ${assetsPath}. Access is necessary to upload and serve user files!`
+      `FilesHandler cannot read or write ${assetsPath}. Access is necessary to upload and serve user files!`,
     );
   }
-}
+};
 
-
-  /**
-   * Borrowed from api files, since its typescript and this is not
-   * Reconcile that later
-   */
+/**
+ * Borrowed from api files, since its typescript and this is not
+ * Reconcile that later
+ */
 function ensureDir(directory) {
-    try {
-      const dir = fs.statSync(directory);
-      if (!dir.isDirectory()) {
-        throw new Error(
-          `ensureDir called but ${directory} already exists as a file`
-        );
-      }
-    } catch (err) {
-      if (err.code !== "ENOENT") throw err;
-      mkdirp.sync(directory);
+  try {
+    const dir = fs.statSync(directory);
+    if (!dir.isDirectory()) {
+      throw new Error(
+        `ensureDir called but ${directory} already exists as a file`,
+      );
     }
-
-    // NOTE: Documentation suggests Windows may report ok here, but then choke
-    // when actually writing. Better to move this logic to the actual file
-    // upload handlers.
-    fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
+    mkdirp.sync(directory);
   }
 
+  // NOTE: Documentation suggests Windows may report ok here, but then choke
+  // when actually writing. Better to move this logic to the actual file
+  // upload handlers.
+  fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
+}

@@ -34,7 +34,7 @@ export class Files {
       journalPath,
       date.slice(0, 4),
       date.slice(5, 7),
-      date + ".md"
+      date + ".md",
     );
   }
 
@@ -53,7 +53,7 @@ export class Files {
   static async save(journalPath: string, date: string, contents: string) {
     if (!contents || !contents.trim()) {
       throw new ValidationError(
-        "[Files.save] contents are required to save a file"
+        "[Files.save] contents are required to save a file",
       );
     }
 
@@ -62,7 +62,7 @@ export class Files {
     // probably just do a date parse to be safe
     if (!reg.test(date)) {
       throw new ValidationError(
-        "[Files.save] date must match format YYYY-MM-DD"
+        "[Files.save] date must match format YYYY-MM-DD",
       );
     }
     const fp = Files.pathForEntry(journalPath, date);
@@ -132,7 +132,7 @@ export class Files {
       const dir = await stat(directory);
       if (!dir.isDirectory()) {
         throw new Error(
-          `ensureDir called but ${directory} already exists as a file`
+          `ensureDir called but ${directory} already exists as a file`,
         );
       }
     } catch (err: any) {

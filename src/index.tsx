@@ -3,8 +3,8 @@ import ReactDOM from "react-dom";
 import Container from "./container";
 import "./index.css";
 import "./typography.css";
-import { HashRouter } from 'react-router-dom';
-import 'mobx-react-lite/batchingForReactDom'
+import { HashRouter } from "react-router-dom";
+import "mobx-react-lite/batchingForReactDom";
 
 ReactDOM.render(
   <>
@@ -12,5 +12,5 @@ ReactDOM.render(
       <Container />
     </HashRouter>
   </>,
-  document.getElementById("app")
+  document.getElementById("app"),
 );

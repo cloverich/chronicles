@@ -1,22 +1,30 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, protocol } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  shell,
+  dialog,
+  protocol,
+} = require("electron");
 const path = require("path");
-const fs = require('fs');
-const { initUserFilesDir } = require('./userFilesInit');
-const settings = require('./settings');
-const migrate = require('./migrations');
-
+const fs = require("fs");
+const { initUserFilesDir } = require("./userFilesInit");
+const settings = require("./settings");
+const migrate = require("./migrations");
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
 initUserFilesDir(app.getPath("userData"));
-console.log('application settings at startup:', settings.store);
+console.log("application settings at startup:", settings.store);
 
-const USER_FILES_DIR = settings.get('USER_FILES_DIR');
+const USER_FILES_DIR = settings.get("USER_FILES_DIR");
 if (!USER_FILES_DIR) {
-  throw new Error('USER_FILES_DIR missing in main tooo after calling initUserFilesDir');
+  throw new Error(
+    "USER_FILES_DIR missing in main tooo after calling initUserFilesDir",
+  );
 }
 
-const DATABASE_URL = 'DATABASE_URL';
+const DATABASE_URL = "DATABASE_URL";
 
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow;
@@ -27,11 +35,11 @@ let dbfile = settings.get(DATABASE_URL);
 /**
  * Persist the database url to settings file
  * assumes url is a full, valid filepath
- * 
+ *
  * todo: Add validation here; call migration scripts
  */
 function setDatabaseUrl(url) {
-  if (!url) throw new Error('setDatabaseUrl called with null or empty string');
+  if (!url) throw new Error("setDatabaseUrl called with null or empty string");
 
   dbfile = url;
   settings.set(DATABASE_URL, url);
@@ -43,8 +51,12 @@ if (!dbfile) {
     setDatabaseUrl(path.join(app.getPath("userData"), "chronicles.db"));
   } catch (err) {
     // note: this is defensive (untested)
-    console.error('Error saving DATABASE_URL to settings file after using a default location');
-    console.error('This will result in the user being unable to change the location of the file without an obvious reason why')
+    console.error(
+      "Error saving DATABASE_URL to settings file after using a default location",
+    );
+    console.error(
+      "This will result in the user being unable to change the location of the file without an obvious reason why",
+    );
     console.error(err);
   }
 }
@@ -52,15 +64,17 @@ if (!dbfile) {
 try {
   migrate(dbfile);
 } catch (err) {
-  console.error('Error migrating the database:', err);
-  throw new Error('Error migrating the database. This is required for initial app setup');
+  console.error("Error migrating the database:", err);
+  throw new Error(
+    "Error migrating the database. This is required for initial app setup",
+  );
 }
 
 /**
  * Open browser windows on link-click, an event triggered by renderer process.
  * @param {String} link
  */
-ipcMain.on('link-click', (_, link) => {
+ipcMain.on("link-click", (_, link) => {
   // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/51
   // https://www.electronjs.org/docs/latest/tutorial/security#15-do-not-use-openexternal-with-untrusted-content
   shell.openExternal(link);
@@ -69,7 +83,7 @@ ipcMain.on('link-click', (_, link) => {
 // Allow files to load if using the "chronicles" protocol
 // https://www.electronjs.org/docs/api/protocol
 app.whenReady().then(() => {
-  protocol.registerFileProtocol('chronicles', (request, callback) => {
+  protocol.registerFileProtocol("chronicles", (request, callback) => {
     // strip the leading chronicles://
     const url = decodeURI(request.url.substr(13));
 
@@ -77,22 +91,25 @@ app.whenReady().then(() => {
     // todo: cache this value. The backend API updates it after start-up, otherwise all updates
     // happen through main. Refactor so backend api calls through here, or move default user files setup
     // logic into main, then cache the value
-    const absoluteUrl = path.join(settings.get('USER_FILES_DIR'), url);
+    const absoluteUrl = path.join(settings.get("USER_FILES_DIR"), url);
 
     // NOTE: If the file does not exist... ELECTRON WILL MAKE AN HTTP REQUEST WITH THE FULL URL???
     // Seems like... odd fallback behavior.
-    // This isn't performant but is for my sanity. 
+    // This isn't performant but is for my sanity.
     // todo: Upgrade libraries, see if this behavior is fixed or can be disabled somehow?
     if (!fs.existsSync(absoluteUrl)) {
-      console.warn('chronicles:// file handler could not find file:', absoluteUrl, 'Maybe you need to set the USER_FILES or update broken file links?')
+      console.warn(
+        "chronicles:// file handler could not find file:",
+        absoluteUrl,
+        "Maybe you need to set the USER_FILES or update broken file links?",
+      );
     }
 
     // todo: santize URL: Prevent ../, ensure it points to USER_FILES directory
     // https://github.com/cloverich/chronicles/issues/53
-    callback({ path: absoluteUrl })
-  })
-})
-
+    callback({ path: absoluteUrl });
+  });
+});
 
 // use a wider width in dev to support attached debugger, since it re-opens on changes
 // NOTE: In production this could be more sophisticated, remembering the users
@@ -109,7 +126,7 @@ function createWindow() {
       // Loading the electron requiring scripts in a preload
       // script, then disabling nodeIntegration, would be
       // more secure
-      // NOTE: Right now, loading local images also requires this. 
+      // NOTE: Right now, loading local images also requires this.
       // Loading images via the API would resolve this issue.
       // ...or using a custom protocol
       // https://github.com/electron/electron/issues/23393
@@ -117,9 +134,8 @@ function createWindow() {
       sandbox: false,
       contextIsolation: true,
       // preload: app.isPackaged ? path.join(__dirname, 'preload.js') : path.join(__dirname, '../preload.js'),
-      preload: path.join(__dirname, 'preload.bundle.js'),
+      preload: path.join(__dirname, "preload.bundle.js"),
     },
-
   });
 
   mainWindow.loadFile("index.html");
@@ -151,16 +167,17 @@ app.on("activate", () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
-
 // Preferences in UI allows user to specify database file
-ipcMain.on('select-database-file', async (event, arg) => {
+ipcMain.on("select-database-file", async (event, arg) => {
   if (!mainWindow) {
-    console.error('received request to open file picker but mainWindow is undefined');
+    console.error(
+      "received request to open file picker but mainWindow is undefined",
+    );
     return;
   }
 
   const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory', 'createDirectory', 'openFile']
+    properties: ["openDirectory", "createDirectory", "openFile"],
   });
 
   const filepath = result.filePaths[0];
@@ -172,31 +189,35 @@ ipcMain.on('select-database-file', async (event, arg) => {
   // https://github.com/cloverich/chronicles/issues/52
   try {
     if (fs.lstatSync(filepath).isDirectory()) {
-      // todo: What was I thinking here? This doesn't even make sense... 
+      // todo: What was I thinking here? This doesn't even make sense...
       // its just creating a new database
-      setDatabaseUrl(path.join(filepath, 'chronicles.db'))
+      setDatabaseUrl(path.join(filepath, "chronicles.db"));
     } else {
       // use user provided database
       // todo: validation :grimace
-      setDatabaseUrl(filepath)
+      setDatabaseUrl(filepath);
     }
   } catch (err) {
-    console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)
+    console.error(
+      `Error checking for file ${filepath} -- maybe it doesn't exist?`,
+    );
     console.error(err);
   }
 
-  event.reply('preferences-updated');
-})
+  event.reply("preferences-updated");
+});
 
 // Preferences in UI allows user to specify user files directory
-ipcMain.on('select-user-files-dir', async (event, arg) => {
+ipcMain.on("select-user-files-dir", async (event, arg) => {
   if (!mainWindow) {
-    console.error('received request to open file picker but mainWindow is undefined');
+    console.error(
+      "received request to open file picker but mainWindow is undefined",
+    );
     return;
   }
 
   const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory', 'createDirectory']
+    properties: ["openDirectory", "createDirectory"],
   });
 
   const filepath = result.filePaths[0];
@@ -209,23 +230,27 @@ ipcMain.on('select-user-files-dir', async (event, arg) => {
   try {
     if (fs.lstatSync(filepath).isDirectory()) {
       // move existing database file to new location
-      settings.set('USER_FILES_DIR', filepath)
+      settings.set("USER_FILES_DIR", filepath);
     } else {
-      throw new Error('User files must be valid directory');
+      throw new Error("User files must be valid directory");
     }
   } catch (err) {
-    console.error(`Error checking for file ${filepath} -- maybe it doesn't exist?`)
+    console.error(
+      `Error checking for file ${filepath} -- maybe it doesn't exist?`,
+    );
     console.error(err);
   }
 
-  event.reply('preferences-updated');
-})
+  event.reply("preferences-updated");
+});
 
-ipcMain.on('inspect-element', async (event, arg) => {
+ipcMain.on("inspect-element", async (event, arg) => {
   if (!mainWindow) {
-    console.error('received request to open file picker but mainWindow is undefined');
+    console.error(
+      "received request to open file picker but mainWindow is undefined",
+    );
     return;
   }
 
-  mainWindow.webContents.inspectElement(arg.x, arg.y)
-})
+  mainWindow.webContents.inspectElement(arg.x, arg.y);
+});

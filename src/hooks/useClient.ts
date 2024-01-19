@@ -6,7 +6,7 @@ export { JournalResponse } from "../preload/client/journals";
 export { SearchResponse } from "../preload/client/documents";
 
 export const ClientContext = React.createContext<any>(
-  (window as any).chronicles.createClient()
+  (window as any).chronicles.createClient(),
 );
 ClientContext.displayName = "ClientContext";
 

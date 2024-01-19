@@ -11,7 +11,7 @@ describe("Uploading files", function () {
 
   // aspirational
   it(
-    "displays a user error message if it is unable to upload a file to the user_files_directory for permission reasons"
+    "displays a user error message if it is unable to upload a file to the user_files_directory for permission reasons",
   );
   it("name files with unique ids and proper file extensions");
   it("displays image files in the editor after uploading");

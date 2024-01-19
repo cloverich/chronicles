@@ -65,7 +65,7 @@ function tagForDepth(text: string): HeadingTag {
       "tagForDepth expected between 1-6 hashes, but got ",
       text.length,
       text,
-      "returning `h1` as a default"
+      "returning `h1` as a default",
     );
     return "h1";
   }

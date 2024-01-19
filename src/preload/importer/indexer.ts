@@ -65,7 +65,7 @@ class Indexer {
     // todo: use auto-increment to track parent node
     this.db
       .prepare(
-        "INSERT INTO nodes (journal, date, type, contents, attributes) VALUES (:journal, :date, :type, :contents, :attributes)"
+        "INSERT INTO nodes (journal, date, type, contents, attributes) VALUES (:journal, :date, :type, :contents, :attributes)",
       )
       .run({
         journal,
@@ -95,7 +95,7 @@ class Indexer {
   update = async (journal: string, date: string, contents: string) => {
     const parsed = stringToMdast(contents);
     const stmt = this.db.prepare(
-      "DELETE FROM nodes where journal = :journal and date = :date"
+      "DELETE FROM nodes where journal = :journal and date = :date",
     );
     stmt.run({ journal, date });
     await this.indexNode(journal, date, parsed);
@@ -116,7 +116,7 @@ class Indexer {
     // I put this here because of a bug so.... hmmm..
     if (!isISODate(date))
       throw new Error(
-        `[Indexer.indexNode] Expected an ISO formatted date but got ${date}`
+        `[Indexer.indexNode] Expected an ISO formatted date but got ${date}`,
       );
 
     if (node.type !== "root") {
@@ -133,7 +133,7 @@ class Indexer {
           // ignore
         } else {
           console.error(
-            "Error indexing node for journal ${journal}: It may not show up correctly"
+            "Error indexing node for journal ${journal}: It may not show up correctly",
           );
           console.error(err);
         }
@@ -169,7 +169,7 @@ class Indexer {
         // Log and continue, so we can index remaining journal documents
         console.error(
           `[Indexer.index] error indexing entry ${entry.path}`,
-          err
+          err,
         );
       }
     }

@@ -22,7 +22,7 @@ export function insertFile(editor: ReactEditor, filepath: string) {
   if (!extension) {
     console.error(
       "insertFile called but filepath did not contain an extension:",
-      filepath
+      filepath,
     );
     return;
   }
@@ -37,7 +37,7 @@ export function insertFile(editor: ReactEditor, filepath: string) {
 
   console.error(
     "Unable to insertFile into Slate Editor of unknown extension: ",
-    filepath
+    filepath,
   );
 }
 

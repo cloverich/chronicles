@@ -8,7 +8,7 @@ import { EditableDocument } from "./EditableDocument";
  */
 export function useEditableDocument(
   journals: JournalResponse[],
-  documentId?: string
+  documentId?: string,
 ) {
   const [document, setDocument] = React.useState<EditableDocument | null>(null);
   const [loadingError, setLoadingError] = React.useState<Error | null>(null);
@@ -34,7 +34,7 @@ export function useEditableDocument(
               // todo: defaulting to first journal, but could use logic such as the last selected
               // journal, etc, once that is in place
               journalId: journals[0].id,
-            })
+            }),
           );
         }
       } catch (err) {

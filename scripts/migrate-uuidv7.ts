@@ -7,13 +7,13 @@
 // against a target electron version, rather than the local node version. So
 // I run it in the preload/client/index.ts file; keeping here for reference.
 import { V7Generator } from "uuidv7";
-import Knex from 'knex';
+import Knex from "knex";
 
 const knex = Knex({
-  client: 'better-sqlite3',
+  client: "better-sqlite3",
   connection: {
-    filename: '/Users/my/sqlite3database.db'
-  }
+    filename: "/Users/my/sqlite3database.db",
+  },
 });
 
 function uuidV7FromTimestamp(ts: string) {
@@ -23,10 +23,12 @@ function uuidV7FromTimestamp(ts: string) {
 }
 
 async function validateSortOrder() {
-  const journals = await knex('journals');
+  const journals = await knex("journals");
 
   // All documents sorted by date; sort is for fudging the timestamp (see below)
-  const documents = await knex('documents').select('id', 'title', 'createdAt', 'journalId').orderBy('createdAt', 'desc');
+  const documents = await knex("documents")
+    .select("id", "title", "createdAt", "journalId")
+    .orderBy("createdAt", "desc");
 
   // Adding a UUIDv7 based on createdAt to each document
   documents.forEach((doc, idx) => {
@@ -43,14 +45,14 @@ async function validateSortOrder() {
     // For now only updating id, not createdAt, b/c I can't definitely say
     // I want to discard the old createdAt value. This is only relevant for
     // my personal documents anyways.
-    await knex('documents').where({ id: doc.id }).update({ id: doc.uuid })
+    await knex("documents").where({ id: doc.id }).update({ id: doc.uuid });
   }
 
   // now update journals
   for (const j of journals) {
     const uuid = uuidV7FromTimestamp(j.createdAt);
-    await knex('journals').where({ id: j.id }).update({ id: uuid })
+    await knex("journals").where({ id: j.id }).update({ id: uuid });
   }
 }
 
-validateSortOrder()
+validateSortOrder();

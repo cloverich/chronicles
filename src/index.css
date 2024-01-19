@@ -4,8 +4,8 @@
 }
 
 .mono {
-  font-family: "IBM Plex Mono", 'SF Mono', SFMono-Regular, ui-monospace,
-    'DejaVu Sans Mono', Menlo, Consolas, monospace;
+  font-family: "IBM Plex Mono", "SF Mono", SFMono-Regular, ui-monospace,
+    "DejaVu Sans Mono", Menlo, Consolas, monospace;
 }
 
 .doc-date {
@@ -24,7 +24,7 @@
  * like heading elements, it acts like extra padding in the
  * note.
  */
-.content-section> :first-child {
+.content-section > :first-child {
   margin-top: 0;
 }
 
@@ -51,21 +51,20 @@ article img {
 }
 
 .link-active::after {
-  content: " }"
+  content: " }";
 }
 
 .link-active::before {
-  content: "{ "
+  content: "{ ";
 }
 
 .link-inactive::after {
-  content: "  "
+  content: "  ";
 }
 
 .link-inactive::before {
-  content: "  "
+  content: "  ";
 }
-
 
 /* 
 removed dthis one from typography.js

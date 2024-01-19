@@ -97,9 +97,13 @@ suite("TagSearchStore", function () {
       value: "chronicles",
     });
 
-    // Re-adding 
+    // Re-adding
     store.addToken("in:chronicles");
-    assert.equal(mock.tokens.length, 1, 'Adding the same text twice should produce only one token');
+    assert.equal(
+      mock.tokens.length,
+      1,
+      "Adding the same text twice should produce only one token",
+    );
 
     // Remove a token that isn't there should not throw an error
     store.removeToken("in:random");
@@ -134,7 +138,7 @@ suite("TagSearchStore", function () {
 
     store.removeToken("title:foo bar");
     assert.equal(mock.tokens.length, 0);
-  })
+  });
 
   test("text:", function () {
     const [mock, store] = makeMock();
@@ -153,15 +157,14 @@ suite("TagSearchStore", function () {
 
     store.removeToken("text:foo bar");
     assert.equal(mock.tokens.length, 0);
-  })
+  });
 
   test("free text", function () {
     // todo: replicate text: tests
-  })
+  });
 
   test("after:", function () {
     // todo: adding a new one replaces existing token
-
   });
 
   test("mix and match", function () {
