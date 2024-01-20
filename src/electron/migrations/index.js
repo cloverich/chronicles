@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const DB = require("better-sqlite3");
 
-// A hacky "migration" script after bailing on Prisma and realiing
+// A hacky "migration" script after bailing on Prisma and realizing
 // better-sqlite3 is not compatible with knex yet :|
 // https://github.com/knex/knex/issues/4511
 // todo: real migrations, backup database while migrating

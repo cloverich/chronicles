@@ -13,8 +13,10 @@ CREATE TABLE IF NOT EXISTS "nodes" (
 CREATE TABLE IF NOT EXISTS "journals" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
+    -- TODO: These defaults need to use timezone (same for documents)
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "archivedAt" TEXT
 );
 
 -- CreateTable

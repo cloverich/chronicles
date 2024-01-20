@@ -18,6 +18,7 @@ export interface JournalResponse {
   name: string;
   createdAt: string;
   updatedAt: string;
+  archivedAt: string;
 }
 
 export type IJournalsClient = JournalsClient;
@@ -50,6 +51,27 @@ export class JournalsClient {
     this.db
       .prepare("delete from journals where id = :id")
       .run({ id: journal.id });
+    return this.list();
+  };
+
+  archive = (journal: { id: string }): Promise<JournalResponse[]> => {
+    this.db
+      .prepare("update journals set archivedAt = :archivedAt where id = :id")
+      .run({
+        id: journal.id,
+        archivedAt: new Date().toISOString(),
+      });
+
+    return this.list();
+  };
+
+  unarchive = (journal: { id: string }): Promise<JournalResponse[]> => {
+    this.db
+      .prepare("update journals set archivedAt = null where id = :id")
+      .run({
+        id: journal.id,
+      });
+
     return this.list();
   };
 }

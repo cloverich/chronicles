@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Editor from "./editor";
 import { Pane, Button, Popover, Menu, Position } from "evergreen-ui";
@@ -17,22 +17,39 @@ import { DebugView } from "./DebugView";
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
-  const journals = useContext(JournalsStoreContext);
+  const journalsStore = useContext(JournalsStoreContext);
   const { document: documentId } = useParams();
   const { document, loadingError } = useEditableDocument(
-    journals.journals,
+    journalsStore.journals,
     documentId,
   );
+
+  // Filter journals to non-archived ones, but must also add
+  // the current document's journal if its archived
+  const [journals, setJournals] = useState<any>();
+  useEffect(() => {
+    if (!document) return;
+
+    const journals = journalsStore.journals.filter((j) => {
+      if (j.archivedAt) {
+        return j.id === document.journalId;
+      } else {
+        return !j.archivedAt;
+      }
+    });
+
+    setJournals(journals);
+  }, [document, loadingError]);
 
   if (loadingError) {
     return <EditLoadingComponent error={loadingError} />;
   }
 
-  if (!document) {
+  if (!document || !journals) {
     return <EditLoadingComponent />;
   }
 
-  return <DocumentEditView document={document} journals={journals.journals} />;
+  return <DocumentEditView document={document} journals={journals} />;
 }
 
 interface DocumentEditProps {
