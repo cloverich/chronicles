@@ -4,6 +4,7 @@
   "main": "main.bundle.js",
   "license": "UNLICENSED",
   "scripts": {
+    "lint:check": "prettier . --check",
     "start": "node ./scripts/dev.js",
     "test": "mocha -r esm -r ts-node/register src/**/*.test.ts",
     "test:one": "mocha -r ts-node/register -r esm"
