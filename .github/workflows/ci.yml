@@ -16,5 +16,5 @@ jobs:
         with:
           node-version: 20.x
       - run: yarn install
-      - run: yarn run lint:check:prettier
-      - run: yarn run lint:check:types
+      - run: yarn run lint:prettier:check
+      - run: yarn run lint:types:check
