@@ -7,7 +7,7 @@ on:
   push:
     branches: [master]
 jobs:
-  format:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -16,4 +16,5 @@ jobs:
         with:
           node-version: 20.x
       - run: yarn install
-      - run: yarn run lint:check
+      - run: yarn run lint:check:prettier
+      - run: yarn run lint:check:types

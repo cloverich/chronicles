@@ -4,7 +4,9 @@ import useClient from "../../hooks/useClient";
 import { RouteProps } from "react-router-dom";
 
 interface Props extends RouteProps {
-  setView?: React.Dispatch<React.SetStateAction<ViewState>>;
+  // TODO: any added to satisfy ts check step; previously
+  // this was ViewState which does not exist. Review and fix.
+  setView?: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export default function Preferences(props: Props) {

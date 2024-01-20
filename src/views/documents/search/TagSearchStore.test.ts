@@ -13,7 +13,8 @@ function makeMock(): [TokensStore, TagSearchStore] {
     tokens: observable([]) as IObservableArray<SearchToken>,
   });
 
-  return [mockStore, new TagSearchStore(mockStore)];
+  // todo: as any quick hack to satisfy tsc
+  return [mockStore, new TagSearchStore(mockStore as any)];
 }
 
 // todo: technically... since TagSearchStore.searchTokens computes from
