@@ -1,4 +1,4 @@
-import { observable } from "mobx";
+import { observable, computed, toJS } from "mobx";
 import { JournalResponse, IClient } from "../useClient";
 
 export class JournalsStore {
@@ -8,6 +8,14 @@ export class JournalsStore {
   @observable error: Error | null = null;
   @observable journals: JournalResponse[];
 
+  @computed get active() {
+    return this.journals.filter((j) => !j.archivedAt);
+  }
+
+  @computed get archived() {
+    return this.journals.filter((j) => !!j.archivedAt);
+  }
+
   constructor(
     private client: IClient,
     journals: JournalResponse[],
@@ -15,7 +23,6 @@ export class JournalsStore {
     this.journals = journals;
   }
 
-  // create instance of store...
   static async create(client: IClient) {
     const journals = await client.journals.list();
     return new JournalsStore(client, journals);
@@ -64,6 +71,33 @@ export class JournalsStore {
       console.error(err);
       this.error = err;
     }
+    this.saving = false;
+  };
+
+  toggleArchive = async (journal: JournalResponse) => {
+    this.saving = true;
+
+    // If I don't do this, the call to archive / unarchive will error with
+    // "Object could not be cloned". It fails before executing the function,
+    // so I guess its an error with Proxy objects being passed to preload
+    // scripts. That is... concerning.
+    journal = toJS(journal);
+
+    try {
+      if (journal.archivedAt) {
+        this.journals = await this.client.journals.unarchive(journal);
+      } else {
+        this.journals = await this.client.journals.archive(journal);
+      }
+    } catch (err: any) {
+      console.error(`Error toggling archive for journal ${journal.name}:`, err);
+      this.saving = false;
+
+      // NOTE: Otherwise this returns success, I'm unsure why the
+      // other calls are storing the error?
+      throw err;
+    }
+
     this.saving = false;
   };
 }
