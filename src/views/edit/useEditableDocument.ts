@@ -2,12 +2,36 @@ import React from "react";
 import { JournalResponse } from "../../preload/client/journals";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
+import { SearchV2Store } from "../documents/SearchStore";
+import { JournalsStore } from "../../hooks/stores/journals";
+
+/**
+ * Determines the default journal to use when creating a new document.
+ *
+ * todo(test): When one or multiple journals are selected, returns the first
+ * todo(test): When no journals are selected, returns the first active journal
+ * todo(test): When archived journal selected, returns the selected (archived) journal
+ */
+function defaultJournal(selectedJournals: string[], jstore: JournalsStore) {
+  const selectedId = jstore.journals.find((j) =>
+    selectedJournals.includes(j.name),
+  )?.id;
+
+  if (selectedId) {
+    return selectedId;
+  } else {
+    // todo: defaulting to first journal, but could use logic such as the last selected
+    // journal, etc, once that is in place
+    return jstore.active[0].id;
+  }
+}
 
 /**
  * Load a new or existing document into a view model
  */
 export function useEditableDocument(
-  journals: JournalResponse[],
+  search: SearchV2Store,
+  jstore: JournalsStore,
   documentId?: string,
 ) {
   const [document, setDocument] = React.useState<EditableDocument | null>(null);
@@ -31,9 +55,7 @@ export function useEditableDocument(
           setDocument(
             new EditableDocument(client, {
               content: "",
-              // todo: defaulting to first journal, but could use logic such as the last selected
-              // journal, etc, once that is in place
-              journalId: journals[0].id,
+              journalId: defaultJournal(search.selectedJournals, jstore),
             }),
           );
         }
@@ -51,7 +73,6 @@ export function useEditableDocument(
   }, [documentId]);
 
   return {
-    journals,
     document,
     loadingError: loadingError,
   };

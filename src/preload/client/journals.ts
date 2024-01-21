@@ -48,6 +48,7 @@ export class JournalsClient {
   };
 
   remove = (journal: { id: string }): Promise<JournalResponse[]> => {
+    // TODO: ensure there is always at least one journal. Deleting the last journal breaks the app.
     this.db
       .prepare("delete from journals where id = :id")
       .run({ id: journal.id });

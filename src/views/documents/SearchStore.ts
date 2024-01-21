@@ -1,3 +1,4 @@
+import { createContext } from "react";
 import { IClient } from "../../hooks/useClient";
 import { observable, IObservableArray, computed, action } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
@@ -18,6 +19,8 @@ interface SearchQuery {
   texts?: string[];
   limit?: number;
 }
+
+export const SearchStoreContext = createContext<SearchV2Store>(null as any);
 
 export class SearchV2Store {
   @observable docs: SearchItem[] = [];
@@ -155,6 +158,14 @@ export class SearchV2Store {
     this.setTokens([]);
     this.addTokens(searchStr);
   };
+
+  @computed get selectedJournals(): string[] {
+    // Grab the journal names from the tokens
+    // todo: Typescript doesn't know when I filter to type === 'in' its InTokens
+    return this._tokens
+      .filter((t) => t.type === "in")
+      .map((t) => t.value) as string[];
+  }
 
   @computed
   get searchTokens() {

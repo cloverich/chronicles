@@ -14,13 +14,17 @@ import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import Toolbar from "./toolbar";
 import { useParams, useNavigate } from "react-router-dom";
 import { DebugView } from "./DebugView";
+import { SearchStoreContext } from "../documents/SearchStore";
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
   const journalsStore = useContext(JournalsStoreContext);
+  const searchStore = useContext(SearchStoreContext);
   const { document: documentId } = useParams();
+
   const { document, loadingError } = useEditableDocument(
-    journalsStore.journals,
+    searchStore,
+    journalsStore,
     documentId,
   );
 

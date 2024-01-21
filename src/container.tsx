@@ -13,7 +13,10 @@ import { Alert, Pane } from "evergreen-ui";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import useClient from "./hooks/useClient";
-import { SearchV2Store } from "./views/documents/SearchStore";
+import {
+  SearchV2Store,
+  SearchStoreContext,
+} from "./views/documents/SearchStore";
 
 export default observer(function Container() {
   const { journalsStore, loading, loadingErr } = useJournalsLoader();
@@ -63,16 +66,21 @@ export default observer(function Container() {
 
   return (
     <JournalsStoreContext.Provider value={journalsStore!}>
-      <Layout>
-        <Routes>
-          <Route element={<Journals />} path="journals" />
-          <Route element={<Preferences />} path="preferences" />
-          <Route element={<Editor />} path="edit/new" />
-          <Route element={<Editor />} path="edit/:document" />
-          <Route element={<Documents store={searchStore} />} path="documents" />
-          <Route path="*" element={<Navigate to="documents" replace />} />
-        </Routes>
-      </Layout>
+      <SearchStoreContext.Provider value={searchStore}>
+        <Layout>
+          <Routes>
+            <Route element={<Journals />} path="journals" />
+            <Route element={<Preferences />} path="preferences" />
+            <Route element={<Editor />} path="edit/new" />
+            <Route element={<Editor />} path="edit/:document" />
+            <Route
+              element={<Documents store={searchStore} />}
+              path="documents"
+            />
+            <Route path="*" element={<Navigate to="documents" replace />} />
+          </Routes>
+        </Layout>
+      </SearchStoreContext.Provider>
     </JournalsStoreContext.Provider>
   );
 });
