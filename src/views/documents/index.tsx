@@ -1,8 +1,8 @@
 import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
 import { Heading, Paragraph, Pane } from "evergreen-ui";
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 
+import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { SearchV2Store } from "./SearchStore";
 import { DocumentItem } from "./DocumentItem";
 import { useNavigate } from "react-router-dom";
@@ -25,11 +25,9 @@ function DocumentsContainer(props: { store: SearchV2Store }) {
 
     // When hitting "back" from an edit note, the search state is maintained.
     // When navigating to other pages (preferences) and back, the search
-    // state needs reset. This resets the state in that case. This is
-    // not the correct place to do this.
+    // state needs reset. This resets the state in that case.
     if (!tokens.length) {
-      searchStore.setTokens([]);
-      searchStore.search();
+      searchStore.setSearch([]);
     }
   }, []);
 
