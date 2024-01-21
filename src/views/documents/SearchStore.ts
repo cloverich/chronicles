@@ -41,6 +41,9 @@ export class SearchV2Store {
     this.tagSeachStore.addTokens(tokens);
   }
 
+  /**
+   * NOTE: This should be private, or refactored to trigger a search
+   */
   @action
   setTokens = (tokens: SearchToken[]) => {
     // Filter out invalid in: journal tokens
@@ -86,7 +89,6 @@ export class SearchV2Store {
   /**
    * Execute a search with the current tokens.
    *
-   * @param limit
    * @param resetPagination - By default execute a fresh search. When paginating,
    *  we don't want to reset the pagination state.
    */
@@ -144,6 +146,14 @@ export class SearchV2Store {
     this.tagSeachStore.removeToken(token);
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
     this.search(100, resetPagination);
+  };
+
+  /**
+   * Replace the current search with a new one.
+   */
+  setSearch = (searchStr: string[]) => {
+    this.setTokens([]);
+    this.addTokens(searchStr);
   };
 
   @computed
