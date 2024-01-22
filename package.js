@@ -15,7 +15,7 @@
  *
  * This is also true for any additional architecture beyond whatever macos supports.
  */
-const packager = require("electron-packager");
+const { packager } = require("@electron/packager");
 const { rebuild } = require("@electron/rebuild");
 
 // These arguments are provided by build.sh
