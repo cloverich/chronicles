@@ -17,3 +17,5 @@ packaged/
 # bundler (dev) outputs .bundle files
 # along-side src files, used during development
 *.bundle.*
+# eh, if its index.bundle.css, the ts import fails, shrug
+index-compiled.css
