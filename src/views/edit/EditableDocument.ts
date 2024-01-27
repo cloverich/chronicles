@@ -4,7 +4,7 @@ import { observable, reaction, toJS, computed, IReactionDisposer } from "mobx";
 import { toaster } from "evergreen-ui";
 import { IClient } from "../../hooks/useClient";
 import { Node as SlateNode } from "slate";
-import { SlateTransformer } from "./util";
+import { SlateTransformer } from "./SlateTransformer";
 import { debounce } from "lodash";
 
 interface NewDocument {

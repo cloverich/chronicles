@@ -1,8 +1,9 @@
 import * as slate from "../models/slate";
 import * as mdast from "../models/mdast";
 
-// NOTE: added
-import { prefixUrl } from "../util";
+// One of the main reasons this fork exists:
+// NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
+import { prefixUrl } from "../../../hooks/images";
 
 // NOTE: added, and a good example of what changes I would want to make to this library!
 import {

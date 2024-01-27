@@ -5,8 +5,9 @@ import * as slateInternal from "./mdast-to-slate";
 
 import { Node as SNode } from "slate";
 
-// NOTE: added
-import { unPrefixUrl } from "../util";
+// One of the main reasons this fork exists:
+// NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
+import { unPrefixUrl } from "../../../hooks/images";
 
 // NOTE: added, and a good example of what changes I would want to make to this library!
 import {

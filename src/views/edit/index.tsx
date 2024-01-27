@@ -11,7 +11,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import Toolbar from "./toolbar";
+import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
 import { useParams, useNavigate } from "react-router-dom";
 import { DebugView } from "./DebugView";
 import { SearchStoreContext } from "../documents/SearchStore";
@@ -259,10 +259,6 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
             placeholder="Untitled"
           />
         </div>
-        <div>
-          <Toolbar toggleDebug={toggleDebugView} />
-        </div>
-
         {renderEditorOrDebug()}
       </Pane>
       <Pane marginTop={24} display="flex" justifyContent="flex-end">

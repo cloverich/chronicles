@@ -157,8 +157,9 @@ function JournalArchiveButton(props: { journal: JournalResponse }) {
 
   async function toggleArchive(journal: JournalResponse) {
     const isArchiving = !!journal.archivedAt;
+    const archiveAction = isArchiving ? "archive" : "restore";
 
-    if (confirm(`Are you sure you want to archive ${journal.name}?`)) {
+    if (confirm(`Are you sure you want to ${archiveAction} ${journal.name}?`)) {
       try {
         await store.toggleArchive(journal);
         if (isArchiving) {
