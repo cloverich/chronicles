@@ -1,5 +1,4 @@
-import { computed, action, observable, IObservableArray } from "mobx";
-import _ from "lodash";
+import { computed, action, IObservableArray } from "mobx";
 import { SearchToken } from "./search/tokens";
 import { FocusTokenParser } from "./search/parsers/focus";
 import { JournalTokenParser } from "./search/parsers/in";
