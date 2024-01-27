@@ -2002,11 +2002,6 @@ ccount@^2.0.0:
   resolved "https://registry.yarnpkg.com/ccount/-/ccount-2.0.0.tgz#3d6fb55803832766a24c6f339abc507297eb5d25"
   integrity sha512-VOR0NWFYX65n9gELQdcpqsie5L5ihBXuZGAgaPEp/U7IOSjnPMEH6geE+2f6lcekaNEfWzAHS45mPvSo5bqsUA==
 
-chai-json-schema-ajv@^5.2.4:
-  version "5.2.4"
-  resolved "https://registry.yarnpkg.com/chai-json-schema-ajv/-/chai-json-schema-ajv-5.2.4.tgz#2b183ba07d64001460fbc132a1e37b3fe5614bad"
-  integrity sha512-KjbsSQUZDT4ed/TYmxgoMXU+qTv6KtI+QTzkjVQNNBEc5DAmmKoYwexCOxxTW15tt33muqRwvuq79v52piZZbw==
-
 chai@^5.0.3:
   version "5.0.3"
   resolved "https://registry.yarnpkg.com/chai/-/chai-5.0.3.tgz#db8e109373b86e7fb33d3ef0d0116f0fa8019066"
