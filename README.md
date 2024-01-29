@@ -2,14 +2,7 @@
 
 Electron based markdown journaling application, in the spirit of [incremental note taking][incr-notes].
 
-**Status**: Hobby project, prototyping and re-working UX to try out various concepts with little regard for usability, stability, or appearances. Will remove this clause when I can guarantee your notes won't _poof_ and the experience isn't confusing. Reach out if you are interested in journaling concepts and I'll provide a tour.
-
-Tech stack:
-
-- Electron and esbuild
-- Typescript
-- React and mobx
-- Slate and Plate (Notion style WSYIWYG)
+**Status**: Hobby project, prototyping and re-working UX to try out various concepts with little regard for usability, stability, or appearances.
 
 ## Development
 
@@ -28,9 +21,16 @@ yarn run electron-rebuild
 
 See scripts/dev.js for specifics on how the source files are compiled and re-loaded in development.
 
+### Tech stack
+
+- Electron and esbuild
+- Typescript
+- React and mobx
+- Slate and Plate (Notion style WSYIWYG)
+
 ## Build and release
 
-- Read and use the `build.sh` script
+- Use `yarn build`
 - Make a Github release
 
 At a high level, the build is comprised of:
