@@ -1,7 +1,15 @@
 import React, { useContext, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Editor from "./editor";
-import { Pane, Button, Popover, Menu, Position } from "evergreen-ui";
+import {
+  Pane,
+  Button,
+  Popover,
+  Menu,
+  Position,
+  Tab,
+  Tablist,
+} from "evergreen-ui";
 import { useEditableDocument } from "./useEditableDocument";
 import { EditableDocument } from "./EditableDocument";
 import { css } from "emotion";
@@ -11,9 +19,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
 import { useParams, useNavigate } from "react-router-dom";
-import { DebugView } from "./DebugView";
 import { SearchStoreContext } from "../documents/SearchStore";
 
 // Loads document, with loading and error placeholders
@@ -65,11 +71,8 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   const { document, journals } = props;
   const isMounted = useIsMounted();
   const navigate = useNavigate();
-  const [debugView, setDebugView] = React.useState(false);
-
-  function toggleDebugView() {
-    setDebugView(!debugView);
-  }
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [tabs] = React.useState(["Editor", "Slate Nodes", "Markdown", "MDAST"]);
 
   // Autofocus the heading input
   const onInputRendered = React.useCallback(
@@ -124,8 +127,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
       >
         <span
           className={css`
-            border-bottom: 1px dotted purple;
-            line-height: 1.3rem;
+            border-bottom: 1px solid #8d8d8d;
             cursor: pointer;
           `}
         >
@@ -165,8 +167,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
       >
         <span
           className={css`
-            border-bottom: 1px dotted purple;
-            line-height: 1.3rem;
+            border-bottom: 1px solid #8d8d8d;
             cursor: pointer;
           `}
         >
@@ -195,19 +196,24 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
-  // Ideally debug content could be viewed in a totally separate
-  // window
-  function renderEditorOrDebug() {
-    if (debugView) {
-      return <DebugView doc={document} />;
-    } else {
-      return (
-        <Editor
-          saving={document.saving}
-          value={document.slateContent}
-          setValue={document.setSlateContent}
-        />
-      );
+  function renderTab(tab: string) {
+    switch (tab) {
+      case "Editor":
+        return (
+          <Pane>
+            <Editor
+              saving={document.saving}
+              value={document.slateContent}
+              setValue={document.setSlateContent}
+            />
+          </Pane>
+        );
+      case "Slate Nodes":
+        return <pre> {JSON.stringify(document.slateContent, null, 2)}</pre>;
+      case "Markdown":
+        return <pre>{document.content}</pre>;
+      case "MDAST":
+        return <pre>{JSON.stringify(document.mdastDebug, null, 2)}</pre>;
     }
   }
 
@@ -215,52 +221,67 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   // and scrollable documents
   return (
     <Pane flexGrow={1} display="flex" flexDirection="column">
+      <div style={{ marginBottom: "24px" }}>
+        <a
+          onClick={goBack}
+          className={css`
+            cursor: pointer;
+          `}
+        >
+          Back
+        </a>
+      </div>
+
+      <div>
+        <input
+          type="text"
+          name="title"
+          ref={onInputRendered}
+          className={css`
+            font-size: 1.8em;
+            border: none;
+            width: 100%;
+            &:focus {
+              outline: none;
+            }
+          `}
+          onChange={(e: any) => (document.title = e.target.value)}
+          value={document.title || ""} // OR '' prevents react complaining about uncontrolled component
+          placeholder="Untitled document"
+        />
+      </div>
+      <div
+        className={css`
+          display: flex;
+          justify-content: flex-start;
+          padding-left: 2px;
+          font-size: 0.9rem;
+          margin-top: -4px;
+          margin-bottom: 16px;
+        `}
+      >
+        {datePicker()}
+        &nbsp;in&nbsp;
+        {journalPicker()}
+      </div>
+
       <Pane flexGrow={1}>
-        <div style={{ marginBottom: "24px" }}>
-          <a
-            onClick={goBack}
-            className={css`
-              cursor: pointer;
-            `}
-          >
-            Back
-          </a>
-        </div>
-        <div
-          className={css`
-            display: flex;
-            justify-content: flex-start;
-          `}
-        >
-          {datePicker()}
-          &nbsp;/&nbsp;
-          {journalPicker()}
-        </div>
-        <div
-          className={css`
-            margin-bottom: 16px;
-            margin-top: 16px;
-          `}
-        >
-          <input
-            type="text"
-            name="title"
-            ref={onInputRendered}
-            className={css`
-              font-size: 1.5em;
-              border: none;
-              width: 100%;
-              &:focus {
-                outline: none;
-              }
-            `}
-            onChange={(e: any) => (document.title = e.target.value)}
-            value={document.title || ""} // OR '' prevents react complaining about uncontrolled component
-            placeholder="Untitled"
-          />
-        </div>
-        {renderEditorOrDebug()}
+        <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
+          {tabs.map((tab, index) => (
+            <Tab
+              aria-controls={`panel-${tab}`}
+              isSelected={index === selectedIndex}
+              key={tab}
+              onSelect={() => setSelectedIndex(index)}
+            >
+              {tab}
+            </Tab>
+          ))}
+        </Tablist>
+        {renderTab(tabs[selectedIndex])}
       </Pane>
+
+      {/* Action buttons */}
       <Pane marginTop={24} display="flex" justifyContent="flex-end">
         <Button
           onClick={() => document.save()}
