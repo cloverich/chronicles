@@ -9,3 +9,4 @@ export * from "./Link";
 export * from "./List";
 export * from "./ImageElement";
 export * from "./LinkFloatingToolbar";
+export * from "./Video";

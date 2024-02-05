@@ -122,8 +122,9 @@ export interface Link extends Parent, Resource {
   children: StaticPhrasingContent[];
 }
 
-export interface Image extends Resource, Alternative {
+export interface Image extends Resource {
   type: "image";
+  alt?: string;
 }
 
 export interface LinkReference extends Parent, Reference {
@@ -131,8 +132,9 @@ export interface LinkReference extends Parent, Reference {
   children: StaticPhrasingContent[];
 }
 
-export interface ImageReference extends Reference, Alternative {
+export interface ImageReference extends Reference {
   type: "imageReference";
+  alt?: string;
 }
 
 export interface Footnote extends Parent {
@@ -164,10 +166,6 @@ export interface Association {
 
 export interface Reference extends Association {
   referenceType: ReferenceType;
-}
-
-export interface Alternative {
-  alt?: string;
 }
 
 export type Content =

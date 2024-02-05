@@ -78,7 +78,10 @@ import {
   LinkElement,
   ListElement,
   LinkFloatingToolbar,
+  VideoElement,
 } from "./elements";
+
+import { ELEMENT_VIDEO, createVideoPlugin } from "./plugins/createVideoPlugin";
 
 import { uploadImage } from "../../../hooks/images";
 
@@ -121,7 +124,14 @@ export default observer((props: Props) => {
           uploadImage: uploadImage,
         },
       }),
-      createMediaEmbedPlugin(),
+
+      // Plate's media handler turns youtube links, twitter links, etc, into embeds.
+      // I'm unsure how to trigger the logic, probabzly via toolbar or shortcut.
+      // createMediaEmbedPlugin(),
+
+      // NOTE: This plugin MUST come after createImagePlugin, otherwise createImagePlugin swallows
+      // dropped video files and this won't be called.
+      createVideoPlugin(),
 
       // I believe this is so hitting backspace lets you select and delete the
       // image
@@ -235,13 +245,13 @@ export default observer((props: Props) => {
           },
         },
       }),
-      createIndentListPlugin(),
 
-      //
+      createIndentListPlugin(),
       createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
     ],
     {
       components: {
+        [ELEMENT_VIDEO]: VideoElement,
         [ELEMENT_BLOCKQUOTE]: BlockquoteElement,
         [ELEMENT_CODE_BLOCK]: CodeLeaf, // todo: should be a code block
         // [ELEMENT_HR]: HrElement,
