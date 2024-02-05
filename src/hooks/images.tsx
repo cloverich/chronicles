@@ -194,7 +194,7 @@ const imageExtensions = [
 ];
 
 // https://github.com/sindresorhus/video-extensions/blob/main/video-extensions.json
-const videoExtensions = [
+export const videoExtensions = [
   "3g2",
   "3gp",
   "aaf",

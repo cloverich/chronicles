@@ -3,14 +3,13 @@ import * as mdast from "../models/mdast";
 
 // One of the main reasons this fork exists:
 // NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
-import { prefixUrl } from "../../../hooks/images";
+import { prefixUrl, videoExtensions } from "../../../hooks/images";
 
 // NOTE: added, and a good example of what changes I would want to make to this library!
 import {
   ELEMENT_LI,
   ELEMENT_LIC,
   ELEMENT_OL,
-  ELEMENT_TODO_LI,
   ELEMENT_UL,
   ELEMENT_CODE_BLOCK,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
@@ -368,10 +367,45 @@ function createLink(node: mdast.Link, deco: Decoration) {
   };
 }
 
-export type Image = ReturnType<typeof createImage>;
+export type Image = {
+  type: "img";
+  url: string;
+  title?: string;
+  alt?: string;
+  caption?: [{ text: string }];
+  children: [{ text: "" }];
+};
 
-function createImage(node: mdast.Image) {
+export type Video = {
+  type: "video";
+  url: string;
+  title?: string;
+  alt?: string;
+  caption?: [{ text: string }];
+  children: [{ text: "" }];
+};
+
+/**
+ * Handle image AND video nodes
+ */
+function createImage(node: mdast.Image): Image | Video {
   const { type, url, title, alt } = node;
+
+  // In slate-to-mdast, we encode video nodes as images, and rely on
+  // the file extension here to determine if it's a video or not
+  const extension = (url?.split(".").pop() || "").toLowerCase();
+  if (videoExtensions.includes(extension)) {
+    return {
+      type: "video",
+      url: prefixUrl(url),
+      title,
+      alt,
+      // NOTE: Plate uses "caption" for alt (createCaptionPlugin + CaptionElement)
+      caption: [{ text: alt || "" }],
+      children: [{ text: "" }],
+    };
+  }
+
   return {
     // NOTE: I changed this from simply type, which forwarded the incoming "image" type,
     // to "img", which plate expects
@@ -380,7 +414,7 @@ function createImage(node: mdast.Image) {
     url: prefixUrl(url),
     title,
     alt,
-    // NOTE: Plate uses "caption" for alt
+    // NOTE: Plate uses "caption" for alt (createCaptionPlugin + CaptionElement)
     caption: [{ text: alt || "" }],
     // NOTE: All slate nodes need text children
     children: [{ text: "" }],
@@ -456,6 +490,7 @@ export type SlateNode =
   | Break
   | Link
   | Image
+  | Video
   | LinkReference
   | ImageReference
   | Footnote
