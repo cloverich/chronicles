@@ -8,6 +8,7 @@ const {
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const url = require("url");
 const { initUserFilesDir } = require("./userFilesInit");
 const settings = require("./settings");
 const migrate = require("./migrations");
@@ -70,44 +71,113 @@ try {
   );
 }
 
-/**
- * Open browser windows on link-click, an event triggered by renderer process.
- * @param {String} link
- */
-ipcMain.on("link-click", (_, link) => {
-  // This presents a security challenge: see https://github.com/cloverich/chronicles/issues/51
-  // https://www.electronjs.org/docs/latest/tutorial/security#15-do-not-use-openexternal-with-untrusted-content
-  shell.openExternal(link);
-});
-
-// Allow files to load if using the "chronicles" protocol
+// Allow files in <img> and <video> tags to load using the "chronicles://" protocol
 // https://www.electronjs.org/docs/api/protocol
 app.whenReady().then(() => {
+  // todo: registerFileProtocol is deprecated; using the new protocol method works,
+  // but videos don't seek properly.
   protocol.registerFileProtocol("chronicles", (request, callback) => {
-    // strip the leading chronicles://
-    const url = decodeURI(request.url.substr(13));
+    callback({ path: validateChroniclesUrl(request.url) });
+  });
+});
 
-    // add the USER_FILES directory
-    // todo: cache this value. The backend API updates it after start-up, otherwise all updates
-    // happen through main. Refactor so backend api calls through here, or move default user files setup
-    // logic into main, then cache the value
-    const absoluteUrl = path.join(settings.get("USER_FILES_DIR"), url);
+/**
+ * Convert a "chronicles://" URL to an absolute file path.
+ *
+ * This function is used by the "chronicles://" protocol handler to resolve file paths
+ * to the user files directory. It also performs some basic security checks. Insecure
+ * or missing files resolve to null; in testing, passing null to the protocol handler
+ * results in 404's in img and video tags.
+ *
+ * @param {string} chroniclesUrl The "chronicles://" URL to convert.
+ */
+function validateChroniclesUrl(chroniclesUrl) {
+  // strip the leading chronicles://, then convert to absolute url
+  const url = decodeURI(chroniclesUrl.slice("chronicles://".length));
+  const baseDir = settings.get("USER_FILES_DIR");
+  const absPath = path.join(baseDir, url);
+  const normalizedPath = path.normalize(absPath);
 
-    // NOTE: If the file does not exist... ELECTRON WILL MAKE AN HTTP REQUEST WITH THE FULL URL???
-    // Seems like... odd fallback behavior.
-    // This isn't performant but is for my sanity.
-    // todo: Upgrade libraries, see if this behavior is fixed or can be disabled somehow?
-    if (!fs.existsSync(absoluteUrl)) {
-      console.warn(
-        "chronicles:// file handler could not find file:",
-        absoluteUrl,
-        "Maybe you need to set the USER_FILES or update broken file links?",
-      );
+  if (!isPathWithinDirectory(normalizedPath, baseDir)) {
+    console.warn(
+      "chronicles:// file handler blocked access to file outside of user files directory:",
+      normalizedPath,
+    );
+
+    return null;
+  }
+
+  if (!fs.existsSync(normalizedPath)) {
+    console.warn(
+      "chronicles:// file handler could not find file:",
+      normalizedPath,
+      "Maybe you need to set the USER_FILES or update broken file links?",
+    );
+
+    return null;
+  }
+
+  return normalizedPath;
+}
+
+// Checks if the resolved path is within the specified directory
+function isPathWithinDirectory(resolvedPath, directory) {
+  const relative = path.relative(directory, resolvedPath);
+  return !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
+/**
+ * Checks if a URL is safe for opening in external applications.
+ * @param {string} urlString The URL to check.
+ * @returns {boolean} True if the URL is considered safe, false otherwise.
+ */
+function isSafeForExternalOpen(urlString) {
+  try {
+    const parsedUrl = new url.URL(urlString);
+
+    const allowedProtocols = ["http:", "https:", "mailto:"];
+    if (allowedProtocols.includes(parsedUrl.protocol)) {
+      return true;
     }
+  } catch (error) {
+    console.error("isSafeForExternalOpen - Error parsing URL:", error);
+    return false;
+  }
 
-    // todo: santize URL: Prevent ../, ensure it points to USER_FILES directory
-    // https://github.com/cloverich/chronicles/issues/53
-    callback({ path: absoluteUrl });
+  return false;
+}
+
+/**
+ * Handle opening web and file links in system default applications.
+ * @param {string} url
+ */
+function handleLinkClick(url) {
+  if (url.startsWith("chronicles://")) {
+    const sanitized = validateChroniclesUrl(url);
+    if (sanitized) {
+      shell.showItemInFolder(sanitized);
+    } else {
+      console.warn("Blocked file navigation:", url);
+    }
+  } else if (isSafeForExternalOpen(url)) {
+    shell.openExternal(url);
+  } else {
+    console.warn("Blocked navigation to:", url);
+  }
+}
+
+app.on("web-contents-created", (event, contents) => {
+  contents.on("will-navigate", (event, navigationUrl) => {
+    // prevent navigation from the main window
+    event.preventDefault();
+    handleLinkClick(navigationUrl);
+  });
+
+  contents.setWindowOpenHandler(({ url }) => {
+    handleLinkClick(url);
+    // Prevent the creation of new windows
+    // https://www.electronjs.org/docs/latest/tutorial/security#14-disable-or-limit-creation-of-new-windows
+    return { action: "deny" };
   });
 });
 
@@ -122,18 +192,9 @@ function createWindow() {
     width,
     height: 600,
     webPreferences: {
-      // This is needed to load electron modules
-      // Loading the electron requiring scripts in a preload
-      // script, then disabling nodeIntegration, would be
-      // more secure
-      // NOTE: Right now, loading local images also requires this.
-      // Loading images via the API would resolve this issue.
-      // ...or using a custom protocol
-      // https://github.com/electron/electron/issues/23393
       nodeIntegration: false,
       sandbox: false,
       contextIsolation: true,
-      // preload: app.isPackaged ? path.join(__dirname, 'preload.js') : path.join(__dirname, '../preload.js'),
       preload: path.join(__dirname, "preload.bundle.js"),
     },
   });
@@ -163,9 +224,6 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
 
 // Preferences in UI allows user to specify database file
 ipcMain.on("select-database-file", async (event, arg) => {
