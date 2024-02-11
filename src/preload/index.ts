@@ -1,8 +1,6 @@
 import { contextBridge } from "electron";
 import { create } from "./client";
-
-import { listenLinks } from "./utils.electron";
-listenLinks();
+import "./utils.electron";
 
 contextBridge.exposeInMainWorld("chronicles", {
   createClient: create,

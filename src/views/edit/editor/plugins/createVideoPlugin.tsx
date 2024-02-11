@@ -1,13 +1,10 @@
-import React from "react";
 import {
   PlateEditor,
-  PlateRenderElementProps,
-  PlateElement,
   WithPlatePlugin,
   createPluginFactory,
   insertNode,
 } from "@udecode/plate";
-import { videoExtensions } from "../../../../hooks/images";
+import { isVideoUrl } from "../../../../hooks/images";
 // Ideally this is injected
 import { IClient } from "../../../../hooks/useClient";
 
@@ -46,7 +43,7 @@ export const createVideoPlugin = createPluginFactory({
           if (mime == "video") {
             // The slate-mdast parser / serializer relies on a whitelist of
             // extensions to parse and serialize the video element correctly.
-            if (!videoExtensions.includes(extension || "")) {
+            if (!isVideoUrl(file.name)) {
               console.error("Unsupported video extension:", extension);
               continue;
             }

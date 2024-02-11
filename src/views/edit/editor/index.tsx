@@ -82,6 +82,7 @@ import {
 } from "./elements";
 
 import { ELEMENT_VIDEO, createVideoPlugin } from "./plugins/createVideoPlugin";
+import { createFilesPlugin } from "./plugins/createFilesPlugin";
 
 import { uploadImage } from "../../../hooks/images";
 
@@ -109,8 +110,11 @@ export default observer((props: Props) => {
       createBasicMarksPlugin(),
 
       createLinkPlugin({
-        // Without the toolbar, links are not really useable by default.
+        // Without the toolbar, links cannot be easily edited
         renderAfterEditable: LinkFloatingToolbar as RenderAfterEditable,
+        options: {
+          allowedSchemes: ["http", "https", "mailto", "chronicles"],
+        },
       }),
 
       createListPlugin(),
@@ -129,9 +133,10 @@ export default observer((props: Props) => {
       // I'm unsure how to trigger the logic, probabzly via toolbar or shortcut.
       // createMediaEmbedPlugin(),
 
-      // NOTE: This plugin MUST come after createImagePlugin, otherwise createImagePlugin swallows
+      // NOTE: These plugins MUST come after createImagePlugin, otherwise createImagePlugin swallows
       // dropped video files and this won't be called.
       createVideoPlugin(),
+      createFilesPlugin(),
 
       // I believe this is so hitting backspace lets you select and delete the
       // image

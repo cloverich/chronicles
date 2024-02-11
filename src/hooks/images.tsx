@@ -68,9 +68,18 @@ export function isImageUrl(filepath: string) {
   return imageExtensions.includes(extension.toLowerCase());
 }
 
+/**
+ * Does the URL end with a known video extension?
+ */
+export function isVideoUrl(filepath: string) {
+  const extension = filepath.split(".").pop();
+  if (!extension) return false;
+  return videoExtensions.includes(extension.toLowerCase());
+}
+
 // Copied from this repo: https://github.com/arthurvr/image-extensions
 // Which is an npm package that is just a json file
-const imageExtensions = [
+export const imageExtensions = [
   "ase",
   "art",
   "bmp",
