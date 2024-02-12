@@ -2,7 +2,7 @@ import React from "react";
 import { JournalResponse } from "../../preload/client/journals";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
-import { SearchV2Store } from "../documents/SearchStore";
+import { SearchStore } from "../documents/SearchStore";
 import { JournalsStore } from "../../hooks/stores/journals";
 
 /**
@@ -30,7 +30,7 @@ function defaultJournal(selectedJournals: string[], jstore: JournalsStore) {
  * Load a new or existing document into a view model
  */
 export function useEditableDocument(
-  search: SearchV2Store,
+  search: SearchStore,
   jstore: JournalsStore,
   documentId?: string,
 ) {

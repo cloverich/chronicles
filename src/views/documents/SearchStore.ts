@@ -3,7 +3,7 @@ import { IClient } from "../../hooks/useClient";
 import { observable, IObservableArray, computed, action } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { SearchToken } from "./search/tokens";
-import { TagSearchStore } from "./TagSearchStore";
+import { SearchParser } from "./SearchParser";
 
 export interface SearchItem {
   id: string;
@@ -20,14 +20,16 @@ interface SearchQuery {
   limit?: number;
 }
 
-export const SearchStoreContext = createContext<SearchV2Store>(null as any);
+export const SearchStoreContext = createContext<SearchStore>(null as any);
 
-export class SearchV2Store {
+export class SearchStore {
   @observable docs: SearchItem[] = [];
   @observable loading = true;
   @observable error: string | null = null;
   private journals: JournalsStore;
-  private tagSeachStore: TagSearchStore;
+  private parser: SearchParser;
+  // NOTE: Public so it can be updated by render calls, since useSearchParmas changes on
+  // each render. Not ideal.
   setTokensUrl: any; // todo: This is react-router-dom's setUrl; type it
 
   @observable private _tokens: IObservableArray<SearchToken> = observable([]);
@@ -39,10 +41,25 @@ export class SearchV2Store {
     tokens: string[],
   ) {
     this.journals = journals;
-    this.tagSeachStore = new TagSearchStore(this);
+    this.parser = new SearchParser();
     this.setTokensUrl = setTokensUrl;
-    this.tagSeachStore.addTokens(tokens);
+    this.initTokens(tokens);
   }
+
+  private initTokens = (searchStr: string[]) => {
+    let tokens: SearchToken[] = [];
+    for (const tokenStr of searchStr) {
+      const token = this.parser.parseToken(tokenStr);
+      if (!token) continue;
+
+      if (token) {
+        tokens = this.parser.mergeToken(tokens, token as SearchToken);
+      }
+    }
+
+    this.setTokens(tokens);
+    this.search();
+  };
 
   /**
    * NOTE: This should be private, or refactored to trigger a search
@@ -129,24 +146,21 @@ export class SearchV2Store {
     this.loading = false;
   };
 
-  // TODO: I refactored SearchStore to wrap TagSearchStore after some design issues;
-  // do a full refactor pass after the key search features are working.
-  addTokens = (searchStr: string[]) => {
-    this.tagSeachStore.addTokens(searchStr);
-    this.search();
-  };
-
+  @action
   addToken = (searchStr: string, resetPagination = true) => {
-    this.tagSeachStore.addToken(searchStr);
+    const token = this.parser.parseToken(searchStr);
 
-    // TODO: I think updating the url should be a reaction to the tokens changing,
-    // perhaps TagSearchStore does this as part of refactor above?
-    this.setTokensUrl({ search: this.searchTokens }, { replace: true });
-    this.search(100, resetPagination);
+    // todo: only search if the token string changes
+    if (token) {
+      this.setTokens(this.parser.mergeToken(this.tokens, token as SearchToken));
+      this.setTokensUrl({ search: this.searchTokens }, { replace: true });
+      this.search(100, resetPagination);
+    }
   };
 
+  @action
   removeToken = (token: string, resetPagination = true) => {
-    this.tagSeachStore.removeToken(token);
+    this.setTokens(this.parser.removeToken(this.tokens.slice(), token)); // slice() from prior implementation
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
     this.search(100, resetPagination);
   };
@@ -154,9 +168,17 @@ export class SearchV2Store {
   /**
    * Replace the current search with a new one.
    */
+  @action
   setSearch = (searchStr: string[]) => {
-    this.setTokens([]);
-    this.addTokens(searchStr);
+    const lastSearch = this.searchTokens.sort().join(" ");
+    const tokens = this.parser.parseTokens(searchStr);
+    this.setTokens(tokens);
+
+    const currentSearch = this.searchTokens.sort().join(" ");
+    if (lastSearch !== currentSearch) {
+      this.setTokensUrl({ search: this.searchTokens }, { replace: true });
+      this.search();
+    }
   };
 
   @computed get selectedJournals(): string[] {
@@ -168,8 +190,10 @@ export class SearchV2Store {
   }
 
   @computed
-  get searchTokens() {
-    return this.tagSeachStore.searchTokens;
+  get searchTokens(): string[] {
+    return this.tokens.map((token) => {
+      return this.parser.serializeToken(token);
+    });
   }
 
   // TODO:Test cases, sigh
