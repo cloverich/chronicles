@@ -12,12 +12,12 @@ import {
 } from "evergreen-ui";
 import TagSearch from "./search";
 import { Link } from "react-router-dom";
-import { SearchV2Store } from "./SearchStore";
+import { SearchStore } from "./SearchStore";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { JournalResponse } from "../../hooks/useClient";
 
 interface Props {
-  store: SearchV2Store;
+  store: SearchStore;
   children: any;
   empty?: boolean;
 }
@@ -43,7 +43,7 @@ export function Layout(props: Props) {
         <TagSearch store={props.store} />
       </Pane>
       <Pane>
-        <Link to="/edit/new">Create new</Link>
+        <Link to="/documents/edit/new">Create new</Link>
       </Pane>
       <Pane marginTop={24}>{props.children}</Pane>
     </Pane>
@@ -53,7 +53,7 @@ export function Layout(props: Props) {
 interface SidebarProps {
   isShown: boolean;
   setIsShown: (isShown: boolean) => void;
-  search: SearchV2Store;
+  search: SearchStore;
 }
 
 /**

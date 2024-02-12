@@ -30,32 +30,17 @@ const parsers: Record<SearchToken["type"], TokenParser<any>> = {
 };
 
 /**
- * Any object holding observable tokens can be used
+ * Helper for parsing, adding, and removing search tokens
  */
-export interface ITokensStore {
-  tokens: IObservableArray<SearchToken>;
-  setTokens: (tokens: SearchToken[]) => void;
-}
-
-/**
- * View model for displaying, adding, and removing search tokens
- */
-export class TagSearchStore {
-  constructor(private store: ITokensStore) {}
-
-  // TODO: Rename. These are stringified tokens, not SearchToken's
-  // which is confusing?
-  @computed
-  get searchTokens() {
-    return this.store.tokens.map((token) => {
-      const parser = parsers[token.type];
-      return parser.serialize(token);
-    });
-  }
+export class SearchParser {
+  serializeToken = (token: SearchToken) => {
+    const parser = parsers[token.type];
+    return parser.serialize(token);
+  };
 
   /**
-   * For a given search (string), get the right parser
-   * and the parsed value.
+   * For a given search component (ex: in:chronicles), get the right parser
+   * and the parsed value (ex: { type: 'in', value: 'chronicles' })
    *
    * @param tokenStr - The raw string from the search input
    */
@@ -72,7 +57,6 @@ export class TagSearchStore {
     }
 
     const [, prefix, value] = matches;
-    // todo: same todo as above
     if (!value) return;
 
     const parser: TokenParser = (parsers as any)[prefix];
@@ -84,36 +68,38 @@ export class TagSearchStore {
     return [parser, parsedToken];
   }
 
-  /**
-   * Add a raw array of (search string) tokens to the store
-   *
-   * @param tokens - An array of strings representing tokens
-   */
-  @action
-  addTokens = (tokens: string[]) => {
-    // todo: Why am I not doing this atomically?
-    for (const token of tokens) {
-      this.addToken(token);
-    }
-  };
-
-  @action
-  addToken = (tokenStr: string) => {
+  parseToken = (tokenStr: string) => {
     const results = this.parserFor(tokenStr);
     if (!results) return;
 
-    const [parser, parsedToken] = results;
-    const tokens = parser.add(this.store.tokens, parsedToken);
-    this.store.setTokens(tokens);
+    const [_, parsedToken] = results;
+    return parsedToken;
+  };
+
+  parseTokens = (tokenStr: string[]) => {
+    let parsedTokens: SearchToken[] = [];
+    tokenStr.forEach((token) => {
+      const parsedToken = this.parseToken(token);
+      if (!parsedToken) return;
+
+      // todo: fix type
+      parsedTokens.push(parsedToken as any);
+    });
+
+    return parsedTokens;
+  };
+
+  mergeToken = (tokens: SearchToken[], token: SearchToken) => {
+    const parser = parsers[token.type];
+    return parser.add(tokens, token);
   };
 
   @action
-  removeToken = (tokenStr: string) => {
+  removeToken = (tokens: any[], tokenStr: string) => {
     const results = this.parserFor(tokenStr);
-    if (!results) return;
+    if (!results) return tokens;
 
     const [parser, parsedToken] = results;
-    const tokens = parser.remove(this.store.tokens.slice(), parsedToken);
-    this.store.setTokens(tokens);
+    return parser.remove(tokens, parsedToken);
   };
 }

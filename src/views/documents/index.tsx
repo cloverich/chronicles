@@ -3,33 +3,19 @@ import { observer } from "mobx-react-lite";
 import { Heading, Paragraph, Pane } from "evergreen-ui";
 
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { SearchV2Store } from "./SearchStore";
+import { SearchStoreContext, SearchStore } from "./SearchStore";
 import { DocumentItem } from "./DocumentItem";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "./Layout";
-import { useSearchParams } from "react-router-dom";
 
-function DocumentsContainer(props: { store: SearchV2Store }) {
+function DocumentsContainer() {
   const journalsStore = useContext(JournalsStoreContext);
-  const [params] = useSearchParams();
-
-  const searchStore = props.store;
+  const searchStore = useContext(SearchStoreContext);
   const navigate = useNavigate();
 
   function edit(docId: string) {
-    navigate(`/edit/${docId}`);
+    navigate(`/documents/edit/${docId}`);
   }
-
-  React.useEffect(() => {
-    const tokens = params.getAll("search");
-
-    // When hitting "back" from an edit note, the search state is maintained.
-    // When navigating to other pages (preferences) and back, the search
-    // state needs reset. This resets the state in that case.
-    if (!tokens.length) {
-      searchStore.setSearch([]);
-    }
-  }, []);
 
   // loading states
   if (searchStore.loading && !searchStore.docs.length) {
@@ -95,7 +81,7 @@ function DocumentsContainer(props: { store: SearchV2Store }) {
   );
 }
 
-function Pagination(props: { store: SearchV2Store }) {
+function Pagination(props: { store: SearchStore }) {
   const nextButton = (() => {
     if (props.store.hasNext) {
       return (

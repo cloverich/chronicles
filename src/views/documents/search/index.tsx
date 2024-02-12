@@ -1,10 +1,10 @@
 import React from "react";
 import { TagInput } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import { SearchV2Store } from "../SearchStore";
+import { SearchStore } from "../SearchStore";
 
 interface Props {
-  store: SearchV2Store;
+  store: SearchStore;
 }
 
 const TagSearch = (props: Props) => {

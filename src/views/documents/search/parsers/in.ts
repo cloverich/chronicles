@@ -14,8 +14,6 @@ export class JournalTokenParser {
 
   add = (tokens: SearchToken[], token: JournalToken) => {
     // there can be only one of each named journal
-    // TODO: prevent adding journals with invalid names,
-    // maybe accept a valid tokens property... where? Blargh...
     if (tokens.find((t) => t.type === "in" && t.value === token.value)) {
       return tokens;
     }
