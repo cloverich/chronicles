@@ -19,6 +19,8 @@ const testFiles = findTestFiles("src");
 testFiles.forEach(async (file) => {
   await esbuild.build({
     entryPoints: [file],
+    // NOTE: If changing filename, also update findTestFiles glob above to avoid
+    // bundled test files being used as source!
     outfile: file.replace(".test.ts", ".test.bundle.js"),
     bundle: true,
     platform: "node",
