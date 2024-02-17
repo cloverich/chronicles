@@ -2,10 +2,6 @@ import { describe, it } from "mocha";
 import { expect } from "chai";
 import { stringToSlate } from "./";
 
-// NOTE: I Never actually ran this because I can't get mocha to work...
-// TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for /Users/cloverich/code/pragma/src/markdown/index.test.ts
-// ...although I have ts-node/register, esm, etc. Need to research...
-// ...this ecosystem is quickly killing me
 describe("Markdown to Slate conversion", function () {
   it("unnests image tags", function () {
     const input = `
@@ -79,13 +75,9 @@ This works! _Seriously_, no **complaints**.
                     text: "My third idea is ",
                   },
                   {
-                    text: "_",
-                  },
-                  {
+                    // todo: I expected this to be escaped; it is escaped if I use similar syntax in the editor.
+                    italic: true,
                     text: "nested",
-                  },
-                  {
-                    text: "_",
                   },
                 ],
               },
@@ -134,6 +126,11 @@ This works! _Seriously_, no **complaints**.
         url: "chronicles://ckure3z1b00003u65tfr1m2ki..png",
         title: null,
         alt: null,
+        caption: [
+          {
+            text: "",
+          },
+        ],
         children: [
           {
             text: "",

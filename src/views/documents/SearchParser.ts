@@ -1,4 +1,3 @@
-import { computed, action, IObservableArray } from "mobx";
 import { SearchToken } from "./search/tokens";
 import { FocusTokenParser } from "./search/parsers/focus";
 import { JournalTokenParser } from "./search/parsers/in";
@@ -94,7 +93,6 @@ export class SearchParser {
     return parser.add(tokens, token);
   };
 
-  @action
   removeToken = (tokens: any[], tokenStr: string) => {
     const results = this.parserFor(tokenStr);
     if (!results) return tokens;

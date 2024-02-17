@@ -13,7 +13,7 @@ export class BeforeTokenParser {
   };
 
   add = (tokens: SearchToken[], token: BeforeToken) => {
-    // replace existing after token
+    // replace existing before token
     const existing = tokens.find((t) => t.type === "before");
     if (existing) {
       if (existing.value !== token.value) {

@@ -107,4 +107,28 @@ export class FilesClient {
         .on("error", (err) => rej(err));
     });
   };
+
+  /**
+   * The uploadImage option on plate's createImagesPlugin.
+   * @param dataUrl - It receives a dataurl after users drag and drop an image onto the editor of
+   *  the form: data:image/png;base64,iVBORw0KGg...
+   *
+   * todo: Actual signature is:  string | ArrayBuffer) => string | ArrayBuffer | Promise<string | ArrayBuffer>;
+   * but calling code definitely only sends a string. See implementation notes below, and also the
+   * createImagePlugin implementation
+   */
+  uploadImage = (dataUrl: string | ArrayBuffer) => {
+    // NOTE: At time of writing, the code that calls this is in plate at
+    // packages/media/src/image/withImageUpload.ts
+    // It receives a FileList, iterates it to get File objects, then does two things
+    // 1. if (mime === 'image')  -- so I don't need to check image type here
+    // 2. It calls reader.readAsDataURL(file); so IDK why the type signature is string | ArrayBuffer
+    // todo(perf): Eventually, should pull in the function and re-implement it the way I had previously,
+    // reading the data as ArrayBuffer and avoiding the need to encode to base64 only to immmediately
+    // decode...but for now this works, and images aren't copied and pasted into the editor that often
+    return this.upload(dataUrl as string).then((json: any) => {
+      // todo: ImageElement could check if image is local or remote; if local, prefix with chronicles://
+      return `chronicles://${json.filename}`;
+    }, console.error) as Promise<string>; // createImagePlugin doesn't allow Promise<void>
+  };
 }
