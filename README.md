@@ -28,6 +28,13 @@ See scripts/dev.js for specifics on how the source files are compiled and re-loa
 - React and mobx
 - Slate and Plate (Notion style WSYIWYG)
 
+## Testing
+
+- Use `yarn test` to run unit tests
+- No end to end testing, yet
+
+Unit tests rely on esbuild to bundle test files, after conflicts getting esm, ts-node, and mocha to play nice.
+
 ## Build and release
 
 - Use `yarn build`

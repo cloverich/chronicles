@@ -13,8 +13,8 @@
     "prestart": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
     "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
     "start": "node ./scripts/dev.js",
-    "test": "mocha -r esm -r ts-node/register src/**/*.test.ts",
-    "test:one": "mocha -r ts-node/register -r esm"
+    "pretest": "node ./scripts/test.mjs",
+    "test": "mocha 'src/**/*.test.bundle.js'"
   },
   "dependencies": {
     "ajv": "^8.6.2",
@@ -51,7 +51,6 @@
     "electron": "^28.2.0",
     "emotion": "^10.0.27",
     "esbuild": "^0.20.0",
-    "esm": "^3.2.25",
     "evergreen-ui": "^7.1.9",
     "klaw": "^3.0.0",
     "lodash": "^4.17.21",
@@ -67,7 +66,7 @@
     "react-router-dom": "^6.3.0",
     "rehype-react": "^7.0.3",
     "remark": "^14.0.1",
-    "remark-gfm": "^3.0.0",
+    "remark-gfm": "^4.0.0",
     "remark-parse": "^8.0.3",
     "remark-rehype": "^10.0.0",
     "remark-stringify": "^8.1.1",
@@ -81,7 +80,6 @@
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "ts-mdast": "^1.0.0",
-    "ts-node": "^10.3.0",
     "typescript": "^5.3.3",
     "unified": "^10.1.0"
   }

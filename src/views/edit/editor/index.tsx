@@ -84,7 +84,9 @@ import {
 import { ELEMENT_VIDEO, createVideoPlugin } from "./plugins/createVideoPlugin";
 import { createFilesPlugin } from "./plugins/createFilesPlugin";
 
-import { uploadImage } from "../../../hooks/images";
+// Ideally this is injected; also createVideoPlugin and createFilesPlugin do this
+import { IClient } from "../../../preload/client/types";
+const client: IClient = (window as any).chronicles.createClient();
 
 import { EditorToolbar } from "./toolbar/EditorToolbar";
 
@@ -125,7 +127,7 @@ export default observer((props: Props) => {
       }),
       createImagePlugin({
         options: {
-          uploadImage: uploadImage,
+          uploadImage: client.files.uploadImage,
         },
       }),
 
