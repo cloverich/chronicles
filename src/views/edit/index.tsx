@@ -67,12 +67,19 @@ interface DocumentEditProps {
   journals: JournalResponse[];
 }
 
+import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
+import { EditorMode } from "./EditorMode";
+
+/**
+ * This is the main document editing view, which houses the editor and some controls.
+ */
 const DocumentEditView = observer((props: DocumentEditProps) => {
   const { document, journals } = props;
   const isMounted = useIsMounted();
   const navigate = useNavigate();
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
-  const [tabs] = React.useState(["Editor", "Slate Nodes", "Markdown", "MDAST"]);
+  const [selectedViewMode, setSelectedViewMode] = React.useState<EditorMode>(
+    EditorMode.Editor,
+  );
 
   // Autofocus the heading input
   const onInputRendered = React.useCallback(
@@ -198,22 +205,42 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
 
   function renderTab(tab: string) {
     switch (tab) {
-      case "Editor":
+      case EditorMode.Editor:
         return (
           <Pane>
             <Editor
               saving={document.saving}
               value={document.slateContent}
               setValue={document.setSlateContent}
+              selectedEditorMode={selectedViewMode}
+              setSelectedEditorMode={setSelectedViewMode}
             />
           </Pane>
         );
-      case "Slate Nodes":
-        return <pre> {JSON.stringify(document.slateContent, null, 2)}</pre>;
-      case "Markdown":
-        return <pre>{document.content}</pre>;
-      case "MDAST":
-        return <pre>{JSON.stringify(document.mdastDebug, null, 2)}</pre>;
+      case EditorMode.SlateDom:
+        return (
+          <ReadOnlyTextEditor
+            selectedEditorMode={selectedViewMode}
+            setSelectedEditorMode={setSelectedViewMode}
+            json={document.slateContent}
+          />
+        );
+      case EditorMode.Markdown:
+        return (
+          <ReadOnlyTextEditor
+            selectedEditorMode={selectedViewMode}
+            setSelectedEditorMode={setSelectedViewMode}
+            markdown={document.content}
+          />
+        );
+      case EditorMode.Mdast:
+        return (
+          <ReadOnlyTextEditor
+            selectedEditorMode={selectedViewMode}
+            setSelectedEditorMode={setSelectedViewMode}
+            json={document.mdastDebug}
+          />
+        );
     }
   }
 
@@ -265,21 +292,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         {journalPicker()}
       </div>
 
-      <Pane flexGrow={1}>
-        <Tablist marginBottom={16} flexBasis={240} marginRight={24}>
-          {tabs.map((tab, index) => (
-            <Tab
-              aria-controls={`panel-${tab}`}
-              isSelected={index === selectedIndex}
-              key={tab}
-              onSelect={() => setSelectedIndex(index)}
-            >
-              {tab}
-            </Tab>
-          ))}
-        </Tablist>
-        {renderTab(tabs[selectedIndex])}
-      </Pane>
+      <Pane flexGrow={1}>{renderTab(selectedViewMode)}</Pane>
 
       {/* Action buttons */}
       <Pane marginTop={24} display="flex" justifyContent="flex-end">
