@@ -33,6 +33,8 @@ import {
   ELEMENT_H6,
   ELEMENT_BLOCKQUOTE,
   ELEMENT_CODE_BLOCK,
+  ELEMENT_CODE_LINE, // inside code_block, not inline code (that's mark_code)
+  ELEMENT_CODE_SYNTAX,
   ELEMENT_LINK,
   ELEMENT_LI,
   ELEMENT_TD,
@@ -52,10 +54,10 @@ import {
   createSelectOnBackspacePlugin,
   ELEMENT_IMAGE,
   createImagePlugin,
-  createMediaEmbedPlugin,
   ELEMENT_MEDIA_EMBED,
 
-  // So document always has a trailing paragraph
+  // So document always has a trailing paragraph, ensures you
+  // can always type after the last non-paragraph block.
   createTrailingBlockPlugin,
   ELEMENT_PARAGRAPH,
 
@@ -71,7 +73,10 @@ import { createCaptionPlugin } from "@udecode/plate-caption";
 
 import {
   BlockquoteElement,
+  CodeBlockElement,
   CodeLeaf,
+  CodeSyntaxLeaf,
+  CodeLineElement,
   HeadingElement,
   ParagraphElement,
   ImageElement,
@@ -142,7 +147,7 @@ export default observer(
         }),
 
         // Plate's media handler turns youtube links, twitter links, etc, into embeds.
-        // I'm unsure how to trigger the logic, probabzly via toolbar or shortcut.
+        // I'm unsure how to trigger the logic, probably via toolbar or shortcut.
         // createMediaEmbedPlugin(),
 
         // NOTE: These plugins MUST come after createImagePlugin, otherwise createImagePlugin swallows
@@ -150,8 +155,7 @@ export default observer(
         createVideoPlugin(),
         createFilesPlugin(),
 
-        // I believe this is so hitting backspace lets you select and delete the
-        // image
+        // Backspacing into an element selects the block before deleting it.
         createSelectOnBackspacePlugin({
           options: {
             query: {
@@ -270,7 +274,10 @@ export default observer(
         components: {
           [ELEMENT_VIDEO]: VideoElement,
           [ELEMENT_BLOCKQUOTE]: BlockquoteElement,
-          [ELEMENT_CODE_BLOCK]: CodeLeaf, // todo: should be a code block
+          [ELEMENT_CODE_BLOCK]: CodeBlockElement,
+          [ELEMENT_CODE_LINE]: CodeLineElement,
+          [ELEMENT_CODE_SYNTAX]: CodeSyntaxLeaf,
+          [MARK_CODE]: CodeLeaf,
           // [ELEMENT_HR]: HrElement,
           [ELEMENT_H1]: withProps(HeadingElement, { variant: "h1" }),
           [ELEMENT_H2]: withProps(HeadingElement, { variant: "h2" }),
@@ -279,7 +286,8 @@ export default observer(
           [ELEMENT_H5]: withProps(HeadingElement, { variant: "h5" }),
           [ELEMENT_H6]: withProps(HeadingElement, { variant: "h6" }),
           [ELEMENT_IMAGE]: ImageElement,
-          [ELEMENT_LINK]: LinkElement, // todo: need more plugins to make these truly usable.
+          [ELEMENT_LINK]: LinkElement,
+          // todo: need more plugins to make these truly usable.
           // [ELEMENT_MEDIA_EMBED]: MediaEmbedElement,
           // [ELEMENT_MENTION]: MentionElement,
           // [ELEMENT_MENTION_INPUT]: MentionInputElement,
@@ -296,9 +304,6 @@ export default observer(
           [MARK_BOLD]: withProps(PlateLeaf, { as: "strong" }),
 
           // Unsure about these:
-          // [ELEMENT_CODE_SYNTAX]: CodeSyntaxLeaf,
-          // [ELEMENT_CODE_LINE]: CodeLineElement, // ???
-          [MARK_CODE]: CodeLeaf,
           // [MARK_HIGHLIGHT]: HighlightLeaf,
           [MARK_ITALIC]: withProps(PlateLeaf, { as: "em" }),
           // [MARK_KBD]: KbdLeaf,

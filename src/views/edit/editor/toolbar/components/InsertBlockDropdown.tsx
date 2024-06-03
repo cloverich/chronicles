@@ -56,7 +56,7 @@ import { ToolbarButton } from "../../components/Toolbar";
 
 const items = [
   {
-    label: "Basic blocks",
+    label: "Insert block",
     items: [
       {
         description: "Paragraph",
@@ -82,6 +82,13 @@ const items = [
         label: "Heading 3",
         value: ELEMENT_H3,
       },
+
+      {
+        description: "Link",
+        icon: Icons.link,
+        label: "Link",
+        value: ELEMENT_LINK,
+      },
       // {
       //   description: "Table",
       //   icon: Icons.table,
@@ -106,6 +113,13 @@ const items = [
         label: "Quote",
         value: ELEMENT_BLOCKQUOTE,
       },
+
+      {
+        description: "Code (```)",
+        icon: Icons.codeblock,
+        label: "Code",
+        value: ELEMENT_CODE_BLOCK,
+      },
       // {
       //   description: "Divider (---)",
       //   icon: Icons.moon, // .hr doesn't exist shrug
@@ -121,46 +135,29 @@ const items = [
     ],
   },
   // {
-  //   label: "Media",
+  //   // label: "Media",
   //   items: [
-  // {
-  //   description: "Code (```)",
-  //   icon: Icons.codeblock,
-  //   label: "Code",
-  //   value: ELEMENT_CODE_BLOCK,
-  // },
-  // {
-  //   description: "Image",
-  //   icon: Icons.image,
-  //   label: "Image",
-  //   value: ELEMENT_IMAGE,
-  // },
-  // {
-  //   description: "Embed",
-  //   icon: Icons.embed,
-  //   label: "Embed",
-  //   value: ELEMENT_MEDIA_EMBED,
-  // },
-  // One day!
-  // {
-  //   description: "Excalidraw",
-  //   icon: Icons.excalidraw,
-  //   label: "Excalidraw",
-  //   value: ELEMENT_EXCALIDRAW,
-  // },
+  //     // {
+  //     //   description: "Image",
+  //     //   icon: Icons.image,
+  //     //   label: "Image",
+  //     //   value: ELEMENT_IMAGE,
+  //     // },
+  //     // {
+  //     //   description: "Embed",
+  //     //   icon: Icons.embed,
+  //     //   label: "Embed",
+  //     //   value: ELEMENT_MEDIA_EMBED,
+  //     // },
+  //     // One day!
+  //     // {
+  //     //   description: "Excalidraw",
+  //     //   icon: Icons.excalidraw,
+  //     //   label: "Excalidraw",
+  //     //   value: ELEMENT_EXCALIDRAW,
+  //     // },
   //   ],
   // },
-  {
-    items: [
-      {
-        description: "Link",
-        icon: Icons.link,
-        label: "Link",
-        value: ELEMENT_LINK,
-      },
-    ],
-    label: "Inline",
-  },
 ];
 
 /**

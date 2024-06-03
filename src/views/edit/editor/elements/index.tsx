@@ -3,6 +3,9 @@
 
 export * from "./Blockquote";
 export * from "./CodeLeaf";
+export * from "./CodeSyntaxLeaf";
+export * from "./CodeLine";
+export * from "./CodeBlock";
 export * from "./Heading";
 export * from "./Paragraph";
 export * from "./Link";
