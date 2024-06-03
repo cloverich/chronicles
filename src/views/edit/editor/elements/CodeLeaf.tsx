@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  PlateElement,
-  PlateElementProps,
-  PlateLeaf,
-  PlateLeafProps,
-} from "@udecode/plate";
+import { PlateLeaf, PlateLeafProps } from "@udecode/plate";
 
 export function CodeLeaf({ className, children, ...props }: PlateLeafProps) {
   return (
@@ -13,3 +8,23 @@ export function CodeLeaf({ className, children, ...props }: PlateLeafProps) {
     </PlateLeaf>
   );
 }
+
+// Plates version does this:
+// But for now, I just want the absolute basics.
+// export const CodeLeaf = withRef<typeof PlateLeaf>(
+//   ({ children, className, ...props }, ref) => {
+//     return (
+//       <PlateLeaf
+//         asChild
+//         className={cn(
+//           'whitespace-pre-wrap rounded-md bg-muted px-[0.3em] py-[0.2em] font-mono text-sm',
+//           className
+//         )}
+//         ref={ref}
+//         {...props}
+//       >
+//         <code>{children}</code>
+//       </PlateLeaf>
+//     );
+//   }
+// );

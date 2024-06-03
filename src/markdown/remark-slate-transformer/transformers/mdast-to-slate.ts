@@ -12,6 +12,7 @@ import {
   ELEMENT_OL,
   ELEMENT_UL,
   ELEMENT_CODE_BLOCK,
+  ELEMENT_CODE_LINE,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
 export type Decoration = {
@@ -75,7 +76,7 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
     case "html":
       return [createHtml(node)];
     case "code":
-      return [createCode(node)];
+      return [createCodeBlock(node)];
     case "yaml":
       return [createYaml(node)];
     case "toml":
@@ -256,15 +257,26 @@ function createHtml(node: mdast.HTML) {
   };
 }
 
-export type Code = ReturnType<typeof createCode>;
+export type Code = ReturnType<typeof createCodeBlock>;
 
-function createCode(node: mdast.Code) {
-  const { type, value, lang, meta } = node;
+function createCodeBlock(node: mdast.Code) {
+  const { value, lang, meta } = node;
+
+  // MDAST represents code blocks as a single string; our Plate code block represents
+  // internal code as a code_line element. Ostensibly this should be each line, but
+  // the PlateDOM seems to convert the full text to a single code_line element when it is modified.
+  // Unclear if this is a bug or a feature; making multiple lines here, but it may not be necessary.
+  // See the reverse transformation in slate-to-mdast.ts - createCode
+  const codeLines = value.split("\n").map((line, index, array) => {
+    const isLastLine = index === array.length - 1;
+    return { type: ELEMENT_CODE_LINE, text: isLastLine ? line : line + "\n" };
+  });
+
   return {
     type: ELEMENT_CODE_BLOCK,
     lang,
     meta,
-    children: [{ text: value }],
+    children: codeLines,
   };
 }
 
