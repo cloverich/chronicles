@@ -95,18 +95,18 @@ const items = [
       //   label: "Table",
       //   value: ELEMENT_TABLE,
       // },
-      // {
-      //   description: "Bulleted list",
-      //   icon: Icons.ul,
-      //   label: "Bulleted list",
-      //   value: "ul",
-      // },
-      // {
-      //   description: "Numbered list",
-      //   icon: Icons.ol,
-      //   label: "Numbered list",
-      //   value: "ol",
-      // },
+      {
+        description: "Bulleted list",
+        icon: Icons.ul,
+        label: "Bulleted list",
+        value: "ul",
+      },
+      {
+        description: "Numbered list",
+        icon: Icons.ol,
+        label: "Numbered list",
+        value: "ol",
+      },
       {
         description: "Quote (⌘+⇧+.)",
         icon: Icons.blockquote,

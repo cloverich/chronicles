@@ -176,8 +176,10 @@ export type List = ReturnType<typeof createList>;
 
 function createList(node: mdast.List, deco: Decoration) {
   const { type, children, ordered, start, spread } = node;
+
   return {
-    type: ordered ? ELEMENT_OL : ELEMENT_UL, // todo: support check list items? No, support those via different function
+    // type is "list" in mdast, but slate expects "ol" or "ul"
+    type: ordered ? ELEMENT_OL : ELEMENT_UL,
     children: convertNodes(children, deco),
     ordered,
     start,
