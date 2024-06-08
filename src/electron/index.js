@@ -5,6 +5,8 @@ const {
   shell,
   dialog,
   protocol,
+  Menu,
+  MenuItemConstructorOptions,
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
@@ -200,7 +202,43 @@ function createWindow() {
   });
 
   mainWindow.loadFile("index.html");
-  if (!app.isPackaged) mainWindow.webContents.openDevTools();
+
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+    setupInspectElement(mainWindow);
+  }
+}
+
+/**
+ * Sets up the "Inspect Element" context menu item for the main window.
+ * This allows right-clicking on elements and inspect them using the
+ * DevTools.
+ * @param {Electron.Main.BrowserWindow} mainWindow
+ */
+function setupInspectElement(mainWindow) {
+  // type is MenuItemConstructorOptions[]
+  let rightClickPosition;
+  const contextMenuTemplate = [
+    {
+      label: "Inspect Element",
+      click: (item, focusedWindow) => {
+        if (focusedWindow)
+          focusedWindow.webContents.inspectElement(
+            rightClickPosition.x,
+            rightClickPosition.y,
+          );
+      },
+    },
+  ];
+
+  const contextMenu = Menu.buildFromTemplate(contextMenuTemplate);
+
+  mainWindow.webContents.on("context-menu", (event, params) => {
+    rightClickPosition = { x: params.x, y: params.y };
+    contextMenu.popup({
+      window: mainWindow,
+    });
+  });
 }
 
 // This method will be called when Electron has finished
