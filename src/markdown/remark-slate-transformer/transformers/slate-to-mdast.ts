@@ -327,9 +327,11 @@ function createBlockquote(node: SlateNodes.Blockquote): mdast.Blockquote {
 
 function createList(node: SlateNodes.List): mdast.List {
   const { type, ordered, start, spread, children } = node;
+
   return {
-    type: "list",
-    ordered,
+    // type is "ol" or "ul" in plate, but mdast expects "list"
+    type: "list", // type: ol, ul
+    ordered: type === "ol",
     start,
     spread,
     children: convertNodes(children) as any as mdast.List["children"],

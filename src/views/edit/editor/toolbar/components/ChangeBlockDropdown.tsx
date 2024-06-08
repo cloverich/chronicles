@@ -72,18 +72,18 @@ const items = [
     label: "Code",
     value: ELEMENT_CODE_BLOCK,
   },
-  // {
-  //   value: 'ul',
-  //   label: 'Bulleted list',
-  //   description: 'Bulleted list',
-  //   icon: Icons.ul,
-  // },
-  // {
-  //   value: 'ol',
-  //   label: 'Numbered list',
-  //   description: 'Numbered list',
-  //   icon: Icons.ol,
-  // },
+  {
+    value: "ul",
+    label: "Bulleted list",
+    description: "Bulleted list",
+    icon: Icons.ul,
+  },
+  {
+    value: "ol",
+    label: "Numbered list",
+    description: "Numbered list",
+    icon: Icons.ol,
+  },
 ];
 
 const defaultItem = items.find((item) => item.value === ELEMENT_PARAGRAPH)!;
