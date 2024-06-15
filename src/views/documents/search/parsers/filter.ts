@@ -86,7 +86,6 @@ function parseFilter(token: string): NodeMatch | undefined {
   } else {
     const nodeMatch = token.match(nodeRegex);
     if (nodeMatch && nodeTypes.includes(nodeMatch[1])) {
-      console.log("nodeMatch", nodeMatch[1]);
       return {
         type: nodeMatch[1],
         text: undefined,

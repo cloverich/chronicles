@@ -1,10 +1,11 @@
 import { SearchToken } from "./search/tokens";
-import { FocusTokenParser } from "./search/parsers/focus";
+// import { FocusTokenParser } from "./search/parsers/focus";
 import { JournalTokenParser } from "./search/parsers/in";
 import { FilterTokenParser } from "./search/parsers/filter";
 import { TitleTokenParser } from "./search/parsers/title";
 import { TextTokenParser } from "./search/parsers/text";
 import { BeforeTokenParser } from "./search/parsers/before";
+import { TagTokenParser } from "./search/parsers/tag";
 
 // TODO: This won't allow searching where value has colon in it
 const tokenRegex = /^(.*):(.*)/;
@@ -20,9 +21,10 @@ interface TokenParser<T = any> {
 // todo: Type this as <SearchToken['type'], TokenParser<SearchToken>, where the type key matches
 // a specific parser that corresponds to it.
 const parsers: Record<SearchToken["type"], TokenParser<any>> = {
-  focus: new FocusTokenParser(),
+  // focus: new FocusTokenParser(),
   in: new JournalTokenParser(),
   filter: new FilterTokenParser(),
+  tag: new TagTokenParser(),
   title: new TitleTokenParser(),
   text: new TextTokenParser(),
   before: new BeforeTokenParser(),
@@ -43,7 +45,7 @@ export class SearchParser {
    *
    * @param tokenStr - The raw string from the search input
    */
-  private parserFor<SearchToken>(
+  private parseFor<SearchToken>(
     tokenStr: string,
   ): [TokenParser<SearchToken>, SearchToken] | undefined {
     if (!tokenStr) return;
@@ -68,7 +70,7 @@ export class SearchParser {
   }
 
   parseToken = (tokenStr: string) => {
-    const results = this.parserFor(tokenStr);
+    const results = this.parseFor(tokenStr);
     if (!results) return;
 
     const [_, parsedToken] = results;
@@ -94,7 +96,7 @@ export class SearchParser {
   };
 
   removeToken = (tokens: any[], tokenStr: string) => {
-    const results = this.parserFor(tokenStr);
+    const results = this.parseFor(tokenStr);
     if (!results) return tokens;
 
     const [parser, parsedToken] = results;

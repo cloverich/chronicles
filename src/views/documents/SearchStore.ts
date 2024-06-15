@@ -16,6 +16,7 @@ interface SearchQuery {
   journals: string[];
   titles?: string[];
   before?: string;
+  tags?: string[];
   texts?: string[];
   limit?: number;
 }
@@ -88,6 +89,10 @@ export class SearchStore {
       .map((token) => this.journals.idForName(token.value as string))
       .filter((token) => token) as string[];
 
+    const tags = this.tokens
+      .filter((t) => t.type === "tag")
+      .map((t) => t.value) as string[];
+
     // todo: Typescript doesn't know when I filter to type === 'title' its TitleTokens
     // its confused by the nodeMatch type
     const titles = this.tokens
@@ -103,7 +108,7 @@ export class SearchStore {
       before = beforeToken.value as string;
     }
 
-    return { journals, titles, texts, before };
+    return { journals, tags, titles, texts, before };
   };
 
   /**

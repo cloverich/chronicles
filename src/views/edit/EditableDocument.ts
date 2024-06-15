@@ -58,6 +58,7 @@ export class EditableDocument {
   @observable id?: string;
   @observable createdAt: string;
   @observable updatedAt: string; // read-only outside this class
+  @observable tags: string[] = [];
 
   // editor properties
   slateContent: SlateNode[];
@@ -78,6 +79,7 @@ export class EditableDocument {
       this.id = doc.id;
       this.createdAt = doc.createdAt;
       this.updatedAt = doc.updatedAt;
+      this.tags = doc.tags;
       const content = doc.content;
       const slateNodes = SlateTransformer.nodify(content);
       this.slateContent = slateNodes;
@@ -85,6 +87,7 @@ export class EditableDocument {
       this.createdAt = new Date().toISOString();
       this.updatedAt = new Date().toISOString();
       this.slateContent = SlateTransformer.createEmptyNodes();
+      this.tags = [];
     }
 
     // Auto-save
@@ -99,6 +102,7 @@ export class EditableDocument {
           changeCount: this.changeCount,
           title: this.title,
           journal: this.journalId,
+          tags: this.tags.slice(), // must access elements to watch them
         };
       },
       () => {
@@ -131,12 +135,21 @@ export class EditableDocument {
     this.dirty = false;
 
     this.content = SlateTransformer.stringify(toJS(this.slateContent));
+    let wasError = false;
 
     try {
       // note: I was passing documentId instead of id, and because id is optional in save it wasn't complaining.
       // Maybe 'save' and optional, unvalidated params is a bad idea :|
       const res = await this.client.documents.save(
-        pick(toJS(this), "title", "content", "journalId", "id", "createdAt"),
+        pick(
+          toJS(this),
+          "title",
+          "content",
+          "journalId",
+          "id",
+          "createdAt",
+          "tags",
+        ),
       );
       this.id = res.id;
       this.createdAt = res.createdAt;
@@ -144,12 +157,14 @@ export class EditableDocument {
     } catch (err) {
       this.saving = false;
       this.dirty = true;
+      wasError = true;
       toaster.danger(JSON.stringify(err));
     } finally {
       this.saving = false;
 
       // if edits made after last save attempt, re-run
-      if (this.dirty) this.save();
+      // Check error to avoid infinite save loop
+      if (this.dirty && !wasError) this.save();
     }
   }, 1000);
 

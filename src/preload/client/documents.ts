@@ -9,6 +9,7 @@ export interface GetDocumentResponse {
   title?: string;
   content: string;
   journalId: string;
+  tags: string[];
 }
 
 /**
@@ -35,6 +36,11 @@ export interface SearchRequest {
    * Search document body text
    */
   texts?: string[];
+
+  /**
+   * Search document #tags. ex: ['mytag', 'othertag']
+   */
+  tags?: string[];
 
   limit?: number;
 
@@ -64,7 +70,6 @@ export interface SearchItem {
   journalId: string;
 }
 
-// Now straight up copying from the API layer
 export interface SaveRawRequest {
   journalName: string;
   date: string;
@@ -84,6 +89,7 @@ export interface SaveRequest {
   journalId: string;
   content: string;
   title?: string;
+  tags: string[];
 
   // these included for override, originally,
   // to support the import process
@@ -99,16 +105,18 @@ export class DocumentsClient {
     private knex: Knex,
   ) {}
 
-  findById = ({
-    documentId,
-  }: {
-    documentId: string;
-  }): Promise<GetDocumentResponse> => {
-    const doc = this.db
-      .prepare("select * from documents where id = :id")
-      .get({ id: documentId });
-
-    return doc;
+  findById = ({ id }: { id: string }): Promise<GetDocumentResponse> => {
+    const document = this.db
+      .prepare(`SELECT * FROM documents WHERE id = :id`)
+      .get({ id });
+    const documentTags = this.db
+      .prepare(`SELECT tag FROM document_tags WHERE documentId = :documentId`)
+      .all({ documentId: id })
+      .map((row) => row.tag);
+    return {
+      ...document,
+      tags: documentTags,
+    };
   };
 
   del = async (id: string) => {
@@ -116,13 +124,17 @@ export class DocumentsClient {
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
-    // todo: consider using raw and getting arrays of values rather than
-    // objects for each row, for performance
     let query = this.knex("documents");
 
     // filter by journal
     if (q?.journals?.length) {
       query = query.whereIn("journalId", q.journals);
+    }
+
+    if (q?.tags?.length) {
+      query = query
+        .join("document_tags", "documents.id", "document_tags.documentId")
+        .whereIn("document_tags.tag", q.tags);
     }
 
     // filter by title
@@ -166,65 +178,95 @@ export class DocumentsClient {
     return { data: [] };
   };
 
-  save = ({
-    id,
+  /**
+   * Create or update a document and its tags
+   *
+   * todo: test; for tags: test prefix is removed, spaces are _, lowercased, max length
+   * todo: test description max length
+   *
+   * @returns - The document as it exists after the save
+   */
+  save = (args: SaveRequest): Promise<GetDocumentResponse> => {
+    // de-dupe tags -- should happen before getting here.
+    args.tags = Array.from(new Set(args.tags));
+
+    const id = this.db.transaction(() => {
+      if (args.id) {
+        this.updateDocument(args);
+        return args.id;
+      } else {
+        return this.createDocument(args);
+      }
+    })();
+
+    return this.findById({ id });
+  };
+
+  private createDocument = ({
     createdAt,
     updatedAt,
     journalId,
     content,
     title,
-  }: SaveRequest): Promise<GetDocumentResponse> => {
-    if (id) {
+    tags,
+  }: SaveRequest): string => {
+    const id = uuidv7();
+    this.db
+      .prepare(
+        `INSERT INTO documents (id, journalId, content, title, createdAt, updatedAt) VALUES (:id, :journalId, :content, :title, :createdAt, :updatedAt)`,
+      )
+      .run({
+        id,
+        journalId,
+        content,
+        title,
+        // allow passing createdAt to support backfilling prior notes
+        createdAt: createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+    if (tags.length > 0) {
       this.db
         .prepare(
-          `
-        update documents set
-          journalId=:journalId,
-          content=:content,
-          title=:title,
-          updatedAt=:updatedAt,
-          createdAt=:createdAt
-        where
-          id=:id
-      `,
+          `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
         )
-        .run({
-          id,
-          content,
-          title,
-          journalId,
-          updatedAt: new Date().toISOString(),
-          createdAt,
-        });
+        .run({ documentId: id });
+    }
 
-      return this.db
-        .prepare(
-          `select * from documents where id = :id order by "createdAt" desc`,
-        )
-        .get({ id });
-    } else {
-      const id = uuidv7();
+    return id;
+  };
+
+  private updateDocument = ({
+    id,
+    createdAt,
+    journalId,
+    content,
+    title,
+    tags,
+  }: SaveRequest): void => {
+    this.db
+      .prepare(
+        `UPDATE documents SET journalId=:journalId, content=:content, title=:title, updatedAt=:updatedAt, createdAt=:createdAt WHERE id=:id`,
+      )
+      .run({
+        id,
+        content,
+        title,
+        journalId,
+        updatedAt: new Date().toISOString(),
+        createdAt,
+      });
+
+    this.db
+      .prepare(`DELETE FROM document_tags WHERE documentId = :documentId`)
+      .run({ documentId: id });
+
+    if (tags.length > 0) {
       this.db
         .prepare(
-          `
-        insert into documents (id, journalId, content, title, createdAt, updatedAt) 
-        values (:id, :journalId, :content, :title, :createdAt, :updatedAt)
-      `,
+          `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
         )
-        .run({
-          id,
-          journalId,
-          content,
-          title,
-          createdAt: createdAt || new Date().toISOString(),
-          updatedAt: updatedAt || new Date().toISOString(),
-        });
-
-      return this.db
-        .prepare(
-          `select * from documents where id = :id order by "createdAt" desc`,
-        )
-        .get({ id });
+        .run({ documentId: id });
     }
   };
 

@@ -44,6 +44,11 @@ export type FocusToken = {
   };
 };
 
+export type TagToken = {
+  type: "tag";
+  value: string;
+};
+
 /**
  * Searching documents by title
  */
@@ -71,7 +76,8 @@ export type BeforeToken = {
 export type SearchToken =
   | FilterToken
   | JournalToken
-  | FocusToken
+  // | FocusToken
+  | TagToken
   | TitleToken
   | TextToken
   | BeforeToken;

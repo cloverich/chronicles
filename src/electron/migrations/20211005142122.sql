@@ -30,11 +30,17 @@ CREATE TABLE  IF NOT EXISTS "documents" (
     FOREIGN KEY ("journalId") REFERENCES "journals" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- CreateIndex
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "document_tags" (
+    "documentId" TEXT NOT NULL,
+    "tag" TEXT NOT NULL,
+    FOREIGN KEY ("documentId") REFERENCES "documents" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY ("documentId", "tag")
+);
+
+
 CREATE UNIQUE INDEX  IF NOT EXISTS "journals_name_uniq" ON "journals"("name");
-
--- CreateIndex
 CREATE INDEX  IF NOT EXISTS "documents_title_idx" ON "documents"("title");
-
--- CreateIndex
 CREATE INDEX  IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
+CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");

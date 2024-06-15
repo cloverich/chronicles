@@ -106,6 +106,29 @@ suite("SearchParser", function () {
       });
     });
 
+    test("tag:", function () {
+      const pasrer = new SearchParser();
+      const tagToken = pasrer.parseToken("tag:javascript");
+
+      assert.exists(tagToken);
+      assert.deepEqual(tagToken, {
+        type: "tag",
+        value: "javascript",
+      });
+    });
+
+    test("tag: with #", function () {
+      const pasrer = new SearchParser();
+      const tagToken = pasrer.parseToken("tag:#javascript");
+
+      assert.exists(tagToken);
+      assert.deepEqual(tagToken, {
+        type: "tag",
+        // should remove the leading #
+        value: "javascript",
+      });
+    });
+
     test("title:", function () {
       const pasrer = new SearchParser();
       const titleToken = pasrer.parseToken("title:fix testing, sigh esm?");

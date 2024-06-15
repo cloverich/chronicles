@@ -47,7 +47,7 @@ export function useEditableDocument(
       try {
         // if documentId -> This is an existing document
         if (documentId) {
-          const doc = await client.documents.findById({ documentId });
+          const doc = await client.documents.findById({ id: documentId });
           if (!isEffectMounted) return;
           setDocument(new EditableDocument(client, doc));
         } else {

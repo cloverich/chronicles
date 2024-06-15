@@ -7,7 +7,10 @@ interface Props {
   store: SearchStore;
 }
 
-const TagSearch = (props: Props) => {
+/**
+ * SearchDocuments is a component that provides a search input for searching documents.
+ */
+const SearchDocuments = (props: Props) => {
   function onRemove(tag: string | React.ReactNode, idx: number) {
     if (typeof tag !== "string") return;
     props.store.removeToken(tag);
@@ -41,4 +44,4 @@ const TagSearch = (props: Props) => {
   );
 };
 
-export default observer(TagSearch);
+export default observer(SearchDocuments);
