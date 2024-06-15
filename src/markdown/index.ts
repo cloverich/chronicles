@@ -8,6 +8,20 @@ import { Node as SNode } from "slate";
 
 export * from "ts-mdast";
 
+// I usually forget how unified works, so just leaving some notes for reference
+// https://github.com/orgs/unifiedjs/discussions/113
+// | ........................ process ........................... |
+// | .......... parse ... | ... run ... | ... stringify ..........|
+//
+//           +--------+                     +----------+
+// Input ->- | Parser | ->- Syntax Tree ->- | Compiler | ->- Output
+//           +--------+          |          +----------+
+//                               X
+//                               |
+//                        +--------------+
+//                        | Transformers |
+//                        +--------------+
+
 const stringifier = unified().use(remarkStringify);
 const parser = unified().use(remarkParse).use(remarkGfm);
 

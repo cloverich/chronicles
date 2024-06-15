@@ -9,6 +9,7 @@ import {
   Position,
   Tab,
   Tablist,
+  TagInput,
 } from "evergreen-ui";
 import { useEditableDocument } from "./useEditableDocument";
 import { EditableDocument } from "./EditableDocument";
@@ -69,6 +70,7 @@ interface DocumentEditProps {
 
 import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
 import { EditorMode } from "./EditorMode";
+import { TagTokenParser } from "../documents/search/parsers/tag";
 
 /**
  * This is the main document editing view, which houses the editor and some controls.
@@ -94,6 +96,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     [],
   );
 
+  // todo: move this to view model
   function getName(journalId?: string) {
     const journal = journals?.find((j) => j.id === journalId);
     return journal ? journal.name : "Unknown journal";
@@ -203,6 +206,34 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
+  function onAddTag(tokens: string[]) {
+    if (tokens.length > 1) {
+      // https://evergreen.segment.com/components/tag-input
+      // Documents say this is single value, Type says array
+      // Testing says array but with only one value... unsure how multiple
+      // values end up in the array.
+      console.warn(
+        "TagInput.onAdd called with > 1 token? ",
+        tokens,
+        "ignoring extra tokens",
+      );
+    }
+
+    let tag = new TagTokenParser().parse(tokens[0])?.value;
+    if (!tag) return;
+
+    if (!document.tags.includes(tag)) {
+      document.tags.push(tag);
+      document.save();
+    }
+  }
+
+  function onRemoveTag(tag: string | React.ReactNode, idx: number) {
+    if (typeof tag !== "string") return;
+    document.tags = document.tags.filter((t) => t !== tag);
+    document.save();
+  }
+
   function renderTab(tab: string) {
     switch (tab) {
       case EditorMode.Editor:
@@ -290,6 +321,25 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         {datePicker()}
         &nbsp;in&nbsp;
         {journalPicker()}
+      </div>
+
+      <div
+        className={css`
+          display: flex;
+          justify-content: flex-start;
+          padding-left: 2px;
+          font-size: 0.9rem;
+          margin-top: -4px;
+          margin-bottom: 16px;
+        `}
+      >
+        <TagInput
+          flexGrow={1}
+          inputProps={{ placeholder: "Document tags" }}
+          values={document.tags}
+          onAdd={onAddTag}
+          onRemove={onRemoveTag}
+        />
       </div>
 
       <Pane flexGrow={1}>{renderTab(selectedViewMode)}</Pane>

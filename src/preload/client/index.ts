@@ -1,5 +1,6 @@
 import { JournalsClient } from "./journals";
 import { DocumentsClient } from "./documents";
+import { TagsClient } from "./tags";
 import { PreferencesClient } from "./preferences";
 import { FilesClient } from "./files";
 import { IClient } from "./types";
@@ -33,6 +34,7 @@ export function create(): IClient {
     client = {
       journals: new JournalsClient(db),
       documents: new DocumentsClient(db, knex),
+      tags: new TagsClient(db, knex),
       preferences: new PreferencesClient(settings),
       files: new FilesClient(settings),
     };

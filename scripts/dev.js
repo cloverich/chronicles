@@ -96,6 +96,7 @@ async function watchRenderer() {
     bundle: true,
     platform: "browser",
     plugins: [startElectronPlugin("renderer")],
+    sourcemap: true,
   });
 
   await ctxRenderer.watch();
@@ -109,6 +110,7 @@ async function watchPreload() {
     platform: "node",
     external: ["knex", "electron", "electron-store", "better-sqlite3"],
     plugins: [startElectronPlugin("preload")],
+    sourcemap: true,
   });
 
   await ctxPreload.watch();

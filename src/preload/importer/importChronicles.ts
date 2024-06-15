@@ -69,6 +69,7 @@ export async function importChronicles(notesDir: string) {
           updatedAt: date.toISO()!,
           content: document.content,
           title: document.title,
+          tags: [], // todo
         });
         console.log("created", doc.id);
       }
