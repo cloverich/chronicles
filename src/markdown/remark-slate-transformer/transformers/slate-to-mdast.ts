@@ -383,14 +383,16 @@ function createHtml(node: SlateNodes.Html): mdast.HTML {
 
 /**
  * Convert a Slate/Plate code block ("code_block") to an MDAST code block ("code").
+ *
+ *
+ * The slateInternal.Code type says its children are text nodes. However the
+ * Plate code block is wraps them in a code_line element.
+ * MDAST (seems to) expect just text in its code block element. This code
+ * implements that. See the reverse transformation in mdast-to-slate.ts - createCodeBlock
  */
 function createCode(node: SlateNodes.Code): mdast.Code {
   const { lang, meta } = node;
 
-  // The slateInternal.Code type says its children are text nodes. However the
-  // Plate code block is wrapping each of those in a `code_line` element.
-  // MDAST (seems to) expect just text in its code block element. This code
-  // implements that. See the reverse transformation in mdast-to-slate.ts - createCodeBlock
   // SNode.texts returns a generator that yields [{text: "foo"}, path] for each line
   // which looks like: [ { type: code_line, children : { text: ''}}]
   // TODO: Update Plate, then change the node's type

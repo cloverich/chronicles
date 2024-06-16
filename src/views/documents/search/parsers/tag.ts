@@ -22,7 +22,7 @@ export class TagTokenParser {
 
     // max length, probably all search tokens need this? Or only this one since its persisted?
     // todo: A consistent strategy here.
-    text = text.slice(0, 15);
+    text = text.slice(0, 20);
 
     return { type: "tag", value: text };
   };

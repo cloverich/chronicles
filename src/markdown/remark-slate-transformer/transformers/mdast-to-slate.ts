@@ -264,21 +264,14 @@ export type Code = ReturnType<typeof createCodeBlock>;
 function createCodeBlock(node: mdast.Code) {
   const { value, lang, meta } = node;
 
-  // MDAST represents code blocks as a single string; our Plate code block represents
-  // internal code as a code_line element. Ostensibly this should be each line, but
-  // the PlateDOM seems to convert the full text to a single code_line element when it is modified.
-  // Unclear if this is a bug or a feature; making multiple lines here, but it may not be necessary.
-  // See the reverse transformation in slate-to-mdast.ts - createCode
-  const codeLines = value.split("\n").map((line, index, array) => {
-    const isLastLine = index === array.length - 1;
-    return { type: ELEMENT_CODE_LINE, text: isLastLine ? line : line + "\n" };
-  });
-
   return {
     type: ELEMENT_CODE_BLOCK,
     lang,
     meta,
-    children: codeLines,
+    // MDAST represents code blocks as a single string; our Plate code block represents
+    // internal code as a code_line element. Ostensibly this should be each line, but
+    // the PlateDOM seems to convert the full text to a single code_line element when it is modified.
+    children: [{ type: ELEMENT_CODE_LINE, text: value }],
   };
 }
 
