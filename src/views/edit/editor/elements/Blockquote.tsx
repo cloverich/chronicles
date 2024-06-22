@@ -1,6 +1,6 @@
 import React from "react";
 import { cn, withRef } from "@udecode/cn";
-import { PlateElement } from "@udecode/plate";
+import { PlateElement } from "@udecode/plate-common";
 
 export const BlockquoteElement = withRef<typeof PlateElement>(
   ({ className, children, ...props }, ref) => {

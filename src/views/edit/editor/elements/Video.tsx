@@ -1,5 +1,5 @@
 import React from "react";
-import { PlateRenderElementProps, PlateElement } from "@udecode/plate";
+import { PlateRenderElementProps, PlateElement } from "@udecode/plate-common";
 import { Caption, CaptionTextarea } from "./Caption";
 import { MediaPopover } from "./MediaPopover";
 import { ELEMENT_VIDEO } from "../plugins/createVideoPlugin";

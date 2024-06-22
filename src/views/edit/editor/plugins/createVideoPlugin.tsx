@@ -3,7 +3,7 @@ import {
   WithPlatePlugin,
   createPluginFactory,
   insertNode,
-} from "@udecode/plate";
+} from "@udecode/plate-common";
 import { isVideoUrl } from "../../../../hooks/images";
 // Ideally this is injected
 import { IClient } from "../../../../hooks/useClient";

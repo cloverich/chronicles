@@ -1,6 +1,6 @@
 import React from "react";
 import { withRef, withVariants } from "@udecode/cn";
-import { PlateElement } from "@udecode/plate";
+import { PlateElement } from "@udecode/plate-common";
 import { cva } from "class-variance-authority";
 
 const headingVariants = cva("", {

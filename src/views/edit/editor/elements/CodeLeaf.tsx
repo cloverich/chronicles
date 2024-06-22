@@ -1,5 +1,5 @@
 import React from "react";
-import { PlateLeaf, PlateLeafProps } from "@udecode/plate";
+import { PlateLeaf, PlateLeafProps } from "@udecode/plate-common";
 
 export function CodeLeaf({ className, children, ...props }: PlateLeafProps) {
   return (
