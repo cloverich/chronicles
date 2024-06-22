@@ -3,8 +3,9 @@ import {
   WithPlatePlugin,
   createPluginFactory,
   insertNode,
-  ELEMENT_LINK,
-} from "@udecode/plate";
+} from "@udecode/plate-common";
+
+import { ELEMENT_LINK } from "@udecode/plate";
 
 import { isVideoUrl, isImageUrl } from "../../../../hooks/images";
 

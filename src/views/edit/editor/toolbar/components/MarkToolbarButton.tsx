@@ -3,7 +3,7 @@ import { withRef } from "@udecode/cn";
 import {
   useMarkToolbarButton,
   useMarkToolbarButtonState,
-} from "@udecode/plate";
+} from "@udecode/plate-common";
 import { ToolbarButton } from "../../components/Toolbar";
 
 /**

@@ -5,14 +5,19 @@ import { Node as SNode } from "slate";
 import {
   Plate,
   PlateContent,
-  PlateLeaf,
-  PlateElement,
   RenderAfterEditable,
   createPlugins,
-  createBasicElementsPlugin,
-  createBasicMarksPlugin,
   createReactPlugin,
   createHistoryPlugin,
+  isBlockAboveEmpty,
+  isSelectionAtBlockStart,
+  PlateLeaf,
+  PlateElement,
+} from "@udecode/plate-common";
+
+import {
+  createBasicElementsPlugin,
+  createBasicMarksPlugin,
   createIndentListPlugin,
   createIndentPlugin,
 
@@ -20,8 +25,6 @@ import {
   unwrapCodeBlock,
   isSelectionAtCodeBlockStart,
   isCodeBlockEmpty,
-  isBlockAboveEmpty,
-  isSelectionAtBlockStart,
 
   // elements
   KEYS_HEADING,
@@ -55,6 +58,8 @@ import {
   ELEMENT_IMAGE,
   createImagePlugin,
   ELEMENT_MEDIA_EMBED,
+
+  // createTogglePlugin
 
   // So document always has a trailing paragraph, ensures you
   // can always type after the last non-paragraph block.
