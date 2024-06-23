@@ -21,6 +21,7 @@ import InsertBlockDropdown from "./components/InsertBlockDropdown";
 import ChangeBlockDropdown from "./components/ChangeBlockDropdown";
 import DebugDropdown from "./components/DebugDropdown";
 import { EditorMode } from "../../EditorMode";
+import { ToggleToolbarButton } from "./components/ToggleToolbarButton";
 
 interface Props {
   selectedEditorMode: EditorMode;
@@ -85,6 +86,7 @@ export function EditorToolbar({
                   <MarkToolbarButton tooltip="Code (⌘+E)" nodeType={MARK_CODE}>
                     <Icons.code />
                   </MarkToolbarButton>
+                  <ToggleToolbarButton />
                 </>
 
                 {/* NOTE: id prop was removed, probably was for Playground to support multiple editors */}

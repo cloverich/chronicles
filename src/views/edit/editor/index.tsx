@@ -52,6 +52,10 @@ import {
   MARK_SUPERSCRIPT,
   MARK_UNDERLINE,
 
+  // Toggles
+  createTogglePlugin,
+  ELEMENT_TOGGLE,
+
   // images
   // https://platejs.org/docs/media
   createSelectOnBackspacePlugin,
@@ -150,6 +154,8 @@ export default observer(
             uploadImage: client.files.uploadImage,
           },
         }),
+
+        createTogglePlugin(),
 
         // Plate's media handler turns youtube links, twitter links, etc, into embeds.
         // I'm unsure how to trigger the logic, probably via toolbar or shortcut.
@@ -267,11 +273,13 @@ export default observer(
                 ELEMENT_H6,
                 ELEMENT_BLOCKQUOTE,
                 ELEMENT_CODE_BLOCK,
+                ELEMENT_TOGGLE,
               ],
             },
           },
         }),
 
+        // todo: I think I need to configure validTypes, similar to createIndentPlugin
         createIndentListPlugin(),
         createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
       ],
@@ -317,6 +325,8 @@ export default observer(
           [MARK_SUPERSCRIPT]: withProps(PlateLeaf, { as: "sup" }),
           [MARK_UNDERLINE]: withProps(PlateLeaf, { as: "u" }),
           // [MARK_COMMENT]: CommentLeaf,
+
+          [ELEMENT_TOGGLE]: withProps(PlateElement, { as: "details" }),
         },
       },
     );
