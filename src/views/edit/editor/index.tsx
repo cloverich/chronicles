@@ -21,6 +21,9 @@ import {
   createIndentListPlugin,
   createIndentPlugin,
 
+  // @udecode/plate-autoformat
+  createAutoformatPlugin,
+
   // imported for resetNodePlugin
   unwrapCodeBlock,
   isSelectionAtCodeBlockStart,
@@ -90,6 +93,8 @@ import {
   LinkFloatingToolbar,
   VideoElement,
 } from "./elements";
+
+import { autoformatRules } from "./plugins/autoformat/autoformatRules";
 
 import { ELEMENT_VIDEO, createVideoPlugin } from "./plugins/createVideoPlugin";
 import { createFilesPlugin } from "./plugins/createFilesPlugin";
@@ -273,7 +278,19 @@ export default observer(
         }),
 
         createIndentListPlugin(),
+
+        // Ensures there is always a paragraph element at the end of the document; avoids
+        // document getting stuck with an image or other non-text element at the end, or
+        // being confused about how to exit an e.g. code block to add more content.
         createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
+
+        // e.g. # -> h1, ``` -> code block, etc
+        createAutoformatPlugin({
+          options: {
+            rules: autoformatRules,
+            enableUndoOnDelete: true,
+          },
+        }),
       ],
       {
         components: {
