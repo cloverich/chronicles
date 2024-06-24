@@ -12,6 +12,7 @@ import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { JournalResponse } from "../../hooks/useClient";
 import { useTags } from "../../hooks/useTags";
 import { SidebarProps } from "./Layout";
+import { Icons } from "../../components/icons";
 
 /**
  * Sidebar for selecting journals or tags to search by.
@@ -52,24 +53,17 @@ export function JournalSelectionSidebar(props: SidebarProps) {
           </Pane>
         </Pane>
         <Pane flex="1" overflowY="scroll" background="tint1" padding={16}>
-          <JournalsCard
-            journals={jstore.active}
-            title="Active Journals"
-            search={search}
-          />
-          <JournalsCard
-            journals={jstore.archived}
-            title="Archived Journals"
-            search={search}
-          />
-          <TagsCard search={searchTag} />
+          <ActiveJournalsList journals={jstore.active} search={search} />
+          <ArchivedJournalsList journals={jstore.archived} search={search} />
+          <TagsList search={searchTag} />
         </Pane>
       </SideSheet>
     </React.Fragment>
   );
 }
 
-function TagsCard(props: { search: (tag: string) => boolean }) {
+// Displays tags that can be searched by
+function TagsList(props: { search: (tag: string) => boolean }) {
   const { loading, error, tags } = useTags();
 
   if (loading) {
@@ -99,9 +93,43 @@ function TagsCard(props: { search: (tag: string) => boolean }) {
   );
 }
 
-function JournalsCard(props: {
+// Displays collapsible list of archived journals that can be searched by
+function ArchivedJournalsList(props: {
   journals: JournalResponse[];
-  title: string;
+  search: (journalName: string) => boolean;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  if (!props.journals.length) {
+    return null;
+  }
+
+  const journals = props.journals.map((j) => {
+    return (
+      <ListItem key={j.id} icon={FolderCloseIcon}>
+        <a href="" onClick={() => props.search(j.name)}>
+          {j.name}
+        </a>
+      </ListItem>
+    );
+  });
+
+  const Icon = isOpen ? Icons.chevronDown : Icons.chevronRight;
+
+  return (
+    <Card backgroundColor="white" elevation={0} padding={16} marginBottom={16}>
+      <Pane display="flex" onClick={() => setIsOpen(!isOpen)} cursor="pointer">
+        <Heading>Archived Journals</Heading>
+        <Icon size={18} />
+      </Pane>
+      {isOpen && <UnorderedList>{journals}</UnorderedList>}
+    </Card>
+  );
+}
+
+//  Active journals that can be searched by
+function ActiveJournalsList(props: {
+  journals: JournalResponse[];
   search: (journalName: string) => boolean;
 }) {
   if (!props.journals.length) {
@@ -120,7 +148,7 @@ function JournalsCard(props: {
 
   return (
     <Card backgroundColor="white" elevation={0} padding={16} marginBottom={16}>
-      <Heading>{props.title}</Heading>
+      <Heading>Active Journals</Heading>
       <UnorderedList>{journals}</UnorderedList>
     </Card>
   );
