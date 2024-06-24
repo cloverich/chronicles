@@ -17,7 +17,6 @@ import { ToolbarGroup, FixedToolbar } from "../components/Toolbar";
 
 // I think this needs to be on the root, wherever Theme would be added (if we had a theme)
 import { TooltipProvider } from "../components/Tooltip";
-import InsertBlockDropdown from "./components/InsertBlockDropdown";
 import ChangeBlockDropdown from "./components/ChangeBlockDropdown";
 import DebugDropdown from "./components/DebugDropdown";
 import { EditorMode } from "../../EditorMode";
@@ -54,11 +53,7 @@ export function EditorToolbar({
           <>
             <FixedToolbar>
               <ToolbarGroup>
-                <InsertBlockDropdown />
                 <ChangeBlockDropdown />
-              </ToolbarGroup>
-
-              <ToolbarGroup>
                 <MarkToolbarButton tooltip="Bold (⌘+B)" nodeType={MARK_BOLD}>
                   <Icons.bold />
                 </MarkToolbarButton>
@@ -86,6 +81,7 @@ export function EditorToolbar({
                     <Icons.code />
                   </MarkToolbarButton>
                 </>
+                <LinkToolbarButton />
 
                 {/* NOTE: id prop was removed, probably was for Playground to support multiple editors */}
               </ToolbarGroup>
@@ -103,10 +99,6 @@ export function EditorToolbar({
                 <ListToolbarButton nodeType={ELEMENT_UL} />
                 <ListToolbarButton nodeType={ELEMENT_OL} />
               </> */}
-
-              <ToolbarGroup>
-                <LinkToolbarButton />
-              </ToolbarGroup>
 
               <ToolbarGroup>
                 <DebugDropdown
