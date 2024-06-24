@@ -31,7 +31,12 @@ export default function Layout(props: Props2) {
 
   return (
     <ErrorBoundary>
-      <Pane minWidth={480} minHeight="100vh">
+      <Pane
+        minWidth={480}
+        minHeight="100vh"
+        display="flex"
+        flexDirection="column"
+      >
         <Pane borderBottom="default" elevation={1} padding={15} display="flex">
           <Pane marginRight={25}>
             <span className="mono" style={{ color: "#6E62B6" }}>
@@ -50,7 +55,9 @@ export default function Layout(props: Props2) {
             </NavLink>
           </Pane>
         </Pane>
-        <Pane padding={50}>{props.children}</Pane>
+        <Pane padding={50} flexGrow={1} display="flex">
+          {props.children}
+        </Pane>
       </Pane>
     </ErrorBoundary>
   );
