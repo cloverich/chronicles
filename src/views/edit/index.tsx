@@ -71,6 +71,7 @@ interface DocumentEditProps {
 import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
 import { EditorMode } from "./EditorMode";
 import { TagTokenParser } from "../documents/search/parsers/tag";
+import { Icons } from "../../components/icons";
 
 /**
  * This is the main document editing view, which houses the editor and some controls.
@@ -357,8 +358,9 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
           marginLeft={16}
           onClick={deleteDocument}
           disabled={!document.canDelete}
+          intent="danger"
         >
-          Delete
+          <Icons.delete size={18} />
         </Button>
       </Pane>
     </Pane>
