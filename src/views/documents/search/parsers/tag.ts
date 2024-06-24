@@ -15,10 +15,12 @@ export class TagTokenParser {
       text = text.slice(1);
     }
 
-    // remove spaces, snake_case
-    // changing value here changes it in the index view, but not ht eadd tags view
+    // remove spaces, snake_case -- arbitrary style decision
     text = text.replace(/ /g, "_");
     text = text.toLowerCase();
+
+    // remove `:` characters, since its reserved for search prefix e.g. `tag:my_tag`, `title: ...`, etc.
+    text = text.replace(/:/g, "_");
 
     // max length, probably all search tokens need this? Or only this one since its persisted?
     // todo: A consistent strategy here.
