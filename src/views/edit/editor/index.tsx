@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { withProps } from "@udecode/cn";
 import { observer } from "mobx-react-lite";
 import { Node as SNode } from "slate";
@@ -95,6 +95,7 @@ import {
 } from "./elements";
 
 import { autoformatRules } from "./plugins/autoformat/autoformatRules";
+import { createCodeBlockNormalizationPlugin } from "./plugins/createCodeBlockNormalizationPlugin";
 
 import { ELEMENT_VIDEO, createVideoPlugin } from "./plugins/createVideoPlugin";
 import { createFilesPlugin } from "./plugins/createFilesPlugin";
@@ -125,6 +126,8 @@ export default observer(
     // todo: Commented out stuff is post-copy paste edit from plate-ui (as recommended), and should used to guide next steps.
     const plugins = createPlugins(
       [
+        createCodeBlockNormalizationPlugin(),
+
         // editor
         createReactPlugin(), // withReact
         createHistoryPlugin(), // withHistory
