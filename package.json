@@ -10,11 +10,11 @@
     "lint:prettier:write": "prettier . --write",
     "lint:types:check": "tsc --noEmit --skipLibCheck",
     "postinstall": "yarn run electron-rebuild",
-    "prestart": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
+    "predev": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
     "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
-    "start": "node ./scripts/dev.js",
-    "pretest": "node ./scripts/test.mjs",
-    "test": "mocha 'src/**/*.test.bundle.js'"
+    "dev": "node ./scripts/dev.js",
+    "pretest": "node ./scripts/pretest.mjs",
+    "test": "electron-mocha --renderer 'src/**/*.test.bundle.js'"
   },
   "dependencies": {
     "ajv": "^8.6.2",
@@ -50,6 +50,7 @@
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.3.1",
     "electron": "^28.2.0",
+    "electron-mocha": "^12.3.0",
     "emotion": "^10.0.27",
     "esbuild": "^0.20.0",
     "evergreen-ui": "^7.1.9",
