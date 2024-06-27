@@ -1,6 +1,6 @@
-const fs = require("fs");
-const path = require("path");
-const esbuild = require("esbuild");
+import esbuild from "esbuild";
+import fs from "fs";
+import path from "path";
 
 // Function to find test files
 function findTestFiles(dir, files = [], ignorePreload = false) {
@@ -19,9 +19,11 @@ function findTestFiles(dir, files = [], ignorePreload = false) {
 
 // Find browser test files, excluding preload directory
 const browserTestFiles = findTestFiles("src", [], true);
+console.log(browserTestFiles);
 
 // Find preload test files
 const preloadTestFiles = findTestFiles("src/preload");
+console.log(preloadTestFiles);
 
 // Bundle browser test files
 browserTestFiles.forEach(async (file) => {
@@ -29,7 +31,7 @@ browserTestFiles.forEach(async (file) => {
     entryPoints: [file],
     outfile: file.replace(".test.ts", ".test.bundle.js"),
     bundle: true,
-    platform: "node", // NOTE: this differs from the build script, which uses "browser", b/c we're running tests in Node
+    platform: "node",
     external: ["mocha"],
     plugins: [],
   });
@@ -42,7 +44,7 @@ preloadTestFiles.forEach(async (file) => {
     outfile: file.replace(".test.ts", ".test.bundle.js"),
     bundle: true,
     platform: "node",
-    external: ["knex", "electron", "electron-store", "better-sqlite3"],
-    plugins: [], // Include any necessary plugins here
+    external: ["knex", "electron", "electron-store", "better-sqlite3", "mocha"],
+    plugins: [],
   });
 });
