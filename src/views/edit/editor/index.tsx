@@ -342,20 +342,18 @@ export default observer(
     );
 
     return (
-      <>
-        <Plate
-          initialValue={value as any}
-          onChange={setValue}
-          plugins={plugins}
-          readOnly={saving}
-        >
-          <EditorToolbar
-            selectedEditorMode={selectedEditorMode}
-            setSelectedEditorMode={setSelectedEditorMode}
-          />
-          <PlateContent placeholder="Type..." />
-        </Plate>
-      </>
+      <Plate
+        initialValue={value as any}
+        onChange={setValue}
+        plugins={plugins}
+        readOnly={saving}
+      >
+        <EditorToolbar
+          selectedEditorMode={selectedEditorMode}
+          setSelectedEditorMode={setSelectedEditorMode}
+        />
+        <PlateContent placeholder="Type..." />
+      </Plate>
     );
   },
 );

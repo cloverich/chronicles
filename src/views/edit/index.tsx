@@ -279,7 +279,8 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   // flexGrows are needed so save / edit buttons are at bottom on both empty documents
   // and scrollable documents
   return (
-    <Pane flexGrow={1} display="flex" flexDirection="column">
+    // NOTE: width: 100% prevents child code_blocks (and maybe others) from overflowing
+    <Pane flexGrow={1} display="flex" flexDirection="column" width="100%">
       <div style={{ marginBottom: "24px" }}>
         <a
           onClick={goBack}
