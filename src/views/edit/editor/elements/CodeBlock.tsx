@@ -11,7 +11,7 @@ import {
 import { CODE_BLOCK_LANGUAGES } from "@udecode/plate-code-block";
 import { Transforms } from "slate";
 
-const languages: { label: string; value: string }[] = [
+const knownLangOptions: { label: string; value: string }[] = [
   { label: "Plain Text", value: "text" },
   ...Object.entries({
     // doesn't include python? But does SVG and GraphQL? WTF?
@@ -23,6 +23,28 @@ const languages: { label: string; value: string }[] = [
   })),
 ];
 
+// Set initial selected language, with some defaults.
+function defaultLang(lang: string | null) {
+  if (!lang) return "text";
+  if (lang === "js") return "javascript";
+  if (lang === "ts") return "typescript";
+
+  // NOTE: If lang is a language not found in Prism / the menus above, it will default to "Plain text"
+  // in the dropdown.
+  return lang;
+}
+
+// On first render, if the language is not in the known options, add it to the list.
+// This is to support unknown languages that are in the underlying markdown, but not known
+// to Prism / language list above; syntax highlighting will not work.
+function amendLanguageOptions(lang: string) {
+  if (!knownLangOptions.find((l) => l.value === lang)) {
+    return [{ label: lang, value: lang }, ...knownLangOptions];
+  }
+
+  return knownLangOptions;
+}
+
 // className -> slate-code_block
 // state -> { className: '', syntax: true }
 // props -> attributes, editor, element
@@ -33,7 +55,7 @@ export const CodeBlockElement = withRef<typeof PlateElement>(
   ({ children, className, ...props }, ref) => {
     const { element } = props;
     const editor = useEditorRef();
-    const [lang, setLang] = React.useState((element.lang as string) || "plain");
+    const [lang, setLang] = React.useState(defaultLang(element.lang as string));
 
     // When the language changes, update S|Plate nodes.
     React.useEffect(() => {
@@ -80,12 +102,14 @@ function LanguageSelect({ lang, setLang }: LangSelectProps) {
   }
 
   const languageOptions = React.useMemo(() => {
+    const languages = amendLanguageOptions(lang);
+
     return languages.map((language) => (
       <option key={language.value} value={language.value}>
         {language.label}
       </option>
     ));
-  }, [languages]);
+  }, []);
 
   return (
     <select value={lang} onChange={onChange} className="bg-muted">
