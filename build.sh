@@ -67,6 +67,15 @@ cp -r src/*.bundle.* dist/
 cp package.json dist/
 cp yarn.lock dist/
 
+# Most recent tag, and commits / count since tag to help version script determine if this is
+# a release (tag), pre-release (commits since), or dev (uncommited) build
+export GIT_TAG=$(git describe --tags --abbrev=0)
+export GIT_COMMIT_SHA=$(git rev-parse --short HEAD)
+export GIT_COMMIT_COUNT=$(git rev-list --count HEAD ^$GIT_TAG)
+export BUILD_DATE=$(date +%Y%m%d)
+export GIT_UNCOMMITTED_CHANGES=$(if [ -n "$(git status --porcelain)" ]; then echo "true"; else echo "false"; fi)
+node ./scripts/set-packaged-version.js
+
 # todo: This is installing dev dependencies which, because of esbuild, should not be needed.
 # When I use install --production, the final build complains it cannot find electron
 # Could probably just install --production then manually add electron? Or munge the copied
