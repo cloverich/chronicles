@@ -31,28 +31,11 @@ export const createCodeBlockNormalizationPlugin = createPluginFactory({
 
       const lines = text.split("\n");
       const { selection } = editor;
-      if (selection && Range.isCollapsed(selection)) {
-        // When pasting at cursor (no text / blocks selected), insert as a single block.
+      if (selection) {
         Transforms.insertText(editor as Editor, lines.join("\n"), {
           at: selection,
         });
-      } else {
-        // Pasting when selecting multiple lines; if its within a code block, it ends up as one block.
-        // I think Plates createCodeBlockPlugin (from createBasicPlugins) is normalizing this to a single block...
-        // unclear if this code makes sense.
-        lines.forEach((line) => {
-          Transforms.insertText(editor as Editor, line);
-          Transforms.insertNodes(
-            editor as Editor,
-            {
-              type: ELEMENT_CODE_LINE,
-              children: [{ text: "" }],
-            } as any,
-          );
-        });
       }
-
-      insertData(data);
     };
 
     return editor;
