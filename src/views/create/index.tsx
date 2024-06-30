@@ -19,6 +19,31 @@ function useCreateDocument() {
   const isMounted = useIsMounted();
   const [error, setError] = useState<Error | null>(null);
 
+  /**
+   * Determines the default journal to use when creating a new document.
+   *
+   * todo(test): When one or multiple journals are selected, returns the first
+   * todo(test): When no journals are selected, returns the first active journal
+   * todo(test): When archived journal selected, returns the selected (archived) journal
+   */
+  function defaultJournal(selectedJournals: string[]) {
+    const selectedId = journalsStore.journals.find((j) =>
+      selectedJournals.includes(j.name),
+    )?.id;
+
+    if (selectedId) {
+      return selectedId;
+    } else {
+      const defaultId = journalsStore.defaultJournalId;
+      if (defaultId) return defaultId;
+
+      console.error(
+        "No default journal set, using first active journal; set a default journal in preferences",
+      );
+      return journalsStore.active[0].id;
+    }
+  }
+
   useEffect(() => {
     (async function () {
       if (!isMounted) return;
@@ -26,8 +51,8 @@ function useCreateDocument() {
       try {
         const document = await client.documents.save({
           content: "",
-          journalId: journalsStore.defaultJournal(searchStore.selectedJournals),
-          tags: [], // todo: tagsStore.defaultTags;
+          journalId: defaultJournal(searchStore.selectedJournals),
+          tags: searchStore.selectedTags,
         });
 
         if (!isMounted) return;

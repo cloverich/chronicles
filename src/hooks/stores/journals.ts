@@ -2,7 +2,6 @@ import { observable, computed, toJS } from "mobx";
 import { JournalResponse, IClient } from "../useClient";
 
 export class JournalsStore {
-  private isLoaded: boolean = false;
   @observable loading: boolean = true;
   @observable saving: boolean = false;
   @observable error: Error | null = null;
@@ -16,16 +15,38 @@ export class JournalsStore {
     return this.journals.filter((j) => !!j.archivedAt);
   }
 
+  @observable defaultJournalId: string;
+
   constructor(
     private client: IClient,
     journals: JournalResponse[],
+    defaultJournalId: string,
   ) {
+    this.client = client;
     this.journals = journals;
+    this.defaultJournalId = defaultJournalId;
   }
 
   static async create(client: IClient) {
     const journals = await client.journals.list();
-    return new JournalsStore(client, journals);
+
+    // todo: This is more like application setup state; should probably have a
+    // global setup routine to track all this in one place.
+    // ensure at least one journal exists
+    if (journals.length === 0) {
+      journals.push(await client.journals.create({ name: "My Journal" }));
+    }
+
+    // ensure a default journal is set
+    let { DEFAULT_JOURNAL_ID: default_journal } =
+      await client.preferences.get();
+
+    if (!default_journal) {
+      await client.preferences.setDefaultJournal(journals[0].id);
+      default_journal = journals[0].id;
+    }
+
+    return new JournalsStore(client, journals, default_journal);
   }
 
   idForName = (name: string) => {
@@ -34,29 +55,29 @@ export class JournalsStore {
     if (match) return match.id;
   };
 
-  load = async () => {
-    if (this.isLoaded) return;
+  private async assertNotDefault(journalId: string) {
+    const { DEFAULT_JOURNAL_ID: default_journal } =
+      await this.client.preferences.get();
 
-    try {
-      this.journals = await this.client.journals.list();
-    } catch (err: any) {
-      this.error = err;
+    if (journalId === default_journal) {
+      throw new Error(
+        "Cannot archive / delete the default journal; set a different journal as default first.",
+      );
     }
-
-    this.isLoaded = true;
-    this.loading = false;
-  };
+  }
 
   remove = async (journalId: string) => {
     this.saving = true;
     try {
-      // todo: update this.journals
+      await this.assertNotDefault(journalId);
       await this.client.journals.remove({ id: journalId });
       this.journals = this.journals.filter((j) => j.id !== journalId);
     } catch (err: any) {
-      this.error = err;
+      console.error("Error removing journal:", err);
+      throw err;
+    } finally {
+      this.saving = false;
     }
-    this.saving = false;
   };
 
   create = async ({ name }: { name: string }) => {
@@ -69,9 +90,10 @@ export class JournalsStore {
       this.journals.push(newJournal);
     } catch (err: any) {
       console.error(err);
-      this.error = err;
+      throw err;
+    } finally {
+      this.saving = false;
     }
-    this.saving = false;
   };
 
   toggleArchive = async (journal: JournalResponse) => {
@@ -84,6 +106,8 @@ export class JournalsStore {
     journal = toJS(journal);
 
     try {
+      await this.assertNotDefault(journal.id);
+
       if (journal.archivedAt) {
         this.journals = await this.client.journals.unarchive(journal);
       } else {
@@ -91,34 +115,29 @@ export class JournalsStore {
       }
     } catch (err: any) {
       console.error(`Error toggling archive for journal ${journal.name}:`, err);
-      this.saving = false;
 
       // NOTE: Otherwise this returns success, I'm unsure why the
       // other calls are storing the error?
       throw err;
+    } finally {
+      this.saving = false;
     }
-
-    this.saving = false;
   };
 
   /**
-   * Determines the default journal to use when creating a new document.
-   *
-   * todo(test): When one or multiple journals are selected, returns the first
-   * todo(test): When no journals are selected, returns the first active journal
-   * todo(test): When archived journal selected, returns the selected (archived) journal
+   * Set the default journal; this is the journal that will be selected by
+   * default when creating a new document, if no journal is selected.
    */
-  defaultJournal = (selectedJournals: string[]) => {
-    const selectedId = this.journals.find((j) =>
-      selectedJournals.includes(j.name),
-    )?.id;
-
-    if (selectedId) {
-      return selectedId;
-    } else {
-      // todo: defaulting to first journal, but could use logic such as the last selected
-      // journal, etc, once that is in place
-      return this.active[0].id;
+  setDefault = async (journalId: string) => {
+    this.saving = true;
+    try {
+      await this.client.preferences.setDefaultJournal(journalId);
+      this.defaultJournalId = journalId;
+    } catch (err: any) {
+      this.error = err;
+      throw err;
+    } finally {
+      this.saving = false;
     }
   };
 }

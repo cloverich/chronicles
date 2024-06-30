@@ -211,6 +211,7 @@ export class DocumentsClient {
     tags,
   }: SaveRequest): string => {
     const id = uuidv7();
+
     this.db
       .prepare(
         `INSERT INTO documents (id, journalId, content, title, createdAt, updatedAt) VALUES (:id, :journalId, :content, :title, :createdAt, :updatedAt)`,

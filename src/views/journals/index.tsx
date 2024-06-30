@@ -7,17 +7,22 @@ import {
   Badge,
   Alert,
   TextInputField,
+  Heading,
+  Paragraph,
+  IconButton,
+  Tooltip,
 } from "evergreen-ui";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { JournalResponse } from "../../preload/client/journals";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import { RouteProps } from "react-router-dom";
+import { Icons } from "../../components/icons";
 
 // todo: TEST CASES
-// button is disabled by default and when no text is present
-// button cannot be doube clicked
-// button saves journal
+// create button is disabled by default and when no text is present
+// create button cannot be doube clicked
+// create button saves journal
 // errors are displayed
 // journal added after successful save
 // journals load and are displayed
@@ -37,20 +42,22 @@ function Journals(props: RouteProps) {
     });
   }, []);
 
-  // Load journals on mount
-  // todo: The app load itself should handle this
-  useEffect(() => {
-    store.load();
-  });
-
   async function removeJournal(journal: JournalResponse) {
     if (confirm(`Are you sure you want to remove ${journal.name}?`)) {
       try {
         await store.remove(journal.id);
         toaster.success(`Successfully removed ${journal.name}`);
       } catch (err) {
-        toaster.danger(err as any);
+        toaster.danger(`Error removing journal: ${String(err)}`);
       }
+    }
+  }
+
+  async function setAsDefault(journal: JournalResponse) {
+    try {
+      await store.setDefault(journal.id);
+    } catch (err) {
+      toaster.danger(`Error setting journal as default: ${String(err)}`);
     }
   }
 
@@ -66,10 +73,14 @@ function Journals(props: RouteProps) {
   }
 
   return (
-    <Pane>
+    <Pane width="100%">
       {renderError()}
 
       <Pane marginTop={24} marginBottom={24}>
+        <Heading size={600}>Create a new journal</Heading>
+        <Paragraph>
+          Journals are like folders; all documents belong to a journal.
+        </Paragraph>
         <TextInputField
           label="Name"
           name="name"
@@ -88,32 +99,55 @@ function Journals(props: RouteProps) {
         </Button>
       </Pane>
 
+      <hr />
       <h2>Active Journals</h2>
+      <Paragraph>Take actions on existing journals below</Paragraph>
+
       <Table>
         <Table.Head>
           <Table.TextHeaderCell>Name</Table.TextHeaderCell>
-          <Table.TextHeaderCell>Id</Table.TextHeaderCell>
+          <Table.TextHeaderCell>Actions</Table.TextHeaderCell>
         </Table.Head>
         <Table.Body>
-          {store.active.map((journal) => (
-            <Table.Row key={journal.name}>
-              <Table.TextCell>{journal.name}</Table.TextCell>
-              <Table.TextCell style={{ textAlign: "center" }}>
-                <Badge>{journal.id}</Badge>
-              </Table.TextCell>
-              <Table.TextCell>
-                <JournalArchiveButton journal={journal} />
-                <Button
-                  size="small"
-                  marginRight={12}
-                  intent="danger"
-                  onClick={() => removeJournal(journal)}
-                >
-                  Remove
-                </Button>
-              </Table.TextCell>
-            </Table.Row>
-          ))}
+          {store.active.map((journal) => {
+            const isDefault = journal.id === store.defaultJournalId;
+            return (
+              <Table.Row key={journal.name}>
+                <Table.TextCell>{journal.name}</Table.TextCell>
+                <Table.TextCell>
+                  <JournalArchiveButton journal={journal} />
+
+                  <Tooltip
+                    content="Delete the journal and all of its notes"
+                    showDelay={1000}
+                  >
+                    <IconButton
+                      size="small"
+                      marginRight={12}
+                      intent="danger"
+                      onClick={() => removeJournal(journal)}
+                      icon={<Icons.trash />}
+                    />
+                  </Tooltip>
+
+                  <Tooltip
+                    content="Set as default journal when creating new notes"
+                    showDelay={1000}
+                  >
+                    <IconButton
+                      size="small"
+                      marginRight={12}
+                      intent={isDefault ? "success" : "info"}
+                      onClick={
+                        isDefault ? () => {} : () => setAsDefault(journal)
+                      }
+                      icon={<Icons.star />}
+                    />
+                  </Tooltip>
+                </Table.TextCell>
+              </Table.Row>
+            );
+          })}
         </Table.Body>
       </Table>
 
@@ -121,25 +155,20 @@ function Journals(props: RouteProps) {
       <Table>
         <Table.Head>
           <Table.TextHeaderCell>Name</Table.TextHeaderCell>
-          <Table.TextHeaderCell>Id</Table.TextHeaderCell>
         </Table.Head>
         <Table.Body>
           {store.archived.map((journal) => (
             <Table.Row key={journal.name}>
               <Table.TextCell>{journal.name}</Table.TextCell>
-              <Table.TextCell style={{ textAlign: "center" }}>
-                <Badge>{journal.id}</Badge>
-              </Table.TextCell>
               <Table.TextCell>
                 <JournalArchiveButton journal={journal} />
-                <Button
+                <IconButton
                   size="small"
                   marginRight={12}
                   intent="danger"
                   onClick={() => removeJournal(journal)}
-                >
-                  Remove
-                </Button>
+                  icon={<Icons.trash />}
+                />
               </Table.TextCell>
             </Table.Row>
           ))}
@@ -169,32 +198,27 @@ function JournalArchiveButton(props: { journal: JournalResponse }) {
         }
       } catch (err) {
         console.error(err);
-        toaster.danger("There was an error archiving the journal");
+        toaster.danger(
+          "There was an error archiving the journal: " + String(err),
+        );
       }
     }
   }
 
-  if (props.journal.archivedAt) {
-    return (
-      <Button
+  return (
+    <Tooltip
+      content="(Un)Archive this journal (hide from default list of journals when creating new notes)"
+      showDelay={1000}
+    >
+      <IconButton
         size="small"
         marginRight={12}
         onClick={() => toggleArchive(props.journal)}
-      >
-        Restore
-      </Button>
-    );
-  } else {
-    return (
-      <Button
-        size="small"
-        marginRight={12}
-        onClick={() => toggleArchive(props.journal)}
-      >
-        Archive
-      </Button>
-    );
-  }
+        intent="info"
+        icon={<Icons.archive />}
+      />
+    </Tooltip>
+  );
 }
 
 export default observer(Journals);
