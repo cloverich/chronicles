@@ -100,6 +100,27 @@ export class JournalsStore {
 
     this.saving = false;
   };
+
+  /**
+   * Determines the default journal to use when creating a new document.
+   *
+   * todo(test): When one or multiple journals are selected, returns the first
+   * todo(test): When no journals are selected, returns the first active journal
+   * todo(test): When archived journal selected, returns the selected (archived) journal
+   */
+  defaultJournal = (selectedJournals: string[]) => {
+    const selectedId = this.journals.find((j) =>
+      selectedJournals.includes(j.name),
+    )?.id;
+
+    if (selectedId) {
+      return selectedId;
+    } else {
+      // todo: defaulting to first journal, but could use logic such as the last selected
+      // journal, etc, once that is in place
+      return this.active[0].id;
+    }
+  };
 }
 
 export type IJournalStore = JournalsStore;

@@ -3,14 +3,14 @@ import { observer } from "mobx-react-lite";
 import { Heading, Paragraph, Pane } from "evergreen-ui";
 
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { SearchStoreContext, SearchStore } from "./SearchStore";
+import { SearchStore, useSearchStore } from "./SearchStore";
 import { DocumentItem } from "./DocumentItem";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "./Layout";
 
 function DocumentsContainer() {
-  const journalsStore = useContext(JournalsStoreContext);
-  const searchStore = useContext(SearchStoreContext);
+  const journalsStore = useContext(JournalsStoreContext)!;
+  const searchStore = useSearchStore()!;
   const navigate = useNavigate();
 
   function edit(docId: string) {

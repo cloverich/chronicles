@@ -6,7 +6,8 @@ import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 import { LayoutDummy } from "../../layout";
 
-export function SearchProvider(props: any) {
+// Sets up document search and its context
+export function SearchProvider() {
   const jstore = useContext(JournalsStoreContext);
   const client = useClient();
   const [params, setParams] = useSearchParams();

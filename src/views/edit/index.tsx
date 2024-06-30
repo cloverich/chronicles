@@ -1,43 +1,35 @@
 import React, { useContext, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Editor from "./editor";
-import {
-  Pane,
-  Button,
-  Popover,
-  Menu,
-  Position,
-  Tab,
-  Tablist,
-  TagInput,
-} from "evergreen-ui";
+import { Pane, Button, Popover, Menu, Position, TagInput } from "evergreen-ui";
 import { useEditableDocument } from "./useEditableDocument";
 import { EditableDocument } from "./EditableDocument";
 import { css } from "emotion";
 import { JournalResponse } from "../../preload/client/journals";
 import { EditLoadingComponent } from "./loading";
 import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { useParams, useNavigate } from "react-router-dom";
-import { SearchStoreContext } from "../documents/SearchStore";
+import { useSearchStore } from "../documents/SearchStore";
+import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
+import { EditorMode } from "./EditorMode";
+import { TagTokenParser } from "../documents/search/parsers/tag";
+import { Icons } from "../../components/icons";
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
-  const journalsStore = useContext(JournalsStoreContext);
-  const searchStore = useContext(SearchStoreContext);
+  const journalsStore = useContext(JournalsStoreContext)!;
   const { document: documentId } = useParams();
 
-  const { document, loadingError } = useEditableDocument(
-    searchStore,
-    journalsStore,
-    documentId,
-  );
+  // todo: handle missing or invalid documentId; loadingError may be fine for this, but
+  // haven't done any UX / design thinking around it.
+  const { document, loadingError } = useEditableDocument(documentId!);
 
   // Filter journals to non-archived ones, but must also add
   // the current document's journal if its archived
   const [journals, setJournals] = useState<any>();
+
   useEffect(() => {
     if (!document) return;
 
@@ -52,6 +44,7 @@ function DocumentLoadingContainer() {
     setJournals(journals);
   }, [document, loadingError]);
 
+  // todo: I don't hit this error when going back and forth to a deleted document, why doesn't this happen?
   if (loadingError) {
     return <EditLoadingComponent error={loadingError} />;
   }
@@ -68,11 +61,6 @@ interface DocumentEditProps {
   journals: JournalResponse[];
 }
 
-import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
-import { EditorMode } from "./EditorMode";
-import { TagTokenParser } from "../documents/search/parsers/tag";
-import { Icons } from "../../components/icons";
-
 /**
  * This is the main document editing view, which houses the editor and some controls.
  */
@@ -80,6 +68,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   const { document, journals } = props;
   const isMounted = useIsMounted();
   const navigate = useNavigate();
+  const searchStore = useSearchStore()!;
   const [selectedViewMode, setSelectedViewMode] = React.useState<EditorMode>(
     EditorMode.Editor,
   );
@@ -195,14 +184,17 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         "Document is unsaved, exiting will discard document. Stop editing anyways?",
       )
     ) {
+      // This handles the edit case but hmm... if its new... it should be added to the search...
+      // but in what order? Well... if we aren't paginated... it should be at the top.
+      searchStore.updateSearch(document);
       navigate(-1);
     }
   }
 
   async function deleteDocument() {
-    if (!document.canDelete) return;
     if (confirm("Are you sure?")) {
       await document.del();
+      searchStore.updateSearch(document, "del");
       if (isMounted()) navigate(-1);
     }
   }
@@ -355,12 +347,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         >
           {document.saving ? "Saving" : document.dirty ? "Save" : "Saved"}
         </Button>
-        <Button
-          marginLeft={16}
-          onClick={deleteDocument}
-          disabled={!document.canDelete}
-          intent="danger"
-        >
+        <Button marginLeft={16} onClick={deleteDocument} intent="danger">
           <Icons.delete size={18} />
         </Button>
       </Pane>
