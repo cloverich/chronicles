@@ -4,6 +4,7 @@ import { ipcRenderer } from "electron";
 export interface Preferences {
   DATABASE_URL: string;
   PREFERENCES_FILE: string;
+  DEFAULT_JOURNAL_ID: string;
 }
 
 export type IPreferencesClient = PreferencesClient;
@@ -24,5 +25,9 @@ export class PreferencesClient {
 
   openDialogUserFiles = () => {
     ipcRenderer.send("select-user-files-dir");
+  };
+
+  setDefaultJournal = async (journalId: string) => {
+    this.settings.set("DEFAULT_JOURNAL_ID", journalId);
   };
 }

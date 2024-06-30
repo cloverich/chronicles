@@ -8,7 +8,7 @@ export const JournalsStoreContext = React.createContext<JournalsStore | null>(
 );
 
 /**
- * Loads this journal store. After loading it should be passed down in context
+ * Loads the journal store. After loading it should be passed down in context
  */
 export function useJournalsLoader() {
   const [journals, setJournals] = React.useState<JournalResponse[]>();
@@ -24,10 +24,9 @@ export function useJournalsLoader() {
     async function load() {
       try {
         const journalStore = await JournalsStore.create(client);
-        const journals = await client.journals.list();
         if (!isEffectMounted) return;
 
-        setJournals(journals);
+        setJournals(journalStore.journals);
         setJournalsStore(journalStore);
         setLoading(false);
       } catch (err: any) {

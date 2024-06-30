@@ -162,7 +162,7 @@ export class SearchStore {
   };
 
   /**
-   * Execute a search with the current tokens.
+   * Execute a documents search with the current tokens.
    *
    * @param resetPagination - By default execute a fresh search. When paginating,
    *  we don't want to reset the pagination state.
@@ -239,11 +239,24 @@ export class SearchStore {
     }
   };
 
+  /**
+   * Return the selected journals from the search tokens, if any
+   */
   @computed get selectedJournals(): string[] {
-    // Grab the journal names from the tokens
-    // todo: Typescript doesn't know when I filter to type === 'in' its InTokens
+    return (
+      this._tokens
+        .filter((t) => t.type === "in")
+        // todo: Typescript doesn't know when I filter to type === 'in' its InTokens
+        .map((t) => t.value) as string[]
+    );
+  }
+
+  /**
+   * Return the selected tags from the search tokens, if any
+   */
+  @computed get selectedTags(): string[] {
     return this._tokens
-      .filter((t) => t.type === "in")
+      .filter((t) => t.type === "tag")
       .map((t) => t.value) as string[];
   }
 

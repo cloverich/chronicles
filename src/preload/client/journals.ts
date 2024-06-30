@@ -1,18 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import { Database } from "better-sqlite3";
 
-interface IJournal {
-  // path to root folder
-  url: string;
-  // display name
-  name: string;
-
-  /**
-   * The duration of a single document in a journal.
-   */
-  period: "day" | "week" | "month" | "year";
-}
-
 export interface JournalResponse {
   id: string;
   name: string;
