@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import { IClient } from "../../hooks/useClient";
 import { observable, IObservableArray, computed, action } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
@@ -12,6 +12,20 @@ export interface SearchItem {
   journalId: string;
 }
 
+// Accepts any document satisfying the SearchItem interface, and copies properties
+// into an actual SearchItem; i.e. I dont want to stuff an EditableDocument or other smart
+// object into search results b/c may get weird.
+function toSearchItem(doc: SearchItem): SearchItem | null {
+  if (!doc.id) return null;
+
+  return {
+    id: doc.id,
+    createdAt: doc.createdAt,
+    title: doc.title,
+    journalId: doc.journalId,
+  };
+}
+
 interface SearchQuery {
   journals: string[];
   titles?: string[];
@@ -21,7 +35,12 @@ interface SearchQuery {
   limit?: number;
 }
 
-export const SearchStoreContext = createContext<SearchStore>(null as any);
+export const SearchStoreContext = createContext<SearchStore | null>(null);
+
+export function useSearchStore() {
+  const searchStore = useContext(SearchStoreContext);
+  return searchStore;
+}
 
 export class SearchStore {
   @observable docs: SearchItem[] = [];
@@ -112,12 +131,46 @@ export class SearchStore {
   };
 
   /**
+   * If a document is present in search results, and is edited / deleted / etc,
+   * navigating back to the search without updating will result in stale results being shown.
+   * This method updates the search results with the latest document data, IF its present
+   * in the search results.
+   */
+  updateSearch = (
+    document: SearchItem,
+    operation: "edit" | "create" | "del" = "edit",
+  ) => {
+    const idx = this.docs.findIndex((d) => d.id === document.id);
+    const item = toSearchItem(document);
+    if (!item) return; // shrug
+
+    if (operation === "edit") {
+      if (idx === -1) return;
+      // NOTE: One weird case is, if the journal / tags change and don't match the search, it will
+      // still be in the results (on back) but wont on refresh. Kind of an edge case that's not
+      // a huge deal. See also create notes below
+      this.docs[idx] = item;
+    } else if (operation === "del") {
+      if (idx === -1) return;
+      this.docs.splice(idx, 1);
+    } else if (operation === "create") {
+      // NOTE: This assumes (usually correctly) that the created document's journal / tag will match
+      // the current search results; if not it will not be shown. Maybe its reasonable? More of a weird
+      // UX based on current design; its weird in others (e.g. Apple notes, when creating with a search filter)
+      this.search({ resetPagination: true });
+    }
+  };
+
+  /**
    * Execute a search with the current tokens.
    *
    * @param resetPagination - By default execute a fresh search. When paginating,
    *  we don't want to reset the pagination state.
    */
-  search = async (limit = 100, resetPagination = true) => {
+  search = async (opts: { limit?: number; resetPagination?: boolean } = {}) => {
+    const limit = opts.limit || 100;
+    const resetPagination = opts.resetPagination || true;
+
     this.loading = true;
     this.error = null;
 
@@ -159,7 +212,7 @@ export class SearchStore {
     if (token) {
       this.setTokens(this.parser.mergeToken(this.tokens, token as SearchToken));
       this.setTokensUrl({ search: this.searchTokens }, { replace: true });
-      this.search(100, resetPagination);
+      this.search({ resetPagination });
     }
   };
 
@@ -167,7 +220,7 @@ export class SearchStore {
   removeToken = (token: string, resetPagination = true) => {
     this.setTokens(this.parser.removeToken(this.tokens.slice(), token)); // slice() from prior implementation
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
-    this.search(100, resetPagination);
+    this.search({ resetPagination });
   };
 
   /**

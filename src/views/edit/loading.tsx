@@ -5,7 +5,7 @@ import { css } from "emotion";
 import { useNavigate } from "react-router-dom";
 
 export interface LoadingComponentProps {
-  error?: Error;
+  error?: Error | null;
 }
 
 export const placeholderDate = new Date().toISOString().slice(0, 10);
@@ -38,7 +38,7 @@ export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
               cursor: pointer;
             `}
           >
-            Unknown
+            Loading...
           </span>
         </div>
         <div

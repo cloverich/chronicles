@@ -7,14 +7,8 @@ import { Node as SlateNode } from "slate";
 import { SlateTransformer } from "./SlateTransformer";
 import { debounce } from "lodash";
 
-interface NewDocument {
-  journalId: string;
-  content: string;
-  title?: string;
-}
-
 function isExistingDocument(
-  doc: NewDocument | GetDocumentResponse,
+  doc: GetDocumentResponse,
 ): doc is GetDocumentResponse {
   return "id" in doc;
 }
@@ -26,9 +20,6 @@ export class EditableDocument {
   // active model properties:
   @observable saving: boolean = false;
   @observable savingError: Error | null = null;
-  @computed get isNew(): boolean {
-    return !this.id;
-  }
 
   // todo: Autorun this, or review how mobx-utils/ViewModel works
   @observable dirty: boolean = false;
@@ -55,7 +46,7 @@ export class EditableDocument {
   // The underlying document properties:
   @observable title?: string;
   @observable journalId: string;
-  @observable id?: string;
+  @observable id: string;
   @observable createdAt: string;
   @observable updatedAt: string; // read-only outside this class
   @observable tags: string[] = [];
@@ -69,26 +60,18 @@ export class EditableDocument {
 
   constructor(
     private client: IClient,
-    doc: NewDocument | GetDocumentResponse,
+    doc: GetDocumentResponse,
   ) {
     this.title = doc.title;
     this.journalId = doc.journalId;
     this.content = doc.content;
-
-    if (isExistingDocument(doc)) {
-      this.id = doc.id;
-      this.createdAt = doc.createdAt;
-      this.updatedAt = doc.updatedAt;
-      this.tags = doc.tags;
-      const content = doc.content;
-      const slateNodes = SlateTransformer.nodify(content);
-      this.slateContent = slateNodes;
-    } else {
-      this.createdAt = new Date().toISOString();
-      this.updatedAt = new Date().toISOString();
-      this.slateContent = SlateTransformer.createEmptyNodes();
-      this.tags = [];
-    }
+    this.id = doc.id;
+    this.createdAt = doc.createdAt;
+    this.updatedAt = doc.updatedAt;
+    this.tags = doc.tags;
+    const content = doc.content;
+    const slateNodes = SlateTransformer.nodify(content);
+    this.slateContent = slateNodes;
 
     // Auto-save
     // todo: performance -- investigate putting draft state into storage,
@@ -168,14 +151,7 @@ export class EditableDocument {
     }
   }, 1000);
 
-  @computed get canDelete() {
-    return !this.isNew && !this.saving;
-  }
-
   del = async () => {
-    // redundant id check to satisfy type checker
-    if (!this.canDelete || !this.id) return;
-
     // overload saving for deleting
     this.saving = true;
     await this.client.documents.del(this.id);

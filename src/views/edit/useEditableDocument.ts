@@ -1,39 +1,11 @@
 import React from "react";
-import { JournalResponse } from "../../preload/client/journals";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
-import { SearchStore } from "../documents/SearchStore";
-import { JournalsStore } from "../../hooks/stores/journals";
-
-/**
- * Determines the default journal to use when creating a new document.
- *
- * todo(test): When one or multiple journals are selected, returns the first
- * todo(test): When no journals are selected, returns the first active journal
- * todo(test): When archived journal selected, returns the selected (archived) journal
- */
-function defaultJournal(selectedJournals: string[], jstore: JournalsStore) {
-  const selectedId = jstore.journals.find((j) =>
-    selectedJournals.includes(j.name),
-  )?.id;
-
-  if (selectedId) {
-    return selectedId;
-  } else {
-    // todo: defaulting to first journal, but could use logic such as the last selected
-    // journal, etc, once that is in place
-    return jstore.active[0].id;
-  }
-}
 
 /**
  * Load a new or existing document into a view model
  */
-export function useEditableDocument(
-  search: SearchStore,
-  jstore: JournalsStore,
-  documentId?: string,
-) {
+export function useEditableDocument(documentId: string) {
   const [document, setDocument] = React.useState<EditableDocument | null>(null);
   const [loadingError, setLoadingError] = React.useState<Error | null>(null);
   const client = useClient();
@@ -44,21 +16,21 @@ export function useEditableDocument(
     async function load() {
       setLoadingError(null);
 
+      if (!documentId) {
+        // Fail safe; this shuldn't happen. If scenarios come up where it could; maybe toast and navigate
+        // to documents list instead?
+        setLoadingError(
+          new Error(
+            "Called useEditableDocument without a documentId, unable to load document",
+          ),
+        );
+        return;
+      }
+
       try {
-        // if documentId -> This is an existing document
-        if (documentId) {
-          const doc = await client.documents.findById({ id: documentId });
-          if (!isEffectMounted) return;
-          setDocument(new EditableDocument(client, doc));
-        } else {
-          // new documents
-          setDocument(
-            new EditableDocument(client, {
-              content: "",
-              journalId: defaultJournal(search.selectedJournals, jstore),
-            }),
-          );
-        }
+        const doc = await client.documents.findById({ id: documentId });
+        if (!isEffectMounted) return;
+        setDocument(new EditableDocument(client, doc));
       } catch (err) {
         if (!isEffectMounted) return;
         setLoadingError(err as Error);

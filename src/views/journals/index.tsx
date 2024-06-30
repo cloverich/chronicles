@@ -22,7 +22,7 @@ import { RouteProps } from "react-router-dom";
 // journal added after successful save
 // journals load and are displayed
 function Journals(props: RouteProps) {
-  const store = useContext(JournalsStoreContext);
+  const store = useContext(JournalsStoreContext)!;
   const [name, setName] = useState<string>("");
 
   function save() {
@@ -153,7 +153,7 @@ function Journals(props: RouteProps) {
  * UI and hook for toggling archive state on a journal
  */
 function JournalArchiveButton(props: { journal: JournalResponse }) {
-  const store = useContext(JournalsStoreContext);
+  const store = useContext(JournalsStoreContext)!;
 
   async function toggleArchive(journal: JournalResponse) {
     const isArchiving = !!journal.archivedAt;

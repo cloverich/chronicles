@@ -19,7 +19,7 @@ import { Icons } from "../../components/icons";
  */
 export function JournalSelectionSidebar(props: SidebarProps) {
   const { isShown, setIsShown } = props;
-  const jstore = useContext(JournalsStoreContext);
+  const jstore = useContext(JournalsStoreContext)!;
   const searchStore = props.search;
 
   function search(journal: string) {
