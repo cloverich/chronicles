@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext, Fragment } from "react";
 import { observer } from "mobx-react-lite";
 import Layout, { LayoutDummy } from "./layout";
 import Preferences from "./views/preferences";
-import Journals from "./views/journals";
 import Documents from "./views/documents";
 import Editor from "./views/edit";
 import DocumentCreator from "./views/create";
@@ -40,7 +39,6 @@ export default observer(function Container() {
     <JournalsStoreContext.Provider value={journalsStore!}>
       <Layout>
         <Routes>
-          <Route path="journals" element={<Journals />} />
           <Route path="preferences" element={<Preferences />} />
           <Route path="documents" element={<SearchProvider />}>
             <Route index element={<Documents />} />

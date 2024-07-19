@@ -80,16 +80,56 @@ export class JournalsStore {
     }
   };
 
+  validateName = (name: string) => {
+    name = name.trim();
+    if (!name) return ["Journal name cannot be empty", name];
+    if (name.length > 25)
+      return ["Journal name cannot be longer than 25 characters", name];
+
+    if (this.journals.find((j) => j.name === name)) {
+      return ["Journal with that name already exists", name];
+    }
+
+    return [null, name];
+  };
+
   create = async ({ name }: { name: string }) => {
     this.saving = true;
     this.error = null;
+
     try {
+      const [err, validName] = this.validateName(name);
+      if (err) throw new Error(err);
+
       const newJournal = await this.client.journals.create({
-        name: name,
+        name: validName!,
       });
+
       this.journals.push(newJournal);
     } catch (err: any) {
       console.error(err);
+      throw err;
+    } finally {
+      this.saving = false;
+    }
+  };
+
+  updateName = async (journalId: string, name: string) => {
+    this.saving = true;
+    try {
+      const [err, validName] = this.validateName(name);
+      if (err) throw new Error(err);
+
+      const journal = this.journals.find((j) => j.id === journalId);
+      if (!journal) throw new Error(`Journal not found: ${journalId}`);
+
+      const updatedAttrs = await this.client.journals.update({
+        id: journalId,
+        name: validName!,
+      });
+      Object.assign(journal, updatedAttrs);
+    } catch (err: any) {
+      console.error(`Error updating journal name for ${journalId}:`, err);
       throw err;
     } finally {
       this.saving = false;
@@ -129,6 +169,8 @@ export class JournalsStore {
    * default when creating a new document, if no journal is selected.
    */
   setDefault = async (journalId: string) => {
+    if (this.defaultJournalId === journalId) return;
+
     this.saving = true;
     try {
       await this.client.preferences.setDefaultJournal(journalId);
