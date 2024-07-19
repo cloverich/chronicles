@@ -15,7 +15,7 @@ export class JournalsClient {
   constructor(private db: Database) {}
 
   list = async (): Promise<JournalResponse[]> => {
-    return this.db.prepare("select * from journals").all();
+    return this.db.prepare("select * from journals order by name").all();
   };
 
   create = (journal: { name: string }): Promise<JournalResponse> => {
@@ -33,6 +33,27 @@ export class JournalsClient {
       });
 
     return this.db.prepare("select * from journals where id = :id").get({ id });
+  };
+
+  update = (journal: {
+    id: string;
+    name: string;
+  }): Promise<JournalResponse> => {
+    if (!journal.name?.trim()) throw new Error("Journal name cannot be empty");
+
+    this.db
+      .prepare(
+        "update journals set name = :name, updatedAt = :updatedAt where id = :id",
+      )
+      .run({
+        name: journal.name,
+        id: journal.id,
+        updatedAt: new Date().toISOString(),
+      });
+
+    return this.db
+      .prepare("select * from journals where id = :id")
+      .get({ id: journal.id });
   };
 
   remove = (journal: { id: string }): Promise<JournalResponse[]> => {

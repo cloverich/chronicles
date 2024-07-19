@@ -3,7 +3,8 @@ import { Pane, IconButton, FolderOpenIcon } from "evergreen-ui";
 import SearchDocuments from "./search";
 import { Link } from "react-router-dom";
 import { SearchStore } from "./SearchStore";
-import { JournalSelectionSidebar } from "./Sidebar";
+import JournalSelectionSidebar from "./sidebar/Sidebar";
+import { SheetTrigger } from "../../components/Sidesheet";
 
 interface Props {
   store: SearchStore;
@@ -17,18 +18,17 @@ export function Layout(props: Props) {
   return (
     <Pane>
       <Pane marginBottom={8}>
-        <IconButton
-          icon={FolderOpenIcon}
-          onClick={() => setIsSidebarOpen(true)}
-          marginRight={8}
-        >
-          Select Journals
-        </IconButton>
         <JournalSelectionSidebar
           isShown={isSidebarOpen}
           setIsShown={setIsSidebarOpen}
           search={props.store}
-        />
+        >
+          <SheetTrigger asChild>
+            <IconButton icon={FolderOpenIcon} marginRight={8}>
+              Select Journals
+            </IconButton>
+          </SheetTrigger>
+        </JournalSelectionSidebar>
         <SearchDocuments store={props.store} />
       </Pane>
       <Pane>
@@ -39,8 +39,8 @@ export function Layout(props: Props) {
   );
 }
 
-export interface SidebarProps {
+export type SidebarProps = React.PropsWithChildren<{
   isShown: boolean;
   setIsShown: (isShown: boolean) => void;
   search: SearchStore;
-}
+}>;

@@ -47,9 +47,6 @@ export default function Layout(props: Props2) {
             <NavLink to="documents" className={classnameFunc}>
               documents
             </NavLink>
-            <NavLink to="journals" className={classnameFunc}>
-              journals
-            </NavLink>
             <NavLink to="preferences" className={classnameFunc}>
               preferences
             </NavLink>
