@@ -35,6 +35,7 @@ const SearchDocuments = (props: Props) => {
 
   return (
     <TagInput
+      className="no-drag"
       flexGrow={1}
       inputProps={{ placeholder: "Search journals" }}
       values={props.store.searchTokens}

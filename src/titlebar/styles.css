@@ -1,0 +1,37 @@
+/*
+  no-drag: titlebar otherwise overrides click and everything drags the app around 
+
+  After making the title bar draggable, buttons inside of it, and the sidesheet that
+  overlays it, lose their clickability and result in app dragging. This undoes that.
+*/
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.TitleBar-macos {
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #6c6a8a;
+  color: #333;
+  /* height: 22px; */
+  padding: 0 10px;
+  -webkit-app-region: drag;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 10px 12px 10px;
+  /* elevation: 1; */
+
+  /* account for traffic lights */
+  padding-left: 80px;
+  padding-right: 70px;
+
+  /* Fix top and be full width */
+  position: fixed;
+  width: 100%;
+
+  /* Stay above editor and dropdown; not much thought put into number */
+  z-index: 1;
+
+  height: 55px;
+}

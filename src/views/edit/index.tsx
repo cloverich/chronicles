@@ -16,6 +16,7 @@ import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
 import { EditorMode } from "./EditorMode";
 import { TagTokenParser } from "../documents/search/parsers/tag";
 import { Icons } from "../../components/icons";
+import Titlebar from "../../titlebar/macos";
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
@@ -53,7 +54,14 @@ function DocumentLoadingContainer() {
     return <EditLoadingComponent />;
   }
 
-  return <DocumentEditView document={document} journals={journals} />;
+  return (
+    <>
+      <Titlebar />
+      <Pane padding={50} flexGrow={1} display="flex">
+        <DocumentEditView document={document} journals={journals} />
+      </Pane>
+    </>
+  );
 }
 
 interface DocumentEditProps {
