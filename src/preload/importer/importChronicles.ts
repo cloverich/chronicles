@@ -6,6 +6,8 @@ import path from "path";
 import { DateTime } from "luxon";
 
 import { create } from "../client";
+
+// todo: move create setup to a shared file
 const client = create();
 
 async function findOrCreate(name: string) {

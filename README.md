@@ -13,7 +13,7 @@ The app is a typical Electron dev setup, excepting the use of [esbuild][1].
 yarn
 
 # start the development build and watch script
-yarn start
+yarn dev
 
 # If error with sqlite library versions
 yarn run electron-rebuild
