@@ -21,6 +21,7 @@ const SheetOverlay = React.forwardRef<
       // Initial use case is for side bar (journal selection) -- imo looks better when backgroud is not faded / covered w/ animation; may want to re-enable
       // for other use cases
       // "fixed inset-0 z-50 bg-slate-400 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "drag-none",
       className,
     )}
     {...props}
@@ -30,7 +31,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-300",
+  "drag-none fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-300",
   {
     variants: {
       side: {

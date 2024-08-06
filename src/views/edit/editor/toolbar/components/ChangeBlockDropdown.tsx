@@ -25,6 +25,21 @@ import {
 import { Icons } from "../../../../../components/icons";
 
 import {
+  MoreIcon,
+  HeaderOneIcon,
+  HeaderTwoIcon,
+  HeaderThreeIcon,
+  CodeBlockIcon,
+  CitationIcon,
+  NumberedListIcon,
+  PropertiesIcon,
+  FontIcon,
+  DeleteIcon,
+  TrashIcon,
+  ParagraphIcon,
+} from "evergreen-ui";
+
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
@@ -38,51 +53,51 @@ import { ToolbarButton } from "../../components/Toolbar";
 const items = [
   {
     description: "Paragraph",
-    icon: Icons.paragraph,
+    icon: ParagraphIcon,
     label: "Paragraph",
     value: ELEMENT_PARAGRAPH,
   },
   {
     description: "Heading 1",
-    icon: Icons.h1,
+    icon: HeaderOneIcon,
     label: "Heading 1",
     value: ELEMENT_H1,
   },
   {
     description: "Heading 2",
-    icon: Icons.h2,
+    icon: HeaderTwoIcon,
     label: "Heading 2",
     value: ELEMENT_H2,
   },
   {
     description: "Heading 3",
-    icon: Icons.h3,
+    icon: HeaderThreeIcon,
     label: "Heading 3",
     value: ELEMENT_H3,
   },
   {
     description: "Quote (⌘+⇧+.)",
-    icon: Icons.blockquote,
+    icon: CitationIcon,
     label: "Quote",
     value: ELEMENT_BLOCKQUOTE,
   },
   {
     description: "Code (```)",
-    icon: Icons.codeblock,
+    icon: CodeBlockIcon,
     label: "Code",
     value: ELEMENT_CODE_BLOCK,
   },
   {
-    value: "ul",
-    label: "Bulleted list",
     description: "Bulleted list",
-    icon: Icons.ul,
+    icon: PropertiesIcon,
+    label: "Bulleted list",
+    value: "ul",
   },
   {
-    value: "ol",
-    label: "Numbered list",
     description: "Numbered list",
-    icon: Icons.ol,
+    icon: NumberedListIcon,
+    label: "Numbered list",
+    value: "ol",
   },
 ];
 
@@ -90,9 +105,6 @@ const defaultItem = items.find((item) => item.value === ELEMENT_PARAGRAPH)!;
 
 /**
  * Toolbar dropdown for toggling block types, e.g. paragraph, heading, blockquote.
- *
- * Unlike the InsertBlockDropdown, this dropdown is for toggling existing blocks, not
- * creating new ones.
  *
  * Referred to as "Turn into" dropdown in Plate UI docs.
  * https://platejs.org/docs/components/turn-into-dropdown-menu
@@ -129,7 +141,7 @@ export default function ChangeBlockDropdown(props: DropdownMenuProps) {
           className="lg:min-w-[130px]"
           isDropdown
           pressed={openState.open}
-          tooltip="Turn into"
+          tooltip="Change type"
         >
           <SelectedItemIcon className="size-5 lg:hidden" />
           <span className="max-lg:hidden">{selectedItemLabel}</span>

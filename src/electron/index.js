@@ -193,6 +193,12 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width,
     height: 600,
+
+    // Hides the default (empty) window title
+    //
+    titleBarStyle: "hidden",
+
+    trafficLightPosition: { x: 10, y: 16 },
     webPreferences: {
       nodeIntegration: false,
       sandbox: false,
