@@ -198,7 +198,7 @@ function createWindow() {
     //
     titleBarStyle: "hidden",
 
-    trafficLightPosition: { x: 10, y: 18 },
+    trafficLightPosition: { x: 10, y: 16 },
     webPreferences: {
       nodeIntegration: false,
       sandbox: false,

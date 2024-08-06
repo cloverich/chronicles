@@ -1,12 +1,11 @@
 import React, { useContext, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Editor from "./editor";
-import { Pane } from "evergreen-ui";
+import { IconButton, Pane, ChevronLeftIcon } from "evergreen-ui";
 import { useEditableDocument } from "./useEditableDocument";
 import { EditableDocument } from "./EditableDocument";
 import { JournalResponse } from "../../preload/client/journals";
 import { EditLoadingComponent } from "./loading";
-import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSearchStore } from "../documents/SearchStore";
@@ -15,8 +14,8 @@ import { EditorMode } from "./EditorMode";
 import Titlebar from "../../titlebar/macos";
 import PlateContainer from "./PlateContainer";
 import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
-import { SaveActions } from "./SaveActions";
 import FrontMatter from "./FrontMatter";
+import { Separator } from "./editor/components/Separator";
 
 // Loads document, with loading and error placeholders
 function DocumentLoadingContainer() {
@@ -70,6 +69,8 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   const [selectedViewMode, setSelectedViewMode] = React.useState<EditorMode>(
     EditorMode.Editor,
   );
+  const navigate = useNavigate();
+  const searchStore = useSearchStore()!;
 
   function renderEditor(tab: string) {
     switch (tab) {
@@ -102,6 +103,20 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
+  function goBack() {
+    if (
+      !document.dirty ||
+      confirm(
+        "Document is unsaved, exiting will discard document. Stop editing anyways?",
+      )
+    ) {
+      // This handles the edit case but hmm... if its new... it should be added to the search...
+      // but in what order? Well... if we aren't paginated... it should be at the top.
+      searchStore.updateSearch(document);
+      navigate(-1);
+    }
+  }
+
   // flexGrows are needed so save / edit buttons are at bottom on both empty documents
   // and scrollable documents
   return (
@@ -115,25 +130,32 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
       setSelectedEditorMode={setSelectedViewMode}
     >
       <Titlebar>
+        <IconButton
+          backgroundColor="transparent"
+          border="none"
+          icon={ChevronLeftIcon}
+          className="drag-none"
+          onClick={goBack}
+          marginRight={8}
+        >
+          Back to documents
+        </IconButton>
+        <Separator orientation="vertical" />
+
         <EditorToolbar
           selectedEditorMode={selectedViewMode}
           setSelectedEditorMode={setSelectedViewMode}
+          document={document}
         />
       </Titlebar>
-      <Pane padding={50} flexGrow={1} display="flex">
+      <Pane padding={50} paddingTop={98} flexGrow={1} display="flex">
         <Pane flexGrow={1} display="flex" flexDirection="column" width="100%">
           <FrontMatter document={document} journals={journals} />
 
-          {/* Saving / Delete, todo: move to toolbar*/}
-          <SaveActions document={document} />
+          <Pane flexGrow={1} paddingTop={24}>
+            {renderEditor(selectedViewMode)}
+          </Pane>
         </Pane>
-
-        <EditorToolbar
-          selectedEditorMode={selectedViewMode}
-          setSelectedEditorMode={setSelectedViewMode}
-        />
-
-        <Pane flexGrow={1}>{renderEditor(selectedViewMode)}</Pane>
       </Pane>
     </PlateContainer>
   );

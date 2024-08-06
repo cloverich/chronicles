@@ -1,8 +1,6 @@
 import React, { PropsWithChildren } from "react";
 import { Pane, Tablist, Tab } from "evergreen-ui";
 import ErrorBoundary from "./error";
-import { NavLink, useLocation } from "react-router-dom";
-import Titlebar from "./titlebar/macos";
 
 interface Props2 {
   children: any;

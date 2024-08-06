@@ -25,7 +25,7 @@ export function Layout(props: Props) {
 
   return (
     <>
-      <Titlebar>
+      <Titlebar className="pr-16">
         <JournalSelectionSidebar
           isShown={isSidebarOpen}
           setIsShown={setIsSidebarOpen}
@@ -37,7 +37,7 @@ export function Layout(props: Props) {
               border="none"
               icon={PanelStatsIcon}
               marginRight={8}
-              className="no-drag"
+              className="drag-none"
             >
               Select Journals
             </IconButton>
@@ -48,7 +48,7 @@ export function Layout(props: Props) {
           backgroundColor="transparent"
           border="none"
           icon={EditIcon}
-          className="no-drag"
+          className="drag-none"
           onClick={() => navigate("/documents/edit/new")}
           marginRight={8}
         >

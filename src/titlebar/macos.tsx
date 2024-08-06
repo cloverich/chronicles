@@ -1,24 +1,20 @@
 import React, { PropsWithChildren } from "react";
-import { Pane } from "evergreen-ui";
-import { NavLink, useLocation } from "react-router-dom";
-import "./styles.css";
+import { cn } from "@udecode/cn";
 
-interface Props2 extends PropsWithChildren {}
+interface Props extends PropsWithChildren {
+  className?: string;
+}
 
-export default function Titlebar({ children }: Props2) {
-  const location = useLocation();
-
+export default function Titlebar({ children, className }: Props) {
   return (
-    <div className="TitleBar-macos">
+    <div
+      style={{ "-webkit-app-region": "drag" } as React.CSSProperties}
+      className={cn(
+        "bg-secondary border-b border-accent text-accent-foreground border-accent flex justify-between items-center py-3 px-2.5 pl-20 fixed w-full h-12 z-10",
+        className,
+      )}
+    >
       {children}
-      {/* <Pane marginRight={25}>
-        <span className="mono" style={{ color: "#6E62B6" }}>
-          chronicles
-        </span>
-      </Pane>
-      <Pane flexGrow={1} marginRight={24}>
-
-      </Pane> */}
     </div>
   );
 }

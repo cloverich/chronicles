@@ -17,9 +17,6 @@ const FrontMatter = observer(
     document: EditableDocument;
     journals: JournalResponse[];
   }) => {
-    const navigate = useNavigate();
-    const searchStore = useSearchStore()!;
-
     function onAddTag(tokens: string[]) {
       if (tokens.length > 1) {
         // https://evergreen.segment.com/components/tag-input
@@ -152,34 +149,8 @@ const FrontMatter = observer(
       );
     }
 
-    function goBack() {
-      if (
-        !document.dirty ||
-        confirm(
-          "Document is unsaved, exiting will discard document. Stop editing anyways?",
-        )
-      ) {
-        // This handles the edit case but hmm... if its new... it should be added to the search...
-        // but in what order? Well... if we aren't paginated... it should be at the top.
-        searchStore.updateSearch(document);
-        navigate(-1);
-      }
-    }
-
     return (
       <>
-        {/* back button */}
-        <div style={{ marginBottom: "24px" }}>
-          <a
-            onClick={goBack}
-            className={css`
-              cursor: pointer;
-            `}
-          >
-            Back
-          </a>
-        </div>
-
         {/* Document title */}
         <div>
           <input

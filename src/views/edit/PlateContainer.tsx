@@ -111,7 +111,6 @@ import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
 import { EditorMode } from "./EditorMode";
 import FrontMatter from "./FrontMatter";
 import { Pane } from "evergreen-ui";
-import { SaveActions } from "./SaveActions";
 import { EditableDocument } from "./EditableDocument";
 import { JournalResponse } from "../../hooks/useClient";
 
