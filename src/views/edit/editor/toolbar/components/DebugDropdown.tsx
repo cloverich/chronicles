@@ -4,12 +4,29 @@ import { ToolbarButton } from "../../components/Toolbar";
 import {
   useOpenState,
   DropdownMenu,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "./DropdownMenu";
-import { Icons } from "../../../../../components/icons";
+
+import {
+  MoreIcon,
+  HeaderOneIcon,
+  HeaderTwoIcon,
+  HeaderThreeIcon,
+  CodeBlockIcon,
+  CitationIcon,
+  NumberedListIcon,
+  PropertiesIcon,
+  FontIcon,
+  DeleteIcon,
+  TrashIcon,
+} from "evergreen-ui";
+
 import { EditorMode } from "../../../EditorMode";
 
 const options = Object.freeze([
@@ -22,6 +39,7 @@ const options = Object.freeze([
 interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
+  deleteDocument: () => void;
 }
 
 /**
@@ -30,6 +48,7 @@ interface Props {
 export default function DebugDropdown({
   selectedEditorMode,
   setSelectedEditorMode,
+  deleteDocument,
 }: Props) {
   const openState = useOpenState();
 
@@ -40,29 +59,38 @@ export default function DebugDropdown({
           isDropdown
           pressed={openState.open}
           tooltip="Change editor debug mode"
+          size="xs"
         >
-          <Icons.bug className="ml-1 h-4 w-4" />
+          <MoreIcon className="ml-1 h-4 w-4" />
         </ToolbarButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        align="start"
-        className="flex max-h-[500px] min-w-0 flex-col gap-0.5 overflow-y-auto"
-      >
+      <DropdownMenuContent align="start" className="min-w-0">
+        <DropdownMenuLabel>Toggle debug mode</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          className="flex flex-col gap-0.5"
+          value={selectedEditorMode}
+        >
+          {options.map(({ key, label }) => (
+            <React.Fragment key={label}>
+              <DropdownMenuRadioItem
+                className="min-w-[180px]"
+                key={key}
+                value={key}
+                onSelect={() => {
+                  setSelectedEditorMode(key);
+                }}
+              >
+                {label}
+              </DropdownMenuRadioItem>
+            </React.Fragment>
+          ))}
+        </DropdownMenuRadioGroup>
+
         <DropdownMenuSeparator />
-        {options.map(({ key, label }) => (
-          <React.Fragment key={label}>
-            <DropdownMenuItem
-              className="min-w-[180px]"
-              key={key}
-              onSelect={() => {
-                setSelectedEditorMode(key);
-              }}
-            >
-              {label}
-            </DropdownMenuItem>
-          </React.Fragment>
-        ))}
+        <DropdownMenuItem onClick={deleteDocument}>
+          <TrashIcon size={16} />
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,5 +1,5 @@
 import React from "react";
-import { ToolbarGroup, FixedToolbar } from "../components/Toolbar";
+import { ToolbarGroup, Toolbar } from "../components/Toolbar";
 import { TooltipProvider } from "../components/Tooltip";
 import DebugDropdown from "../toolbar/components/DebugDropdown";
 import { EditorMode } from "../../EditorMode";
@@ -36,14 +36,15 @@ export function ReadonlyToolbar({
         >
           <div className="grow" />
           <>
-            <FixedToolbar>
+            <Toolbar>
               <ToolbarGroup>
                 <DebugDropdown
                   selectedEditorMode={selectedEditorMode}
                   setSelectedEditorMode={setSelectedEditorMode}
+                  deleteDocument={() => {}}
                 />
               </ToolbarGroup>
-            </FixedToolbar>
+            </Toolbar>
           </>
         </div>
       </div>

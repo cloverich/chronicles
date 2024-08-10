@@ -13,17 +13,32 @@ import { Icons } from "../../../../components/icons";
 
 import { LinkToolbarButton } from "./components/LinkToolbarButton";
 import { MarkToolbarButton } from "./components/MarkToolbarButton";
-import { ToolbarGroup, FixedToolbar } from "../components/Toolbar";
+import { ToolbarGroup, Toolbar } from "../components/Toolbar";
 
 // I think this needs to be on the root, wherever Theme would be added (if we had a theme)
 import { TooltipProvider } from "../components/Tooltip";
 import ChangeBlockDropdown from "./components/ChangeBlockDropdown";
 import DebugDropdown from "./components/DebugDropdown";
 import { EditorMode } from "../../EditorMode";
+import {
+  BoldIcon,
+  ItalicIcon,
+  UnderlineIcon,
+  StrikethroughIcon,
+  CodeIcon,
+  LinkIcon,
+  MoreIcon,
+} from "evergreen-ui";
+import { Underline } from "lucide-react";
+import { EditableDocument } from "../../EditableDocument";
+import { useIsMounted } from "../../../../hooks/useIsMounted";
+import { useNavigate } from "react-router-dom";
+import { useSearchStore } from "../../../documents/SearchStore";
 
 interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
+  document: EditableDocument;
 }
 
 /**
@@ -34,40 +49,53 @@ interface Props {
 export function EditorToolbar({
   selectedEditorMode,
   setSelectedEditorMode,
+  document,
 }: Props) {
+  const isMounted = useIsMounted();
+  const navigate = useNavigate();
+  const searchStore = useSearchStore()!;
+
+  async function deleteDocument() {
+    if (confirm("Are you sure?")) {
+      await document.del();
+      searchStore.updateSearch(document, "del");
+      if (isMounted()) navigate(-1);
+    }
+  }
+
   return (
     <TooltipProvider
       disableHoverableContent
       delayDuration={500}
       skipDelayDuration={0}
     >
-      {/* NOTE: Unclear why I cant use Tailwind class mb-24 here  */}
-      <div className="w-full overflow-hidden" style={{ marginBottom: "48px" }}>
+      <div className="w-full overflow-hidden">
         <div
-          className="flex flex-wrap"
+          className="flex flex-wrap text-muted-foreground"
           style={{
             // Conceal the first separator on each line using overflow
             transform: "translateX(calc(-1px))",
           }}
         >
+          <div className="grow" />
           <>
-            <FixedToolbar>
-              <ToolbarGroup>
+            <Toolbar>
+              <ToolbarGroup className="drag-none">
                 <ChangeBlockDropdown />
                 <MarkToolbarButton tooltip="Bold (⌘+B)" nodeType={MARK_BOLD}>
-                  <Icons.bold />
+                  <BoldIcon size={16} />
                 </MarkToolbarButton>
                 <MarkToolbarButton
                   tooltip="Italic (⌘+I)"
                   nodeType={MARK_ITALIC}
                 >
-                  <Icons.italic />
+                  <ItalicIcon size={16} />
                 </MarkToolbarButton>
                 <MarkToolbarButton
                   tooltip="Underline (⌘+U)"
                   nodeType={MARK_UNDERLINE}
                 >
-                  <Icons.underline />
+                  <UnderlineIcon size={16} />
                 </MarkToolbarButton>
 
                 <>
@@ -75,41 +103,24 @@ export function EditorToolbar({
                     tooltip="Strikethrough (⌘+⇧+M)"
                     nodeType={MARK_STRIKETHROUGH}
                   >
-                    <Icons.strikethrough />
+                    <StrikethroughIcon size={16} />
                   </MarkToolbarButton>
                   <MarkToolbarButton tooltip="Code (⌘+E)" nodeType={MARK_CODE}>
-                    <Icons.code />
+                    <CodeIcon size={16} />
                   </MarkToolbarButton>
                 </>
                 <LinkToolbarButton />
-
-                {/* NOTE: id prop was removed, probably was for Playground to support multiple editors */}
               </ToolbarGroup>
 
-              {/* <ToolbarGroup> */}
-              {/* {isEnabled("indentlist", id) && indentList && (
-                <>
-                  <IndentListToolbarButton nodeType={ListStyleType.Disc} />
-                  <IndentListToolbarButton nodeType={ListStyleType.Decimal} />
-                </>
-              )} */}
-
-              {/* NOTE: id prop was removed, probably was for Playground to support multiple editors */}
-              {/* <>
-                <ListToolbarButton nodeType={ELEMENT_UL} />
-                <ListToolbarButton nodeType={ELEMENT_OL} />
-              </> */}
-
-              <ToolbarGroup>
+              <ToolbarGroup className="drag-none">
                 <DebugDropdown
                   selectedEditorMode={selectedEditorMode}
                   setSelectedEditorMode={setSelectedEditorMode}
+                  deleteDocument={deleteDocument}
                 />
               </ToolbarGroup>
-            </FixedToolbar>
+            </Toolbar>
           </>
-
-          <div className="grow" />
         </div>
       </div>
     </TooltipProvider>

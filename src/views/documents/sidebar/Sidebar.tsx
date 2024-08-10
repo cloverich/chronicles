@@ -10,13 +10,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from "../../../components/Sidesheet";
-import { SidebarProps } from "../Layout";
-import "./sidebar-styles.css";
 import { observer } from "mobx-react-lite";
 import { useSidebarStore } from "./store";
 import { SidebarStore } from "./store";
 import { JournalCreateForm, JournalItem, Collapse } from "./JournalItem";
 import { TagsList } from "./TagsList";
+import { SearchStore } from "../SearchStore";
+
+import "./sidebar-styles.css";
+
+type SidebarProps = React.PropsWithChildren<{
+  isShown: boolean;
+  setIsShown: (isShown: boolean) => void;
+  search: SearchStore;
+}>;
 
 /**
  * Sidebar for selecting journals or tags to search by.
@@ -29,7 +36,7 @@ export default observer(function JournalSelectionSidebar(props: SidebarProps) {
     <Sheet open={isShown} onOpenChange={store.onOpenChanged}>
       {props.children}
       <SheetContent
-        side="left"
+        side="right"
         className="overflow-auto"
         onEscapeKeyDown={(event) => {
           if (!store.shouldEscapeClose) {
