@@ -11,6 +11,13 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
+    /* NOTE: Separated tooltip from popover, where dropdown, popover, and tooltip all shared before
+     * This was to avoid bikeshedding once I changed the tooltip color to black, but proibably this is 
+     * worth tying back together once I can dedicate more time to just these styles
+     */
+    --tooltip: 222.2 84% 4.9%;
+    --tooltip-foreground: 0 0% 100%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
@@ -43,6 +50,9 @@
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
+
+    --tooltip: 222.2 84% 4.9%;
+    --tooltip-foreground: 210 40% 98%;
 
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
