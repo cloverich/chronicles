@@ -235,7 +235,7 @@ html {
     "Segoe UI Emoji",
     "Segoe UI Symbol";
   box-sizing: border-box;
-  overflow-y: scroll;
+  overflow: hidden;
   line-height: 1.6;
 }
 

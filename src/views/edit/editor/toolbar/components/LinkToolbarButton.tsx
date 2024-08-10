@@ -6,7 +6,7 @@ import {
 } from "@udecode/plate";
 
 import { ToolbarButton } from "../../components/Toolbar";
-import { Icons } from "../../../../../components/icons";
+import { LinkIcon } from "evergreen-ui";
 
 export const LinkToolbarButton = withRef<typeof ToolbarButton>((rest, ref) => {
   const state = useLinkToolbarButtonState();
@@ -14,7 +14,7 @@ export const LinkToolbarButton = withRef<typeof ToolbarButton>((rest, ref) => {
 
   return (
     <ToolbarButton ref={ref} tooltip="Link" {...props} {...rest}>
-      <Icons.link />
+      <LinkIcon size={16} />
     </ToolbarButton>
   );
 });

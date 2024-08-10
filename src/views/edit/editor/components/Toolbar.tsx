@@ -10,7 +10,7 @@ import { withTooltip } from "./Tooltip";
 
 export const Toolbar = withCn(
   ToolbarPrimitive.Root,
-  "relative flex select-none items-center gap-1 bg-background",
+  "relative flex select-none items-center gap-1",
 );
 
 export const ToolbarToggleGroup = withCn(
@@ -30,21 +30,24 @@ export const ToolbarSeparator = withCn(
 
 const toolbarButtonVariants = cva(
   cn(
-    "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center text-xs ring-offset-background transition-colors disabled:pointer-events-none disabled:opacity-50",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     "[&_svg:not([data-icon])]:h-5 [&_svg:not([data-icon])]:w-5",
+    "rounded-sm border border-transparent",
   ),
   {
     variants: {
       variant: {
         default:
-          "bg-transparent hover:bg-muted hover:text-muted-foreground aria-checked:bg-accent aria-checked:text-accent-foreground",
+          "hover:bg-slate-50 hover:border-slate-400 hover:border hover:text-accent-foreground aria-checked:text-accent-foreground ", //border-1  border-transparent bg-transparent
         outline:
           "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
       },
       size: {
-        default: "h-10 px-3",
-        sm: "h-9 px-2",
-        lg: "h-11 px-5",
+        default: "h-7 p-1.5",
+        xs: "h-5 p-1.5",
+        sm: "h-7 p-1.5",
+        lg: "h-9 p-1.5",
       },
     },
     defaultVariants: {
@@ -54,8 +57,10 @@ const toolbarButtonVariants = cva(
   },
 );
 
-// todo: fix any
-const ToolbarButton: any = withTooltip(
+/**
+ * A styled button for the toolbar.
+ */
+const ToolbarButton = withTooltip(
   // eslint-disable-next-line react/display-name
   React.forwardRef<
     React.ElementRef<typeof ToolbarToggleItem>,
@@ -85,22 +90,12 @@ const ToolbarButton: any = withTooltip(
                 variant,
                 size,
               }),
-              isDropdown && "my-1 justify-between pr-1",
               className,
             )}
             value={pressed ? "single" : ""}
             {...props}
           >
-            {isDropdown ? (
-              <>
-                <div className="flex flex-1">{children}</div>
-                <div>
-                  <Icons.arrowDown className="ml-0.5 h-4 w-4" data-icon />
-                </div>
-              </>
-            ) : (
-              children
-            )}
+            {children}
           </ToolbarToggleItem>
         </ToolbarToggleGroup>
       ) : (
@@ -122,7 +117,9 @@ const ToolbarButton: any = withTooltip(
     },
   ),
 );
+
 ToolbarButton.displayName = "ToolbarButton";
+
 export { ToolbarButton };
 
 export const ToolbarToggleItem = withVariants(
@@ -148,13 +145,7 @@ export const ToolbarGroup = withRef<
         </div>
       )}
 
-      <div className="mx-1 flex items-center gap-1">{children}</div>
+      <div className="mx-1 flex items-center">{children}</div>
     </div>
   );
 });
-
-// Also https://platejs.org/docs/components/toolbar
-export const FixedToolbar = withCn(
-  Toolbar,
-  "supports-backdrop-blur:bg-background/60 sticky left-0 top-[57px] z-50 w-full overflow-x-auto rounded-t-lg border-b border-b-border bg-background/95 backdrop-blur",
-);

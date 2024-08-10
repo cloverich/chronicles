@@ -2,6 +2,8 @@
 @import "@radix-ui/colors/mauve.css";
 @import "@radix-ui/colors/violet.css";
 
+/* todo: move ContextMenu stuffs to their own stylesheet */
+
 .ContextMenuTrigger {
   /* display: block;
   border: 2px white dashed;

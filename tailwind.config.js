@@ -1,6 +1,8 @@
 import { fontFamily } from "tailwindcss/defaultTheme";
 
 /** @type {import('tailwindcss').Config} */
+const plugin = require("tailwindcss/plugin");
+
 export const darkMode = ["class"];
 export const content = ["src/**/*.{ts,tsx}"];
 export const theme = {
@@ -73,4 +75,21 @@ export const theme = {
     },
   },
 };
-export const plugins = [require("tailwindcss-animate")];
+
+export const plugins = [
+  require("tailwindcss-animate"),
+  plugin(function ({ addUtilities }) {
+    addUtilities({
+      // The titlebar which replaces the native (default) titlebar is draggable; set .drag-none on
+      // inner elements that need to be clickable / interactive, like buttons, inputs, etc.
+      ".drag-none": {
+        "-webkit-app-region": "no-drag",
+        // "-webkit-user-drag": "none",
+        // "-khtml-user-drag": "none",
+        // "-moz-user-drag": "none",
+        // "-o-user-drag": "none",
+        // "user-drag": "none",
+      },
+    });
+  }),
+];
