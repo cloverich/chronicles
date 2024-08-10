@@ -58,13 +58,13 @@ export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
       <PopoverAnchor>{children}</PopoverAnchor>
 
       <PopoverContent
-        className="w-auto p-1"
+        className="w-auto"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         {isEditing ? (
           <div className="flex w-[330px] flex-col">
-            <div className="flex items-center">
-              <div className="flex items-center pl-3 text-muted-foreground">
+            <div className="flex items-center px-2">
+              <div className="flex items-center text-muted-foreground px-1">
                 <Icons.link className="h-4 w-4" />
               </div>
 
@@ -78,14 +78,15 @@ export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
             </div>
           </div>
         ) : (
-          <div className="box-content flex h-9 items-center gap-1">
+          <div className="box-content flex items-center">
             <FloatingMediaPrimitive.EditButton
               className={buttonVariants({ variant: "ghost", size: "sm" })}
             >
               Edit link
             </FloatingMediaPrimitive.EditButton>
 
-            <Separator orientation="vertical" className="my-1" />
+            {/* Ah, I broke this (invisible). Fix it at some point */}
+            <Separator orientation="vertical" />
 
             <Button variant="ghost" size="sms" {...buttonProps}>
               <Icons.delete className="h-4 w-4" />

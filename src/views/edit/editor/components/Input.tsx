@@ -11,7 +11,7 @@ export const inputVariants = cva(
         ghost: "border-none focus-visible:ring-transparent",
       },
       h: {
-        sm: "h-9 px-2 py-1",
+        sm: "h-9 px-1",
         md: "h-10 px-3 py-2",
       },
     },

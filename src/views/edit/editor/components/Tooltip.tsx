@@ -11,7 +11,7 @@ export const TooltipContent = withCn(
   withProps(TooltipPrimitive.Content, {
     sideOffset: 4,
   }),
-  "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md",
+  "z-50 overflow-hidden py-0.5 px-1.5 rounded-sm border bg-popover text-sm text-tooltip-foreground bg-tooltip shadow-md",
 );
 
 // Added along with @radix-ui/react-tooltip to support the Plate Toolbar
