@@ -107,10 +107,7 @@ import { createFilesPlugin } from "./editor/plugins/createFilesPlugin";
 import { IClient } from "../../preload/client/types";
 const client: IClient = (window as any).chronicles.createClient();
 
-import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
 import { EditorMode } from "./EditorMode";
-import FrontMatter from "./FrontMatter";
-import { Pane } from "evergreen-ui";
 import { EditableDocument } from "./EditableDocument";
 import { JournalResponse } from "../../hooks/useClient";
 
@@ -125,17 +122,7 @@ export interface Props {
 }
 
 export default observer(
-  ({
-    children,
-    document,
-    journals,
-    saving,
-    value,
-    setValue,
-    selectedEditorMode,
-    setSelectedEditorMode,
-  }: React.PropsWithChildren<Props>) => {
-    // todo: Commented out stuff is post-copy paste edit from plate-ui (as recommended), and should used to guide next steps.
+  ({ children, saving, value, setValue }: React.PropsWithChildren<Props>) => {
     const plugins = createPlugins(
       [
         createCodeBlockNormalizationPlugin(),

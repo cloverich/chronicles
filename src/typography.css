@@ -787,29 +787,31 @@ li > ul {
   margin-left: 2.03125rem;
 }
 
-a {
+/* Commented the links out when I re-styled editor links, but keeping them here for reference */
+
+/* a {
   color: #3e3e3e;
   text-decoration: none;
   border-bottom: 1px solid #3e3e3e;
-}
+} */
 
-a:hover,
+/* a:hover,
 a:active {
   text-decoration: underline;
-}
+} */
 
 a.gatsby-resp-image-link {
   box-shadow: none;
 }
 
-a:hover {
+/* a:hover {
   text-decoration: none;
 }
 
 header a {
   text-decoration: none;
   border-bottom: none;
-}
+} */
 
 blockQuote {
   margin-top: 25px;

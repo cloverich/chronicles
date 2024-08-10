@@ -105,7 +105,7 @@ export function LinkFloatingToolbar({ state }: LinkFloatingToolbarProps) {
   const editContent = editState.isEditing ? (
     input
   ) : (
-    <div className="box-content flex h-9 items-center gap-1">
+    <div className="box-content flex h-7 items-center">
       <button
         type="button"
         className={buttonVariants({ variant: "ghost", size: "sm" })}
@@ -144,7 +144,7 @@ export function LinkFloatingToolbar({ state }: LinkFloatingToolbarProps) {
     <>
       <div
         ref={insertRef}
-        className={cn(popoverVariants(), "w-auto p-1")}
+        className={cn(popoverVariants(), "w-auto")}
         {...insertProps}
       >
         {input}
@@ -152,7 +152,7 @@ export function LinkFloatingToolbar({ state }: LinkFloatingToolbarProps) {
 
       <div
         ref={editRef}
-        className={cn(popoverVariants(), "w-auto p-1")}
+        className={cn(popoverVariants(), "w-auto")}
         {...editProps}
       >
         {editContent}

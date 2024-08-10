@@ -195,7 +195,6 @@ function createWindow() {
     height: 600,
 
     // Hides the default (empty) window title
-    //
     titleBarStyle: "hidden",
 
     trafficLightPosition: { x: 10, y: 16 },

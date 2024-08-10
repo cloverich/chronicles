@@ -13,7 +13,7 @@ export const LinkElement = withRef<typeof PlateElement>(
         ref={ref}
         asChild
         className={cn(
-          "font-medium text-primary underline decoration-primary underline-offset-4",
+          "text-primary cursor-pointer underline underline-offset-1 decoration-1",
           className,
         )}
         {...(linkProps as any)}

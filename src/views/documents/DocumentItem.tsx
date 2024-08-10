@@ -10,12 +10,10 @@ export function DocumentItem(props: {
   const { doc, edit, getName } = props;
 
   return (
-    <Pane
+    <div
       key={doc.id}
-      style={{ display: "flex" }}
       onClick={() => edit(doc.id)}
-      cursor="default"
-      className="hover-underline"
+      className="cursor-pointer flex hover:underline hover:underline-offset"
     >
       {/* Without mono font, dates won't be a uniform width */}
       <div className="mono" style={{ flexShrink: 0, marginRight: "24px" }}>
@@ -34,6 +32,6 @@ export function DocumentItem(props: {
           </Badge>
         </small>
       </div>
-    </Pane>
+    </div>
   );
 }
