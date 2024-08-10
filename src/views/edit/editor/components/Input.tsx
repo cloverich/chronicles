@@ -2,7 +2,7 @@ import { withVariants } from "@udecode/cn";
 import { cva } from "class-variance-authority";
 
 export const inputVariants = cva(
-  "flex w-full rounded-md bg-transparent text-sm file:border-0 file:bg-background file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+  "flex w-full bg-transparent text-sm file:border-0 file:bg-background file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -11,7 +11,7 @@ export const inputVariants = cva(
         ghost: "border-none focus-visible:ring-transparent",
       },
       h: {
-        sm: "h-9 px-3 py-2",
+        sm: "h-9 px-2 py-1",
         md: "h-10 px-3 py-2",
       },
     },
