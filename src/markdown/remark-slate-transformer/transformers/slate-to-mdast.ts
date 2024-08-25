@@ -9,7 +9,6 @@ import { Node as SNode } from "slate";
 // NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
 import { unPrefixUrl } from "../../../hooks/images";
 
-// NOTE: added, and a good example of what changes I would want to make to this library!
 import {
   ELEMENT_LI,
   ELEMENT_LIC,
@@ -17,7 +16,12 @@ import {
   ELEMENT_TODO_LI,
   ELEMENT_UL,
   ELEMENT_CODE_BLOCK,
-} from "@udecode/plate"; // todo: sub-package which has only elements?
+} from "@udecode/plate";
+
+import {
+  createLinkFromNoteLinkFactory,
+  ELEMENT_NOTE_LINK,
+} from "../../../views/edit/editor/features/note-linking";
 
 // NOTE: Changed these, they were just mirroring mdasts' before
 // which doesn't make sense
@@ -56,7 +60,7 @@ function createMdastRoot(node: slate.Node): unistLib.Node {
   return root as any as unistLib.Node;
 }
 
-function convertNodes(nodes: slate.Node[]): unistLib.Node[] {
+export function convertNodes(nodes: slate.Node[]): unistLib.Node[] {
   const mdastNodes: unistLib.Node[] = [];
   let textQueue: SlateNodes.Text[] = [];
   for (let i = 0; i <= nodes.length; i++) {
@@ -238,6 +242,8 @@ function createMdastNode(
       return createImage(node);
     case "linkReference":
       return createLinkReference(node);
+    case ELEMENT_NOTE_LINK:
+      return createLinkFromNoteLink(node);
     case "imageReference":
       return createImageReference(node);
     case "footnote":
@@ -461,12 +467,14 @@ function createBreak(node: SlateNodes.Break): mdast.Break {
 function createLink(node: SlateNodes.Link): mdast.Link {
   const { type, url, title, children } = node;
   return {
-    type: "link", // note: changes from type to type: "link" so it can accept "a", see the switch statement
-    url, // note: converted, "as any" added because mdast.Link thinks its url and not link?
+    type: "link",
+    url,
     title,
-    children: convertNodes(children) as any as mdast.Link["children"],
-  } as any;
+    children: convertNodes(children) as any, //
+  };
 }
+
+const createLinkFromNoteLink = createLinkFromNoteLinkFactory(convertNodes);
 
 function createImage(node: SlateNodes.Image | SlateNodes.Video): mdast.Image {
   const { type, url, title, alt } = node;

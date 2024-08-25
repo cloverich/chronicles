@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { withProps } from "@udecode/cn";
 import { observer } from "mobx-react-lite";
-import { Node as SNode } from "slate";
+import { Editor, Node as SNode } from "slate";
 import {
   Plate,
   PlateContent,
@@ -11,6 +11,7 @@ import {
   createHistoryPlugin,
   isBlockAboveEmpty,
   isSelectionAtBlockStart,
+  isSelectionAtBlockEnd,
   PlateLeaf,
   PlateElement,
 } from "@udecode/plate-common";
@@ -73,7 +74,6 @@ import {
   createLinkPlugin,
   createSoftBreakPlugin,
   createExitBreakPlugin,
-  createResetNodePlugin,
   createListPlugin,
 } from "@udecode/plate";
 
@@ -96,16 +96,22 @@ import {
 
 import { autoformatRules } from "./editor/plugins/autoformat/autoformatRules";
 import { createCodeBlockNormalizationPlugin } from "./editor/plugins/createCodeBlockNormalizationPlugin";
+import { createResetNodePlugin } from "./editor/plugins/createResetNodePlugin";
+import { createInlineEscapePlugin } from "./editor/plugins/createInlineEscapePlugin";
+import {
+  NOTE_LINK,
+  ELEMENT_NOTE_LINK,
+  createNoteLinkDropdownPlugin,
+  createNoteLinkElementPlugin,
+  NoteLinkDropdownElement,
+  NoteLinkElement,
+} from "./editor/features/note-linking";
 
 import {
   ELEMENT_VIDEO,
   createVideoPlugin,
 } from "./editor/plugins/createVideoPlugin";
 import { createFilesPlugin } from "./editor/plugins/createFilesPlugin";
-
-// Ideally this is injected; also createVideoPlugin and createFilesPlugin do this
-import { IClient } from "../../preload/client/types";
-const client: IClient = (window as any).chronicles.createClient();
 
 import { EditorMode } from "./EditorMode";
 import { EditableDocument } from "./EditableDocument";
@@ -121,8 +127,16 @@ export interface Props {
   setSelectedEditorMode: (s: EditorMode) => any;
 }
 
+import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import useClient from "../../hooks/useClient";
+import { SearchStore } from "../documents/SearchStore";
+
 export default observer(
   ({ children, saving, value, setValue }: React.PropsWithChildren<Props>) => {
+    const jstore = useContext(JournalsStoreContext);
+    const client = useClient();
+    const store = new SearchStore(client, jstore!, () => {}, []);
+
     const plugins = createPlugins(
       [
         createCodeBlockNormalizationPlugin(),
@@ -166,6 +180,8 @@ export default observer(
         // dropped video files and this won't be called.
         createVideoPlugin(),
         createFilesPlugin(),
+        createNoteLinkDropdownPlugin({ options: { store } } as any),
+        createNoteLinkElementPlugin(),
 
         // Backspacing into an element selects the block before deleting it.
         createSelectOnBackspacePlugin({
@@ -256,6 +272,11 @@ export default observer(
           },
         }),
 
+        // When editing "inline" elements, allow space at the end to "escape" from the element.
+        // ex: link or note link editing.
+        // See plugin comments for links and details; this is
+        createInlineEscapePlugin(),
+
         // Set text block indentation for differentiating structural
         // elements or emphasizing certain content sections.
         // https://platejs.org/docs/indent
@@ -286,7 +307,8 @@ export default observer(
         // being confused about how to exit an e.g. code block to add more content.
         createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
 
-        // e.g. # -> h1, ``` -> code block, etc
+        // convert markdown to wysiwyg sa you type:
+        // # -> h1, ``` -> code block, etc
         createAutoformatPlugin({
           options: {
             rules: autoformatRules,
@@ -302,7 +324,6 @@ export default observer(
           [ELEMENT_CODE_LINE]: CodeLineElement,
           [ELEMENT_CODE_SYNTAX]: CodeSyntaxLeaf,
           [MARK_CODE]: CodeLeaf,
-          // [ELEMENT_HR]: HrElement,
           [ELEMENT_H1]: withProps(HeadingElement, { variant: "h1" }),
           [ELEMENT_H2]: withProps(HeadingElement, { variant: "h2" }),
           [ELEMENT_H3]: withProps(HeadingElement, { variant: "h3" }),
@@ -311,31 +332,22 @@ export default observer(
           [ELEMENT_H6]: withProps(HeadingElement, { variant: "h6" }),
           [ELEMENT_IMAGE]: ImageElement,
           [ELEMENT_LINK]: LinkElement,
-          // todo: need more plugins to make these truly usable.
-          // [ELEMENT_MEDIA_EMBED]: MediaEmbedElement,
-          // [ELEMENT_MENTION]: MentionElement,
-          // [ELEMENT_MENTION_INPUT]: MentionInputElement,
+
+          // NoteLinkDropdown provides the dropdown when typing `@`; NoteLinkElement
+          // is the actual element that gets inserted when you select a note.
+          [NOTE_LINK]: NoteLinkDropdownElement,
+          [ELEMENT_NOTE_LINK]: NoteLinkElement,
+
           [ELEMENT_UL]: withProps(ListElement, { variant: "ul" }),
           [ELEMENT_LI]: withProps(PlateElement, { as: "li" }),
           [ELEMENT_OL]: withProps(ListElement, { variant: "ol" }),
           [ELEMENT_PARAGRAPH]: ParagraphElement,
-          // [ELEMENT_TABLE]: TableElement,
-          // [ELEMENT_TD]: TableCellElement,
-          // [ELEMENT_TH]: TableCellHeaderElement,
-          // [ELEMENT_TODO_LI]: TodoListElement,
-          // [ELEMENT_TR]: TableRowElement,
-          // [ELEMENT_EXCALIDRAW]: ExcalidrawElement,
           [MARK_BOLD]: withProps(PlateLeaf, { as: "strong" }),
-
-          // Unsure about these:
-          // [MARK_HIGHLIGHT]: HighlightLeaf,
           [MARK_ITALIC]: withProps(PlateLeaf, { as: "em" }),
-          // [MARK_KBD]: KbdLeaf,
           [MARK_STRIKETHROUGH]: withProps(PlateLeaf, { as: "s" }),
           [MARK_SUBSCRIPT]: withProps(PlateLeaf, { as: "sub" }),
           [MARK_SUPERSCRIPT]: withProps(PlateLeaf, { as: "sup" }),
           [MARK_UNDERLINE]: withProps(PlateLeaf, { as: "u" }),
-          // [MARK_COMMENT]: CommentLeaf,
         },
       },
     );

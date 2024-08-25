@@ -17,6 +17,7 @@
     "test": "mocha 'src/**/*.test.bundle.js'"
   },
   "dependencies": {
+    "@ariakit/react": "^0.4.8",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^9.2.2",

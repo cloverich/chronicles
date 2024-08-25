@@ -1,51 +1,65 @@
 import React from "react";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
+import { observable } from "mobx";
+
+interface LoodingState {
+  document: EditableDocument | null;
+  loading: boolean;
+  error: Error | null;
+}
 
 /**
  * Load a new or existing document into a view model
  */
 export function useEditableDocument(documentId: string) {
-  const [document, setDocument] = React.useState<EditableDocument | null>(null);
-  const [loadingError, setLoadingError] = React.useState<Error | null>(null);
   const client = useClient();
+  const [state, _] = React.useState<LoodingState>(() => {
+    return observable({
+      document: null,
+      loading: true,
+      error: null,
+    });
+  });
 
   // (Re)load document based on documentId
   React.useEffect(() => {
+    state.loading = true;
+
     let isEffectMounted = true;
     async function load() {
-      setLoadingError(null);
+      state.error = null;
 
       if (!documentId) {
         // Fail safe; this shuldn't happen. If scenarios come up where it could; maybe toast and navigate
         // to documents list instead?
-        setLoadingError(
-          new Error(
-            "Called useEditableDocument without a documentId, unable to load document",
-          ),
+        state.error = new Error(
+          "Called useEditableDocument without a documentId, unable to load document",
         );
+
         return;
       }
 
       try {
         const doc = await client.documents.findById({ id: documentId });
         if (!isEffectMounted) return;
-        setDocument(new EditableDocument(client, doc));
+        state.document = new EditableDocument(client, doc);
+
+        // Loading is instantaneous and the loading = true | false transition which the edit/view depends on never
+        // happens; insert an artifical delay (hack).
+        setTimeout(() => {
+          state.loading = false;
+        });
       } catch (err) {
-        if (!isEffectMounted) return;
-        setLoadingError(err as Error);
+        state.error = err as Error;
       }
     }
 
     load();
     return () => {
-      isEffectMounted = false;
-      if (document?.teardown) document.teardown();
+      if (state.document?.teardown) state.document.teardown();
     };
   }, [documentId]);
 
-  return {
-    document,
-    loadingError: loadingError,
-  };
+  return state;
 }

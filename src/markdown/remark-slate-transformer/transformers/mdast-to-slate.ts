@@ -13,7 +13,10 @@ import {
   ELEMENT_UL,
   ELEMENT_CODE_BLOCK,
   ELEMENT_CODE_LINE,
+  ELEMENT_LINK,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
+
+import { toSlateLink } from "../../../views/edit/editor/features/note-linking/toMdast";
 
 export type Decoration = {
   [key in (
@@ -43,7 +46,6 @@ function convertNodes(nodes: mdast.Content[], deco: Decoration): slate.Node[] {
   }, []);
 }
 
-// NOTE: Added
 const DECORATION_MAPPING = {
   emphasis: "italic",
   strong: "bold",
@@ -365,9 +367,14 @@ function createBreak(node: mdast.Break) {
 export type Link = ReturnType<typeof createLink>;
 
 function createLink(node: mdast.Link, deco: Decoration) {
-  const { type, children, url, title } = node;
+  const { children, url, title } = node;
+
+  const res = toSlateLink({ url, children, deco, convertNodes });
+
+  if (res) return res;
+
   return {
-    type: "a", // NOTE: Default plate link component uses "a"
+    type: ELEMENT_LINK,
     children: convertNodes(children, deco),
     url,
     title,
