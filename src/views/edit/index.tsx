@@ -19,13 +19,17 @@ import { Separator } from "./editor/components/Separator";
 import * as Base from "../layout";
 
 // Loads document, with loading and error placeholders
-function DocumentLoadingContainer() {
+const DocumentLoadingContainer = observer(() => {
   const journalsStore = useContext(JournalsStoreContext)!;
   const { document: documentId } = useParams();
 
   // todo: handle missing or invalid documentId; loadingError may be fine for this, but
   // haven't done any UX / design thinking around it.
-  const { document, loadingError } = useEditableDocument(documentId!);
+  const {
+    document,
+    error: loadingError,
+    loading,
+  } = useEditableDocument(documentId!);
 
   // Filter journals to non-archived ones, but must also add
   // the current document's journal if its archived
@@ -45,17 +49,18 @@ function DocumentLoadingContainer() {
     setJournals(journals);
   }, [document, loadingError]);
 
-  // todo: I don't hit this error when going back and forth to a deleted document, why doesn't this happen?
   if (loadingError) {
     return <EditLoadingComponent error={loadingError} />;
   }
 
-  if (!document || !journals) {
+  // `loading` acts as a break when navigating from one document to another, effectively
+  // resetting the state of the editor
+  if (!document || !journals || loading) {
     return <EditLoadingComponent />;
   }
 
   return <DocumentEditView document={document} journals={journals} />;
-}
+});
 
 interface DocumentEditProps {
   document: EditableDocument;
@@ -168,4 +173,4 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   );
 });
 
-export default observer(DocumentLoadingContainer);
+export default DocumentLoadingContainer;

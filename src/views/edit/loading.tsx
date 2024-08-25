@@ -32,9 +32,7 @@ export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
       </Titlebar>
       <Pane padding={50} paddingTop={98} flexGrow={1} display="flex">
         <Pane flexGrow={1} display="flex" flexDirection="column" width="100%">
-          <Pane flexGrow={1} paddingTop={24}>
-            <h3>Coming soon...</h3>
-          </Pane>
+          <Pane flexGrow={1} paddingTop={24}></Pane>
         </Pane>
       </Pane>
     </>
