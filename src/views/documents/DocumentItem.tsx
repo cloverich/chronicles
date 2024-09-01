@@ -16,10 +16,10 @@ export function DocumentItem(props: {
       className="cursor-pointer flex hover:underline hover:underline-offset"
     >
       {/* Without mono font, dates won't be a uniform width */}
-      <div className="mono" style={{ flexShrink: 0, marginRight: "24px" }}>
+      <div className="font-mono text-sm tracking-tight mr-6 shrink-0">
         {doc.createdAt.slice(0, 10)}
       </div>
-      <div>
+      <div className="font-sans">
         {doc.title}
         <small>
           <Badge

@@ -303,13 +303,27 @@ function createParagraph(node: SlateNodes.Paragraph): mdast.Paragraph {
   };
 }
 
+// weird type is what mdast.Heading expects
+function headingToDepth(heading: string): 1 | 2 | 3 {
+  // stylistic choice: limit depth to h3; we make the same choice
+  // in mdast-to-slate
+  switch (heading) {
+    case "h1":
+      return 1;
+    case "h2":
+      return 2;
+    default:
+      return 3;
+  }
+}
+
 function createHeading(node: SlateNodes.Heading): mdast.Heading {
   const { type, depth, children } = node;
   return {
     type: "heading",
-    // Slate claims "type" will always be "Heading", but its coming through as
-    // "h1", "h2", etc. Probably the Plate plugin encoding it that way.
-    depth: (type as string) === "h1" ? 1 : 2,
+    // todo: Slate type claims "Heading" + depth, but I see only "h1", "h2"
+    // etc here.
+    depth: headingToDepth(type as string),
     children: convertNodes(children) as any as mdast.Heading["children"],
   };
 }
