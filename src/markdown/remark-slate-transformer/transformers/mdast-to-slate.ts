@@ -141,16 +141,25 @@ function createParagraph(node: mdast.Paragraph, deco: Decoration) {
 
 export type Heading = ReturnType<typeof createHeading>;
 
+function depthToHeading(depth: number): string {
+  // stylistic choice: limit depth to h3
+  switch (depth) {
+    case 1:
+      return "h1";
+    case 2:
+      return "h2";
+    default:
+      return "h3";
+  }
+}
+
 function createHeading(node: mdast.Heading, deco: Decoration) {
   const { type, children, depth } = node;
 
   return {
-    // see slate-to-mdast heading conversion
-    // mdast deals in type: "heading" with depth, but
-    // slate (and actually, I think Plate) want type to be
-    // "h1", "h2", etc. I only have toolbar buttons for h1 and h2
-    // so I default to h2 if its not h1
-    type: depth === 1 ? "h1" : "h2",
+    // mdast uses "heading" + depth; our slate implementation
+    // uses "h1", "h2", etc
+    type: depthToHeading(depth),
     depth,
     children: convertNodes(children, deco),
   };

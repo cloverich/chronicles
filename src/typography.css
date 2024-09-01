@@ -70,11 +70,6 @@ dfn {
   font-style: italic;
 }
 
-h1 {
-  font-size: 2em;
-  margin: 0.67em 0;
-}
-
 mark {
   background-color: #ff0;
   color: #000;
@@ -252,16 +247,20 @@ html {
 }
 
 body {
-  color: hsla(0, 0%, 0%, 0.8);
+  color: hsla(0, 0%, 8%, 0.8);
+  font-size: 0.9rem;
   font-family:
-    "IBM Plex Serif",
+    "Space Grotesk",
+    sans-serif,
     -apple-system,
+    "Roboto",
+    "Iosevka Aile",
+    "Iosevka Etoile",
+    "Iosevka",
     "BlinkMacSystemFont",
     "Segoe UI",
-    "Roboto",
     "Helvetica",
     "Arial",
-    sans-serif,
     "Apple Color Emoji",
     "Segoe UI Emoji",
     "Segoe UI Symbol";
@@ -284,176 +283,6 @@ img {
   padding-right: 0;
   padding-top: 0;
   margin-bottom: 0.8125rem;
-}
-
-h1 {
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 2.4375rem;
-  padding-bottom: calc(0.40625rem - 1px);
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 0;
-  margin-bottom: 1.21875rem;
-  color: #515151;
-  font-family:
-    "Roboto Slab",
-    -apple-system,
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica",
-    "Arial",
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  font-weight: 600;
-  text-rendering: optimizeLegibility;
-  font-size: 2rem;
-  line-height: 1.1;
-  border-bottom: 1px solid hsla(0, 0%, 0%, 0.07);
-}
-
-h2 {
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 2.4375rem;
-  padding-bottom: calc(0.40625rem - 1px);
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 0;
-  margin-bottom: 0.40625rem;
-  color: inherit;
-  font-family:
-    "Roboto Slab",
-    -apple-system,
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica",
-    "Arial",
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  font-weight: 400;
-  text-rendering: optimizeLegibility;
-  font-size: 1.51572rem;
-  line-height: 1.1;
-  border-bottom: 0;
-}
-
-h3 {
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 0;
-  padding-bottom: 0;
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 0;
-  margin-bottom: 0.8125rem;
-  color: inherit;
-  font-family:
-    "Roboto Slab",
-    -apple-system,
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica",
-    "Arial",
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  font-weight: 600;
-  text-rendering: optimizeLegibility;
-  font-size: 1.31951rem;
-  line-height: 1.1;
-}
-
-h4 {
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 0;
-  padding-bottom: 0;
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 0;
-  margin-bottom: 0.8125rem;
-  color: inherit;
-  font-family:
-    "Roboto Slab",
-    -apple-system,
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica",
-    "Arial",
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  font-weight: 600;
-  text-rendering: optimizeLegibility;
-  font-size: 1rem;
-  line-height: 1.1;
-}
-
-h5 {
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 0;
-  padding-bottom: 0;
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 0;
-  margin-bottom: 0.8125rem;
-  color: inherit;
-  font-family:
-    "Roboto Slab",
-    -apple-system,
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica",
-    "Arial",
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  font-weight: 600;
-  text-rendering: optimizeLegibility;
-  font-size: 0.87055rem;
-  line-height: 1.1;
-}
-
-h6 {
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 0;
-  padding-bottom: 0;
-  padding-left: 0;
-  padding-right: 0;
-  padding-top: 0;
-  margin-bottom: 0.8125rem;
-  color: hsla(0, 0%, 0%, 0.53);
-  font-family:
-    "Roboto Slab",
-    -apple-system,
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica",
-    "Arial",
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  font-weight: 600;
-  text-rendering: optimizeLegibility;
-  font-size: 0.81225rem;
-  line-height: 1.1;
 }
 
 hgroup {
@@ -787,44 +616,8 @@ li > ul {
   margin-left: 2.03125rem;
 }
 
-/* Commented the links out when I re-styled editor links, but keeping them here for reference */
-
-/* a {
-  color: #3e3e3e;
-  text-decoration: none;
-  border-bottom: 1px solid #3e3e3e;
-} */
-
-/* a:hover,
-a:active {
-  text-decoration: underline;
-} */
-
-a.gatsby-resp-image-link {
-  box-shadow: none;
-}
-
-/* a:hover {
-  text-decoration: none;
-}
-
-header a {
-  text-decoration: none;
-  border-bottom: none;
-} */
-
 blockQuote {
   margin-top: 25px;
   margin-bottom: 25px;
   border-left: none;
-}
-
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 400;
-  font-size: 1.3em;
-  color: #515151;
 }

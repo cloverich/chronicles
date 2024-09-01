@@ -5,6 +5,8 @@
 /* This section initially added as recommended copypasta https://platejs.org/docs/components/installation/manual */
 @layer base {
   :root {
+    --font-sans: "Space Grotesk", sans-serif;
+    --font-heading: "Space Grotesk";
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -98,18 +100,6 @@ div {
   margin: auto;
 }
 
-.mono {
-  font-family: "IBM Plex Mono", "SF Mono", SFMono-Regular, ui-monospace,
-    "DejaVu Sans Mono", Menlo, Consolas, monospace;
-}
-
-.doc-date {
-  margin-left: -150px;
-  font-family: "IBM Plex Mono";
-  font-size: 18px;
-  color: rgb(41, 58, 242);
-}
-
 /**
  * When first elements of each note have margin-top,
  * like heading elements, it acts like extra padding in the
@@ -128,36 +118,3 @@ article {
 article img {
   max-width: 64%;
 }
-
-/* see link styling in Layout */
-.link-active {
-  font-weight: 700;
-  margin: 1rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.link-inactive {
-  margin: 1rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.link-active::after {
-  content: " }";
-}
-
-.link-active::before {
-  content: "{ ";
-}
-
-.link-inactive::after {
-  content: "  ";
-}
-
-.link-inactive::before {
-  content: "  ";
-}
-
-/* 
-removed this one from typography.js
-p *:last-child{margin-bottom:0;}
-*/
