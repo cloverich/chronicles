@@ -2,30 +2,18 @@ import * as React from "react";
 
 import { ToolbarButton } from "../../components/Toolbar";
 import {
-  useOpenState,
   DropdownMenu,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  useOpenState,
 } from "./DropdownMenu";
 
-import {
-  MoreIcon,
-  HeaderOneIcon,
-  HeaderTwoIcon,
-  HeaderThreeIcon,
-  CodeBlockIcon,
-  CitationIcon,
-  NumberedListIcon,
-  PropertiesIcon,
-  FontIcon,
-  DeleteIcon,
-  TrashIcon,
-} from "evergreen-ui";
+import { MoreIcon, TrashIcon } from "evergreen-ui";
 
 import { EditorMode } from "../../../EditorMode";
 

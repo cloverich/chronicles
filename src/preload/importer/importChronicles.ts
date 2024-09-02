@@ -1,9 +1,9 @@
-import { Files } from "../files";
-import { stringToMdast } from "../../markdown";
-import { shouldIndexDay } from "./indexer";
 import fs from "fs";
-import path from "path";
 import { DateTime } from "luxon";
+import path from "path";
+import { stringToMdast } from "../../markdown";
+import { Files } from "../files";
+import { shouldIndexDay } from "./indexer";
 
 import { create } from "../client";
 const client = create();

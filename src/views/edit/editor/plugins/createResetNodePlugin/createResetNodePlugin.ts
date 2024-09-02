@@ -1,5 +1,4 @@
 import {
-  type TElement,
   createPluginFactory,
   getEndPoint,
   getNode,
@@ -10,6 +9,7 @@ import {
   setNodes,
   unsetNodes,
   withoutNormalizing,
+  type TElement,
 } from "@udecode/plate-common";
 import { Point } from "slate";
 

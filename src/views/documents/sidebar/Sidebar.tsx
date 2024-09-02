@@ -1,8 +1,9 @@
-import React from "react";
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import React from "react";
 
-import { Pane, Card, Heading, IconButton, PlusIcon } from "evergreen-ui";
+import { Card, Heading, IconButton, Pane, PlusIcon } from "evergreen-ui";
 
+import { observer } from "mobx-react-lite";
 import {
   Sheet,
   SheetContent,
@@ -10,12 +11,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "../../../components/Sidesheet";
-import { observer } from "mobx-react-lite";
-import { useSidebarStore } from "./store";
-import { SidebarStore } from "./store";
-import { JournalCreateForm, JournalItem, Collapse } from "./JournalItem";
-import { TagsList } from "./TagsList";
 import { SearchStore } from "../SearchStore";
+import { Collapse, JournalCreateForm, JournalItem } from "./JournalItem";
+import { TagsList } from "./TagsList";
+import { SidebarStore, useSidebarStore } from "./store";
 
 import "./sidebar-styles.css";
 

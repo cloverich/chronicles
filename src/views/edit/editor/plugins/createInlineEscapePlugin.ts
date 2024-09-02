@@ -3,13 +3,13 @@ import { createPluginFactory } from "@udecode/plate-core";
 // These are all effectively overrides of Slate Editor.blah methods, sometimes re-named,
 // usually handling Plate types and doing inline null checking
 import {
-  isInline,
   getAboveNode,
-  isEndPoint,
   getPointAfter,
+  isEndPoint,
+  isInline,
   setSelection,
 } from "@udecode/plate-common";
-import { Editor, Range, Transforms } from "slate";
+import { Range } from "slate";
 
 const KEY_INLINE_ESCAPE = "inline-escape";
 

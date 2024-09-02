@@ -1,10 +1,10 @@
-import { unified } from "unified";
-import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import remarkUnwrapImages from "remark-unwrap-images";
-import { remarkToSlate, slateToRemark } from "./remark-slate-transformer";
 import { Node as SNode } from "slate";
+import { unified } from "unified";
+import { remarkToSlate, slateToRemark } from "./remark-slate-transformer";
 
 export * from "ts-mdast";
 

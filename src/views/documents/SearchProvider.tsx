@@ -1,10 +1,9 @@
-import React, { useContext, useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
+import React, { useContext, useEffect, useState } from "react";
+import { Outlet, useSearchParams } from "react-router-dom";
 import useClient from "../../hooks/useClient";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { SearchStore, SearchStoreContext } from "./SearchStore";
 import { LayoutDummy } from "../../layout";
+import { SearchStore, SearchStoreContext } from "./SearchStore";
 
 // Sets up document search and its context
 export function SearchProvider() {

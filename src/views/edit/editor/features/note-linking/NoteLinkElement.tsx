@@ -1,6 +1,6 @@
-import React from "react";
 import { cn, withRef } from "@udecode/cn";
-import { useElement, PlateElement, TElement } from "@udecode/plate-common";
+import { PlateElement, TElement, useElement } from "@udecode/plate-common";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
 export const ELEMENT_NOTE_LINK = "noteLinkElement";
@@ -26,7 +26,7 @@ export const NoteLinkElement = withRef<typeof PlateElement>(
         ref={ref}
         asChild
         className={cn(
-          "text-indigo-800 cursor-pointer underline underline-offset-1 decoration-1",
+          "cursor-pointer text-indigo-800 underline decoration-1 underline-offset-1",
           className,
         )}
         {...props}

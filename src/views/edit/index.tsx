@@ -1,22 +1,22 @@
-import React, { useContext, useState, useEffect } from "react";
+import { ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import Editor from "./editor";
-import { IconButton, Pane, ChevronLeftIcon } from "evergreen-ui";
-import { useEditableDocument } from "./useEditableDocument";
-import { EditableDocument } from "./EditableDocument";
-import { JournalResponse } from "../../preload/client/journals";
-import { EditLoadingComponent } from "./loading";
+import React, { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { useParams, useNavigate } from "react-router-dom";
-import { useSearchStore } from "../documents/SearchStore";
-import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
-import { EditorMode } from "./EditorMode";
+import { JournalResponse } from "../../preload/client/journals";
 import Titlebar from "../../titlebar/macos";
-import PlateContainer from "./PlateContainer";
-import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
-import FrontMatter from "./FrontMatter";
-import { Separator } from "./editor/components/Separator";
+import { useSearchStore } from "../documents/SearchStore";
 import * as Base from "../layout";
+import { EditableDocument } from "./EditableDocument";
+import { EditorMode } from "./EditorMode";
+import FrontMatter from "./FrontMatter";
+import PlateContainer from "./PlateContainer";
+import Editor from "./editor";
+import { Separator } from "./editor/components/Separator";
+import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
+import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
+import { EditLoadingComponent } from "./loading";
+import { useEditableDocument } from "./useEditableDocument";
 
 // Loads document, with loading and error placeholders
 const DocumentLoadingContainer = observer(() => {

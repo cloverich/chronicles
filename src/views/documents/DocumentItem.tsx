@@ -1,5 +1,5 @@
+import { Badge } from "evergreen-ui";
 import React from "react";
-import { Pane, Badge } from "evergreen-ui";
 import { SearchItem } from "./SearchStore";
 
 export function DocumentItem(props: {
@@ -13,10 +13,10 @@ export function DocumentItem(props: {
     <div
       key={doc.id}
       onClick={() => edit(doc.id)}
-      className="cursor-pointer flex hover:underline hover:underline-offset"
+      className="hover:underline-offset flex cursor-pointer hover:underline"
     >
       {/* Without mono font, dates won't be a uniform width */}
-      <div className="font-mono text-sm tracking-tight mr-6 shrink-0">
+      <div className="mr-6 shrink-0 font-mono text-sm tracking-tight">
         {doc.createdAt.slice(0, 10)}
       </div>
       <div className="font-sans">

@@ -1,5 +1,5 @@
-import * as slate from "../models/slate";
 import * as mdast from "../models/mdast";
+import * as slate from "../models/slate";
 
 // One of the main reasons this fork exists:
 // NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
@@ -7,13 +7,13 @@ import { prefixUrl, videoExtensions } from "../../../hooks/images";
 
 // NOTE: added, and a good example of what changes I would want to make to this library!
 import {
-  ELEMENT_LI,
-  ELEMENT_LIC,
-  ELEMENT_OL,
-  ELEMENT_UL,
   ELEMENT_CODE_BLOCK,
   ELEMENT_CODE_LINE,
+  ELEMENT_LI,
+  ELEMENT_LIC,
   ELEMENT_LINK,
+  ELEMENT_OL,
+  ELEMENT_UL,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
 import { toSlateLink } from "../../../views/edit/editor/features/note-linking/toMdast";

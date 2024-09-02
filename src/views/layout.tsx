@@ -19,7 +19,7 @@ import React from "react";
  */
 export const Container = ({ children }: React.PropsWithChildren) => {
   return (
-    <div className="flex flex-col h-screen overflow-hidden">{children}</div>
+    <div className="flex h-screen flex-col overflow-hidden">{children}</div>
   );
 };
 
@@ -43,7 +43,7 @@ export const BottomSpacer = () => {
  */
 export const ScrollContainer = ({ children }: React.PropsWithChildren) => {
   return (
-    <div className="p-12 flex-grow flex flex-col overflow-y-scroll">
+    <div className="flex flex-grow flex-col overflow-y-scroll p-12">
       {children}
     </div>
   );

@@ -1,8 +1,8 @@
-import path from "path";
-import { stringToMdast, mdastToString, Root } from "../../markdown";
 import { Database } from "better-sqlite3";
-import { Files, PathStatsFile } from "../files";
 import { DateTime } from "luxon";
+import path from "path";
+import { Root, mdastToString, stringToMdast } from "../../markdown";
+import { Files, PathStatsFile } from "../files";
 
 export interface IJournal {
   // path to root folder

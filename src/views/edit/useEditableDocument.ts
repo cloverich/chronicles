@@ -1,7 +1,7 @@
+import { observable } from "mobx";
 import React from "react";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
-import { observable } from "mobx";
 
 interface LoodingState {
   document: EditableDocument | null;

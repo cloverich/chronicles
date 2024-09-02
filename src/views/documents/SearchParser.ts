@@ -1,11 +1,11 @@
 import { SearchToken } from "./search/tokens";
 // import { FocusTokenParser } from "./search/parsers/focus";
-import { JournalTokenParser } from "./search/parsers/in";
-import { FilterTokenParser } from "./search/parsers/filter";
-import { TitleTokenParser } from "./search/parsers/title";
-import { TextTokenParser } from "./search/parsers/text";
 import { BeforeTokenParser } from "./search/parsers/before";
+import { FilterTokenParser } from "./search/parsers/filter";
+import { JournalTokenParser } from "./search/parsers/in";
 import { TagTokenParser } from "./search/parsers/tag";
+import { TextTokenParser } from "./search/parsers/text";
+import { TitleTokenParser } from "./search/parsers/title";
 
 // TODO: This won't allow searching where value has colon in it
 const tokenRegex = /^(.*):(.*)/;

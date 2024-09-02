@@ -1,9 +1,7 @@
-import * as React from "react";
 import * as ToolbarPrimitive from "@radix-ui/react-toolbar";
 import { cn, withCn, withRef, withVariants } from "@udecode/cn";
-import { cva, VariantProps } from "class-variance-authority";
-
-import { Icons } from "../../../../components/icons";
+import { VariantProps, cva } from "class-variance-authority";
+import * as React from "react";
 
 import { Separator } from "./Separator";
 import { withTooltip } from "./Tooltip";

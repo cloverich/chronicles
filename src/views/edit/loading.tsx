@@ -1,6 +1,6 @@
-import React from "react";
+import { ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import { Pane, IconButton, ChevronLeftIcon } from "evergreen-ui";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import Titlebar from "../../titlebar/macos";
 import { Separator } from "./editor/components/Separator";

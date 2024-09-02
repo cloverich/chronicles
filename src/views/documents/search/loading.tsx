@@ -1,5 +1,5 @@
-import React from "react";
 import { TagInput } from "evergreen-ui";
+import React from "react";
 
 export function TagSearchLoading() {
   return (

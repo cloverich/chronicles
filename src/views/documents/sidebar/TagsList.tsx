@@ -1,11 +1,11 @@
-import React from "react";
 import {
-  ListItem,
-  FolderCloseIcon,
   Card,
+  FolderCloseIcon,
   Heading,
+  ListItem,
   UnorderedList,
 } from "evergreen-ui";
+import React from "react";
 
 import { useTags } from "../../../hooks/useTags";
 

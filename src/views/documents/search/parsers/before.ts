@@ -1,4 +1,4 @@
-import { SearchToken, BeforeToken } from "../tokens";
+import { BeforeToken, SearchToken } from "../tokens";
 
 export class BeforeTokenParser {
   prefix = "before:";

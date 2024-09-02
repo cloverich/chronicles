@@ -1,5 +1,5 @@
-import { Element as SlateElement, Node as SlateNode } from "slate";
-import { stringToSlate, slateToString, slateToMdast } from "../../markdown";
+import { Node as SlateNode } from "slate";
+import { slateToMdast, slateToString, stringToSlate } from "../../markdown";
 
 /**
  * Helper to convert markdown text into Slate nodes, and vice versa

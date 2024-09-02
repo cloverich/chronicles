@@ -1,5 +1,5 @@
-import React, { PropsWithChildren } from "react";
 import { cn } from "@udecode/cn";
+import React, { PropsWithChildren } from "react";
 
 interface Props extends PropsWithChildren {
   className?: string;
@@ -10,7 +10,7 @@ export default function Titlebar({ children, className }: Props) {
     <div
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       className={cn(
-        "bg-secondary border-b border-accent text-accent-foreground border-accent flex justify-between items-center py-3 px-2.5 pl-20 fixed w-full h-12 z-10 shadow",
+        "fixed z-10 flex h-12 w-full items-center justify-between border-b border-accent bg-secondary px-2.5 py-3 pl-20 text-accent-foreground shadow",
         className,
       )}
     >

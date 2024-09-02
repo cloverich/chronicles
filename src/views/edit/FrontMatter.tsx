@@ -1,10 +1,10 @@
-import { Popover, Menu, Position, TagInput } from "evergreen-ui";
+import { Menu, Popover, Position, TagInput } from "evergreen-ui";
+import { observer } from "mobx-react-lite";
 import React from "react";
 import { DayPicker } from "react-day-picker";
 import { JournalResponse } from "../../preload/client/journals";
 import { TagTokenParser } from "../documents/search/parsers/tag";
 import { EditableDocument } from "./EditableDocument";
-import { observer } from "mobx-react-lite";
 
 const FrontMatter = observer(
   ({
@@ -134,7 +134,7 @@ const FrontMatter = observer(
             type="text"
             name="title"
             ref={onInputRendered}
-            className="font-heading font-medium text-2xl w-full border-none focus:outline-none"
+            className="w-full border-none font-heading text-2xl font-medium focus:outline-none"
             onChange={(e: any) => (document.title = e.target.value)}
             value={document.title || ""} // OR '' prevents react complaining about uncontrolled component
             placeholder="Untitled document"
@@ -142,14 +142,14 @@ const FrontMatter = observer(
         </div>
 
         {/* Date / Journal dropdown */}
-        <div className="flex justify-start pl-0.5 text-xs mb-4">
+        <div className="mb-4 flex justify-start pl-0.5 text-xs">
           {datePicker()}
           &nbsp;in&nbsp;
           {journalPicker()}
         </div>
 
         {/* Tags */}
-        <div className="flex justify-start pl-0.5 text-sm -mt-2 mb-4">
+        <div className="-mt-2 mb-4 flex justify-start pl-0.5 text-sm">
           <TagInput
             flexGrow={1}
             inputProps={{ placeholder: "Document tags" }}

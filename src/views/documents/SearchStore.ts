@@ -1,9 +1,9 @@
+import { IObservableArray, action, computed, observable } from "mobx";
 import { createContext, useContext } from "react";
-import { IClient } from "../../hooks/useClient";
-import { observable, IObservableArray, computed, action } from "mobx";
 import { JournalsStore } from "../../hooks/stores/journals";
-import { SearchToken } from "./search/tokens";
+import { IClient } from "../../hooks/useClient";
 import { SearchParser } from "./SearchParser";
+import { SearchToken } from "./search/tokens";
 
 export interface SearchItem {
   id: string;

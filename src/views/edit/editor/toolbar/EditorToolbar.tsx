@@ -1,4 +1,3 @@
-import React from "react";
 import {
   MARK_BOLD,
   MARK_CODE,
@@ -6,34 +5,31 @@ import {
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
 } from "@udecode/plate-basic-marks";
+import React from "react";
 // import { KEY_LIST_STYLE_TYPE, ListStyleType } from "@udecode/plate-indent-list";
 // import { ELEMENT_OL, ELEMENT_UL } from "@udecode/plate-list";
 // import { ELEMENT_IMAGE } from "@udecode/plate-media";
-import { Icons } from "../../../../components/icons";
 
+import { Toolbar, ToolbarGroup } from "../components/Toolbar";
 import { LinkToolbarButton } from "./components/LinkToolbarButton";
 import { MarkToolbarButton } from "./components/MarkToolbarButton";
-import { ToolbarGroup, Toolbar } from "../components/Toolbar";
 
 // I think this needs to be on the root, wherever Theme would be added (if we had a theme)
+import {
+  BoldIcon,
+  CodeIcon,
+  ItalicIcon,
+  StrikethroughIcon,
+  UnderlineIcon,
+} from "evergreen-ui";
+import { useNavigate } from "react-router-dom";
+import { useIsMounted } from "../../../../hooks/useIsMounted";
+import { useSearchStore } from "../../../documents/SearchStore";
+import { EditableDocument } from "../../EditableDocument";
+import { EditorMode } from "../../EditorMode";
 import { TooltipProvider } from "../components/Tooltip";
 import ChangeBlockDropdown from "./components/ChangeBlockDropdown";
 import DebugDropdown from "./components/DebugDropdown";
-import { EditorMode } from "../../EditorMode";
-import {
-  BoldIcon,
-  ItalicIcon,
-  UnderlineIcon,
-  StrikethroughIcon,
-  CodeIcon,
-  LinkIcon,
-  MoreIcon,
-} from "evergreen-ui";
-import { Underline } from "lucide-react";
-import { EditableDocument } from "../../EditableDocument";
-import { useIsMounted } from "../../../../hooks/useIsMounted";
-import { useNavigate } from "react-router-dom";
-import { useSearchStore } from "../../../documents/SearchStore";
 
 interface Props {
   selectedEditorMode: EditorMode;

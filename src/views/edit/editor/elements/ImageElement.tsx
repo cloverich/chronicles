@@ -1,15 +1,15 @@
-import React from "react";
 import { cn, withRef } from "@udecode/cn";
 import { PlateElement, withHOC } from "@udecode/plate-common";
 import { ELEMENT_IMAGE, Image, useMediaState } from "@udecode/plate-media";
 import { ResizableProvider, useResizableStore } from "@udecode/plate-resizable";
+import React from "react";
 
 import { Caption, CaptionTextarea } from "./Caption";
 import { MediaPopover } from "./MediaPopover";
 import {
-  mediaResizeHandleVariants,
   Resizable,
   ResizeHandle,
+  mediaResizeHandleVariants,
 } from "./Resizeable";
 
 // https://platejs.org/docs/components/image-element

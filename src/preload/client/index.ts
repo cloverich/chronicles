@@ -1,11 +1,11 @@
-import { JournalsClient } from "./journals";
-import { DocumentsClient } from "./documents";
-import { TagsClient } from "./tags";
-import { PreferencesClient } from "./preferences";
-import { FilesClient } from "./files";
-import { IClient } from "./types";
 import DB from "better-sqlite3";
 import Knex from "knex";
+import { DocumentsClient } from "./documents";
+import { FilesClient } from "./files";
+import { JournalsClient } from "./journals";
+import { PreferencesClient } from "./preferences";
+import { TagsClient } from "./tags";
+import { IClient } from "./types";
 
 import Store from "electron-store";
 const settings = new Store({

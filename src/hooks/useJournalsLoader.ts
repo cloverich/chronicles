@@ -1,6 +1,6 @@
 import React from "react";
-import { JournalsStore } from "./stores/journals";
 import { JournalResponse } from "../preload/client/journals";
+import { JournalsStore } from "./stores/journals";
 import useClient from "./useClient";
 
 export const JournalsStoreContext = React.createContext<JournalsStore | null>(

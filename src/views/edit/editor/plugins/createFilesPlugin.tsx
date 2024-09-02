@@ -7,7 +7,7 @@ import {
 
 import { ELEMENT_LINK } from "@udecode/plate";
 
-import { isVideoUrl, isImageUrl } from "../../../../hooks/images";
+import { isImageUrl, isVideoUrl } from "../../../../hooks/images";
 
 // Ideally this is injected
 import { IClient } from "../../../../hooks/useClient";

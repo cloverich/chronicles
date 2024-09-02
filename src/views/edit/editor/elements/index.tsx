@@ -2,14 +2,14 @@
 // https://platejs.org/docs/plugin-components
 
 export * from "./Blockquote";
-export * from "./CodeLeaf";
-export * from "./CodeSyntaxLeaf";
-export * from "./CodeLine";
 export * from "./CodeBlock";
+export * from "./CodeLeaf";
+export * from "./CodeLine";
+export * from "./CodeSyntaxLeaf";
 export * from "./Heading";
-export * from "./Paragraph";
-export * from "./Link";
-export * from "./List";
 export * from "./ImageElement";
+export * from "./Link";
 export * from "./LinkFloatingToolbar";
+export * from "./List";
+export * from "./Paragraph";
 export * from "./Video";

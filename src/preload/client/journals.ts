@@ -1,5 +1,5 @@
-import { uuidv7 } from "uuidv7";
 import { Database } from "better-sqlite3";
+import { uuidv7 } from "uuidv7";
 
 export interface JournalResponse {
   id: string;

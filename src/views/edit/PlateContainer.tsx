@@ -1,53 +1,41 @@
-import React, { useContext } from "react";
 import { withProps } from "@udecode/cn";
-import { observer } from "mobx-react-lite";
-import { Editor, Node as SNode } from "slate";
 import {
   Plate,
-  PlateContent,
+  PlateElement,
+  PlateLeaf,
   RenderAfterEditable,
+  createHistoryPlugin,
   createPlugins,
   createReactPlugin,
-  createHistoryPlugin,
   isBlockAboveEmpty,
   isSelectionAtBlockStart,
-  isSelectionAtBlockEnd,
-  PlateLeaf,
-  PlateElement,
 } from "@udecode/plate-common";
+import { observer } from "mobx-react-lite";
+import React, { useContext } from "react";
+import { Node as SNode } from "slate";
 
 import {
-  createBasicElementsPlugin,
-  createBasicMarksPlugin,
-  createIndentListPlugin,
-  createIndentPlugin,
-
-  // @udecode/plate-autoformat
-  createAutoformatPlugin,
-
-  // imported for resetNodePlugin
-  unwrapCodeBlock,
-  isSelectionAtCodeBlockStart,
-  isCodeBlockEmpty,
-
-  // elements
-  KEYS_HEADING,
+  ELEMENT_BLOCKQUOTE,
+  ELEMENT_CODE_BLOCK,
+  ELEMENT_CODE_LINE, // inside code_block, not inline code (that's mark_code)
+  ELEMENT_CODE_SYNTAX,
   ELEMENT_H1,
   ELEMENT_H2,
   ELEMENT_H3,
   ELEMENT_H4,
   ELEMENT_H5,
   ELEMENT_H6,
-  ELEMENT_BLOCKQUOTE,
-  ELEMENT_CODE_BLOCK,
-  ELEMENT_CODE_LINE, // inside code_block, not inline code (that's mark_code)
-  ELEMENT_CODE_SYNTAX,
-  ELEMENT_LINK,
+  ELEMENT_IMAGE,
   ELEMENT_LI,
+  ELEMENT_LINK,
+  ELEMENT_MEDIA_EMBED,
+  ELEMENT_OL,
+  ELEMENT_PARAGRAPH,
   ELEMENT_TD,
   ELEMENT_TODO_LI,
   ELEMENT_UL,
-  ELEMENT_OL,
+  // elements
+  KEYS_HEADING,
   MARK_BOLD,
   MARK_CODE,
   MARK_ITALIC,
@@ -55,26 +43,29 @@ import {
   MARK_SUBSCRIPT,
   MARK_SUPERSCRIPT,
   MARK_UNDERLINE,
-
+  // @udecode/plate-autoformat
+  createAutoformatPlugin,
+  createBasicElementsPlugin,
+  createBasicMarksPlugin,
+  createExitBreakPlugin,
+  createImagePlugin,
+  createIndentListPlugin,
+  createIndentPlugin,
+  // links
+  createLinkPlugin,
+  createListPlugin,
   // images
   // https://platejs.org/docs/media
   createSelectOnBackspacePlugin,
-  ELEMENT_IMAGE,
-  createImagePlugin,
-  ELEMENT_MEDIA_EMBED,
-
+  createSoftBreakPlugin,
   // createTogglePlugin
-
   // So document always has a trailing paragraph, ensures you
   // can always type after the last non-paragraph block.
   createTrailingBlockPlugin,
-  ELEMENT_PARAGRAPH,
-
-  // links
-  createLinkPlugin,
-  createSoftBreakPlugin,
-  createExitBreakPlugin,
-  createListPlugin,
+  isCodeBlockEmpty,
+  isSelectionAtCodeBlockStart,
+  // imported for resetNodePlugin
+  unwrapCodeBlock,
 } from "@udecode/plate";
 
 import { createCaptionPlugin } from "@udecode/plate-caption";
@@ -83,39 +74,39 @@ import {
   BlockquoteElement,
   CodeBlockElement,
   CodeLeaf,
-  CodeSyntaxLeaf,
   CodeLineElement,
+  CodeSyntaxLeaf,
   HeadingElement,
-  ParagraphElement,
   ImageElement,
   LinkElement,
-  ListElement,
   LinkFloatingToolbar,
+  ListElement,
+  ParagraphElement,
   VideoElement,
 } from "./editor/elements";
 
-import { autoformatRules } from "./editor/plugins/autoformat/autoformatRules";
-import { createCodeBlockNormalizationPlugin } from "./editor/plugins/createCodeBlockNormalizationPlugin";
-import { createResetNodePlugin } from "./editor/plugins/createResetNodePlugin";
-import { createInlineEscapePlugin } from "./editor/plugins/createInlineEscapePlugin";
 import {
-  NOTE_LINK,
   ELEMENT_NOTE_LINK,
-  createNoteLinkDropdownPlugin,
-  createNoteLinkElementPlugin,
+  NOTE_LINK,
   NoteLinkDropdownElement,
   NoteLinkElement,
+  createNoteLinkDropdownPlugin,
+  createNoteLinkElementPlugin,
 } from "./editor/features/note-linking";
+import { autoformatRules } from "./editor/plugins/autoformat/autoformatRules";
+import { createCodeBlockNormalizationPlugin } from "./editor/plugins/createCodeBlockNormalizationPlugin";
+import { createInlineEscapePlugin } from "./editor/plugins/createInlineEscapePlugin";
+import { createResetNodePlugin } from "./editor/plugins/createResetNodePlugin";
 
+import { createFilesPlugin } from "./editor/plugins/createFilesPlugin";
 import {
   ELEMENT_VIDEO,
   createVideoPlugin,
 } from "./editor/plugins/createVideoPlugin";
-import { createFilesPlugin } from "./editor/plugins/createFilesPlugin";
 
-import { EditorMode } from "./EditorMode";
-import { EditableDocument } from "./EditableDocument";
 import { JournalResponse } from "../../hooks/useClient";
+import { EditableDocument } from "./EditableDocument";
+import { EditorMode } from "./EditorMode";
 
 export interface Props {
   saving: boolean;
@@ -127,8 +118,8 @@ export interface Props {
   setSelectedEditorMode: (s: EditorMode) => any;
 }
 
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import useClient from "../../hooks/useClient";
+import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { SearchStore } from "../documents/SearchStore";
 
 export default observer(

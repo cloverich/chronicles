@@ -1,12 +1,10 @@
-import { createPluginFactory } from "@udecode/plate-core";
 import {
-  type PlateEditor,
-  type TElement,
   getEditorString,
   getPointBefore,
   getRange,
-  getPluginOptions,
+  type PlateEditor,
 } from "@udecode/plate-common";
+import { createPluginFactory } from "@udecode/plate-core";
 
 export const NOTE_LINK = "noteLinkingPlugin";
 
