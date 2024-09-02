@@ -1,13 +1,13 @@
 export { NoteLinkDropdownElement } from "./NoteLinkDropdown";
 export {
-  createNoteLinkDropdownPlugin,
+  ELEMENT_NOTE_LINK,
+  INoteLinkElement,
+  NoteLinkElement,
+} from "./NoteLinkElement";
+export {
   NOTE_LINK,
+  createNoteLinkDropdownPlugin,
 } from "./createNoteLinkDropdownPlugin";
 export { createNoteLinkElementPlugin } from "./createNoteLinkElementPlugin";
-export {
-  NoteLinkElement,
-  INoteLinkElement,
-  ELEMENT_NOTE_LINK,
-} from "./NoteLinkElement";
 
 export { toMdastLinkFactory as createLinkFromNoteLinkFactory } from "./toMdast";

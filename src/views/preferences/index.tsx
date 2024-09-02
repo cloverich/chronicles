@@ -1,9 +1,9 @@
-import React, { useState, useEffect, PropsWithChildren } from "react";
-import { Pane, Button, IconButton, ChevronLeftIcon } from "evergreen-ui";
-import useClient from "../../hooks/useClient";
+import { Button, ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import { RouteProps, useNavigate } from "react-router-dom";
-import * as Base from "../layout";
+import useClient from "../../hooks/useClient";
 import Titlebar from "../../titlebar/macos";
+import * as Base from "../layout";
 
 interface Props extends RouteProps {
   // TODO: any added to satisfy ts check step; previously

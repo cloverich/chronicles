@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
 import {
+  isSelectionExpanded,
   useEditorSelector,
   useElement,
   useRemoveNodeButton,
-  isSelectionExpanded,
 } from "@udecode/plate-common";
+import React, { useEffect } from "react";
 
 import {
   floatingMediaActions,
@@ -64,7 +64,7 @@ export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
         {isEditing ? (
           <div className="flex w-[330px] flex-col">
             <div className="flex items-center px-2">
-              <div className="flex items-center text-muted-foreground px-1">
+              <div className="flex items-center px-1 text-muted-foreground">
                 <Icons.link className="h-4 w-4" />
               </div>
 

@@ -6,8 +6,8 @@
 // NOTE: This script won't actually run here, because the databse is compiled
 // against a target electron version, rather than the local node version. So
 // I run it in the preload/client/index.ts file; keeping here for reference.
-import { V7Generator } from "uuidv7";
 import Knex from "knex";
+import { V7Generator } from "uuidv7";
 
 const knex = Knex({
   client: "better-sqlite3",

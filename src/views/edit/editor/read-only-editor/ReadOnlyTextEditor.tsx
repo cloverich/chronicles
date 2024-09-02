@@ -1,7 +1,7 @@
-import * as React from "react";
-import { ReadonlyToolbar } from "./ReadonlyToolbar";
 import { observer } from "mobx-react-lite";
+import * as React from "react";
 import { EditorMode } from "../../EditorMode";
+import { ReadonlyToolbar } from "./ReadonlyToolbar";
 
 interface Props {
   markdown?: string;

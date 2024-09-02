@@ -1,5 +1,5 @@
-import { suite, test } from "mocha";
 import { assert } from "chai";
+import { suite, test } from "mocha";
 import { SearchParser } from "../SearchParser";
 import { SearchToken } from "./tokens";
 

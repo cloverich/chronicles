@@ -1,5 +1,5 @@
-import { observable, computed, toJS } from "mobx";
-import { JournalResponse, IClient } from "../useClient";
+import { computed, observable, toJS } from "mobx";
+import { IClient, JournalResponse } from "../useClient";
 
 export class JournalsStore {
   @observable loading: boolean = true;

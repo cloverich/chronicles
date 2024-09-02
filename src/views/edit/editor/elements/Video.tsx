@@ -1,8 +1,8 @@
+import { PlateElement, PlateRenderElementProps } from "@udecode/plate-common";
 import React from "react";
-import { PlateRenderElementProps, PlateElement } from "@udecode/plate-common";
+import { ELEMENT_VIDEO } from "../plugins/createVideoPlugin";
 import { Caption, CaptionTextarea } from "./Caption";
 import { MediaPopover } from "./MediaPopover";
-import { ELEMENT_VIDEO } from "../plugins/createVideoPlugin";
 
 /**
  * Renders <video> elements. Expects a url to be present in the element.

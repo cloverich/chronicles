@@ -3,7 +3,6 @@
 // icons in all their components. Will either prefer these throughou,
 // or migrate the plate icons to use evergreens
 // https://platejs.org/docs/components/installation/manual
-import React from "react";
 import { cva } from "class-variance-authority";
 import {
   AlignCenter,
@@ -12,16 +11,15 @@ import {
   AlignRight,
   Archive,
   Baseline,
-  Bug,
   Bold,
+  Bug,
   Check,
-  ChevronUp,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   ChevronsUpDown,
   Code2,
   Combine,
-  Edit2,
   ExternalLink,
   Eye,
   FileCode,
@@ -75,6 +73,7 @@ import {
   WrapText,
   X,
 } from "lucide-react";
+import React from "react";
 
 import type { LucideIcon } from "lucide-react";
 

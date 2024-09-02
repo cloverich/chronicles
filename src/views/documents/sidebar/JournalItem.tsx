@@ -1,5 +1,5 @@
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { Pane, Heading, toaster } from "evergreen-ui";
+import { Heading, Pane, toaster } from "evergreen-ui";
 import { noop } from "lodash";
 import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
@@ -201,7 +201,7 @@ const JournalEditor = observer(function JournalEditor({
       <input
         type="text"
         autoFocus
-        className="px-1 border border-input bg-transparent text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="border border-input bg-transparent px-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         ref={ref}
         value={name}
         onChange={(e) => setName(e.target.value)}

@@ -1,7 +1,7 @@
-import { IJournalsClient } from "./journals";
 import { IDocumentsClient } from "./documents";
-import { IPreferencesClient } from "./preferences";
 import { IFilesClient } from "./files";
+import { IJournalsClient } from "./journals";
+import { IPreferencesClient } from "./preferences";
 import { ITagsClient } from "./tags";
 
 // This interface was created with these "I" types like this

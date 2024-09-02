@@ -1,5 +1,5 @@
-import Store from "electron-store";
 import { ipcRenderer } from "electron";
+import Store from "electron-store";
 
 export interface Preferences {
   DATABASE_URL: string;

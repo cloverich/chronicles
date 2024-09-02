@@ -1,11 +1,10 @@
-import { GetDocumentResponse } from "../../preload/client/documents";
-import { pick } from "lodash";
-import { observable, reaction, toJS, computed, IReactionDisposer } from "mobx";
 import { toaster } from "evergreen-ui";
-import { IClient } from "../../hooks/useClient";
+import { debounce, pick } from "lodash";
+import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
 import { Node as SlateNode } from "slate";
+import { IClient } from "../../hooks/useClient";
+import { GetDocumentResponse } from "../../preload/client/documents";
 import { SlateTransformer } from "./SlateTransformer";
-import { debounce } from "lodash";
 
 function isExistingDocument(
   doc: GetDocumentResponse,

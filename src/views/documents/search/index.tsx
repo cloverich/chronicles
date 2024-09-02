@@ -1,6 +1,6 @@
-import React from "react";
 import { TagInput } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
+import React from "react";
 import { SearchStore } from "../SearchStore";
 
 interface Props {

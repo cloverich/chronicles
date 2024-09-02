@@ -1,12 +1,12 @@
-import React from "react";
 import { withRef } from "@udecode/cn";
 import {
   useLinkToolbarButton,
   useLinkToolbarButtonState,
 } from "@udecode/plate";
+import React from "react";
 
-import { ToolbarButton } from "../../components/Toolbar";
 import { LinkIcon } from "evergreen-ui";
+import { ToolbarButton } from "../../components/Toolbar";
 
 export const LinkToolbarButton = withRef<typeof ToolbarButton>((rest, ref) => {
   const state = useLinkToolbarButtonState();

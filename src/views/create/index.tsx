@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { EditLoadingComponent } from "../edit/loading";
+import React, { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import useClient from "../../hooks/useClient";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { useNavigate } from "react-router-dom";
 import { SearchStoreContext } from "../documents/SearchStore";
-import useClient from "../../hooks/useClient";
+import { EditLoadingComponent } from "../edit/loading";
 
 // Creates a new document and immediately navigates to it
 function useCreateDocument() {

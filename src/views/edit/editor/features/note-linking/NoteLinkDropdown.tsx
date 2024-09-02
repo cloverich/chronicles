@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 import { cn, withRef } from "@udecode/cn";
-import { PlateElement, PlateEditor } from "@udecode/plate-common";
+import { PlateEditor, PlateElement } from "@udecode/plate-common";
 
 import {
   InlineCombobox,
@@ -13,20 +13,15 @@ import {
 import { NOTE_LINK } from "./createNoteLinkDropdownPlugin";
 import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
 
-import {
-  TMentionItemBase,
-  MentionOnSelectItem,
-  MentionPlugin,
-  TMentionElement,
-} from "@udecode/plate";
+import { MentionPlugin } from "@udecode/plate";
 
 import {
+  getBlockAbove,
   getPlugin,
   insertNodes,
-  moveSelection,
-  getBlockAbove,
-  isEndPoint,
   insertText,
+  isEndPoint,
+  moveSelection,
 } from "@udecode/plate-common";
 import { SearchItem, SearchStore } from "../../../../documents/SearchStore";
 

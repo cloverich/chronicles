@@ -1,4 +1,3 @@
-import React from "react";
 import { cn } from "@udecode/cn";
 import {
   flip,
@@ -14,6 +13,7 @@ import {
   useFloatingLinkInsert,
   useFloatingLinkInsertState,
 } from "@udecode/plate-link";
+import React from "react";
 
 import { Icons } from "../.././../../components/icons";
 

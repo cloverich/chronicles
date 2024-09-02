@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useContext, Fragment } from "react";
-import { observer } from "mobx-react-lite";
-import Layout, { LayoutDummy } from "./layout";
-import Preferences from "./views/preferences";
-import Documents from "./views/documents";
-import Editor from "./views/edit";
-import DocumentCreator from "./views/create";
-import { SearchProvider } from "./views/documents/SearchProvider";
-import {
-  useJournalsLoader,
-  JournalsStoreContext,
-} from "./hooks/useJournalsLoader";
 import { Alert } from "evergreen-ui";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { observer } from "mobx-react-lite";
+import React from "react";
 import "react-day-picker/dist/style.css";
+import { Navigate, Route, Routes } from "react-router-dom";
+import {
+  JournalsStoreContext,
+  useJournalsLoader,
+} from "./hooks/useJournalsLoader";
+import Layout, { LayoutDummy } from "./layout";
+import DocumentCreator from "./views/create";
+import Documents from "./views/documents";
+import { SearchProvider } from "./views/documents/SearchProvider";
+import Editor from "./views/edit";
+import Preferences from "./views/preferences";
 
 export default observer(function Container() {
   const { journalsStore, loading, loadingErr } = useJournalsLoader();

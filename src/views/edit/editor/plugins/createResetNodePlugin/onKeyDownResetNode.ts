@@ -1,12 +1,12 @@
 import {
-  type KeyboardHandlerReturnType,
-  type PlateEditor,
-  type Value,
-  type WithPlatePlugin,
   isCollapsed,
   isHotkey,
   setElements,
   someNode,
+  type KeyboardHandlerReturnType,
+  type PlateEditor,
+  type Value,
+  type WithPlatePlugin,
 } from "@udecode/plate-common";
 
 import type { ResetNodePlugin } from "./types";

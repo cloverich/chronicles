@@ -1,5 +1,5 @@
+import { Alert, Pane } from "evergreen-ui";
 import React from "react";
-import { Pane, Alert } from "evergreen-ui";
 
 interface State {
   hasError: boolean;

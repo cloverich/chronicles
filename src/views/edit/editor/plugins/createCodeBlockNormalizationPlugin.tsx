@@ -1,6 +1,6 @@
+import { ELEMENT_CODE_BLOCK } from "@udecode/plate";
 import { createPluginFactory } from "@udecode/plate-common";
-import { Editor, Range, Transforms } from "slate";
-import { ELEMENT_CODE_BLOCK, ELEMENT_CODE_LINE } from "@udecode/plate";
+import { Editor, Transforms } from "slate";
 
 /**
  * This plugin handles pasted code to ensure it is pasted as a single block. Prior to this pasting

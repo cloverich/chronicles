@@ -1,5 +1,5 @@
-import React, { PropsWithChildren } from "react";
-import { Pane, Tablist, Tab } from "evergreen-ui";
+import { Pane } from "evergreen-ui";
+import React from "react";
 import ErrorBoundary from "./error";
 
 interface Props2 {

@@ -1,19 +1,17 @@
-import React from "react";
 import {
-  Pane,
-  IconButton,
-  FolderOpenIcon,
   EditIcon,
-  SettingsIcon,
+  IconButton,
   PanelStatsIcon,
+  SettingsIcon,
 } from "evergreen-ui";
-import SearchDocuments from "./search";
-import { Link, useNavigate } from "react-router-dom";
-import { SearchStore } from "./SearchStore";
-import JournalSelectionSidebar from "./sidebar/Sidebar";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { SheetTrigger } from "../../components/Sidesheet";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
+import { SearchStore } from "./SearchStore";
+import SearchDocuments from "./search";
+import JournalSelectionSidebar from "./sidebar/Sidebar";
 
 interface Props {
   store: SearchStore;

@@ -1,5 +1,5 @@
-import React from "react";
 import { SelectField } from "evergreen-ui";
+import React from "react";
 
 interface SelectProps<T extends string> {
   options: T[];

@@ -1,10 +1,9 @@
+import fs, { Stats } from "fs";
 import mkdirp from "mkdirp";
-import walk = require("klaw");
 import path from "path";
-import fs from "fs";
-const { readFile, writeFile, access, stat } = fs.promises;
-import { Stats } from "fs";
 import { NotFoundError, ValidationError } from "./errors";
+import walk = require("klaw");
+const { readFile, writeFile, access, stat } = fs.promises;
 const readFileStr = (path: string) => readFile(path, "utf8");
 
 import { IncomingMessage } from "http";

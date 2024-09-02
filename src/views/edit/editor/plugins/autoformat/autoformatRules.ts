@@ -4,17 +4,12 @@ import {
   ELEMENT_CODE_BLOCK,
   insertEmptyCodeBlock,
 } from "@udecode/plate-code-block";
-import {
-  ELEMENT_DEFAULT,
-  // insertNodes,
-  // setNodes,
-  // isBlock,
-} from "@udecode/plate-common";
+import { ELEMENT_DEFAULT } from "@udecode/plate-common";
 import { ELEMENT_H1, ELEMENT_H2, ELEMENT_H3 } from "@udecode/plate-heading";
 
 import { ELEMENT_LI, ELEMENT_OL, ELEMENT_UL } from "@udecode/plate-list";
 
-import { preFormat, formatList } from "./autoformatUtils";
+import { formatList, preFormat } from "./autoformatUtils";
 
 import {
   MARK_BOLD,

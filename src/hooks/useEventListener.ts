@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 // NOTE: Copy pasta from
 // https://usehooks.com/useEventListener/

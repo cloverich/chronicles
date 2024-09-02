@@ -1,7 +1,4 @@
 import React, {
-  type HTMLAttributes,
-  type ReactNode,
-  type RefObject,
   createContext,
   forwardRef,
   startTransition,
@@ -10,6 +7,9 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  type HTMLAttributes,
+  type ReactNode,
+  type RefObject,
 } from "react";
 
 import type { PointRef } from "slate";
@@ -17,22 +17,21 @@ import type { PointRef } from "slate";
 import {
   Combobox,
   ComboboxItem,
-  type ComboboxItemProps,
   ComboboxPopover,
   ComboboxProvider,
   Portal,
   useComboboxContext,
   useComboboxStore,
+  type ComboboxItemProps,
 } from "@ariakit/react";
 import { cn } from "@udecode/cn";
 import {
-  type UseComboboxInputResult,
   filterWords,
   useComboboxInput,
   useHTMLInputCursorState,
+  type UseComboboxInputResult,
 } from "@udecode/plate-combobox";
 import {
-  type TElement,
   createPointRef,
   findNodePath,
   getPointBefore,
@@ -40,6 +39,7 @@ import {
   moveSelection,
   useComposedRef,
   useEditorRef,
+  type TElement,
 } from "@udecode/plate-common";
 import { cva } from "class-variance-authority";
 

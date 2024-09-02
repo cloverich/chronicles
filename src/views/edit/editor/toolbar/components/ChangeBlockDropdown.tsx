@@ -2,9 +2,15 @@ import React from "react";
 
 import type { DropdownMenuProps } from "@radix-ui/react-dropdown-menu";
 
+import {
+  ELEMENT_CODE_BLOCK,
+  ELEMENT_H1,
+  ELEMENT_H2,
+  ELEMENT_H3,
+  ELEMENT_PARAGRAPH,
+} from "@udecode/plate";
 import { ELEMENT_BLOCKQUOTE } from "@udecode/plate-block-quote";
 import {
-  type TElement,
   collapseSelection,
   findNode,
   focusEditor,
@@ -13,32 +19,21 @@ import {
   toggleNodeType,
   useEditorRef,
   useEditorSelector,
+  type TElement,
 } from "@udecode/plate-common";
-import {
-  ELEMENT_CODE_BLOCK,
-  ELEMENT_H1,
-  ELEMENT_H2,
-  ELEMENT_H3,
-  ELEMENT_PARAGRAPH,
-} from "@udecode/plate";
-
-import { Icons } from "../../../../../components/icons";
 
 import {
-  MoreIcon,
-  HeaderOneIcon,
-  HeaderTwoIcon,
-  HeaderThreeIcon,
-  CodeBlockIcon,
   CitationIcon,
+  CodeBlockIcon,
+  HeaderOneIcon,
+  HeaderThreeIcon,
+  HeaderTwoIcon,
   NumberedListIcon,
-  PropertiesIcon,
-  FontIcon,
-  DeleteIcon,
-  TrashIcon,
   ParagraphIcon,
+  PropertiesIcon,
 } from "evergreen-ui";
 
+import { ToolbarButton } from "../../components/Toolbar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +43,6 @@ import {
   DropdownMenuTrigger,
   useOpenState,
 } from "./DropdownMenu";
-import { ToolbarButton } from "../../components/Toolbar";
 
 const items = [
   {

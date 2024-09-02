@@ -1,6 +1,6 @@
 import * as unistLib from "unist";
-import * as slate from "../models/slate";
 import * as mdast from "../models/mdast";
+import * as slate from "../models/slate";
 import * as SlateNodes from "./mdast-to-slate";
 
 import { Node as SNode } from "slate";
@@ -10,12 +10,11 @@ import { Node as SNode } from "slate";
 import { unPrefixUrl } from "../../../hooks/images";
 
 import {
+  ELEMENT_CODE_BLOCK,
   ELEMENT_LI,
   ELEMENT_LIC,
   ELEMENT_OL,
-  ELEMENT_TODO_LI,
   ELEMENT_UL,
-  ELEMENT_CODE_BLOCK,
 } from "@udecode/plate";
 
 import {
