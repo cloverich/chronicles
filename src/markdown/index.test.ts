@@ -17,7 +17,7 @@ I have a few ideas to record:
 
 Now lets add an image: 
 
-![](ckure3z1b00003u65tfr1m2ki..png)
+![](ckure3z1b00003u65tfr1m2ki.png)
 
 This works! _Seriously_, no **complaints**.
 
@@ -123,7 +123,7 @@ This works! _Seriously_, no **complaints**.
       },
       {
         type: "img",
-        url: "chronicles://ckure3z1b00003u65tfr1m2ki..png",
+        url: "chronicles://ckure3z1b00003u65tfr1m2ki.png",
         title: null,
         alt: null,
         caption: [

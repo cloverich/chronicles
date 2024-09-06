@@ -68,8 +68,6 @@ import {
   unwrapCodeBlock,
 } from "@udecode/plate";
 
-import { createCaptionPlugin } from "@udecode/plate-caption";
-
 import {
   BlockquoteElement,
   CodeBlockElement,
@@ -153,10 +151,6 @@ export default observer(
 
         createListPlugin(),
 
-        // https://platejs.org/docs/media
-        createCaptionPlugin({
-          options: { pluginKeys: [ELEMENT_IMAGE, ELEMENT_MEDIA_EMBED] },
-        }),
         createImagePlugin({
           options: {
             uploadImage: client.files.uploadImage,
