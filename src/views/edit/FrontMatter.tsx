@@ -1,7 +1,8 @@
-import { Menu, Popover, Position, TagInput } from "evergreen-ui";
+import { Menu, Popover, Position } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { DayPicker } from "react-day-picker";
+import TagInput from "../../components/TagInput";
 import { JournalResponse } from "../../preload/client/journals";
 import { TagTokenParser } from "../documents/search/parsers/tag";
 import { EditableDocument } from "./EditableDocument";
@@ -14,20 +15,8 @@ const FrontMatter = observer(
     document: EditableDocument;
     journals: JournalResponse[];
   }) => {
-    function onAddTag(tokens: string[]) {
-      if (tokens.length > 1) {
-        // https://evergreen.segment.com/components/tag-input
-        // Documents say this is single value, Type says array
-        // Testing says array but with only one value... unsure how multiple
-        // values end up in the array.
-        console.warn(
-          "TagInput.onAdd called with > 1 token? ",
-          tokens,
-          "ignoring extra tokens",
-        );
-      }
-
-      let tag = new TagTokenParser().parse(tokens[0])?.value;
+    function onAddTag(token: string) {
+      let tag = new TagTokenParser().parse(token)?.value;
       if (!tag) return;
 
       if (!document.tags.includes(tag)) {
@@ -36,8 +25,7 @@ const FrontMatter = observer(
       }
     }
 
-    function onRemoveTag(tag: string | React.ReactNode, idx: number) {
-      if (typeof tag !== "string") return;
+    function onRemoveTag(tag: string) {
       document.tags = document.tags.filter((t) => t !== tag);
       document.save();
     }
@@ -151,11 +139,11 @@ const FrontMatter = observer(
         {/* Tags */}
         <div className="-mt-2 mb-4 flex justify-start pl-0.5 text-sm">
           <TagInput
-            flexGrow={1}
-            inputProps={{ placeholder: "Document tags" }}
-            values={document.tags}
+            tokens={document.tags}
             onAdd={onAddTag}
             onRemove={onRemoveTag}
+            placeholder="Add tags"
+            ghost={true}
           />
         </div>
       </>
