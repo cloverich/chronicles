@@ -1,4 +1,5 @@
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import { cn } from "@udecode/cn";
 import { Heading, Pane, toaster } from "evergreen-ui";
 import { noop } from "lodash";
 import { observer } from "mobx-react-lite";
@@ -44,6 +45,12 @@ export function JournalCreateForm({ done }: { done: () => any }) {
   );
 }
 
+const menuItemCss = cn(
+  "relative flex h-6 cursor-pointer select-none items-center pr-1 pl-6 text-xs outline-none transition-colors",
+  "data-[disabled]:text-muted-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[disabled]:pointer-events-none",
+  "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+);
+
 /**
  * Displays a journal by name in the sidebar, with context menu actions
  * for editing, archiving, deleting, and setting as default.
@@ -72,7 +79,7 @@ export const JournalItem = observer(
 
     return (
       <ContextMenu.Root>
-        <ContextMenu.Trigger className="ContextMenuTrigger">
+        <ContextMenu.Trigger>
           <div className="flex items-center">
             <Icons.folder size={19} className="mr-1" />
             {editing ? (
@@ -86,13 +93,16 @@ export const JournalItem = observer(
           </div>
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
-          <ContextMenu.Content className="ContextMenuContent" alignOffset={5}>
-            <ContextMenu.Label className="ContextMenuLabel">
+          <ContextMenu.Content
+            className="z-50 min-w-56 overflow-y-auto overflow-x-hidden border bg-popover p-1 text-popover-foreground shadow-md"
+            alignOffset={5}
+          >
+            <ContextMenu.Label className="py-1 pl-6 text-xs text-accent-foreground">
               Journal management
             </ContextMenu.Label>
 
             <ContextMenu.Item
-              className="ContextMenuItem"
+              className={menuItemCss}
               onClick={onArchive}
               disabled={isDefault}
             >
@@ -100,7 +110,7 @@ export const JournalItem = observer(
             </ContextMenu.Item>
 
             <ContextMenu.Item
-              className="ContextMenuItem"
+              className={menuItemCss}
               onClick={() => store.toggleEditing(journal.id)}
               disabled={isArchived}
             >
@@ -108,22 +118,22 @@ export const JournalItem = observer(
             </ContextMenu.Item>
 
             <ContextMenu.CheckboxItem
-              className="ContextMenuCheckboxItem"
+              className={menuItemCss}
               checked={isDefault}
               onCheckedChange={() => {}}
               onClick={onSetDefault}
               disabled={isArchived}
             >
-              <ContextMenu.ItemIndicator className="ContextMenuItemIndicator">
-                <Icons.check />
+              <ContextMenu.ItemIndicator className="absolute left-0 inline-flex w-6 items-center justify-center">
+                <Icons.check size="14" />
               </ContextMenu.ItemIndicator>
               Default
             </ContextMenu.CheckboxItem>
 
-            <ContextMenu.Separator className="ContextMenuSeparator" />
+            <ContextMenu.Separator className="m-1 h-[1px] bg-accent" />
 
             <ContextMenu.Item
-              className="ContextMenuItem"
+              className={menuItemCss}
               onClick={onDelete}
               disabled={isDefault}
             >
@@ -209,3 +219,25 @@ const JournalEditor = observer(function JournalEditor({
     </>
   );
 });
+
+/*
+ "RightSlot" css - this is the last CSS I did not migrate, when I replaced
+ the previously imported .css file with tailwind classes. Leaving in case its
+ needed:
+
+.RightSlot {
+  margin-left: auto;
+  padding-left: 20px;
+  color: var(--mauve-11);
+}
+
+[data-highlighted] > .RightSlot {
+  color: white;
+}
+
+[data-disabled] .RightSlot {
+  color: var(--mauve-8);
+}
+
+
+ */

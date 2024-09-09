@@ -17,9 +17,9 @@ import React from "react";
 
 import { Icons } from "../.././../../components/icons";
 
+import { popoverVariants } from "../../../../components/Popover";
 import { buttonVariants } from "../components/Button";
 import { inputVariants } from "../components/Input";
-import { popoverVariants } from "../components/Popover";
 import { Separator } from "../components/Separator";
 
 const floatingOptions: UseVirtualFloatingOptions = {

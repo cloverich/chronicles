@@ -103,14 +103,6 @@ svg:not(:root) {
   overflow: hidden;
 }
 
-code,
-kbd,
-pre,
-samp {
-  font-family: monospace, monospace;
-  font-size: 1em;
-}
-
 figure {
   margin: 1em 40px;
 }
@@ -399,8 +391,8 @@ table {
   padding-right: 0;
   padding-top: 0;
   margin-bottom: 0.8125rem;
-  font-size: 1rem;
-  line-height: 1.625rem;
+  font-size: 0.9rem;
+  line-height: 1.425rem;
   border-collapse: collapse;
   width: 100%;
 }
@@ -537,11 +529,6 @@ li *:last-child {
 
 li > p {
   margin-bottom: calc(0.8125rem / 2);
-}
-
-code {
-  font-size: 0.85rem;
-  line-height: 1.625rem;
 }
 
 kbd {

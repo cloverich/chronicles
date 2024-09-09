@@ -16,8 +16,6 @@ import { Collapse, JournalCreateForm, JournalItem } from "./JournalItem";
 import { TagsList } from "./TagsList";
 import { SidebarStore, useSidebarStore } from "./store";
 
-import "./sidebar-styles.css";
-
 type SidebarProps = React.PropsWithChildren<{
   isShown: boolean;
   setIsShown: (isShown: boolean) => void;

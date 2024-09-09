@@ -33,7 +33,6 @@ import {
   PropertiesIcon,
 } from "evergreen-ui";
 
-import { ToolbarButton } from "../../components/Toolbar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +41,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   useOpenState,
-} from "./DropdownMenu";
+} from "../../../../../components/DropdownMenu";
+import { ToolbarButton } from "../../components/Toolbar";
 
 const items = [
   {
