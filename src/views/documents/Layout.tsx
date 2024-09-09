@@ -10,7 +10,7 @@ import { SheetTrigger } from "../../components/Sidesheet";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
 import { SearchStore } from "./SearchStore";
-import SearchDocuments from "./search";
+import { SearchInput } from "./search";
 import JournalSelectionSidebar from "./sidebar/Sidebar";
 
 interface Props {
@@ -55,7 +55,8 @@ export function Layout(props: Props) {
           Create new note
         </IconButton>
 
-        <SearchDocuments store={props.store} />
+        <SearchInput />
+
         <IconButton
           backgroundColor="transparent"
           border="none"
