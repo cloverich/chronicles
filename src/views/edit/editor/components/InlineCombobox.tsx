@@ -229,7 +229,6 @@ const InlineComboboxInput = forwardRef<
    * This works well for all cases except when input exceeds the width of the
    * container.
    */
-
   return (
     <>
       {showTrigger && trigger}

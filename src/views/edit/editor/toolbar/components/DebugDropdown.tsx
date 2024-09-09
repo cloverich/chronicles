@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { ToolbarButton } from "../../components/Toolbar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   useOpenState,
-} from "./DropdownMenu";
+} from "../../../../../components/DropdownMenu";
+import { ToolbarButton } from "../../components/Toolbar";
 
 import { MoreIcon, TrashIcon } from "evergreen-ui";
 

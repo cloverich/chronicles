@@ -1,7 +1,8 @@
-import { Menu, Popover, Position } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { DayPicker } from "react-day-picker";
+import * as D from "../../components/DropdownMenu";
+import * as Popover from "../../components/Popover";
 import TagInput from "../../components/TagInput";
 import { JournalResponse } from "../../preload/client/journals";
 import { TagTokenParser } from "../documents/search/parsers/tag";
@@ -15,6 +16,9 @@ const FrontMatter = observer(
     document: EditableDocument;
     journals: JournalResponse[];
   }) => {
+    const journalSelectorOpenState = D.useOpenState();
+    const datePickerOpenState = D.useOpenState();
+
     function onAddTag(token: string) {
       let tag = new TagTokenParser().parse(token)?.value;
       if (!tag) return;
@@ -52,41 +56,36 @@ const FrontMatter = observer(
     function makeOptions(close: any) {
       return journals.map((j: any) => {
         return (
-          <Menu.Item
+          <D.DropdownMenuItem
             key={j.id}
             onSelect={(e) => {
               document.journalId = j.id;
-              close();
             }}
           >
             {j.name}
-          </Menu.Item>
+          </D.DropdownMenuItem>
         );
       });
     }
 
     function journalPicker() {
       return (
-        <Popover
-          position={Position.BOTTOM}
-          content={({ close }) => (
-            <div className="max-h-24rem overflow-auto">
-              <Menu>
-                <Menu.Group>{makeOptions(close)}</Menu.Group>
-              </Menu>
-            </div>
-          )}
-        >
-          <span className="cursor-pointer border-b border-slate-500">
-            {getName(document.journalId)}
-          </span>
-        </Popover>
+        <D.DropdownMenu modal={false} {...journalSelectorOpenState}>
+          <D.DropdownMenuTrigger asChild>
+            <span className="cursor-pointer border-b border-slate-500">
+              {getName(document.journalId)}
+            </span>
+          </D.DropdownMenuTrigger>
+          <D.DropdownMenuContent align="start">
+            {makeOptions(close)}
+          </D.DropdownMenuContent>
+        </D.DropdownMenu>
       );
     }
 
-    function onDayPick(day: Date, callback: () => void) {
+    function onDayPick(day: Date) {
       document.createdAt = day.toISOString();
-      callback();
+      datePickerOpenState.onOpenChange(false);
     }
 
     // tests: when changing date, documents date is highlighted
@@ -94,23 +93,23 @@ const FrontMatter = observer(
     // document auto-saves when changing date
     function datePicker() {
       return (
-        <Popover
-          position={Position.BOTTOM}
-          content={({ close }) => (
+        <Popover.Popover {...datePickerOpenState}>
+          <Popover.PopoverTrigger>
+            <span className="cursor-pointer border-b border-slate-500">
+              {document.createdAt.slice(0, 10)}
+            </span>
+          </Popover.PopoverTrigger>
+          <Popover.PopoverContent align="start">
             <div className="max-h-24rem overflow-auto">
               <DayPicker
                 selected={new Date(document.createdAt)}
                 defaultMonth={new Date(document.createdAt)}
-                onDayClick={(day) => onDayPick(day, close)}
+                onDayClick={(day) => onDayPick(day)}
                 mode="single"
               />
             </div>
-          )}
-        >
-          <span className="cursor-pointer border-b border-slate-500">
-            {document.createdAt.slice(0, 10)}
-          </span>
-        </Popover>
+          </Popover.PopoverContent>
+        </Popover.Popover>
       );
     }
 

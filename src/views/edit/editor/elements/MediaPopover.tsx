@@ -14,9 +14,13 @@ import {
 import { useReadOnly, useSelected } from "slate-react";
 
 import { Icons } from "../../../../components/icons";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "../../../../components/Popover";
 import { Button, buttonVariants } from "../components/Button";
 import { inputVariants } from "../components/Input";
-import { Popover, PopoverAnchor, PopoverContent } from "../components/Popover";
 import { Separator } from "../components/Separator";
 
 export interface MediaPopoverProps {
