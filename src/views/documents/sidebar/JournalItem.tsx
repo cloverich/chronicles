@@ -1,6 +1,6 @@
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { cn } from "@udecode/cn";
-import { Heading, Pane, toaster } from "evergreen-ui";
+import { toaster } from "evergreen-ui";
 import { noop } from "lodash";
 import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
@@ -10,27 +10,6 @@ import { JournalResponse } from "../../../hooks/useClient";
 import { useIsMounted } from "../../../hooks/useIsMounted";
 import { JournalsStoreContext } from "../../../hooks/useJournalsLoader";
 import { SidebarStore } from "./store";
-
-/**
- * Collapse component that can be toggled open and closed.
- */
-export function Collapse(props: { defaultOpen?: boolean; children: any }) {
-  const [isOpen, setIsOpen] = React.useState(
-    props.defaultOpen == null ? false : props.defaultOpen,
-  );
-
-  const Icon = isOpen ? Icons.chevronDown : Icons.chevronRight;
-
-  return (
-    <Pane>
-      <Pane display="flex" onClick={() => setIsOpen(!isOpen)} cursor="pointer">
-        <Heading>Archived Journals</Heading>
-        <Icon size={18} />
-      </Pane>
-      {isOpen && props.children}
-    </Pane>
-  );
-}
 
 export function JournalCreateForm({ done }: { done: () => any }) {
   const [journal, _] = React.useState<{ name: string }>({

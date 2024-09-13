@@ -143,6 +143,7 @@ const FrontMatter = observer(
             onRemove={onRemoveTag}
             placeholder="Add tags"
             ghost={true}
+            prefixHash={true}
           />
         </div>
       </>

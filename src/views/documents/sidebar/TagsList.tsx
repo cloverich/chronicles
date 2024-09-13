@@ -1,12 +1,6 @@
-import {
-  Card,
-  FolderCloseIcon,
-  Heading,
-  ListItem,
-  UnorderedList,
-} from "evergreen-ui";
 import React from "react";
 
+import { ClickableTag as Tag } from "../../../components/TagInput";
 import { useTags } from "../../../hooks/useTags";
 
 /**
@@ -24,20 +18,20 @@ export function TagsList(props: { search: (tag: string) => boolean }) {
     return "error loading tags";
   }
 
-  const tagItems = tags.map((t) => {
-    return (
-      <ListItem key={t} icon={FolderCloseIcon}>
-        <a href="" onClick={() => props.search(t)}>
-          {t}
-        </a>
-      </ListItem>
-    );
-  });
-
   return (
-    <Card backgroundColor="white" elevation={0} padding={16} marginBottom={16}>
-      <Heading>Tags</Heading>
-      <UnorderedList>{tagItems}</UnorderedList>
-    </Card>
+    <div className="mb-4 p-4 shadow-md">
+      <div className="text-md mb-2 flex cursor-pointer items-center font-medium tracking-tight">
+        Tags
+      </div>
+      <div className="flex flex-wrap">
+        {tags.map((t) => {
+          return (
+            <Tag className="mb-1 mr-1" key={t} onClick={() => props.search(t)}>
+              #{t}
+            </Tag>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
-import { Badge } from "evergreen-ui";
 import React from "react";
-import { SearchItem } from "./SearchStore";
+import { ClickableTag } from "../../components/TagInput";
+import { SearchItem, useSearchStore } from "./SearchStore";
 
 export function DocumentItem(props: {
   doc: SearchItem;
@@ -8,30 +8,27 @@ export function DocumentItem(props: {
   getName: (id: string) => string;
 }) {
   const { doc, edit, getName } = props;
+  const search = useSearchStore()!;
 
   return (
-    <div
-      key={doc.id}
-      onClick={() => edit(doc.id)}
-      className="hover:underline-offset flex cursor-pointer hover:underline"
-    >
+    <div key={doc.id} className="flex items-center">
       {/* Without mono font, dates won't be a uniform width */}
       <div className="mr-6 shrink-0 font-mono text-sm tracking-tight">
         {doc.createdAt.slice(0, 10)}
       </div>
-      <div className="font-sans">
+      <div
+        className="hover:underline-offset mr-2 cursor-pointer font-sans hover:underline"
+        onClick={() => edit(doc.id)}
+      >
         {doc.title}
-        <small>
-          <Badge
-            color="purple"
-            fontWeight={400}
-            textTransform="none"
-            marginLeft={8}
-          >
-            {getName(doc.journalId)}
-          </Badge>
-        </small>
       </div>
+      <ClickableTag
+        size="xs"
+        variant="muted"
+        onClick={() => search.addToken(`in:${getName(doc.journalId)}`)}
+      >
+        in:{getName(doc.journalId)}
+      </ClickableTag>
     </div>
   );
 }

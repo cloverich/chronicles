@@ -1,4 +1,5 @@
 import { cn } from "@udecode/cn";
+import { cva } from "class-variance-authority";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import * as React from "react";
@@ -16,12 +17,18 @@ interface TagInputProps {
   placeholder?: string;
   /** When true, hide the borders / disable padding */
   ghost?: boolean;
+  /** A lazy hack to make the editors tags always start with a hash */
+  prefixHash?: boolean;
 }
 
+/**
+ * A multi-select input where values appear as tags
+ */
 const TagInput = observer((props: TagInputProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [dropdown, _] = React.useState(observable({ open: false }));
+  const hash = props.prefixHash ? "#" : null;
 
   // Close the typeahead menu when clicking outside of the dropdown
   React.useEffect(() => {
@@ -53,7 +60,10 @@ const TagInput = observer((props: TagInputProps) => {
         )}
       >
         {props.tokens.map((token, idx) => (
-          <Tag key={idx} token={token} remove={props.onRemove} />
+          <CloseableTag key={idx} remove={() => props.onRemove(token)}>
+            {hash}
+            {token}
+          </CloseableTag>
         ))}
         <input
           ref={inputRef}
@@ -122,21 +132,82 @@ const TagInput = observer((props: TagInputProps) => {
 
 export default TagInput;
 
-interface TagProps {
-  token: string;
-  remove: (token: string) => void;
-}
+const tagVariants = cva(
+  cn(
+    "mr-2 flex flex-shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border border-slate-800 bg-violet-200 px-1 py-0.5 text-xs text-slate-600",
+  ),
+  {
+    variants: {
+      variant: {
+        default: "",
+        // todo: bg-accent just happens to be muted rn; in the future
+        // likely need a bg-accent-muted or similar
+        muted: "border-default bg-accent",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        xs: "py-0 px-0.5 text-xs",
+        sm: "h-7 px-2",
+      },
+      defaultVariants: {
+        variant: "default",
+        size: "default",
+      },
+    },
+  },
+);
 
-const Tag = ({ token, remove }: TagProps) => {
+type PTag = React.PropsWithChildren<{
+  className?: string;
+  onClick?: () => void;
+  size?: "default" | "xs" | "sm";
+  variant?: "default" | "muted";
+}>;
+
+const Tag = ({ size, className, children, onClick, variant }: PTag) => {
   return (
-    <span className="mr-2 flex flex-shrink items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border border-slate-800 bg-violet-200 px-1 py-0.5 text-xs text-slate-600">
-      <span className="flex-shrink overflow-hidden text-ellipsis">{token}</span>
-      <button
-        className="text-grey-400 ml-1 flex-shrink-0"
-        onClick={() => remove(token)}
-      >
+    <span
+      className={cn(tagVariants({ size, className, variant }))}
+      onClick={onClick}
+    >
+      {children}
+    </span>
+  );
+};
+
+type ClickableTagProps = PTag & {
+  onClick: () => void;
+};
+
+/**
+ * Tag where user can click on any part of the tag to perform an action
+ */
+export const ClickableTag = ({ children, ...rest }: ClickableTagProps) => {
+  return (
+    <Tag {...rest}>
+      <span className="flex-shrink overflow-hidden text-ellipsis">
+        {children}
+      </span>
+    </Tag>
+  );
+};
+
+type PClosableTag = PTag & {
+  remove: () => void;
+};
+
+/**
+ * Tag where user can click on an 'x' to remove the tag
+ */
+const CloseableTag = ({ remove, children, ...rest }: PClosableTag) => {
+  return (
+    <Tag {...rest}>
+      <span className="flex-shrink overflow-hidden text-ellipsis">
+        {children}
+      </span>
+      <button className="text-grey-400 ml-1 flex-shrink-0" onClick={remove}>
         ×
       </button>
-    </span>
+    </Tag>
   );
 };

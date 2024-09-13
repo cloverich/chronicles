@@ -1,9 +1,10 @@
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import React from "react";
 
-import { Card, Heading, IconButton, Pane, PlusIcon } from "evergreen-ui";
+import { IconButton, PlusIcon } from "evergreen-ui";
 
 import { observer } from "mobx-react-lite";
+import { Collapse } from "../../../components/Collapse";
 import {
   Sheet,
   SheetContent,
@@ -12,7 +13,7 @@ import {
   SheetTitle,
 } from "../../../components/Sidesheet";
 import { SearchStore } from "../SearchStore";
-import { Collapse, JournalCreateForm, JournalItem } from "./JournalItem";
+import { JournalCreateForm, JournalItem } from "./JournalItem";
 import { TagsList } from "./TagsList";
 import { SidebarStore, useSidebarStore } from "./store";
 
@@ -60,27 +61,22 @@ export default observer(function JournalSelectionSidebar(props: SidebarProps) {
 
 const InnerContent = observer(({ store }: { store: SidebarStore }) => {
   return (
-    <>
-      {" "}
-      <Card
-        backgroundColor="white"
-        elevation={0}
-        padding={16}
-        marginBottom={16}
-      >
-        <Pane>
-          <Heading>
-            Active Journals{" "}
+    <div className="mt-6">
+      <div className="mb-4 border p-4 shadow-md">
+        <div>
+          <div className="text-md mb-2 flex cursor-pointer items-center font-medium tracking-tight">
+            Active Journals
             <IconButton
               icon={PlusIcon}
               size="small"
               onClick={store.toggleAdding}
               disabled={store.adding}
+              className="ml-1"
             >
               Add Journal
             </IconButton>
-          </Heading>
-        </Pane>
+          </div>
+        </div>
         <ul className="ml-0 text-sm">
           {store.adding && (
             <li>
@@ -102,8 +98,10 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
             );
           })}
         </ul>
+      </div>
 
-        <Collapse>
+      <div className="mb-4 p-4 shadow-md">
+        <Collapse heading="Archived Journals">
           <ul className="ml-0 text-sm">
             {store.journalStore.archived.map((j) => {
               return (
@@ -120,8 +118,8 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
             })}
           </ul>
         </Collapse>
-      </Card>
+      </div>
       <TagsList search={store.searchTag} />
-    </>
+    </div>
   );
 });
