@@ -15,3 +15,11 @@ export interface IClient {
   preferences: IPreferencesClient;
   files: IFilesClient;
 }
+
+export type JournalResponse = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string;
+};

@@ -1,13 +1,8 @@
 import { Database } from "better-sqlite3";
+import path from "path";
 import { uuidv7 } from "uuidv7";
 
-export interface JournalResponse {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  archivedAt: string;
-}
+import { JournalResponse } from "./types";
 
 export type IJournalsClient = JournalsClient;
 
@@ -19,6 +14,7 @@ export class JournalsClient {
   };
 
   create = (journal: { name: string }): Promise<JournalResponse> => {
+    const name = validateJournalName(journal.name);
     const id = uuidv7();
 
     this.db
@@ -26,8 +22,8 @@ export class JournalsClient {
         "insert into journals (id, name, createdAt, updatedAt) values (:id, :name, :createdAt, :updatedAt)",
       )
       .run({
-        name: journal.name,
         id,
+        name,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -39,14 +35,14 @@ export class JournalsClient {
     id: string;
     name: string;
   }): Promise<JournalResponse> => {
-    if (!journal.name?.trim()) throw new Error("Journal name cannot be empty");
+    const name = validateJournalName(journal.name);
 
     this.db
       .prepare(
         "update journals set name = :name, updatedAt = :updatedAt where id = :id",
       )
       .run({
-        name: journal.name,
+        name,
         id: journal.id,
         updatedAt: new Date().toISOString(),
       });
@@ -85,3 +81,37 @@ export class JournalsClient {
     return this.list();
   };
 }
+
+const MAX_NAME_LENGTH = 20;
+
+/**
+ * A basic validation function for journal names.
+ */
+const validateJournalName = (name: string): string => {
+  name = name?.trim() || "";
+  if (!name) {
+    throw new Error("Journal name cannot be empty.");
+  }
+
+  // Check for max length
+  if (name.length > MAX_NAME_LENGTH) {
+    throw new Error(
+      `Journal name exceeds max length of ${MAX_NAME_LENGTH} characters.`,
+    );
+  }
+
+  let sanitized = decodeURIComponent(encodeURIComponent(name));
+
+  // Check for URL safety
+  if (name !== sanitized) {
+    throw new Error("Journal name is not URL safe.");
+  }
+
+  // Ensure the name doesn't contain path traversal or invalid slashes
+  sanitized = path.basename(name);
+  if (sanitized !== name) {
+    throw new Error("Journal name contains invalid path characters.");
+  }
+
+  return sanitized;
+};

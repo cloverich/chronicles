@@ -102,7 +102,9 @@ import {
   createVideoPlugin,
 } from "./editor/plugins/createVideoPlugin";
 
-import { JournalResponse } from "../../hooks/useClient";
+import useClient, { JournalResponse } from "../../hooks/useClient";
+import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import { SearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import { EditorMode } from "./EditorMode";
 
@@ -115,10 +117,6 @@ export interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
 }
-
-import useClient from "../../hooks/useClient";
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
-import { SearchStore } from "../documents/SearchStore";
 
 export default observer(
   ({ children, saving, value, setValue }: React.PropsWithChildren<Props>) => {
