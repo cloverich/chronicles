@@ -2,7 +2,6 @@
   "name": "chronicles",
   "version": "1.0.0",
   "main": "main.bundle.js",
-  "license": "UNLICENSED",
   "scripts": {
     "build": "./build.sh",
     "lint": "yarn run lint:prettier:check && yarn run lint:types:check",
