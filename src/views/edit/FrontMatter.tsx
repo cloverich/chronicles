@@ -4,7 +4,7 @@ import { DayPicker } from "react-day-picker";
 import * as D from "../../components/DropdownMenu";
 import * as Popover from "../../components/Popover";
 import TagInput from "../../components/TagInput";
-import { JournalResponse } from "../../preload/client/journals";
+import { JournalResponse } from "../../hooks/useClient";
 import { TagTokenParser } from "../documents/search/parsers/tag";
 import { EditableDocument } from "./EditableDocument";
 

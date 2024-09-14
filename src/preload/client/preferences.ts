@@ -17,8 +17,6 @@ export class PreferencesClient {
     return settingsJson as unknown as Preferences;
   };
 
-  // todo: Ideally this could go into a preload script
-  // see the main script (electron/index) for the other half
   openDialog = () => {
     ipcRenderer.send("select-database-file");
   };
