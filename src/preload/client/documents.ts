@@ -17,7 +17,8 @@ export interface GetDocumentResponse {
  */
 export interface SearchRequest {
   /**
-   * Filter to these journals. The empty array is treated as "all journals",
+   * Filter by journal (array of Ids).
+   * The empty array is treated as "all journals",
    * rather than None.
    */
   journals: string[];

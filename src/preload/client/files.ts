@@ -1,8 +1,10 @@
 import Store from "electron-store";
 
 import fs from "fs";
+import mkdirp from "mkdirp";
 import path from "path";
 import { uuidv7 } from "uuidv7";
+import { GetDocumentResponse } from "./documents"; // todo: circular dependency
 
 export interface Preferences {
   DATABASE_URL: string;
@@ -106,6 +108,26 @@ export class FilesClient {
         .on("close", () => res({ filename: filename }))
         .on("error", (err) => rej(err));
     });
+  };
+
+  /**
+   * Writes a document to the correct file / disk location based
+   * on baseDir and journalName
+   *
+   * @param baseDir - Chronicles root directory
+   * @param document
+   * @param journalName
+   */
+  uploadDocument = async (
+    baseDir: string,
+    document: GetDocumentResponse,
+    journalName: string,
+  ) => {
+    const journalPath = path.join(baseDir, journalName);
+    await mkdirp(journalPath);
+
+    const docPath = path.join(journalPath, `${document.id}.md`);
+    await fs.promises.writeFile(docPath, document.content);
   };
 
   /**
