@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 import path from "path";
 import { stringToMdast } from "../../markdown";
 import { Files } from "../files";
-import { shouldIndexDay } from "./indexer";
+import { shouldIndexDay } from "./legacy/indexer";
 
 import { create } from "../client";
 const client = create();

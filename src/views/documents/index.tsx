@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
 
 import { useNavigate } from "react-router-dom";
+import useClient from "../../hooks/useClient";
 import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { DocumentItem } from "./DocumentItem";
 import { Layout } from "./Layout";
@@ -11,7 +12,16 @@ import { SearchStore, useSearchStore } from "./SearchStore";
 function DocumentsContainer() {
   const journalsStore = useContext(JournalsStoreContext)!;
   const searchStore = useSearchStore()!;
+  const client = useClient();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Temporarily using these to run the import / export once on start-up
+    // client.export.export(
+    //   "/Users/cloverich/Documents/chronicles-development/export",
+    // );
+    // client.export.walk("/Users/cloverich/Documents/chronicles-development");
+  }, []);
 
   function edit(docId: string) {
     navigate(`/documents/edit/${docId}`);

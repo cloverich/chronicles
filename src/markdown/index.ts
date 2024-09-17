@@ -21,7 +21,6 @@ export * from "ts-mdast";
 //                        +--------------+
 //                        | Transformers |
 //                        +--------------+
-
 const stringifier = unified().use(remarkStringify);
 const parser = unified().use(remarkParse).use(remarkGfm);
 

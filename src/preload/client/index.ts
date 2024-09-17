@@ -1,6 +1,7 @@
 import DB from "better-sqlite3";
 import Knex from "knex";
 import { DocumentsClient } from "./documents";
+import { ExportClient } from "./exporter";
 import { FilesClient } from "./files";
 import { JournalsClient } from "./journals";
 import { PreferencesClient } from "./preferences";
@@ -30,13 +31,17 @@ export { GetDocumentResponse } from "./documents";
 
 let client: IClient;
 export function create(): IClient {
+  const journals = new JournalsClient(db);
+  const documents = new DocumentsClient(db, knex);
+  const files = new FilesClient(settings);
   if (!client) {
     client = {
-      journals: new JournalsClient(db),
-      documents: new DocumentsClient(db, knex),
+      journals: journals,
+      documents: documents,
       tags: new TagsClient(db, knex),
       preferences: new PreferencesClient(settings),
-      files: new FilesClient(settings),
+      files: files,
+      export: new ExportClient(db, knex, journals, documents, files, settings),
     };
   }
 
