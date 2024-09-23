@@ -44,7 +44,7 @@ export class EditableDocument {
 
   // The underlying document properties:
   @observable title?: string;
-  @observable journalId: string;
+  @observable journal: string;
   @observable id: string;
   @observable createdAt: string;
   @observable updatedAt: string; // read-only outside this class
@@ -62,7 +62,7 @@ export class EditableDocument {
     doc: GetDocumentResponse,
   ) {
     this.title = doc.title;
-    this.journalId = doc.journalId;
+    this.journal = doc.journal;
     this.content = doc.content;
     this.id = doc.id;
     this.createdAt = doc.createdAt;
@@ -83,7 +83,7 @@ export class EditableDocument {
           // the underlying nodes. See setSlateContent for additional context.
           changeCount: this.changeCount,
           title: this.title,
-          journal: this.journalId,
+          journal: this.journal,
           tags: this.tags.slice(), // must access elements to watch them
         };
       },
@@ -127,7 +127,7 @@ export class EditableDocument {
           toJS(this),
           "title",
           "content",
-          "journalId",
+          "journal",
           "id",
           "createdAt",
           "tags",
@@ -153,6 +153,6 @@ export class EditableDocument {
   del = async () => {
     // overload saving for deleting
     this.saving = true;
-    await this.client.documents.del(this.id);
+    await this.client.documents.del(this.id, this.journal);
   };
 }

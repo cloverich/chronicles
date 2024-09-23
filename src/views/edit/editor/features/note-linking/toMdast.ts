@@ -15,7 +15,7 @@ export function toMdastLinkFactory(convertNodes: (nodes: Node[]) => any) {
     const { title, noteId, journalName, children } = node;
 
     // NOTE: This format assumes if notes were exported, the format of all notes would be
-    // <somedir>/<journal_id>/<note_id>.md. While intra-journal linking could be simplified
+    // <basedir>/<journal>/<note_id>.md. While intra-journal linking could be simplified
     // to ./<note_id>.md, then we would need to update the links if the note was changed to
     // a different journal (which I do constantly).
     const url = `../${journalName}/${noteId}.md`;
@@ -29,10 +29,9 @@ export function toMdastLinkFactory(convertNodes: (nodes: Node[]) => any) {
   };
 }
 
-// For parsing note links, i.e. the `./<journalId>/<noteId>.md` format.
+// For parsing note links, i.e. the `./<journalName>/<noteId>.md` format.
 const noteLinkRegex = /^\..\/(?:(.+)\/)?([a-zA-Z0-9-]+)\.md$/;
 
-// Embedded within
 export function checkNoteLink(url: string) {
   if (!url) return null;
 

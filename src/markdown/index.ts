@@ -26,6 +26,7 @@ const parser = unified().use(remarkParse).use(remarkGfm);
 
 const slateToStringProcessor = unified()
   .use(slateToRemark)
+  .use(remarkGfm)
   .use(remarkStringify);
 
 const stringToSlateProcessor = parser

@@ -19,6 +19,9 @@ type ShouldIndex = (file: PathStatsFile) => boolean;
 const reg = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * todo: This is probably legacy code from when I used importer/indexer on every startup;
+ * Most of this should be moved to client.files and the legacy code removed.
+ *
  * FileDAO has methods for finding and fetching documents from the file system
  */
 export class Files {
@@ -100,16 +103,21 @@ export class Files {
 
   /**
    *
-   * @param srcDir - Journal directory to walk,looking for files to index
-   * @param name - The journal name. Treated as a key to the journals table. Stupid.
+   * @param directory - The folder to walk
+   * @param shouldIndex - A function that determines whether to index a file
+   * @param opts - Klaw options https://github.com/jprichardson/node-klaw
    *
    * todo: If bored, implement a more efficient and easier to work with API:
    * - Implement walk with w/ node APIs
    * - Filter on filename -- avoid non-journal directories and calling fs.stat needlessly
    */
-  static async *walk(directory: string, shouldIndex: ShouldIndex) {
+  static async *walk(
+    directory: string,
+    shouldIndex: ShouldIndex,
+    opts: walk.Options = {},
+  ) {
     // todo: statistics
-    const walking = walk(directory);
+    const walking = walk(directory, opts);
 
     // NOTE: Docs say walk is lexicographical but if I log out statements, its not walking in order
     for await (const entry of walking) {

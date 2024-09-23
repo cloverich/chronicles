@@ -1,8 +1,8 @@
 import { IDocumentsClient } from "./documents";
-import { IExportClient } from "./exporter";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
+import { ISyncClient } from "./sync";
 import { ITagsClient } from "./tags";
 
 // This interface was created with these "I" types like this
@@ -15,13 +15,12 @@ export interface IClient {
   documents: IDocumentsClient;
   preferences: IPreferencesClient;
   files: IFilesClient;
-  export: IExportClient;
+  imports: ISyncClient;
 }
 
 export type JournalResponse = {
-  id: string;
   name: string;
   createdAt: string;
   updatedAt: string;
-  archivedAt: string;
+  archived: boolean;
 };

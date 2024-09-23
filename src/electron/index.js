@@ -14,6 +14,7 @@ const url = require("url");
 const { initUserFilesDir } = require("./userFilesInit");
 const settings = require("./settings");
 const migrate = require("./migrations");
+const { ensureDir } = require("./ensureDir");
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
@@ -95,8 +96,11 @@ app.whenReady().then(() => {
  */
 function validateChroniclesUrl(chroniclesUrl) {
   // strip the leading chronicles://, then convert to absolute url
-  const url = decodeURI(chroniclesUrl.slice("chronicles://".length));
-  const baseDir = settings.get("USER_FILES_DIR");
+  // Also: file references are created with ../, because of the directory
+  // structure used by Chronicles. Strip the leading ../ since we are
+  // already in the root directory
+  const url = decodeURI(chroniclesUrl.slice("chronicles://../".length));
+  const baseDir = settings.get("NOTES_DIR");
   const absPath = path.join(baseDir, url);
   const normalizedPath = path.normalize(absPath);
 
@@ -268,48 +272,51 @@ app.on("activate", () => {
   }
 });
 
-// Preferences in UI allows user to specify database file
-ipcMain.on("select-database-file", async (event, arg) => {
-  if (!mainWindow) {
-    console.error(
-      "received request to open file picker but mainWindow is undefined",
-    );
-    return;
-  }
+// When the database was the source of truth, this was used to ease testing and make it
+// configurable for users. Now that the database is a cache over the source of truth (NOTES_DIR),
+// this is not needed for testing. But eventually we likely allow configuring where this cache is stored
+// so leaving for now. See preferences in UI.
+// ipcMain.on("select-database-file", async (event, arg) => {
+//   if (!mainWindow) {
+//     console.error(
+//       "received request to open file picker but mainWindow is undefined",
+//     );
+//     return;
+//   }
 
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ["openDirectory", "createDirectory", "openFile"],
-  });
+//   const result = await dialog.showOpenDialog(mainWindow, {
+//     properties: ["openDirectory", "createDirectory", "openFile"],
+//   });
 
-  const filepath = result.filePaths[0];
+//   const filepath = result.filePaths[0];
 
-  // user selected cancel
-  if (!filepath) return;
+//   // user selected cancel
+//   if (!filepath) return;
 
-  // todo: feedback to user if error
-  // https://github.com/cloverich/chronicles/issues/52
-  try {
-    if (fs.lstatSync(filepath).isDirectory()) {
-      // todo: What was I thinking here? This doesn't even make sense...
-      // its just creating a new database
-      setDatabaseUrl(path.join(filepath, "chronicles.db"));
-    } else {
-      // use user provided database
-      // todo: validation :grimace
-      setDatabaseUrl(filepath);
-    }
-  } catch (err) {
-    console.error(
-      `Error checking for file ${filepath} -- maybe it doesn't exist?`,
-    );
-    console.error(err);
-  }
+//   // todo: feedback to user if error
+//   // https://github.com/cloverich/chronicles/issues/52
+//   try {
+//     if (fs.lstatSync(filepath).isDirectory()) {
+//       // todo: What was I thinking here? This doesn't even make sense...
+//       // its just creating a new database
+//       setDatabaseUrl(path.join(filepath, "chronicles.db"));
+//     } else {
+//       // use user provided database
+//       // todo: validation :grimace
+//       setDatabaseUrl(filepath);
+//     }
+//   } catch (err) {
+//     console.error(
+//       `Error checking for file ${filepath} -- maybe it doesn't exist?`,
+//     );
+//     console.error(err);
+//   }
 
-  event.reply("preferences-updated");
-});
+//   event.reply("preferences-updated");
+// });
 
 // Preferences in UI allows user to specify user files directory
-ipcMain.on("select-user-files-dir", async (event, arg) => {
+ipcMain.on("select-chronicles-root", async (event, arg) => {
   if (!mainWindow) {
     console.error(
       "received request to open file picker but mainWindow is undefined",
@@ -324,25 +331,39 @@ ipcMain.on("select-user-files-dir", async (event, arg) => {
   const filepath = result.filePaths[0];
 
   // user selected cancel
-  if (!filepath) return;
+  if (!filepath) {
+    event.reply("preferences-updated", {
+      name: "NOTES_DIR",
+      value: null,
+      error: null,
+    });
+    return;
+  }
 
   // todo: feedback to user if error
   // https://github.com/cloverich/chronicles/issues/52
   try {
-    if (fs.lstatSync(filepath).isDirectory()) {
-      // move existing database file to new location
-      settings.set("USER_FILES_DIR", filepath);
-    } else {
-      throw new Error("User files must be valid directory");
-    }
+    ensureDir(filepath);
+    settings.set("NOTES_DIR", filepath);
   } catch (err) {
     console.error(
-      `Error checking for file ${filepath} -- maybe it doesn't exist?`,
+      `Error accessing directory ${filepath}; canceling update to NOTES_DIR`,
+      err,
     );
-    console.error(err);
+    event.reply("preferences-updated", {
+      name: "NOTES_DIR",
+      value: null,
+      error: `Error accessing directory ${filepath}; canceling update to NOTES_DIR`,
+    });
+    return;
   }
 
-  event.reply("preferences-updated");
+  // NOTE: Do not change this name without updating UI handlers
+  event.reply("preferences-updated", {
+    name: "NOTES_DIR",
+    value: filepath,
+    error: null,
+  });
 });
 
 ipcMain.on("inspect-element", async (event, arg) => {

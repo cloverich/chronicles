@@ -71,8 +71,8 @@ function toOptions(
 ): Pick<INoteLinkElement, "title" | "journalName" | "noteId">[] {
   return docs.slice(0, 10).map((d) => ({
     noteId: d.id,
-    title: d.title || d.id,
-    journalName: d.journalId,
+    title: d.title || d.id, // for untitled notes
+    journalName: d.journal,
   }));
 }
 

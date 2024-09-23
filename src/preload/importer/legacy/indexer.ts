@@ -4,6 +4,9 @@ import path from "path";
 import { Root, mdastToString, stringToMdast } from "../../../markdown";
 import { Files, PathStatsFile } from "../../files";
 
+/**
+ * NOTE: See comments in importChronicles; this is legacy. Leaving until the importers work is completed at least.
+ */
 export interface IJournal {
   // path to root folder
   url: string;

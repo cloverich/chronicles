@@ -22,7 +22,7 @@ export function useJournalsLoader() {
 
     async function load() {
       try {
-        const journalStore = await JournalsStore.create(client);
+        const journalStore = await JournalsStore.init(client);
         if (!isEffectMounted) return;
 
         setJournals(journalStore.journals);
@@ -30,7 +30,7 @@ export function useJournalsLoader() {
         setLoading(false);
       } catch (err: any) {
         if (!isEffectMounted) return;
-
+        console.error("error creating journal store", err);
         setLoadingErr(err);
         setLoading(false);
       }

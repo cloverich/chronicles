@@ -5,9 +5,8 @@ import { SearchItem, useSearchStore } from "./SearchStore";
 export function DocumentItem(props: {
   doc: SearchItem;
   edit: (id: string) => any;
-  getName: (id: string) => string;
 }) {
-  const { doc, edit, getName } = props;
+  const { doc, edit } = props;
   const search = useSearchStore()!;
 
   return (
@@ -20,14 +19,14 @@ export function DocumentItem(props: {
         className="hover:underline-offset mr-2 cursor-pointer font-sans hover:underline"
         onClick={() => edit(doc.id)}
       >
-        {doc.title}
+        {doc.title || "Untitled"}
       </div>
       <ClickableTag
         size="xs"
         variant="muted"
-        onClick={() => search.addToken(`in:${getName(doc.journalId)}`)}
+        onClick={() => search.addToken(`in:${doc.journal}`)}
       >
-        in:{getName(doc.journalId)}
+        in:{doc.journal}
       </ClickableTag>
     </div>
   );

@@ -4,9 +4,11 @@ import {
   PanelStatsIcon,
   SettingsIcon,
 } from "evergreen-ui";
+import { observer } from "mobx-react-lite";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { SheetTrigger } from "../../components/Sidesheet";
+import { useJournals } from "../../hooks/useJournals";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
 import { SearchStore } from "./SearchStore";
@@ -19,9 +21,10 @@ interface Props {
   empty?: boolean;
 }
 
-export function Layout(props: Props) {
+export const Layout = observer((props: Props) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const navigate = useNavigate();
+  const jstore = useJournals();
 
   return (
     <Base.Container>
@@ -49,6 +52,7 @@ export function Layout(props: Props) {
           border="none"
           icon={EditIcon}
           className="drag-none"
+          disabled={jstore.journals.length === 0}
           onClick={() => navigate("/documents/edit/new")}
           marginRight={8}
         >
@@ -72,4 +76,4 @@ export function Layout(props: Props) {
       <Base.ScrollContainer>{props.children}</Base.ScrollContainer>
     </Base.Container>
   );
-}
+});

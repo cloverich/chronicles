@@ -47,9 +47,9 @@ const FrontMatter = observer(
       [],
     );
 
-    // todo: move this to view model
-    function getName(journalId?: string) {
-      const journal = journals?.find((j) => j.id === journalId);
+    // todo: this is no longer needed (since re-wroking journal id to its name)
+    function getName(journalName?: string) {
+      const journal = journals?.find((j) => j.name === journalName);
       return journal ? journal.name : "Unknown journal";
     }
 
@@ -57,9 +57,9 @@ const FrontMatter = observer(
       return journals.map((j: any) => {
         return (
           <D.DropdownMenuItem
-            key={j.id}
+            key={j.name}
             onSelect={(e) => {
-              document.journalId = j.id;
+              document.journal = j.name;
             }}
           >
             {j.name}
@@ -73,7 +73,7 @@ const FrontMatter = observer(
         <D.DropdownMenu modal={false} {...journalSelectorOpenState}>
           <D.DropdownMenuTrigger asChild>
             <span className="cursor-pointer border-b border-slate-500">
-              {getName(document.journalId)}
+              {getName(document.journal)}
             </span>
           </D.DropdownMenuTrigger>
           <D.DropdownMenuContent align="start">

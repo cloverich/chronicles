@@ -9,7 +9,7 @@ export interface SearchItem {
   id: string;
   createdAt: string;
   title?: string;
-  journalId: string;
+  journal: string;
 }
 
 // Accepts any document satisfying the SearchItem interface, and copies properties
@@ -22,11 +22,12 @@ function toSearchItem(doc: SearchItem): SearchItem | null {
     id: doc.id,
     createdAt: doc.createdAt,
     title: doc.title,
-    journalId: doc.journalId,
+    journal: doc.journal,
   };
 }
 
 interface SearchQuery {
+  // journal name(s)
   journals: string[];
   titles?: string[];
   before?: string;
@@ -90,8 +91,8 @@ export class SearchStore {
     // Additional validation can go here as well
     tokens = tokens.filter((t) => {
       if (t.type !== "in") return true;
-      const journal = this.journals.idForName(t.value as string);
-      return !!journal;
+      if (!this.journals.journals.find((j) => j.name === t.value)) return false;
+      return true;
     });
 
     this.tokens.replace(tokens);
@@ -105,8 +106,7 @@ export class SearchStore {
   private tokensToQuery = (): SearchQuery => {
     const journals = this.tokens
       .filter((t) => t.type === "in")
-      .map((token) => this.journals.idForName(token.value as string))
-      .filter((token) => token) as string[];
+      .map((token) => token.value) as string[]; // assumes pre-validated by addToeken above
 
     const tags = this.tokens
       .filter((t) => t.type === "tag")

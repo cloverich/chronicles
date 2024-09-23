@@ -48,10 +48,6 @@ export const JournalItem = observer(
     isArchived: boolean;
     isDefault: boolean;
   }) => {
-    // api idea: const {archive, delete, setDefault} = actionGroup(store, 'archive', 'delete', 'setDefault');
-    // Provides a loading state, error state, and success state, and ties them all together
-    // todo: make computed value on journal itself
-    // todo: make methods on Journal model itself
     const onArchive = isDefault ? noop : () => store.onArchive(journal);
     const onDelete = isDefault ? noop : () => store.onDelete(journal);
     const onSetDefault = isDefault ? noop : () => store.onSetDefault(journal);
@@ -90,7 +86,7 @@ export const JournalItem = observer(
 
             <ContextMenu.Item
               className={menuItemCss}
-              onClick={() => store.toggleEditing(journal.id)}
+              onClick={() => store.toggleEditing(journal.name)}
               disabled={isArchived}
             >
               Rename
@@ -131,10 +127,11 @@ export const JournalItem = observer(
 const JournalEditor = observer(function JournalEditor({
   journal,
   done,
+  isNew,
 }: {
   isNew?: boolean;
   // New journal (no id) or existing journal (has id)
-  journal: { id: string; name: string } | { name: string };
+  journal: JournalResponse | { name: string };
   done: () => void;
 }) {
   const [name, setName] = React.useState(journal.name);
@@ -147,21 +144,17 @@ const JournalEditor = observer(function JournalEditor({
     setSaving(true);
 
     try {
-      if ("id" in journal) {
-        await store.updateName(journal.id, name);
+      if (isNew) {
+        await store.create(name);
       } else {
-        await store.create({ name });
+        await store.updateName(journal as JournalResponse, name);
       }
 
       if (isMounted()) {
         done();
       }
     } catch (err) {
-      const msg =
-        "id" in journal
-          ? `Error updating journal name for ${journal.id}`
-          : "Error creating journal";
-      console.error(msg, err);
+      console.error(err);
       if (isMounted()) {
         toaster.danger(`Error saving journal: ${String(err)}`);
       }

@@ -1,3 +1,4 @@
+import { toaster } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +8,8 @@ import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
 import { SearchStoreContext } from "../documents/SearchStore";
 import { EditLoadingComponent } from "../edit/loading";
 
-// Creates a new document and immediately navigates to it
+// Creates a new document and immediately navigates to it; re-directs back to
+// /documents if no journals are available
 function useCreateDocument() {
   const journalsStore = useContext(JournalsStoreContext)!;
 
@@ -26,21 +28,25 @@ function useCreateDocument() {
    * todo(test): When no journals are selected, returns the first active journal
    * todo(test): When archived journal selected, returns the selected (archived) journal
    */
-  function defaultJournal(selectedJournals: string[]) {
-    const selectedId = journalsStore.journals.find((j) =>
+  function defaultJournal(selectedJournals: string[]): string | null {
+    // pre-select the first journal if any are active in the search
+    const selected = journalsStore.journals.find((j) =>
       selectedJournals.includes(j.name),
-    )?.id;
+    )?.name;
 
-    if (selectedId) {
-      return selectedId;
+    if (selected) {
+      return selected;
     } else {
-      const defaultId = journalsStore.defaultJournalId;
-      if (defaultId) return defaultId;
+      // Otherwise use the default journal, or the first active journal
+      const defaultJournal = journalsStore.defaultJournal;
+      if (defaultJournal) return defaultJournal;
 
-      console.error(
-        "No default journal set, using first active journal; set a default journal in preferences",
-      );
-      return journalsStore.active[0].id;
+      // Fallback behavior
+      if (!journalsStore.active.length) {
+        return null;
+      }
+
+      return journalsStore.active[0].name;
     }
   }
 
@@ -48,10 +54,21 @@ function useCreateDocument() {
     (async function () {
       if (!isMounted) return;
 
+      const journal = defaultJournal(searchStore.selectedJournals);
+
+      // edge case: no journals, all journals archived, failed sync
+      // etc. Shouldn't happen, but better to have fallback behavior
+      // than be stuck.
+      if (!journal) {
+        navigate("/documents");
+        toaster.warning("No journals available to create a document");
+        return;
+      }
+
       try {
         const document = await client.documents.save({
           content: "",
-          journalId: defaultJournal(searchStore.selectedJournals),
+          journal: journal,
           tags: searchStore.selectedTags,
         });
 

@@ -1,83 +1,125 @@
 import { Database } from "better-sqlite3";
 import path from "path";
-import { uuidv7 } from "uuidv7";
 
+import { IFilesClient } from "./files";
+import { IPreferencesClient } from "./preferences";
 import { JournalResponse } from "./types";
 
 export type IJournalsClient = JournalsClient;
 
 export class JournalsClient {
-  constructor(private db: Database) {}
+  constructor(
+    private db: Database,
+    private files: IFilesClient,
+    private preferences: IPreferencesClient,
+  ) {}
 
   list = async (): Promise<JournalResponse[]> => {
-    return this.db.prepare("select * from journals order by name").all();
+    const journals = this.db
+      .prepare("select * from journals order by name")
+      .all();
+
+    const archived = await this.preferences.get("ARCHIVED_JOURNALS");
+    journals.forEach((j) => {
+      j.archived = archived[j.name];
+    });
+
+    return journals;
   };
 
-  create = (journal: { name: string }): Promise<JournalResponse> => {
+  create = async (journal: { name: string }): Promise<JournalResponse> => {
     const name = validateJournalName(journal.name);
-    const id = uuidv7();
+    await this.files.createFolder(name);
+    return this.index(name);
+  };
+
+  index = async (journalName: string): Promise<JournalResponse> => {
+    // add to archived if not already present
+    const existing = await this.preferences.get(
+      `ARCHIVED_JOURNALS.${journalName}`,
+    );
+    if (existing == null) {
+      await this.preferences.set(`ARCHIVED_JOURNALS.${journalName}`, false);
+    }
 
     this.db
       .prepare(
-        "insert into journals (id, name, createdAt, updatedAt) values (:id, :name, :createdAt, :updatedAt)",
+        "insert into journals (name, createdAt, updatedAt) values (:name, :createdAt, :updatedAt)",
       )
       .run({
-        id,
-        name,
+        name: journalName,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
-    return this.db.prepare("select * from journals where id = :id").get({ id });
+    return this.db
+      .prepare("select * from journals where name = :name")
+      .get({ name: journalName });
   };
 
-  update = (journal: {
-    id: string;
-    name: string;
-  }): Promise<JournalResponse> => {
-    const name = validateJournalName(journal.name);
+  rename = async (
+    // note: do not pass the full JournalResponse mobx object here; restructure
+    // it to just the name and archived fields
+    journal: { name: string; archived: boolean },
+    newName: string,
+  ): Promise<JournalResponse> => {
+    newName = validateJournalName(newName);
+    await this.files.renameFolder(journal.name, newName);
 
     this.db
       .prepare(
-        "update journals set name = :name, updatedAt = :updatedAt where id = :id",
+        "update journals set name = :newName, updatedAt = :updatedAt where name = :name",
       )
       .run({
-        name,
-        id: journal.id,
+        name: journal.name,
+        newName,
         updatedAt: new Date().toISOString(),
       });
 
+    // todo: dumb; revert to having documents reference id instead of name
+    this.db
+      .prepare("update documents set journal = :newName where journal = :name")
+      .run({
+        name: journal.name,
+        newName,
+      });
+
+    await this.preferences.delete(`ARCHIVED_JOURNALS.${journal.name}`);
+    await this.preferences.set(
+      `ARCHIVED_JOURNALS.${newName}`,
+      journal.archived,
+    );
+
     return this.db
-      .prepare("select * from journals where id = :id")
-      .get({ id: journal.id });
+      .prepare("select * from journals where name = :name")
+      .get({ name: newName });
   };
 
-  remove = (journal: { id: string }): Promise<JournalResponse[]> => {
-    // TODO: ensure there is always at least one journal. Deleting the last journal breaks the app.
+  remove = async (journal: string): Promise<JournalResponse[]> => {
+    // todo: Allow removing the last journal; handle this like first-time
+    // setup
+    if ((await this.list()).length === 1) {
+      throw new Error(
+        "Cannot delete the last journal. Create a new journal first.",
+      );
+    }
+
+    await this.files.removeFolder(journal);
+    await this.preferences.delete(`ARCHIVED_JOURNALS.${journal}`);
+
     this.db
-      .prepare("delete from journals where id = :id")
-      .run({ id: journal.id });
+      .prepare("delete from journals where name = :name")
+      .run({ name: journal });
     return this.list();
   };
 
-  archive = (journal: { id: string }): Promise<JournalResponse[]> => {
-    this.db
-      .prepare("update journals set archivedAt = :archivedAt where id = :id")
-      .run({
-        id: journal.id,
-        archivedAt: new Date().toISOString(),
-      });
-
+  archive = async (journal: string): Promise<JournalResponse[]> => {
+    await this.preferences.set(`ARCHIVED_JOURNALS.${journal}`, true);
     return this.list();
   };
 
-  unarchive = (journal: { id: string }): Promise<JournalResponse[]> => {
-    this.db
-      .prepare("update journals set archivedAt = null where id = :id")
-      .run({
-        id: journal.id,
-      });
-
+  unarchive = async (journal: string): Promise<JournalResponse[]> => {
+    await this.preferences.set(`ARCHIVED_JOURNALS.${journal}`, false);
     return this.list();
   };
 }
@@ -91,6 +133,10 @@ const validateJournalName = (name: string): string => {
   name = name?.trim() || "";
   if (!name) {
     throw new Error("Journal name cannot be empty.");
+  }
+
+  if (name === "_attachments") {
+    throw new Error("Journal name cannot be '_attachments'.");
   }
 
   // Check for max length
