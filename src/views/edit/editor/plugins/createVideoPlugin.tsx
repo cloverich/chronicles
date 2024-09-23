@@ -55,7 +55,7 @@ export const createVideoPlugin = createPluginFactory({
               // was hell.
               insertNode(editor, {
                 type: ELEMENT_VIDEO,
-                url: `chronicles://${json.filename}`,
+                url: `chronicles://../attachments/${json.filename}`,
                 children: [{ text: "" }],
               });
             });

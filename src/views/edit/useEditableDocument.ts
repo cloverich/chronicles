@@ -2,6 +2,8 @@ import { observable } from "mobx";
 import React from "react";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
+const { useNavigate } = require("react-router-dom");
+const { toaster } = require("evergreen-ui");
 
 interface LoodingState {
   document: EditableDocument | null;
@@ -13,6 +15,7 @@ interface LoodingState {
  * Load a new or existing document into a view model
  */
 export function useEditableDocument(documentId: string) {
+  const { navigate } = useNavigate();
   const client = useClient();
   const [state, _] = React.useState<LoodingState>(() => {
     return observable({
@@ -31,7 +34,7 @@ export function useEditableDocument(documentId: string) {
       state.error = null;
 
       if (!documentId) {
-        // Fail safe; this shuldn't happen. If scenarios come up where it could; maybe toast and navigate
+        // Fail safe; this shouldn't happen. If scenarios come up where it could; maybe toast and navigate
         // to documents list instead?
         state.error = new Error(
           "Called useEditableDocument without a documentId, unable to load document",
@@ -43,6 +46,12 @@ export function useEditableDocument(documentId: string) {
       try {
         const doc = await client.documents.findById({ id: documentId });
         if (!isEffectMounted) return;
+        if (!doc) {
+          navigate("/documents");
+          toaster.warning("Document not found, redirecting to documents list");
+          return state;
+        }
+
         state.document = new EditableDocument(client, doc);
 
         // Loading is instantaneous and the loading = true | false transition which the edit/view depends on never

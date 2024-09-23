@@ -86,13 +86,13 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
 
           {store.journalStore.active.map((j) => {
             return (
-              <li key={j.id}>
+              <li key={j.name}>
                 <JournalItem
                   journal={j}
                   store={store}
-                  editing={store.editing === j.id}
+                  editing={store.editing === j.name}
                   isArchived={store.journalStore.archived.includes(j)}
-                  isDefault={j.id === store.journalStore.defaultJournalId}
+                  isDefault={j.name === store.journalStore.defaultJournal}
                 />
               </li>
             );
@@ -105,13 +105,13 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
           <ul className="ml-0 text-sm">
             {store.journalStore.archived.map((j) => {
               return (
-                <li key={j.id}>
+                <li key={j.name}>
                   <JournalItem
                     journal={j}
                     store={store}
-                    editing={store.editing === j.id}
+                    editing={store.editing === j.name}
                     isArchived={store.journalStore.archived.includes(j)}
-                    isDefault={j.id === store.journalStore.defaultJournalId}
+                    isDefault={j.name === store.journalStore.defaultJournal}
                   />
                 </li>
               );

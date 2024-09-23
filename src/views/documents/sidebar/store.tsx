@@ -77,9 +77,9 @@ export class SidebarStore {
     return false;
   };
 
-  toggleEditing = (journalId?: string) => {
+  toggleEditing = (journal?: string) => {
     this.adding = false;
-    this.editing = journalId; // undefined to close
+    this.editing = journal; // undefined to close
   };
 
   toggleAdding = () => {
@@ -107,7 +107,8 @@ export class SidebarStore {
 
     try {
       if (confirm(`Are you sure you want to delete ${journal.name}?`)) {
-        await this.journalStore.remove(journal.id);
+        await this.journalStore.remove(journal);
+        this.searchStore.removeToken(`in:${journal.name}`);
       }
     } catch (err) {
       toaster.danger(`Error deleting journal ${String(err)}`);
@@ -121,7 +122,7 @@ export class SidebarStore {
     this.saving = true;
 
     try {
-      await this.journalStore.setDefault(journal.id);
+      await this.journalStore.setDefault(journal.name);
     } catch (err) {
       toaster.danger(`Error setting journal as default ${String(err)}`);
     } finally {

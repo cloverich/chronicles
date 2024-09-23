@@ -17,6 +17,7 @@ export class TagTokenParser {
 
     // remove spaces, snake_case -- arbitrary style decision
     text = text.replace(/ /g, "_");
+    text = text.replace(/,/g, "_");
     text = text.toLowerCase();
 
     // remove `:` characters, since its reserved for search prefix e.g. `tag:my_tag`, `title: ...`, etc.

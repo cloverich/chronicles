@@ -15,14 +15,6 @@ function DocumentsContainer() {
   const client = useClient();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    // Temporarily using these to run the import / export once on start-up
-    // client.export.export(
-    //   "/Users/cloverich/Documents/chronicles-development/export",
-    // );
-    // client.export.walk("/Users/cloverich/Documents/chronicles-development");
-  }, []);
-
   function edit(docId: string) {
     navigate(`/documents/edit/${docId}`);
   }
@@ -70,17 +62,8 @@ function DocumentsContainer() {
     }
   }
 
-  function getName(id: string) {
-    const jrnl = journalsStore.journals?.find((j) => j.id === id);
-    if (!jrnl) return "shrug";
-
-    return jrnl.name;
-  }
-
   const docs = searchStore.docs.map((doc) => {
-    return (
-      <DocumentItem key={doc.id} doc={doc} getName={getName} edit={edit} />
-    );
+    return <DocumentItem key={doc.id} doc={doc} edit={edit} />;
   });
 
   return (

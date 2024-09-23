@@ -43,7 +43,7 @@ export const createFilesPlugin = createPluginFactory({
             client.files.uploadFile(file).then((json: any) => {
               insertNode(editor, {
                 type: ELEMENT_LINK,
-                url: `chronicles://${json.filename}`,
+                url: `chronicles://../_attachments/${json.filename}`,
                 children: [{ text: `File: ${json.filename}` }],
               });
             });

@@ -1,6 +1,7 @@
 import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import { uuidv7 } from "uuidv7";
+import { IFilesClient } from "./files";
 
 export interface GetDocumentResponse {
   id: string;
@@ -8,7 +9,7 @@ export interface GetDocumentResponse {
   updatedAt: string;
   title?: string;
   content: string;
-  journalId: string;
+  journal: string;
   tags: string[];
 }
 
@@ -68,7 +69,7 @@ export interface SearchItem {
   id: string;
   createdAt: string;
   title?: string;
-  journalId: string;
+  journal: string;
 }
 
 export interface SaveRawRequest {
@@ -87,7 +88,7 @@ export interface SaveMdastRequest {
 
 export interface SaveRequest {
   id?: string;
-  journalId: string;
+  journal: string;
   content: string;
   title?: string;
   tags: string[];
@@ -104,6 +105,7 @@ export class DocumentsClient {
   constructor(
     private db: Database,
     private knex: Knex,
+    private files: IFilesClient,
   ) {}
 
   findById = ({ id }: { id: string }): Promise<GetDocumentResponse> => {
@@ -120,7 +122,8 @@ export class DocumentsClient {
     };
   };
 
-  del = async (id: string) => {
+  del = async (id: string, journal: string) => {
+    await this.files.deleteDocument(id, journal);
     this.db.prepare("delete from documents where id = :id").run({ id });
   };
 
@@ -129,7 +132,7 @@ export class DocumentsClient {
 
     // filter by journal
     if (q?.journals?.length) {
-      query = query.whereIn("journalId", q.journals);
+      query = query.whereIn("journal", q.journals);
     }
 
     if (q?.tags?.length) {
@@ -187,89 +190,146 @@ export class DocumentsClient {
    *
    * @returns - The document as it exists after the save
    */
-  save = (args: SaveRequest): Promise<GetDocumentResponse> => {
+  save = async (args: SaveRequest): Promise<GetDocumentResponse> => {
     // de-dupe tags -- should happen before getting here.
     args.tags = Array.from(new Set(args.tags));
+    let id;
 
-    const id = this.db.transaction(() => {
-      if (args.id) {
-        this.updateDocument(args);
-        return args.id;
-      } else {
-        return this.createDocument(args);
-      }
-    })();
+    args.title = args.title;
+    args.updatedAt = args.updatedAt || new Date().toISOString();
+
+    if (args.id) {
+      this.updateDocument(args);
+      id = args.id;
+    } else {
+      args.createdAt = new Date().toISOString();
+      args.updatedAt = new Date().toISOString();
+      id = await this.createDocument(args);
+    }
 
     return this.findById({ id });
   };
 
-  private createDocument = ({
+  /**
+   * Convert the properties we track to frontmatter
+   */
+  contentsWithFrontMatter = (document: SaveRequest) => {
+    const fm = `---
+title: ${document.title}
+tags: ${document.tags.join(", ")}
+createdAt: ${document.createdAt}
+updatedAt: ${document.updatedAt}
+---`;
+
+    return `${fm}\n\n${document.content}`;
+  };
+
+  private createDocument = async (args: SaveRequest): Promise<string> => {
+    const id = uuidv7();
+    const content = this.contentsWithFrontMatter(args);
+    await this.files.uploadDocument({ id, content }, args.journal);
+    return this.createIndex({ id, ...args });
+  };
+
+  private updateDocument = async (args: SaveRequest): Promise<void> => {
+    const content = this.contentsWithFrontMatter(args);
+
+    const origDoc = await this.findById({ id: args.id! });
+    await this.files.uploadDocument({ id: args.id!, content }, args.journal);
+
+    // sigh; this is a bit of a mess
+    if (origDoc.journal !== args.journal) {
+      // no await, optimistic delete
+      this.files.deleteDocument(args.id!, origDoc.journal);
+    }
+
+    return this.updateIndex(args);
+  };
+
+  createIndex = ({
+    id,
     createdAt,
     updatedAt,
-    journalId,
+    journal,
     content,
     title,
     tags,
   }: SaveRequest): string => {
-    const id = uuidv7();
-
-    this.db
-      .prepare(
-        `INSERT INTO documents (id, journalId, content, title, createdAt, updatedAt) VALUES (:id, :journalId, :content, :title, :createdAt, :updatedAt)`,
-      )
-      .run({
-        id,
-        journalId,
-        content,
-        title,
-        // allow passing createdAt to support backfilling prior notes
-        createdAt: createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-
-    if (tags.length > 0) {
-      this.db
-        .prepare(
-          `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
-        )
-        .run({ documentId: id });
+    if (!id) {
+      throw new Error("id required to create document index");
     }
 
-    return id;
+    return this.db.transaction(() => {
+      this.db
+        .prepare(
+          `INSERT INTO documents (id, journal, content, title, createdAt, updatedAt) VALUES (:id, :journal, :content, :title, :createdAt, :updatedAt)`,
+        )
+        .run({
+          id,
+          journal,
+          content,
+          title,
+          // allow passing createdAt to support backfilling prior notes
+          createdAt: createdAt || new Date().toISOString(),
+          updatedAt: updatedAt || new Date().toISOString(),
+        });
+
+      if (tags.length > 0) {
+        this.db
+          .prepare(
+            `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
+          )
+          .run({ documentId: id });
+      }
+
+      return id;
+    })();
   };
 
-  private updateDocument = ({
+  updateIndex = ({
     id,
     createdAt,
-    journalId,
+    updatedAt,
+    journal,
     content,
     title,
     tags,
   }: SaveRequest): void => {
-    this.db
-      .prepare(
-        `UPDATE documents SET journalId=:journalId, content=:content, title=:title, updatedAt=:updatedAt, createdAt=:createdAt WHERE id=:id`,
-      )
-      .run({
-        id,
-        content,
-        title,
-        journalId,
-        updatedAt: new Date().toISOString(),
-        createdAt,
-      });
-
-    this.db
-      .prepare(`DELETE FROM document_tags WHERE documentId = :documentId`)
-      .run({ documentId: id });
-
-    if (tags.length > 0) {
+    return this.db.transaction(() => {
       this.db
         .prepare(
-          `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
+          `UPDATE documents SET journal=:journal, content=:content, title=:title, updatedAt=:updatedAt, createdAt=:createdAt WHERE id=:id`,
         )
+        .run({
+          id,
+          content,
+          title,
+          journal,
+          updatedAt: updatedAt || new Date().toISOString(),
+          createdAt,
+        });
+
+      this.db
+        .prepare(`DELETE FROM document_tags WHERE documentId = :documentId`)
         .run({ documentId: id });
-    }
+
+      if (tags.length > 0) {
+        this.db
+          .prepare(
+            `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
+          )
+          .run({ documentId: id });
+      }
+    })();
+  };
+
+  /**
+   * When removing a journal, call this to de-index all documents from that journal.
+   */
+  deindexJournal = (journal: string): void => {
+    this.db
+      .prepare("DELETE FROM documents WHERE journal = :journal")
+      .run({ journal });
   };
 
   /**

@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS "nodes" (
 
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "journals" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "name" TEXT NOT NULL,
+    "name" TEXT NOT NULL PRIMARY KEY,
     -- TODO: These defaults need to use timezone (same for documents)
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -26,8 +25,8 @@ CREATE TABLE  IF NOT EXISTS "documents" (
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "title" TEXT,
     "content" TEXT NOT NULL,
-    "journalId" TEXT NOT NULL,
-    FOREIGN KEY ("journalId") REFERENCES "journals" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "journal" TEXT NOT NULL,
+    FOREIGN KEY ("journal") REFERENCES "journals" ("name") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
@@ -40,7 +39,6 @@ CREATE TABLE IF NOT EXISTS "document_tags" (
 );
 
 
-CREATE UNIQUE INDEX  IF NOT EXISTS "journals_name_uniq" ON "journals"("name");
-CREATE INDEX  IF NOT EXISTS "documents_title_idx" ON "documents"("title");
-CREATE INDEX  IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
+CREATE INDEX IF NOT EXISTS "documents_title_idx" ON "documents"("title");
+CREATE INDEX IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
 CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");

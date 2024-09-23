@@ -39,10 +39,10 @@ const DocumentLoadingContainer = observer(() => {
     if (!document) return;
 
     const journals = journalsStore.journals.filter((j) => {
-      if (j.archivedAt) {
-        return j.id === document.journalId;
+      if (j.archived) {
+        return j.name === document.journal;
       } else {
-        return !j.archivedAt;
+        return !j.archived;
       }
     });
 
@@ -77,6 +77,13 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   );
   const navigate = useNavigate();
   const searchStore = useSearchStore()!;
+
+  // If there are no journals, redirect to the documents view
+  React.useEffect(() => {
+    if (!journals?.length) {
+      navigate("/documents");
+    }
+  }, []);
 
   function renderEditor(tab: string) {
     switch (tab) {

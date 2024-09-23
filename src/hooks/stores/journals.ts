@@ -1,4 +1,4 @@
-import { computed, observable, toJS } from "mobx";
+import { computed, observable } from "mobx";
 import { IClient, JournalResponse } from "../useClient";
 
 export class JournalsStore {
@@ -8,70 +8,66 @@ export class JournalsStore {
   @observable journals: JournalResponse[];
 
   @computed get active() {
-    return this.journals.filter((j) => !j.archivedAt);
+    return this.journals.filter((j) => !j.archived);
   }
 
   @computed get archived() {
-    return this.journals.filter((j) => !!j.archivedAt);
+    return this.journals.filter((j) => !!j.archived);
   }
 
-  @observable defaultJournalId: string;
+  @observable defaultJournal: string;
 
   constructor(
     private client: IClient,
     journals: JournalResponse[],
-    defaultJournalId: string,
+    defaultJournal: string,
   ) {
     this.client = client;
     this.journals = journals;
-    this.defaultJournalId = defaultJournalId;
+    this.defaultJournal = defaultJournal;
   }
 
-  static async create(client: IClient) {
-    const journals = await client.journals.list();
-
-    // todo: This is more like application setup state; should probably have a
-    // global setup routine to track all this in one place.
-    // ensure at least one journal exists
-    if (journals.length === 0) {
-      journals.push(await client.journals.create({ name: "My Journal" }));
-    }
-
-    // ensure a default journal is set
-    let { DEFAULT_JOURNAL_ID: default_journal } =
-      await client.preferences.get();
-
-    if (!default_journal) {
-      await client.preferences.setDefaultJournal(journals[0].id);
-      default_journal = journals[0].id;
-    }
-
-    return new JournalsStore(client, journals, default_journal);
+  // todo: Move to a proper start-up routine; fuse with sync routine
+  static async init(client: IClient) {
+    // todo: kind of silly post
+    const jstore = new JournalsStore(client, [], "");
+    await jstore.refresh();
+    return jstore;
   }
 
-  idForName = (name: string) => {
-    const nameLower = name.toLowerCase();
-    const match = this.journals.find((j) => j.name === nameLower);
-    if (match) return match.id;
-  };
+  // todo: refactor so preferences and this store are always in sync
+  private async assertNotDefault(journal: string) {
+    const defaultJournal = await this.client.preferences.get("DEFAULT_JOURNAL");
 
-  private async assertNotDefault(journalId: string) {
-    const { DEFAULT_JOURNAL_ID: default_journal } =
-      await this.client.preferences.get();
-
-    if (journalId === default_journal) {
+    if (journal === defaultJournal) {
       throw new Error(
         "Cannot archive / delete the default journal; set a different journal as default first.",
       );
     }
   }
 
-  remove = async (journalId: string) => {
+  refresh = async () => {
+    this.loading = true;
+    try {
+      this.journals = await this.client.journals.list();
+      this.defaultJournal =
+        await this.client.preferences.get("DEFAULT_JOURNAL");
+    } catch (err: any) {
+      console.error("Error refreshing journals:", err);
+      throw err;
+    } finally {
+      this.loading = false;
+    }
+  };
+
+  remove = async (journal: JournalResponse) => {
     this.saving = true;
     try {
-      await this.assertNotDefault(journalId);
-      await this.client.journals.remove({ id: journalId });
-      this.journals = this.journals.filter((j) => j.id !== journalId);
+      await this.assertNotDefault(journal.name);
+
+      await this.client.journals.remove(journal.name);
+      await this.client.documents.deindexJournal(journal.name);
+      this.journals = this.journals.filter((j) => j.name !== journal.name);
     } catch (err: any) {
       console.error("Error removing journal:", err);
       throw err;
@@ -93,12 +89,12 @@ export class JournalsStore {
     return [null, name];
   };
 
-  create = async ({ name }: { name: string }) => {
+  create = async (journal: string) => {
     this.saving = true;
     this.error = null;
 
     try {
-      const [err, validName] = this.validateName(name);
+      const [err, validName] = this.validateName(journal);
       if (err) throw new Error(err);
 
       const newJournal = await this.client.journals.create({
@@ -114,22 +110,20 @@ export class JournalsStore {
     }
   };
 
-  updateName = async (journalId: string, name: string) => {
+  updateName = async (journal: JournalResponse, newName: string) => {
     this.saving = true;
     try {
-      const [err, validName] = this.validateName(name);
+      const [err, validName] = this.validateName(newName);
       if (err) throw new Error(err);
 
-      const journal = this.journals.find((j) => j.id === journalId);
-      if (!journal) throw new Error(`Journal not found: ${journalId}`);
-
-      const updatedAttrs = await this.client.journals.update({
-        id: journalId,
-        name: validName!,
-      });
+      const updatedAttrs = await this.client.journals.rename(
+        // note: re-structured to avoid passing a Proxy object (sigh)
+        { name: journal.name, archived: journal.archived },
+        newName,
+      );
       Object.assign(journal, updatedAttrs);
     } catch (err: any) {
-      console.error(`Error updating journal name for ${journalId}:`, err);
+      console.error(`Error updating journal name for ${journal.name}:`, err);
       throw err;
     } finally {
       this.saving = false;
@@ -139,19 +133,13 @@ export class JournalsStore {
   toggleArchive = async (journal: JournalResponse) => {
     this.saving = true;
 
-    // If I don't do this, the call to archive / unarchive will error with
-    // "Object could not be cloned". It fails before executing the function,
-    // so I guess its an error with Proxy objects being passed to preload
-    // scripts. That is... concerning.
-    journal = toJS(journal);
-
     try {
-      await this.assertNotDefault(journal.id);
+      await this.assertNotDefault(journal.name);
 
-      if (journal.archivedAt) {
-        this.journals = await this.client.journals.unarchive(journal);
+      if (journal.archived) {
+        this.journals = await this.client.journals.unarchive(journal.name);
       } else {
-        this.journals = await this.client.journals.archive(journal);
+        this.journals = await this.client.journals.archive(journal.name);
       }
     } catch (err: any) {
       console.error(`Error toggling archive for journal ${journal.name}:`, err);
@@ -168,13 +156,13 @@ export class JournalsStore {
    * Set the default journal; this is the journal that will be selected by
    * default when creating a new document, if no journal is selected.
    */
-  setDefault = async (journalId: string) => {
-    if (this.defaultJournalId === journalId) return;
+  setDefault = async (journal: string) => {
+    if (this.defaultJournal === journal) return;
 
     this.saving = true;
     try {
-      await this.client.preferences.setDefaultJournal(journalId);
-      this.defaultJournalId = journalId;
+      await this.client.preferences.set("DEFAULT_JOURNAL", journal);
+      this.defaultJournal = journal;
     } catch (err: any) {
       this.error = err;
       throw err;

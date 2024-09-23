@@ -1,57 +1,72 @@
-import { Button, ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
-import React, { PropsWithChildren, useEffect, useState } from "react";
-import { RouteProps, useNavigate } from "react-router-dom";
+import {
+  Button,
+  ChevronLeftIcon,
+  IconButton,
+  Pane,
+  toaster,
+} from "evergreen-ui";
+import { observable } from "mobx";
+import { observer } from "mobx-react-lite";
+import React, { PropsWithChildren, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import useClient from "../../hooks/useClient";
+import { useJournals } from "../../hooks/useJournals";
+import { Preferences } from "../../preload/client/preferences";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
 
-interface Props extends RouteProps {
-  // TODO: any added to satisfy ts check step; previously
-  // this was ViewState which does not exist. Review and fix.
-  setView?: React.Dispatch<React.SetStateAction<any>>;
-}
+const Preferences = observer(() => {
+  const jstore = useJournals();
+  const [store, _] = React.useState(() =>
+    observable({
+      preferences: {} as Preferences,
+      loading: true,
+    }),
+  );
 
-export default function Preferences(props: Props) {
-  const [preferences, setPreferences] = useState<any>({});
-  const [loading, setLoading] = useState(false);
   const client = useClient();
   const navigate = useNavigate();
 
-  // todo: Ideally this could go into a preload script
-  // see the main script (electron/index) for the other half
-  function openDialog() {
-    setLoading(true);
-    // todo: lol this name
-    client.preferences.openDialog();
-    // ipcRenderer.send("select-database-file");
+  async function openDialogNotesDir() {
+    store.loading = true;
+    try {
+      const result = await client.preferences.openDialogNotesDir();
+      if (!result.value) {
+        store.loading = false;
+        return;
+      }
 
-    // todo: replace  this hack with a timeout button, or implement
-    // a listener for the results (overkill imho)
-    setTimeout(() => setLoading(false), 1500);
+      store.preferences = await client.preferences.all();
+      store.loading = false;
+      sync();
+    } catch (e) {
+      store.loading = false;
+      toaster.danger("Failed to set new directory");
+    }
   }
 
-  function openDialogUserFiles() {
-    setLoading(true);
-    client.preferences.openDialogUserFiles();
-    // ipcRenderer.send("select-user-files-dir");
+  async function sync() {
+    if (store.loading) return;
 
-    // todo: replace this hack with a timeout button, or implement
-    // a listener for the results (overkill imho)
-    setTimeout(() => setLoading(false), 1500);
+    toaster.notify("Syncing cache...may take a few minutes");
+    store.loading = true;
+    await client.imports.sync();
+    await jstore.refresh();
+    store.loading = false;
+    toaster.success("Cache synced");
   }
 
   useEffect(() => {
     async function load() {
-      if (loading) return;
-      setPreferences(await client.preferences.get());
-      setLoading(false);
+      store.preferences = await client.preferences.all();
+      store.loading = false;
     }
 
-    // reload anytime preferences update
-    // ipcRenderer.on("preferences-updated", load);
     load();
 
     return () => {
+      // todo: Re-implement a single general listener for preferences-updated,
+      // test that the prefernces store can correctly call a cb when preferences are updated
       // ipcRenderer.removeListener("preferences-updated", load);
     };
   }, []);
@@ -73,64 +88,82 @@ export default function Preferences(props: Props) {
       <Base.TitlebarSpacer />
       <Base.ScrollContainer>
         <SettingsBox>
-          <h4>Database</h4>
-          <p>Chronicles documents are stored in a SQLite database file.</p>
-          <p>This file is located at: </p>
+          <h4>Settings directory</h4>
           <p>
-            <code>{preferences.DATABASE_URL}</code>
+            Location of files / directories are persisted to the settings file
+            located at {client.preferences.settingsPath()}
           </p>
-          <ul>
-            <li>
-              <b>To create a backup:</b> Make a copy of the database file
-            </li>
-            <li>
-              <b>To restore from a backup:</b> Use the filepicker below to point
-              the app at your backed up file
-            </li>
-            <li>
-              <b>To change the files location:</b> <i>First</i> move the
-              existing database file to your desired location, <i>then</i> use
-              the filepicker to select the new location
-            </li>
-            &nbsp;then restart the app
-          </ul>
-
-          {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
-          <Button isLoading={loading} disabled={loading} onClick={openDialog}>
-            Select new file
-          </Button>
         </SettingsBox>
+        {/* <SettingsBox>
+          <h4>Export</h4>
+          <Button
+            isLoading={store.loading}
+            disabled={store.loading}
+            onClick={() =>
+              client.export.export(
+                "/Users/cloverich/Documents/chronicles-development/export",
+              )
+            }
+          >
+            Export database to
+            "/Users/cloverich/Documents/chronicles-development/export"
+          </Button>
+        </SettingsBox> */}
+
         <SettingsBox>
-          <h4>User Files Directory</h4>
+          <h4>Chronicles Notes Root</h4>
           <p>
-            Chronicles images and other user files are stored in the
-            `USER_FILES` directory
+            Base directory against which documents and attachments are created /
+            read from
           </p>
-          <p>This file is located at:</p>
+          <p>This directory is currently located at:</p>
           <p>
-            <code>{preferences.USER_FILES_DIR}</code>
-          </p>
-          <p>
-            To change the directory location, <b>first</b> move the existing
-            directory to the desired location, and then select the new location
-            with the button below
+            <code>{store.preferences.NOTES_DIR}</code>
           </p>
 
           {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
           <Button
-            isLoading={loading}
-            disabled={loading}
-            onClick={openDialogUserFiles}
+            isLoading={store.loading}
+            disabled={store.loading}
+            onClick={openDialogNotesDir}
           >
             Select new directory
           </Button>
         </SettingsBox>
-
+        <SettingsBox>
+          <h4>Re-build cache (Sync)</h4>
+          <p>
+            Chronicles builds an index of all documents and journals (folders)
+            in NOTES_DIR to power its search and general operation. When the
+            cache is out of sync with the filesystem, this can cause issues such
+            as missing documents, tags, or journals.
+          </p>
+          <p>
+            "Syncing" the cache will rebuild the index from the filesystem,
+            ensuring that all documents, journals, and tags are correctly
+            indexed. This should be done anytime you make changes to the
+            filesystem outside of the app, including from another device (if the
+            NOTES_DIR is synced via a cloud service).
+          </p>
+          <p>
+            The current Chronicles cache is located at{" "}
+            {store.preferences.CACHE_DIR}
+          </p>
+          <Button
+            isLoading={store.loading}
+            disabled={store.loading}
+            onClick={sync}
+          >
+            Sync folder
+          </Button>
+        </SettingsBox>
         <Base.BottomSpacer />
       </Base.ScrollContainer>
     </Base.Container>
   );
-}
+});
+
+export default Preferences;
 
 function SettingsBox(props: PropsWithChildren<any>) {
   return (

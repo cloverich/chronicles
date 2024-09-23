@@ -4,12 +4,7 @@ import fs from "fs";
 import mkdirp from "mkdirp";
 import path from "path";
 import { uuidv7 } from "uuidv7";
-import { GetDocumentResponse } from "./documents"; // todo: circular dependency
-
-export interface Preferences {
-  DATABASE_URL: string;
-  PREFERENCES_FILE: string;
-}
+const { readFile, writeFile, access, stat } = fs.promises;
 
 interface UploadResponse {
   filename: string;
@@ -70,7 +65,8 @@ export class FilesClient {
   // the plugin
   upload = async (dataUrl: string): Promise<UploadResponse> => {
     // todo: add error handling if dir not found...
-    const dir = (await this.settings.get("USER_FILES_DIR")) as string;
+    const chronRoot = (await this.settings.get("NOTES_DIR")) as string;
+    const dir = path.join(chronRoot, "_attachments");
 
     const { buffer, extension } = dataURLToBufferAndExtension(dataUrl);
     const filename = `${uuidv7()}${extension}`;
@@ -119,15 +115,22 @@ export class FilesClient {
    * @param journalName
    */
   uploadDocument = async (
-    baseDir: string,
-    document: GetDocumentResponse,
-    journalName: string,
+    document: { id: string; content: string },
+    journal: string,
   ) => {
-    const journalPath = path.join(baseDir, journalName);
-    await mkdirp(journalPath);
+    const { docPath, journalPath } = this.getSafeDocumentPath(
+      journal,
+      document.id,
+    );
 
-    const docPath = path.join(journalPath, `${document.id}.md`);
+    await mkdirp(journalPath);
     await fs.promises.writeFile(docPath, document.content);
+  };
+
+  deleteDocument = async (documentId: string, journal: string) => {
+    const { docPath } = this.getSafeDocumentPath(journal, documentId);
+
+    await fs.promises.unlink(docPath);
   };
 
   /**
@@ -150,7 +153,71 @@ export class FilesClient {
     // decode...but for now this works, and images aren't copied and pasted into the editor that often
     return this.upload(dataUrl as string).then((json: any) => {
       // todo: ImageElement could check if image is local or remote; if local, prefix with chronicles://
-      return `chronicles://${json.filename}`;
+      return `chronicles://../_attachments/${json.filename}`;
     }, console.error) as Promise<string>; // createImagePlugin doesn't allow Promise<void>
   };
+
+  renameFolder = async (oldName: string, newName: string) => {
+    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const oldPath = path.join(baseDir, oldName);
+    const newPath = path.join(baseDir, newName);
+
+    return await fs.promises.rename(oldPath, newPath);
+  };
+
+  createFolder = async (name: string) => {
+    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const newPath = path.join(baseDir, name);
+
+    return fs.promises.mkdir(newPath);
+  };
+
+  removeFolder = async (name: string) => {
+    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const newPath = path.join(baseDir, name);
+
+    return fs.promises.rmdir(newPath, { recursive: true });
+  };
+
+  private getSafeDocumentPath = (journal: string, documentId: string) => {
+    const baseDir = this.settings.get("NOTES_DIR") as string;
+
+    const journalPath = path.join(baseDir, journal);
+    const docPath = path.join(journalPath, `${documentId}.md`);
+
+    const resolvedDocPath = path.resolve(docPath);
+    const resolvedJournalPath = path.resolve(journalPath);
+
+    if (!resolvedDocPath.startsWith(resolvedJournalPath)) {
+      throw new Error("Invalid path: Directory traversal attempt detected.");
+    }
+
+    return { docPath: resolvedDocPath, journalPath: resolvedJournalPath };
+  };
+
+  /**
+   * Ensure directory exists and can be accessed
+   *
+   * WARN: Logic to handle errors when writing / reading files from directory
+   * are still needed as access check may be innaccurate or could change while
+   * app is running.
+   */
+  async ensureDir(directory: string): Promise<void> {
+    try {
+      const dir = await stat(directory);
+      if (!dir.isDirectory()) {
+        throw new Error(
+          `ensureDir called but ${directory} already exists as a file`,
+        );
+      }
+    } catch (err: any) {
+      if (err.code !== "ENOENT") throw err;
+      await mkdirp(directory);
+    }
+
+    // NOTE: Documentation suggests Windows may report ok here, but then choke
+    // when actually writing. Better to move this logic to the actual file
+    // upload handlers.
+    await access(directory, fs.constants.R_OK | fs.constants.W_OK);
+  }
 }
