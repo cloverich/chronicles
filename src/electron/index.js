@@ -21,13 +21,6 @@ const { ensureDir } = require("./ensureDir");
 initUserFilesDir(app.getPath("userData"));
 console.log("application settings at startup:", settings.store);
 
-const USER_FILES_DIR = settings.get("USER_FILES_DIR");
-if (!USER_FILES_DIR) {
-  throw new Error(
-    "USER_FILES_DIR missing in main tooo after calling initUserFilesDir",
-  );
-}
-
 const DATABASE_URL = "DATABASE_URL";
 
 // Used by createWindow, but needed in database routine because of the filepicker call
