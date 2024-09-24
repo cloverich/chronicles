@@ -116,18 +116,22 @@ updatedAt: ${document.updatedAt}
     }
 
     await this.files.ensureDir(rootDir);
+    await this.files.ensureDir(path.join(rootDir, "_attachments"));
 
     console.log("syncing directory", rootDir);
     const rootFolderName = path.basename(rootDir);
 
-    const journals: string[] = [];
+    // Track created journals and number of documents to help troubleshoot
+    // sync issues
+    const journals: Record<string, number> = {};
+    const erroredDocumentPaths: string[] = [];
 
     for await (const file of Files.walk(rootDir, () => true, {
       // depth: dont go into subdirectories
       depthLimit: 1,
     })) {
       // For some reason it yields the root folder first, what is the point of that shrug
-      if (file.path.endsWith(rootFolderName)) continue;
+      if (file.path == rootDir) continue;
       if (file.path.includes(".DS_Store")) continue;
       const { ext, name } = path.parse(file.path);
       if (name.startsWith(".")) continue;
@@ -140,8 +144,12 @@ updatedAt: ${document.updatedAt}
 
         // This is creating a journal outside of the journals store... which caches the
         // initial list of journals
-        await this.journals.index(directory);
-        journals.push(directory);
+        if (!(directory in journals)) {
+          await this.files.ensureDir(file.path);
+          await this.journals.index(directory);
+          journals[directory] = 0;
+        }
+
         continue;
       }
 
@@ -191,6 +199,8 @@ updatedAt: ${document.updatedAt}
           updatedAt: frontMatter.updatedAt,
         });
       } catch (e) {
+        erroredDocumentPaths.push(file.path);
+
         // https://github.com/cloverich/chronicles/issues/248
         console.error(
           "Error with document",
@@ -199,14 +209,13 @@ updatedAt: ${document.updatedAt}
           directory,
           e,
         );
-        break;
       }
     }
 
     // Ensure default journal exists; attempt to declare one otherwise
     const defaultJournal = await this.preferences.get("DEFAULT_JOURNAL");
 
-    if (!defaultJournal || !journals.includes(defaultJournal)) {
+    if (!defaultJournal || !(defaultJournal in journals)) {
       console.log("updating default journal", defaultJournal, journals);
 
       if (journals.length) {
@@ -217,11 +226,14 @@ updatedAt: ${document.updatedAt}
     // remove any invalid archived journals
     const archivedJournals = await this.preferences.get("ARCHIVED_JOURNALS");
     for (const journal of Object.keys(archivedJournals)) {
-      if (!journals.includes(journal)) {
+      if (!(journal in journals)) {
         delete archivedJournals[journal];
       }
     }
 
     await this.preferences.set("ARCHIVED_JOURNALS", archivedJournals);
+
+    // todo: track this in a useful way...
+    console.log("Errored documents (during sync)", erroredDocumentPaths);
   };
 }
