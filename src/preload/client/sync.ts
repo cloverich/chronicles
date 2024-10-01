@@ -63,6 +63,8 @@ function parseFrontMatter(content: string) {
   };
 }
 
+const SKIPPABLE_FILES = new Set(".DS_Store");
+
 export class SyncClient {
   constructor(
     private db: Database,
@@ -132,31 +134,27 @@ updatedAt: ${document.updatedAt}
     })) {
       // For some reason it yields the root folder first, what is the point of that shrug
       if (file.path == rootDir) continue;
-      if (file.path.includes(".DS_Store")) continue;
-      const { ext, name } = path.parse(file.path);
+
+      const { ext, name, dir } = path.parse(file.path);
       if (name.startsWith(".")) continue;
+      if (SKIPPABLE_FILES.has(name)) continue;
 
       if (file.stats.isDirectory()) {
-        const directory = path.basename(file.path);
-        if (directory === "_attachments") {
+        const dirname = name;
+        if (dirname === "_attachments") {
           continue;
         }
 
-        // This is creating a journal outside of the journals store... which caches the
-        // initial list of journals
-        if (!(directory in journals)) {
-          await this.files.ensureDir(file.path);
-          await this.journals.index(directory);
-          journals[directory] = 0;
-        }
-
+        // Defer creating journals until we find a markdown file
+        // in the directory
         continue;
       }
 
+      // Only process markdown files
       if (ext !== ".md") continue;
 
       // filename is id; ensure it is formatted as a uuidv7
-      const documentId = path.basename(file.path).replace(".md", "");
+      const documentId = name;
 
       if (!uuidv7Regex.test(documentId)) {
         console.error("Invalid document id", documentId);
@@ -165,11 +163,19 @@ updatedAt: ${document.updatedAt}
 
       // treated as journal name
       // NOTE: This directory check only works because we limit depth to 1
-      const directory = path.basename(path.dirname(file.path));
+      const dirname = path.basename(dir);
 
       // _attachments is for images (etc), not notes
-      if (directory == "_attachments") {
+      if (dirname === "_attachments") {
         continue;
+      }
+
+      // Once we find at least one markdown file, we treat this directory
+      // as a journal
+      if (!(dirname in journals)) {
+        await this.files.ensureDir(dirname);
+        await this.journals.index(dirname);
+        journals[dirname] = 0;
       }
 
       // todo: sha comparison
@@ -191,7 +197,7 @@ updatedAt: ${document.updatedAt}
       try {
         await this.documents.createIndex({
           id: documentId,
-          journal: directory, // using name as id
+          journal: dirname, // using name as id
           content: body,
           title: frontMatter.title,
           tags: frontMatter.tags || [],
@@ -206,7 +212,7 @@ updatedAt: ${document.updatedAt}
           "Error with document",
           documentId,
           "for journal",
-          directory,
+          dirname,
           e,
         );
       }

@@ -57,17 +57,33 @@ export class PreferencesClient {
   //   ipcRenderer.send("select-user-files-dir");
   // };
 
+  openDialogImportDir = async () => {
+    ipcRenderer.send("select-directory");
+
+    return new Promise<string>((resolve, reject) => {
+      ipcRenderer.once("directory-selected", (event, arg) => {
+        console.log("directory-selected", arg);
+        if (arg.error) {
+          reject(arg.error);
+        } else {
+          resolve(arg.value);
+        }
+      });
+    });
+  };
+
   openDialogNotesDir = async () => {
-    ipcRenderer.send("select-chronicles-root");
+    ipcRenderer.send("select-directory");
 
     return new Promise<{ error?: string; value?: string }>(
       (resolve, reject) => {
-        ipcRenderer.once("preferences-updated", (event, arg) => {
-          console.log("preferences-updated", arg);
+        ipcRenderer.once("directory-selected", (event, arg) => {
+          console.log("directory-selected", arg);
           if (arg.error) {
             reject(arg.error);
           } else {
-            resolve(arg);
+            this.set("NOTES_DIR", arg.value);
+            resolve(arg.value);
           }
         });
       },
