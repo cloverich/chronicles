@@ -75,19 +75,19 @@ export class SyncClient {
     private preferences: IPreferencesClient,
   ) {}
 
-  private selectImages = (mdast: any, images: any = new Set()) => {
-    if (mdast.type === "image") {
-      images.add(mdast.url);
-    }
+  // private selectImages = (mdast: any, images: any = new Set()) => {
+  //   if (mdast.type === "image") {
+  //     images.add(mdast.url);
+  //   }
 
-    if (mdast.children) {
-      for (const child of mdast.children) {
-        this.selectImages(child, images);
-      }
-    }
+  //   if (mdast.children) {
+  //     for (const child of mdast.children) {
+  //       this.selectImages(child, images);
+  //     }
+  //   }
 
-    return images;
-  };
+  //   return images;
+  // };
 
   /**
    * Convert the properties we track to frontmatter

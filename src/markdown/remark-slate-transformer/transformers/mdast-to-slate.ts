@@ -16,7 +16,7 @@ import {
   ELEMENT_UL,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
-import { toSlateLink } from "../../../views/edit/editor/features/note-linking/toMdast";
+import { toSlateNoteLink } from "../../../views/edit/editor/features/note-linking/toMdast";
 
 export type Decoration = {
   [key in (
@@ -378,7 +378,7 @@ export type Link = ReturnType<typeof createLink>;
 function createLink(node: mdast.Link, deco: Decoration) {
   const { children, url, title } = node;
 
-  const res = toSlateLink({ url, children, deco, convertNodes });
+  const res = toSlateNoteLink({ url, children, deco, convertNodes });
 
   if (res) return res;
 

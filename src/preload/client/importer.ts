@@ -3,15 +3,20 @@ import { diff } from "deep-object-diff";
 import { Knex } from "knex";
 import path from "path";
 import yaml from "yaml";
-import { Files } from "../files";
+import { Files, PathStatsFile } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
 
+// todo: this is a dumb way to do this.. see how ts-mdast is exported
+import * as mdast from "../../markdown/remark-slate-transformer/models/mdast";
+
 export type IImporterClient = ImporterClient;
 
+import { uuidv7 } from "uuidv7";
+import { mdastToString, stringToMdast } from "../../markdown";
 import { testCases } from "./importer.test";
 
 // Temporary helper to test frontmatter parsing and dump the results
@@ -215,13 +220,15 @@ const hexIdRegex = /\b[0-9a-f]{16,}\b/;
 /**
  * Strip the id from Notion filenames
  *
- * Notion filenames are formatted as `title UUID`
- * example: architecture f35b7cabdf98421d94a27722f0fbdeb8
- * @param filename - The filename (not path, no extension) to strip the UUID from
+ * todo: add tests
  *
- * @returns
+ * Notion filenames are formatted as `title UUID`
+ * example: My Note f35b7cabdf98421d94a27722f0fbdeb8
+ *
+ * @param filename - The filename (not path, no extension) to strip the UUID from
+ * @returns [string, string] - title, id (if present)
  */
-function stripNotionIdFromTitle(filename: string) {
+function stripNotionIdFromTitle(filename: string): [string, string?] {
   const lastSpaceIndex = filename.lastIndexOf(" ");
 
   // Only strip if a space and UUID are present after the space
@@ -229,11 +236,90 @@ function stripNotionIdFromTitle(filename: string) {
     lastSpaceIndex > 0 &&
     hexIdRegex.test(filename.slice(lastSpaceIndex + 1))
   ) {
-    return filename.substring(0, lastSpaceIndex).trim();
+    const name = filename.substring(0, lastSpaceIndex).trim();
+    const id = filename.substring(lastSpaceIndex + 1).trim();
+    return [name, id];
   }
 
-  return filename.trim();
+  // Missing id is defensive; might arise if assumption or actual format of Notion ID structure
+  // or filename structure changes.
+  return [filename.trim(), undefined];
 }
+
+interface ImportItemSuccess {
+  importerId: string;
+  sourcePath: string;
+  sourceId?: string;
+
+  title: string;
+  journal: string;
+  content: string;
+  frontMatter: string;
+
+  // Where this item will end up
+  chroniclesId: string;
+  chroniclesPath: string;
+  status: string; // 'pending' | 'complete' | 'error'
+}
+
+interface ImportItemError {
+  importerId: string;
+  title: string;
+  journal: string;
+  sourcePath: string;
+  sourceId?: string;
+
+  // error specific
+  status: "error";
+  error: true;
+}
+
+type ImportItem = ImportItemSuccess | ImportItemError;
+
+// ugh, when pulling from db we get full set of propeties so my interfaces
+// above dont' make sense; need to re-think this
+type ImportItemDb = {
+  importerId: string;
+  sourcePath: string;
+  sourceId?: string;
+
+  title: string;
+  journal: string;
+  content: string;
+  frontMatter: string;
+
+  // Where this item will end up
+  chroniclesId: string;
+  chroniclesPath: string;
+  status: string; // 'pending' | 'complete' | 'error'
+};
+
+/**
+ * For processing links, we pass through documents multiple times. First,
+ * we collect all the links, including their source document name and path.
+ * Then, we annotate with the chronicles id and path (that it will eventually have)
+ * and the journal name. In this way, we can re-name links on the second pass
+ * to point to the correct (updated) path, before we save the document. Because
+ * we do this before we save, there is some risk it won't be right.
+ */
+interface ImportItemLink {
+  kind: "link" | "file";
+  importerId: string;
+  sourceChroniclesId: string; // chronicles id of document that owns the link
+  sourceChroniclesPath: string; // path of document that contains the link
+  sourceId?: string;
+  sourceUrl: string;
+  title: string;
+  journal: string;
+
+  destChroniclesId: string; // chronicles id of document this link points to
+
+  // todo: Maybe make this sourceUrlResolved (i.e. the path with decoded id)
+  sourceUrlResolved: string;
+  sourceUrlResolveable: number; // boolean
+}
+
+const importedItems: ImportItem[] = [];
 
 export class ImporterClient {
   constructor(
@@ -246,24 +332,120 @@ export class ImporterClient {
     private syncs: ISyncClient, // sync is keyword?
   ) {}
 
-  private selectImages = (mdast: any, images: any = new Set()) => {
-    if (mdast.type === "image") {
-      images.add(mdast.url);
-    }
-
-    if (mdast.children) {
-      for (const child of mdast.children) {
-        this.selectImages(child, images);
+  saveImportItem = async (item: ImportItem) => {
+    // inserts into the import_items table
+    try {
+      if ("error" in item) {
+        this.db
+          .prepare(
+            `INSERT INTO import_items (
+              importerId, 
+              title,
+              journal,
+              sourcePath, 
+              sourceId, 
+              error, 
+              status)
+            VALUES (
+              :importerId, 
+              :title, 
+              :journal, 
+              :sourcePath, 
+              :sourceId, 
+              :error, 
+              :status)`,
+          )
+          .run(item);
       }
+      this.db
+        .prepare(
+          `INSERT INTO import_items (importerId, title, journal, 
+              content,
+              frontMatter, chroniclesId, chroniclesPath, sourcePath, sourceId, status)
+      VALUES (:importerId, :title, :journal, 
+              :content,
+              :frontMatter, :chroniclesId, :chroniclesPath, :sourcePath, :sourceId, :status)`,
+        )
+        .run(item);
+    } catch (err) {
+      console.error("Error saving import item", item, err);
+    }
+  };
+
+  saveImportItemLinks = async (items: ImportItemLink[]) => {
+    try {
+      items.forEach((item) => {
+        this.db
+          .prepare(
+            `INSERT INTO import_links (importerId, sourceChroniclesId, sourceId, title, journal, sourceChroniclesPath, sourceUrl, kind, sourceUrlResolved, sourceUrlResolveable)
+          VALUES (:importerId, :sourceChroniclesId, :sourceId, :title, :journal, :sourceChroniclesPath, :sourceUrl, :kind, :sourceUrlResolved, :sourceUrlResolveable)`,
+          )
+          .run(item);
+      });
+    } catch (err: any) {
+      // already exists -- acceptable!
+      if (err?.code === "SQLITE_CONSTRAINT_PRIMARYKEY") return;
+
+      console.error("Error saving import links", items, err);
+    }
+  };
+
+  updateImportItemLink = async (item: ImportItemLink) => {
+    // todo: try catch:
+    // error { code: SQLITE_CONSTRAINT_PRIMARYKEY } } --> already exists (acceptable!)
+    this.db
+      .prepare(
+        `UPDATE import_links SET sourceChroniclesId = :sourceChroniclesId, sourceChroniclesPath = :sourceChroniclesPath
+        WHERE sourcePath = :sourcePath AND sourceId = :sourceId`,
+      )
+      .run(item);
+  };
+
+  stageImportItems = async (
+    importDir: string,
+    journals: Record<string, number>,
+    rootFolderName: string,
+    importerId: string,
+  ) => {
+    for await (const file of Files.walk(importDir, () => true, {
+      // depth: dont go into subdirectories
+      depthLimit: 1,
+    })) {
+      this.processNote(file, journals, rootFolderName, importerId);
+    }
+  };
+
+  extractAndUpdateLinks = async (
+    mdast: mdast.Root,
+    item: ImportItemDb,
+    linkMapping: Record<string, { journal: string; chroniclesId: string }>,
+  ) => {
+    const links = this.selectLinks(mdast);
+    if (!links.size) return;
+
+    // todo: pre-build this mapping from the database, we already have all of this information
+    // there.
+    const mappedLinks: Record<string, string> = {};
+
+    for (const link of Array.from(links)) {
+      const sourceFolderPath = path.dirname(item.sourcePath);
+      const sourceUrlResolved = path.resolve(sourceFolderPath, link.url);
+      const mapped = linkMapping[sourceUrlResolved];
+      if (!mapped) {
+        console.error("no mapping for", sourceUrlResolved);
+        continue;
+      }
+      mappedLinks[link.url] = `../${mapped.journal}/${mapped.chroniclesId}.md`;
     }
 
-    return images;
+    this.updateLinks(mdast, mappedLinks);
   };
 
   /**
    * Sync the notes directory with the database
    */
   import = async (importDir: string) => {
+    const importerId = uuidv7();
     const rootDir = await this.preferences.get("NOTES_DIR");
 
     if (!rootDir || typeof rootDir !== "string") {
@@ -285,132 +467,305 @@ export class ImporterClient {
     // Track created journals and number of documents to help troubleshoot
     // sync issues
     const journals: Record<string, number> = {};
-    const erroredDocumentPaths: string[] = [];
+    await this.stageImportItems(
+      importDir,
+      journals,
+      rootFolderName,
+      importerId,
+    );
 
-    for await (const file of Files.walk(importDir, () => true, {
-      // depth: dont go into subdirectories
-      depthLimit: 1,
-    })) {
-      // For some reason it yields the root folder first, what is the point of that shrug
-      if (file.path == rootFolderName) continue;
-      const { ext, name, dir } = path.parse(file.path);
+    // At this point, import_items and import_links are populated;
+    // we can iterate and update them, before syncing
+    // This whole thing is a little silly because I am pulling all the contents
+    // out of the database, i could jsut do this whole ting in memory if I was going to do that
+    // todo: Calculate the disk size of my total note repository and see just how stupid
+    // this effort is.
+    const items: ImportItemDb[] = await this.db
+      .prepare("select * from import_items")
+      .all();
 
-      // Skip hidden files and directories
-      if (name.startsWith(".")) continue;
-      if (SKIPPABLE_FILES.has(name)) continue;
+    // Links point to the original documents path (sourcePath). Build a mapping
+    // of each document's sourcePath to its eventual Chronicles path (journal/chroniclesId.md)
+    // With this, we can update links in each document.
+    // TODO: I think we can generate the link mapping in the database,
+    // like destChroniclesId = joinedImportItemChroniclesId (join on sourceUrlResolved)
+    const linkMapping: Record<
+      string,
+      { journal: string; chroniclesId: string }
+    > = {};
+    for (const item of items) {
+      if ("error" in item && item.error) continue;
+      const { journal, chroniclesId, sourcePath } = item;
+      linkMapping[sourcePath] = { journal, chroniclesId };
+    }
 
-      if (file.stats.isDirectory()) {
-        const directory = name;
-        if (directory === "_attachments") {
-          continue;
-        }
-
-        // Defer creating journals until we find a markdown file
-        // in the directory
+    for (const item of items) {
+      if ("error" in item && item.error) {
+        console.log("skipping error item", item.sourcePath);
         continue;
       }
 
-      // Only process markdown files
-      if (ext !== ".md") continue;
+      const frontMatter = JSON.parse(item.frontMatter);
 
-      // filename is id; ensure it is formatted as a uuidv7
-      // compared to sync, we do not assume the filename is a uuidv7
-      // const documentId = path.basename(file.path).replace(".md", "");
+      // todo: can I store the mdast in JSON? If so, should I just do this on the first
+      // pass since I already parsed it to mdast once?
+      const mdast = stringToMdast(item.content) as any as mdast.Root;
+      this.extractAndUpdateLinks(mdast, item, linkMapping);
 
-      // if (!uuidv7Regex.test(documentId)) {
-      //   console.error("Invalid document id", documentId);
-      //   continue;
-      // }
-
-      // treated as journal name
-      // NOTE: This directory check only works because we limit depth to 1
-      const dirname = path.basename(dir);
-      const journalName = stripNotionIdFromTitle(dirname);
-
-      // Once we find at least one markdown file, we treat this directory
-      // as a journal
-      if (!(journalName in journals)) {
-        await this.files.ensureDir(dirname);
-
-        // current work: Separate create from index; instead just re-work notion folder structure into
-        // chronicles structure as we import, then call sync;
-        // So, I don't think we need to even create journals, I think the folder is created when the first file is
-        // created .... remove this later.
-        // await this.journals.index(dirname);
-        journals[journalName] = 0;
-      }
-
-      // this is only special for sync, not import
-      // _attachments is for images (etc), not notes
-      // TODO: Allow dir named _attachments; but would need to re-name it on import
-      // if (directory == "_attachments") {
-      //   continue;
-      // }
-
-      // todo: handle repeat import, specifically if the imported folder / file already exists;
-      // b/c that may happen when importing multiple sources...
-
-      // todo: sha comparison
-      const contents = await Files.read(file.path);
+      // with updated links we can now save the document
       try {
-        const { frontMatter, body, title } = parseTitleAndFrontMatter(contents);
-        console.log("parsed", JSON.stringify(frontMatter, null, 2));
+        const [id, docPath] = await this.documents.createDocument(
+          {
+            id: item.chroniclesId,
+            journal: item.journal, // using name as id
 
-        // In a directory that was pre-formatted by Chronicles, this should not
-        // be needed. Will leave here as a reminder when I do the more generalized
-        // import routine.
-        if (!frontMatter.createdAt) {
-          frontMatter.createdAt = file.stats.ctime.toISOString();
-        }
-
-        // todo: check updatedAt Updated At, Last Edited, etc.
-        // createdAt
-        if (!frontMatter.updatedAt) {
-          frontMatter.updatedAt = file.stats.mtime.toISOString();
-        }
-
-        // todo: handle additional kinds of frontMatter; just add a column for them
-        // and ensure they are not overwritten when editing existing files
-        // https://github.com/cloverich/chronicles/issues/127
-
-        // todo: Unlike sync, here we need to handle images and note references
-        // there are two kinds of note references: file references, and [[Magic References]]
-
-        try {
-          // sync calls createIndex, but we call createDocument
-          // NOTE: This is not idempotent; we could make it so by tracking
-          // the original file path
-          await this.documents.createDocument(
-            {
-              journal: journalName, // using name as id
-              content: body,
-              title: title, //stripNotionIdFromTitle(name),
-              tags: frontMatter.tags || [],
-              createdAt: frontMatter.createdAt,
-              updatedAt: frontMatter.updatedAt,
-            },
-            false, // don't index; we'll call sync after import
-          );
-        } catch (e) {
-          erroredDocumentPaths.push(file.path);
-
-          // https://github.com/cloverich/chronicles/issues/248
-          console.error(
-            "Error creating document",
-            file.path,
-            "for journal",
-            dirname,
-            e,
-          );
-        }
-      } catch (e) {
-        console.error("Error parsing front matter", file.path, e);
-        // console.log(contents);
-        continue;
+            // todo: wrap stringifying these errors separately; maybe updateLinks should return the content|error error separately
+            content: mdastToString(mdast),
+            title: item.title, //stripNotionIdFromTitle(name),
+            tags: frontMatter.tags || [],
+            createdAt: frontMatter.createdAt,
+            updatedAt: frontMatter.updatedAt,
+          },
+          false, // don't index; we'll call sync after import
+        );
+        console.log(
+          "do ids equal?",
+          id == item.chroniclesId,
+          id,
+          item.chroniclesId,
+        );
+      } catch (err) {
+        // todo: pre-validate ids are unique
+        // https://github.com/cloverich/chronicles/issues/248
+        console.error(
+          "Error creating document after import",
+          item.sourcePath,
+          err,
+        );
+        // todo: track create_error on the import_item
       }
     }
 
     console.log("import complete; calling sync to update indexes");
     await this.syncs.sync();
+  };
+
+  private isNoteLink = (url: string) => {
+    // we are only interested in markdown links
+    if (!url.endsWith(".md")) return false;
+
+    // ensure its not a url with an .md domain
+    if (url.includes("://")) return false;
+
+    return true;
+  };
+
+  private updateLinks = (
+    mdast: mdast.Content | mdast.Root,
+    links: Record<string, string>,
+  ) => {
+    if (mdast.type === "link" && this.isNoteLink(mdast.url)) {
+      // todo: I do this in the other routine too sigh, so links has it stored this way
+      // fucking hell.
+      const url = decodeURIComponent(mdast.url);
+      if (!(url in links)) {
+        // todo: track unmapped links
+        // technically I can pre-work this out in the database, and have done so for my import
+        // (44/44 note links mapped). But an error here would indicate programmatic issue so...
+        // hmmm where to record this?
+        console.error("link not found", links, url);
+        throw new Error("link not found");
+      } else {
+        mdast.url = links[url];
+      }
+    }
+
+    if ("children" in mdast) {
+      for (const child of mdast.children) {
+        this.updateLinks(child, links);
+      }
+    }
+  };
+
+  private selectLinks = (
+    mdast: mdast.Content | mdast.Root,
+    // todo: no longer need set since moving to object, re-work this
+    links: Set<{
+      title: string;
+      url: string;
+      description?: string;
+    }> = new Set(),
+  ) => {
+    if (mdast.type === "link") {
+      if (!this.isNoteLink(mdast.url)) return links;
+
+      links.add({
+        // Notion's filenames are url encoded; the urls are url encoded
+        // When _i_ parse the file (fs.stat in Files.walk), they are coming
+        // back as decoded (e.g. %20 -> " "). So decode before saving. Need
+        // to test this and ensure it is consistent across platforms (eventually);
+        // need to test this with tests to ensure it works as expected
+        // need to validate against my own notes which I should be able to do easily
+        // i.e. how many resolve properly
+        url: decodeURIComponent(mdast.url),
+        // todo: error handling for mdastToString
+        title:
+          // trim: trailing \n added by stringifier
+          mdastToString({ type: "root", children: mdast.children })?.trim() ||
+          mdast.url,
+        description: undefined, // undefined on links, not files
+      });
+    }
+
+    if ("children" in mdast) {
+      for (const child of mdast.children) {
+        this.selectLinks(child, links);
+      }
+    }
+
+    return links;
+  };
+
+  private processNote = async (
+    file: PathStatsFile,
+    journals: Record<string, number>,
+    rootFolderName: string,
+    importerId: string,
+  ) => {
+    // For some reason it yields the root folder first, what is the point of that shrug
+    if (file.path == rootFolderName) return;
+    const { ext, name, dir } = path.parse(file.path);
+
+    // Skip hidden files and directories
+    if (name.startsWith(".")) return;
+    if (SKIPPABLE_FILES.has(name)) return;
+
+    if (file.stats.isDirectory()) {
+      const directory = name;
+      if (directory === "_attachments") {
+        return;
+      }
+
+      // Defer creating journals until we find a markdown file
+      // in the directory
+      return;
+    }
+
+    // Only process markdown files
+    if (ext !== ".md") return;
+
+    // treated as journal name
+    // NOTE: This directory check only works because we limit depth to 1
+    const dirname = path.basename(dir);
+    const [journalName] = stripNotionIdFromTitle(dirname);
+
+    // Once we find at least one markdown file, we treat this directory
+    // as a journal
+    if (!(journalName in journals)) {
+      await this.files.ensureDir(dirname);
+    }
+
+    // this is only special for sync, not import
+    // _attachments is for images (etc), not notes
+    // TODO: Allow dir named _attachments; but would need to re-name it on import
+    // if (directory == "_attachments") {
+    //   return;
+    // }
+
+    // todo: handle repeat import, specifically if the imported folder / file already exists;
+    // b/c that may happen when importing multiple sources...
+
+    // todo: sha comparison
+    const contents = await Files.read(file.path);
+    const [, notionId] = stripNotionIdFromTitle(name);
+
+    try {
+      // todo: fallback title to filename - uuid
+      const { frontMatter, body, title } = parseTitleAndFrontMatter(contents);
+      // console.log("parsed", JSON.stringify(frontMatter, null, 2));
+
+      // In a directory that was pre-formatted by Chronicles, this should not
+      // be needed. Will leave here as a reminder when I do the more generalized
+      // import routine.
+      if (!frontMatter.createdAt) {
+        frontMatter.createdAt = file.stats.ctime.toISOString();
+      }
+
+      // todo: check updatedAt Updated At, Last Edited, etc.
+      // createdAt
+      if (!frontMatter.updatedAt) {
+        frontMatter.updatedAt = file.stats.mtime.toISOString();
+      }
+
+      // todo: handle additional kinds of frontMatter; just add a column for them
+      // and ensure they are not overwritten when editing existing files
+      // https://github.com/cloverich/chronicles/issues/127
+
+      // todo: Unlike sync, here we need to handle images and note references
+      // there are two kinds of note references: file references, and [[Magic References]]
+      const mdast = stringToMdast(body) as any as mdast.Root; // todo: type these better...
+      const links = this.selectLinks(mdast);
+
+      // skip if no links for now
+      // if (!links.size) return;
+      // console.log(links);
+
+      const chroniclesId = uuidv7();
+      const importItem = {
+        importerId,
+        chroniclesId: chroniclesId,
+        // hmm... what am I going to do with this? Should it be absolute to NOTES_DIR?
+        chroniclesPath: `${path.join(journalName, chroniclesId)}.md`,
+        sourceId: notionId,
+        sourcePath: file.path,
+        title,
+        journal: journalName,
+        content: body,
+        frontMatter: JSON.stringify(frontMatter),
+        status: "pending",
+      };
+
+      this.saveImportItem(importItem);
+
+      const linkItems: ImportItemLink[] = [];
+      for (const link of links) {
+        const sourceFolderPath = path.dirname(file.path);
+        const sourceUrlResolved = path.resolve(sourceFolderPath, link.url);
+        const canAccessFile = await this.files.validFile(sourceUrlResolved);
+
+        //
+
+        linkItems.push({
+          importerId,
+          sourceChroniclesId: importItem.chroniclesId,
+          sourceChroniclesPath: importItem.chroniclesPath,
+          sourceId: notionId,
+          sourceUrl: link.url,
+
+          // sourceUrlResolvedToTheFullTargetPath
+          sourceUrlResolved: sourceUrlResolved,
+          destChroniclesId: "", // todo: fill this in later
+          sourceUrlResolveable: canAccessFile ? 1 : 0,
+          kind: "link",
+          title: link.title,
+          journal: journalName,
+        });
+      }
+
+      await this.saveImportItemLinks(linkItems);
+      // this.saveImportItemLinks(
+      //   Array.from(links).map<ImportItemLink>((link) => {
+      //     // compute the destination (import_item) for each link
+
+      //   }),
+      // );
+
+      // temporarily skip importing, just logging links
+      return;
+    } catch (e) {
+      console.error("Error parsing front matter", file.path, e);
+      // console.log(contents);
+      return;
+    }
   };
 }

@@ -204,7 +204,7 @@ export class DocumentsClient {
     } else {
       args.createdAt = new Date().toISOString();
       args.updatedAt = new Date().toISOString();
-      id = await this.createDocument(args);
+      [id] = await this.createDocument(args);
     }
 
     return this.findById({ id });
@@ -232,15 +232,18 @@ updatedAt: ${document.updatedAt}
   createDocument = async (
     args: SaveRequest,
     index: boolean = true,
-  ): Promise<string> => {
-    const id = uuidv7();
+  ): Promise<[string, string]> => {
+    const id = args.id || uuidv7();
     const content = this.contentsWithFrontMatter(args);
-    await this.files.uploadDocument({ id, content }, args.journal);
+    const docPath = await this.files.uploadDocument(
+      { id, content },
+      args.journal,
+    );
 
     if (index) {
-      return this.createIndex({ id, ...args });
+      return [this.createIndex({ id, ...args }), docPath];
     } else {
-      return id;
+      return [id, docPath];
     }
   };
 
