@@ -76,6 +76,8 @@ export class JournalsStore {
     }
   };
 
+  // todo: client.journals has its own validation that is more robust than this
+  // and isn ow exported us that
   validateName = (name: string) => {
     name = name.trim();
     if (!name) return ["Journal name cannot be empty", name];

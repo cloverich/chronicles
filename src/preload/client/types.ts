@@ -1,5 +1,6 @@
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
+import { IImporterClient } from "./importer";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
@@ -15,7 +16,8 @@ export interface IClient {
   documents: IDocumentsClient;
   preferences: IPreferencesClient;
   files: IFilesClient;
-  imports: ISyncClient;
+  sync: ISyncClient;
+  importer: IImporterClient;
 }
 
 export type JournalResponse = {

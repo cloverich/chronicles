@@ -139,6 +139,7 @@ export class FilesClient {
    * @param baseDir - Chronicles root directory
    * @param document
    * @param journalName
+   * @returns - The path to the saved document
    */
   uploadDocument = async (
     document: { id: string; content: string },
@@ -151,6 +152,7 @@ export class FilesClient {
 
     await mkdirp(journalPath);
     await fs.promises.writeFile(docPath, document.content);
+    return docPath;
   };
 
   deleteDocument = async (documentId: string, journal: string) => {
@@ -196,6 +198,36 @@ export class FilesClient {
 
     return { docPath: resolvedDocPath, journalPath: resolvedJournalPath };
   };
+
+  /**
+   * Check if a filepath exists and can be accessed; useful for confirming
+   * imported / updated links are valid.
+   *
+   * @param filepath
+   */
+  async validFile(filepath: string): Promise<boolean> {
+    try {
+      const file = await stat(filepath);
+      if (!file.isFile()) {
+        throw new Error(
+          `ensureFile called but ${filepath} already exists as a directory`,
+        );
+      }
+    } catch (err: any) {
+      console.error("Error files.validFile:", filepath, err);
+      // if (err.code !== "ENOENT") throw err;
+      return false;
+    }
+
+    // todo: idk if this is how the API is supposed to be used
+    try {
+      await access(filepath, fs.constants.R_OK | fs.constants.W_OK);
+      return true;
+    } catch (err) {
+      console.error("Error files.validFile.access:", filepath, err);
+      return false;
+    }
+  }
 
   /**
    * Ensure directory exists and can be accessed
