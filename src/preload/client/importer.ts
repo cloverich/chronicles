@@ -6,7 +6,7 @@ import yaml from "yaml";
 import { Files, PathStatsFile } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
-import { IJournalsClient } from "./journals";
+import { IJournalsClient, validateJournalName } from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
 
@@ -17,12 +17,12 @@ export type IImporterClient = ImporterClient;
 
 import { uuidv7 } from "uuidv7";
 import { mdastToString, stringToMdast } from "../../markdown";
-import { testCases } from "./importer.test";
+import { titleFrontMatterTestCases } from "./importer.test";
 
 // Temporary helper to test frontmatter parsing and dump the results
 // to the console; can convert to real tests at the end.
 export function runFrontmatterTests() {
-  for (const testCase of testCases) {
+  for (const testCase of titleFrontMatterTestCases) {
     console.log("TEST:", testCase.expected.title);
     const result = parseTitleAndFrontMatter(testCase.input);
     if (!result.frontMatter) {
@@ -403,15 +403,16 @@ export class ImporterClient {
 
   stageImportItems = async (
     importDir: string,
-    journals: Record<string, number>,
     rootFolderName: string,
     importerId: string,
   ) => {
+    // for processNote; maps the original folder path to the fixed name
+    const journalsMapping: Record<string, string> = {};
     for await (const file of Files.walk(importDir, () => true, {
       // depth: dont go into subdirectories
-      depthLimit: 1,
+      // depthLimit: 1,
     })) {
-      this.processNote(file, journals, rootFolderName, importerId);
+      this.processNote(file, importDir, importerId, journalsMapping);
     }
   };
 
@@ -448,13 +449,16 @@ export class ImporterClient {
     const importerId = uuidv7();
     const rootDir = await this.preferences.get("NOTES_DIR");
 
+    // Sanity check this is set first, because I'm hacking a lot of stuff together
+    // in tiny increments, many things bound to get mixed up
     if (!rootDir || typeof rootDir !== "string") {
       throw new Error("No chronicles root directory set");
     }
 
+    // Ensure `importDir` is a directory and can be accessed
     await this.files.ensureDir(importDir);
 
-    // Ensure `importDir` can be accessed, and is not a subdirectory of `rootDir`
+    // Confirm its not a sub-directory of the notes root `rootDir`
     if (importDir.startsWith(rootDir)) {
       throw new Error(
         "Import directory must not reside within the chronicles root directory",
@@ -464,15 +468,7 @@ export class ImporterClient {
     console.log("importing directory", importDir);
     const rootFolderName = path.basename(importDir);
 
-    // Track created journals and number of documents to help troubleshoot
-    // sync issues
-    const journals: Record<string, number> = {};
-    await this.stageImportItems(
-      importDir,
-      journals,
-      rootFolderName,
-      importerId,
-    );
+    await this.stageImportItems(importDir, rootFolderName, importerId);
 
     // At this point, import_items and import_links are populated;
     // we can iterate and update them, before syncing
@@ -528,12 +524,6 @@ export class ImporterClient {
           },
           false, // don't index; we'll call sync after import
         );
-        console.log(
-          "do ids equal?",
-          id == item.chroniclesId,
-          id,
-          item.chroniclesId,
-        );
       } catch (err) {
         // todo: pre-validate ids are unique
         // https://github.com/cloverich/chronicles/issues/248
@@ -560,6 +550,11 @@ export class ImporterClient {
     return true;
   };
 
+  /**
+   * Update the links in a document with the provided mapping
+   * @param mdast - contents parsed to MDAST
+   * @param links  - Mapping of (cleaned) original link to updated link
+   */
   private updateLinks = (
     mdast: mdast.Content | mdast.Root,
     links: Record<string, string>,
@@ -587,6 +582,9 @@ export class ImporterClient {
     }
   };
 
+  /**
+   * Grab all links from the note
+   */
   private selectLinks = (
     mdast: mdast.Content | mdast.Root,
     // todo: no longer need set since moving to object, re-work this
@@ -626,52 +624,104 @@ export class ImporterClient {
     return links;
   };
 
+  /**
+   * Infer or generate a journal name from the folder path
+   *
+   * Imported notes have folders, that may be nested and have uique ids in the names
+   * and may be invalid names, etc. Handle all that and return or generate a valid name.
+   *
+   * @param folderPath - The (probably relatiive) path to the folder (we reoslve it to absolute)
+   * @param importDir - The root import directory
+   * @param journals - A mapping of original folder path to journal name (for cache / unique check)
+   *
+   * @returns The inferred or generated journal name
+   */
+  private inferOrGenerateJournalName = (
+    // Path to the documents folder, relative to import direcgory
+    folderPath: string,
+    // import directory, so we can ensure its stripped from the journal name
+    importDir: string,
+    // cache / unique names checker (for when we have to generate name)
+    journals: Record<string, string>,
+  ): string => {
+    // Notion folder names have unique ids, just like the notes themselves.
+    // Also, the folder may be nested, so we need to strip the ids from each
+    // ex: "Documents abc123efg"
+    // ex: "Documents abc123eft/My Nested Folder hijk456klm"
+    const folderNameMaybeNestedWithIds = path
+      .resolve(folderPath)
+      .split(importDir)[1];
+
+    // if we've already generated a name for this folder, return it
+    if (folderNameMaybeNestedWithIds in journals) {
+      return journals[folderNameMaybeNestedWithIds];
+    }
+
+    // strip notion ids from each (potential) folder name, then re-assmble
+    let journalName = folderNameMaybeNestedWithIds
+      // break into parts
+      .split(path.sep)
+      // if leading with path.sep, kick out ''
+      .filter(Boolean)
+      // Strip notionId from each part
+      // "Documents abc123eft" -> "Documents"
+      .map((part) => {
+        const [folderNameWithoutId] = stripNotionIdFromTitle(part);
+        return folderNameWithoutId;
+      })
+      // re-join w/ _ to treat it as a single folder going forward
+      .join("_");
+
+    // confirm its valid.
+    try {
+      validateJournalName(journalName);
+
+      // also ensure its unique
+      if (Object.values(journals).includes(journalName)) {
+        throw new Error(`Journal name ${journalName} not unique`);
+      }
+    } catch (err) {
+      journalName = uuidv7();
+
+      // too long, reserved name, non-unique, etc.
+      console.warn(
+        "Error validating journal name",
+        journalName,
+        err,
+        "Generating a new name:",
+        journalName,
+      );
+    }
+
+    // cache for next time
+    journals[folderNameMaybeNestedWithIds] = journalName;
+
+    return journalName;
+  };
+
   private processNote = async (
     file: PathStatsFile,
-    journals: Record<string, number>,
-    rootFolderName: string,
+    importDir: string,
     importerId: string,
+    journals: Record<string, string>, // mapping of original folder path to journal name
   ) => {
-    // For some reason it yields the root folder first, what is the point of that shrug
-    if (file.path == rootFolderName) return;
     const { ext, name, dir } = path.parse(file.path);
 
     // Skip hidden files and directories
     if (name.startsWith(".")) return;
     if (SKIPPABLE_FILES.has(name)) return;
 
-    if (file.stats.isDirectory()) {
-      const directory = name;
-      if (directory === "_attachments") {
-        return;
-      }
-
-      // Defer creating journals until we find a markdown file
-      // in the directory
-      return;
-    }
+    // Skip directories, symbolic links, etc.
+    if (!file.stats.isFile()) return;
 
     // Only process markdown files
     if (ext !== ".md") return;
 
-    // treated as journal name
-    // NOTE: This directory check only works because we limit depth to 1
-    const dirname = path.basename(dir);
-    const [journalName] = stripNotionIdFromTitle(dirname);
-
-    // Once we find at least one markdown file, we treat this directory
-    // as a journal
-    if (!(journalName in journals)) {
-      await this.files.ensureDir(dirname);
-    }
-
-    // this is only special for sync, not import
-    // _attachments is for images (etc), not notes
-    // TODO: Allow dir named _attachments; but would need to re-name it on import
-    // if (directory == "_attachments") {
-    //   return;
-    // }
-
+    const journalName = this.inferOrGenerateJournalName(
+      dir,
+      importDir,
+      journals,
+    );
     // todo: handle repeat import, specifically if the imported folder / file already exists;
     // b/c that may happen when importing multiple sources...
 

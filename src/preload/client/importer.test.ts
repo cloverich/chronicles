@@ -1,4 +1,4 @@
-export const testCases = [
+export const titleFrontMatterTestCases = [
   // Case 1: Title and simple front matter with no special characters
   {
     input: `# My First Note
@@ -234,3 +234,34 @@ Body content has a colon: in it!`,
 
 // todo: Test with colons in the body, ensure it STOPS trying tp parse front matter
 // after the final newline; either that or pre-process the content to ...
+
+//
+export const inferOrGenerateJournalNameTestCases = [
+  // base case
+  {
+    input: "Documents c3ceaee48e24410f90a075fb72681991",
+    output: "Documents c3ceaee48e24410f90a075fb72681991",
+  },
+  // base case (nested)
+  {
+    input:
+      "Documents c3ceaee48e24410f90a075fb72681991/Attachments c3ceaee48e24410f90a075fb72681991",
+    output: "Documents_Attachments",
+  },
+  // probably works fine but shrug
+  {
+    input: "Documents",
+    output: "Documents",
+  },
+  // reserved name results in generated folder name
+  {
+    input: "_attachments",
+    // uuidv7 regex completely untested / unused just an idea
+    // because _attachments is not allowed, should be generated
+    output: /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/g,
+  },
+  {
+    input: "TODO_MAKE_THIS_A_TOO_LONG_INVALID_NAME_BLAHBLAHBLAH",
+    output: "TODO_...", // shorter
+  },
+];
