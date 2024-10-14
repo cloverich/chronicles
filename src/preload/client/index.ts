@@ -2,7 +2,7 @@ import DB from "better-sqlite3";
 import Knex from "knex";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
-import { ImporterClient } from "./importer";
+import { ImporterClient, runFrontmatterTests } from "./importer";
 import { JournalsClient } from "./journals";
 import { PreferencesClient } from "./preferences";
 import { SyncClient } from "./sync";
@@ -33,7 +33,7 @@ export { GetDocumentResponse } from "./documents";
 let client: IClient;
 export function create(): IClient {
   if (!client) {
-    // runFrontmatterTests();
+    runFrontmatterTests();
     const preferences = new PreferencesClient(settings);
     const files = new FilesClient(settings);
     const journals = new JournalsClient(db, files, preferences);

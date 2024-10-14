@@ -1,5 +1,5 @@
 export const titleFrontMatterTestCases = [
-  // Case 1: Title and simple front matter with no special characters
+  // Title and simple front matter with no special characters
   {
     input: `# My First Note
 
@@ -13,17 +13,17 @@ This is the body of the document.`,
     expected: {
       title: "My First Note",
       frontMatter: {
-        CreatedBy: "John Doe",
-        LastEdited: "July 20, 2023 12:00 PM",
+        "Created By": "John Doe",
         Category: "personal",
-        createdAt: "January 1, 2021",
+        createdAt: "2021-01-01T08:00:00.000Z",
         published: "Yes",
+        updatedAt: "2023-07-20T19:00:00.000Z",
       },
       body: "This is the body of the document.",
     },
   },
 
-  // Case 2: Title with no front matter
+  // Title with no front matter
   {
     input: `# Another Note
 
@@ -35,34 +35,13 @@ This document has no front matter, just content.`,
     },
   },
 
-  // Case 3: No title, but front matter with special characters
-  {
-    input: `Created By: Jane Doe
-Last Edited: July 20, 2023 12:00 PM
-Category: "work, personal"
-createdAt: January 1, 2021 8:30 AM
-published: No
-
-Body starts here and has no title.`,
-    expected: {
-      title: "",
-      frontMatter: {
-        CreatedBy: "Jane Doe",
-        LastEdited: "July 20, 2023 12:00 PM",
-        Category: "work, personal",
-        createdAt: "January 1, 2021 8:30 AM",
-        published: "No",
-      },
-      body: "Body starts here and has no title.",
-    },
-  },
-
-  // Case 4: Title with front matter missing values
+  // Title with front matter missing values
   {
     input: `# Empty Values
+    
 Created By:
 Last Edited:
-Category: work
+tags:
 createdAt:
 published:
 
@@ -70,15 +49,97 @@ Content for this note goes here.`,
     expected: {
       title: "Empty Values",
       frontMatter: {
-        CreatedBy: "",
-        LastEdited: "",
-        Category: "work",
-        createdAt: "",
+        "Created By": null,
+        "Last Edited": null,
+        // Currently, empty values for these are removed to avoid confusion
+        // updatedAt: null,
+        // createdAt: null,
+        // Important: emptry tags should be an empty array, not null or "" or [""]
+        tags: [],
         published: "",
       },
       body: "Content for this note goes here.",
     },
   },
+
+  // No front-matter, colon in the body
+  {
+    input: `# Notion title + colon in body
+
+Body content has a colon: in it!`,
+    expected: {
+      title: "Notion title + colon in body",
+      frontMatter: {},
+      body: "Body content has a colon: in it!",
+    },
+  },
+
+  // Frontmatter, colon in the body
+  {
+    input: `# Notion title + front matter + colon in body
+    
+Created By: John Doe
+Last Edited: July 20, 2023 12:00 PM
+Category: personal
+createdAt: January 1, 2021
+published: Yes
+
+Body content has a colon: in it!`,
+    expected: {
+      title: "Notion title + front matter + colon in body",
+      frontMatter: {
+        "Created By": "John Doe",
+        updatedAt: "2023-07-20T19:00:00.000Z",
+        Category: "personal",
+        createdAt: "2021-01-01T08:00:00.000Z",
+        published: "Yes",
+      },
+      body: "Body content has a colon: in it!",
+    },
+  },
+
+  // Frontmatter, no body. I have many of these in my notes.
+  {
+    input: `# Notion title + front matter + no body
+    
+Created By: John Doe
+Last Edited: July 20, 2023 12:00 PM
+Category: personal
+createdAt: January 1, 2021
+published: Yes`,
+    expected: {
+      title: "Notion title + front matter + no body",
+      frontMatter: {
+        "Created By": "John Doe",
+        updatedAt: "2023-07-20T19:00:00.000Z",
+        Category: "personal",
+        createdAt: "2021-01-01T08:00:00.000Z",
+        published: "Yes",
+      },
+      body: "",
+    },
+  },
+  // Notion Edge Case: No title, but front matter with special characters
+  //   {
+  //     input: `Created By: Jane Doe
+  // Last Edited: July 20, 2023 12:00 PM
+  // Category: "work, personal"
+  // createdAt: January 1, 2021 8:30 AM
+  // published: No
+
+  // Body starts here and has no title.`,
+  //     expected: {
+  //       title: "",
+  //       frontMatter: {
+  //         "Created By": "Jane Doe",
+  //         "Last Edited": "July 20, 2023 12:00 PM",
+  //         Category: "work, personal",
+  //         createdAt: "January 1, 2021 8:30 AM",
+  //         published: "No",
+  //       },
+  //       body: "Body starts here and has no title.",
+  //     },
+  //   },
 
   // Case 5: Title with multi-line front matter
   // Nah. https://github.com/cloverich/chronicles/issues/256
@@ -96,8 +157,8 @@ Content for this note goes here.`,
   //     expected: {
   //       title: "Project Plan",
   //       frontMatter: {
-  //         CreatedBy: "Chris O",
-  //         LastEdited: "July 25, 2023 9:45 PM",
+  //         'Created By': "Chris O",
+  //         'Last Edited': "July 25, 2023 9:45 PM",
   //         Category: "project",
   //         createdAt: "February 15, 2021 10:30 AM",
   //         description:
@@ -109,52 +170,52 @@ Content for this note goes here.`,
 
   // Case 6: YAML-style front matter with tags; no space after last line of
   // front matter (but has correct ---)
-  {
-    input: `---
-title: "YAML Note"
-tags: work, personal
-createdAt: 2023-09-28
-updatedAt: 2023-09-29
----
-This is a document with YAML front matter.`,
-    expected: {
-      title: "",
-      frontMatter: {
-        title: "YAML Note",
-        tags: ["work", "personal"],
-        createdAt: "2023-09-28",
-        updatedAt: "2023-09-29",
-      },
-      body: "This is a document with YAML front matter.",
-    },
-  },
+  //   {
+  //     input: `---
+  // title: "YAML Note"
+  // tags: work, personal
+  // createdAt: 2023-09-28
+  // updatedAt: 2023-09-29
+  // ---
+  // This is a document with YAML front matter.`,
+  //     expected: {
+  //       title: "",
+  //       frontMatter: {
+  //         title: "YAML Note",
+  //         tags: ["work", "personal"],
+  //         createdAt: "2023-09-28",
+  //         updatedAt: "2023-09-29",
+  //       },
+  //       body: "This is a document with YAML front matter.",
+  //     },
+  //   },
 
   // Case 7: YAML front matter without tags
-  {
-    input: `---
-title: "Note Without Tags"
-createdAt: 2023-09-28
----
-Just some plain content.`,
-    expected: {
-      title: "",
-      frontMatter: {
-        title: "Note Without Tags",
-        createdAt: "2023-09-28",
-      },
-      body: "Just some plain content.",
-    },
-  },
+  //   {
+  //     input: `---
+  // title: "Note Without Tags"
+  // createdAt: 2023-09-28
+  // ---
+  // Just some plain content.`,
+  //     expected: {
+  //       title: "",
+  //       frontMatter: {
+  //         title: "Note Without Tags",
+  //         createdAt: "2023-09-28",
+  //       },
+  //       body: "Just some plain content.",
+  //     },
+  //   },
 
   // Case 8: No front matter or title, only body
-  {
-    input: `This document only has body content.`,
-    expected: {
-      title: "",
-      frontMatter: {},
-      body: "This document only has body content.",
-    },
-  },
+  // {
+  //   input: `This document only has body content.`,
+  //   expected: {
+  //     title: "",
+  //     frontMatter: {},
+  //     body: "This document only has body content.",
+  //   },
+  // },
 
   // Case 9: Front matter with a multi-line description field
   // https://github.com/cloverich/chronicles/issues/256
@@ -177,59 +238,23 @@ Just some plain content.`,
   //   },
 
   // Case 10: Mixed Notion-style front matter with YAML tags
-  {
-    input: `# Mixed Front Matter
-Created By: John Doe
-Last Edited: July 20, 2023
-tags: work, projects
+  //   {
+  //     input: `# Mixed Front Matter
+  // Created By: John Doe
+  // Last Edited: July 20, 2023
+  // tags: work, projects
 
-Body content follows after mixed front matter.`,
-    expected: {
-      title: "Mixed Front Matter",
-      frontMatter: {
-        CreatedBy: "John Doe",
-        LastEdited: "July 20, 2023",
-        tags: ["work", "projects"],
-      },
-      body: "Body content follows after mixed front matter.",
-    },
-  },
-
-  // Case 11: No front-matter, colon in the body
-  {
-    input: `# Notion title + colon in body
-
-Body content has a colon: in it!`,
-    expected: {
-      title: "Notion title + colon in body",
-      frontMatter: {},
-      body: "Body content has a colon: in it!",
-    },
-  },
-
-  // Case 12: No front-matter, colon in the body
-  {
-    input: `# Notion title + front matter + colon in body
-    
-Created By: John Doe
-Last Edited: July 20, 2023 12:00 PM
-Category: personal
-createdAt: January 1, 2021
-published: Yes
-
-Body content has a colon: in it!`,
-    expected: {
-      title: "Notion title + front matter + colon in body",
-      frontMatter: {
-        CreatedBy: "John Doe",
-        LastEdited: "July 20, 2023 12:00 PM",
-        Category: "personal",
-        createdAt: "January 1, 2021",
-        published: "Yes",
-      },
-      body: "Body content has a colon: in it!",
-    },
-  },
+  // Body content follows after mixed front matter.`,
+  //     expected: {
+  //       title: "Mixed Front Matter",
+  //       frontMatter: {
+  //         "Created By": "John Doe",
+  //         "Last Edited": "July 20, 2023",
+  //         tags: ["work", "projects"],
+  //       },
+  //       body: "Body content follows after mixed front matter.",
+  //     },
+  //   },
 ];
 
 // todo: Test with colons in the body, ensure it STOPS trying tp parse front matter

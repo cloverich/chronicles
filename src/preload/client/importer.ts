@@ -23,49 +23,53 @@ import { titleFrontMatterTestCases } from "./importer.test";
 // to the console; can convert to real tests at the end.
 export function runFrontmatterTests() {
   for (const testCase of titleFrontMatterTestCases) {
-    console.log("TEST:", testCase.expected.title);
     const result = parseTitleAndFrontMatter(testCase.input);
     if (!result.frontMatter) {
-      console.info("FAILED: no front matter");
-      console.info(testCase.input);
+      console.error("FAILED:", testCase.expected.title);
+      console.error("FAILED No front matter parsed");
+      console.error(testCase.input);
       break;
     } else {
       if (result.title !== testCase.expected.title) {
-        console.error("FAILED: title");
-        console.error("expected:", testCase.expected.title);
-        console.error("result:", result.title);
+        console.error("FAILED:", testCase.expected.title);
+        console.error("FAILED title");
+        console.error("We should have:", testCase.expected.title);
+        console.error("We got:", result.title);
         console.error();
         break;
       }
 
       if (result.body !== testCase.expected.body) {
-        console.error("FAILED: body");
-        console.error("expected:", testCase.expected.body);
-        console.error("result:", result.body);
+        console.error("FAILED:", testCase.expected.title);
+        console.error("FAILED parsing body");
+        console.error("We should have:", testCase.expected.body);
+        console.error("We got:", result.body);
         console.error();
         break;
       }
 
       // expect(result.frontMatter).to.deep.equal(testCase.expected.frontMatter);
 
-      if (
-        JSON.stringify(result.frontMatter) !==
-        JSON.stringify(testCase.expected.frontMatter)
-      ) {
-        console.error("FAILED: front matter");
-        console.error(diff(result.frontMatter, testCase.expected.frontMatter));
-        console.error("expected:", testCase.expected.frontMatter);
-        console.error("result:", result.frontMatter);
-        // console.error(
-        //   "expected:",
-        //   JSON.stringify(testCase.expected.frontMatter),
-        // );
-        // console.error("result:", JSON.stringify(result.frontMatter));
-        // console.error();
+      const difference = diff(
+        result.frontMatter,
+        testCase.expected.frontMatter,
+      );
+      if (Object.keys(difference).length) {
+        console.error("FAILED:", testCase.expected.title);
+        console.error("FAILED parsing front matter");
+        console.error(difference);
+        console.error("^ was diff, was it useless? lets log json instead...");
+        console.error(
+          "Should have (string):",
+          JSON.stringify(testCase.expected.frontMatter),
+        );
+        console.error("We got (string):", JSON.stringify(result.frontMatter));
+        console.error("We should have:", testCase.expected.frontMatter);
+        console.error("We got:", result.frontMatter);
         break;
       }
 
-      console.info("SUCCESS:", result);
+      console.info("SUCCESS: ", testCase.expected.title);
       console.info();
       console.info();
     }
@@ -78,115 +82,225 @@ interface ParseTitleAndFrontMatterRes {
   body: string;
 }
 
-function parseTitleAndFrontMatter(contents: string) {
-  const lines = contents.split("\n");
+interface RawExtractFrontMatterResponse {
+  title: string;
+  rawFrontMatter: string;
+  body: string;
+}
 
-  let title = "";
-  let frontMatter: Record<string, any> = {};
-  let bodyStartIndex = 0;
-
-  // Process the title (assuming it's the first line starting with '#')
-  if (lines[0].startsWith("#")) {
-    title = lines[0].replace(/^#\s*/, "").trim();
-    bodyStartIndex = 1; // Move index to the next line
-  }
-
-  // Check for front matter by looking line by line until an empty line
-  let frontMatterLines = [];
-
-  // Notion style front matter has no --- border, just new lines; but support
-  // --- style too b/c that is what I used in other notes.... this is maybe stupid
-  // supporting bothin the same importer. Likely refactor when this is properly abstracted
-  // :hopesanddreams:
-  let fontMatterBorderTriggered = false;
-
-  // Notion style document is:
-  // title, newline, frontmatter(optional), newline(if front matter), body
-  let firstSpaceEncountered = false;
-  for (let i = bodyStartIndex; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    // Track the start of frontmatter if using ---, so we can later
-    // detect --- and infer the end of front matter (as opposed to an empty line)
-    if (i == bodyStartIndex && line == "---") {
-      fontMatterBorderTriggered = true;
-      continue;
-    }
-
-    // Stop if we reach an empty line (indicating end of front matter)
-    if (
-      i > bodyStartIndex &&
-      fontMatterBorderTriggered &&
-      line.startsWith("---")
-    ) {
-      bodyStartIndex = i + 1; // Move index to start of body content
-      break;
-    }
-
-    // Stop if we reach an empty line (indicating end of front matter)
-    if (line === "" && !fontMatterBorderTriggered) {
-      if (firstSpaceEncountered) {
-        bodyStartIndex = i + 1; // Move index to start of body content
-        break;
-      } else {
-        firstSpaceEncountered = true;
-        continue;
-      }
-    }
-
-    // Add potential front matter lines for processing
-    frontMatterLines.push(line);
-  }
-
-  if (frontMatterLines.length) {
-    const rawFrontMatter = frontMatterLines.join("\n");
-    const processedFrontMatter = preprocessFrontMatter(rawFrontMatter);
-
-    try {
-      frontMatter = yaml.parse(processedFrontMatter);
-
-      if (frontMatter.Tags) {
-        frontMatter.tags = frontMatter.Tags;
-        delete frontMatter.Tags;
-      }
-
-      // Process tags if present
-      if (frontMatter.tags) {
-        frontMatter.tags = frontMatter.tags
-          .split(",")
-          .map((tag: string) => tag.trim())
-          .filter(Boolean);
-      }
-
-      // Idiosyncratic handling of my particular front matter keys
-      // 1. I have createdAt key, but format is August 12, 2020 8:13 PM
-      // 2. updatedAt is key "Last Edited"
-      frontMatter.updatedAt = frontMatter["Last Edited"];
-      if (frontMatter.updatedAt) {
-        const date = new Date(frontMatter.updatedAt);
-        frontMatter.updatedAt = date.toISOString();
-        delete frontMatter["Last Edited"];
-      }
-
-      if (frontMatter.createdAt) {
-        const date = new Date(frontMatter.createdAt);
-        frontMatter.createdAt = date.toISOString();
-      }
-    } catch (e) {
-      console.error("Error parsing front matter", e);
-      console.log("Front matter:", rawFrontMatter);
-      throw e;
-    }
-  }
-
-  // The remaining lines form the body
-  const body = lines.slice(bodyStartIndex).join("\n").trim();
-
+/**
+ * Parses a string of contents into a title, front matter, and body; strips title / frontmatter
+ * from the body.
+ */
+function parseTitleAndFrontMatter(
+  contents: string,
+): ParseTitleAndFrontMatterRes {
+  const { title, rawFrontMatter, body } = extractRawFrontMatter(contents);
+  const frontMatter = rawFrontMatter.length
+    ? parseExtractedFrontMatter(rawFrontMatter)
+    : {};
   return { title, frontMatter, body };
 }
 
-// Reused preprocessFrontMatter for cleaning up front matter before parsing
-function preprocessFrontMatter(content: string) {
+/**
+ * Attempt to extract a title and front matter from a string of contents;
+ * return the original body on error.
+ */
+function extractRawFrontMatter(
+  contents: string,
+): RawExtractFrontMatterResponse {
+  try {
+    const lines = contents.split("\n");
+
+    let title = "";
+    let rawFrontMatter: string = "";
+    let bodyStartIndex = 0;
+
+    // Process the title (assuming it's the first line starting with '#')
+    if (lines[0].startsWith("#")) {
+      title = lines[0].replace(/^#\s*/, "").trim();
+      bodyStartIndex = 1; // Move index to the next line
+    }
+
+    // Check for front matter by looking line by line until an empty line
+    let frontMatterLines = [];
+
+    // Notion style front matter has no --- border, just new lines; but support
+    // --- style too b/c that is what I used in other notes.... this is maybe stupid
+    // supporting both in the same importer. Likely refactor when this is properly abstracted
+    // :hopesanddreams:
+    let fontMatterBorderTriggered = false;
+    let tripleDashBorderTriggered = false;
+
+    // Notion style document is:
+    // title, newline, frontmatter(optional), newline(if front matter), body
+    let firstEmptyLineEncountered = false;
+
+    for (let i = bodyStartIndex; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Track the start of frontmatter if using ---, so we can later
+      // detect --- and infer the end of front matter (as opposed to an empty line)
+      if (i == bodyStartIndex && line == "---") {
+        fontMatterBorderTriggered = true;
+        tripleDashBorderTriggered = true;
+        continue;
+      }
+
+      // Stop if we reach a closing --- (indicating end of front matter)
+      if (
+        i > bodyStartIndex &&
+        fontMatterBorderTriggered &&
+        tripleDashBorderTriggered &&
+        line.startsWith("---")
+      ) {
+        bodyStartIndex = i + 1; // Move index to start of body content
+        break;
+      }
+
+      // Stop if we reach an empty line (indicating end of front matter)
+      if (line === "" && !fontMatterBorderTriggered) {
+        if (firstEmptyLineEncountered) {
+          bodyStartIndex = i + 1; // Move index to start of body content
+          break;
+        } else {
+          firstEmptyLineEncountered = true;
+          continue;
+        }
+      }
+
+      // Add potential front matter lines for processing
+      bodyStartIndex = i + 1;
+      frontMatterLines.push(lines[i]);
+    }
+
+    // technically we'd get here with a malformed document, that doesn't close its front matter (---),
+    // and documents with front matter but no body; only dealing with the latter for now.
+
+    // At this point, we have one of:
+    // Front matter, body content remaining
+    // Front matter, no body
+    // No front matter, body content is in frontMatterLines, and body content remains (multipe paragraphs)
+    // No front matter, body content is in frontMatterLines, and no body content remains
+    // In the last case... we need to evaluate the length of the first key
+
+    if ((!tripleDashBorderTriggered && bodyStartIndex > lines.length, lines)) {
+      // no body content and not classic front matter, just front matter
+      // first, if it does not parse, we will just return the whole thing as body
+      try {
+        yaml.parse(frontMatterLines.join("\n"));
+        // It does parse; now check if the first key is super long
+        // if so, we assume it's a body, not front matter
+        if (frontMatterLines[0].split(":")[0].length > 20) {
+          // error irrelevant; handler returns the whole thing as body
+          throw Error("First key is too long; assuming it's a body");
+        }
+      } catch (err) {
+        return {
+          title,
+          rawFrontMatter: "",
+          body: title
+            ? lines.length > 1
+              ? lines.slice(1).join("\n").trim()
+              : ""
+            : lines.join("\n")?.trim(),
+        };
+      }
+    }
+
+    if (frontMatterLines.length) {
+      rawFrontMatter = frontMatterLines.join("\n");
+    }
+
+    // The remaining lines form the body
+    const body = lines.slice(bodyStartIndex).join("\n").trim();
+    return { title, rawFrontMatter, body };
+  } catch (err) {
+    // tood: something more sophisticated here
+    console.error("Error extracting raw front matter from contents", err);
+    console.log("Contents:", contents);
+    return { title: "", rawFrontMatter: "", body: contents };
+  }
+}
+
+/**
+ * Parse the front matter from a string that has already been processed
+ * by preprocessRawFrontMatter.
+ */
+function parseExtractedFrontMatter(rawFrontMatter: string) {
+  const processedFrontMatter = preprocessRawFrontMatter(rawFrontMatter);
+
+  try {
+    // NOTE: Returns a string if no front matter is present...wtf.
+    const frontMatter: string | Record<string, any> =
+      yaml.parse(processedFrontMatter);
+
+    if (typeof frontMatter === "string") {
+      return {};
+    }
+
+    if (frontMatter.Tags) {
+      frontMatter.tags = frontMatter.Tags;
+      delete frontMatter.Tags;
+    }
+
+    // Process tags if present
+    if (frontMatter.tags != null) {
+      frontMatter.tags = frontMatter.tags
+        .split(",")
+        .map((tag: string) => tag.trim())
+        .filter(Boolean);
+    }
+
+    // Idiosyncratic handling of my particular front matter keys
+    // 1. I have createdAt key, but format is August 12, 2020 8:13 PM
+    // 2. updatedAt is key "Last Edited"
+    // In both cases re-name to createdAt/updatedAt, convert to ISO string;
+    // discard if empty; log and discard if cannot parse
+    if ("Last Edited" in frontMatter) {
+      const lastEdited = frontMatter["Last Edited"];
+      if (lastEdited === "") {
+        delete frontMatter["Last Edited"];
+      } else if (!isNaN(Date.parse(lastEdited))) {
+        const date = new Date(lastEdited);
+        frontMatter.updatedAt = date.toISOString();
+        delete frontMatter["Last Edited"];
+      } else {
+        console.warn("Invalid date format for 'Last Edited':", lastEdited);
+      }
+    }
+
+    if (frontMatter.createdAt != null) {
+      if (frontMatter.createdAt === "") {
+        delete frontMatter.createdAt;
+      } else if (!isNaN(Date.parse(frontMatter.createdAt))) {
+        const date = new Date(frontMatter.createdAt);
+        frontMatter.createdAt = date.toISOString();
+      } else {
+        console.warn(
+          "Invalid date format for 'createdAt':",
+          frontMatter.createdAt,
+        );
+        delete frontMatter.createdAt;
+      }
+    }
+
+    return frontMatter;
+  } catch (e) {
+    console.error("Error parsing front matter", e);
+    console.log("Front matter:", rawFrontMatter);
+    return {};
+  }
+}
+
+/**
+ * Clean-up raw front matter as seen in my Notion export that was tripping
+ * up the yaml parser.
+ *
+ * See body comments for explanations. Should be called on the raw string before
+ * calling yaml.parse.
+ */
+function preprocessRawFrontMatter(content: string) {
   return (
     content
       // Handle keys with no values by assigning empty strings
