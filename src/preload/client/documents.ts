@@ -204,7 +204,7 @@ export class DocumentsClient {
     } else {
       args.createdAt = new Date().toISOString();
       args.updatedAt = new Date().toISOString();
-      id = await this.createDocument(args);
+      [id] = await this.createDocument(args);
     }
 
     return this.findById({ id });
@@ -224,11 +224,27 @@ updatedAt: ${document.updatedAt}
     return `${fm}\n\n${document.content}`;
   };
 
-  private createDocument = async (args: SaveRequest): Promise<string> => {
-    const id = uuidv7();
+  /**
+   * Create (upload) a new document and index it
+   * @param args - The document to create
+   * @param index - Whether to index the document - set to false when importing (we import, then call `sync` instead)
+   */
+  createDocument = async (
+    args: SaveRequest,
+    index: boolean = true,
+  ): Promise<[string, string]> => {
+    const id = args.id || uuidv7();
     const content = this.contentsWithFrontMatter(args);
-    await this.files.uploadDocument({ id, content }, args.journal);
-    return this.createIndex({ id, ...args });
+    const docPath = await this.files.uploadDocument(
+      { id, content },
+      args.journal,
+    );
+
+    if (index) {
+      return [this.createIndex({ id, ...args }), docPath];
+    } else {
+      return [id, docPath];
+    }
   };
 
   private updateDocument = async (args: SaveRequest): Promise<void> => {
