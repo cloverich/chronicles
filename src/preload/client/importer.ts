@@ -6,7 +6,11 @@ import yaml from "yaml";
 import { Files, PathStatsFile } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
-import { IJournalsClient, validateJournalName } from "./journals";
+import {
+  IJournalsClient,
+  MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
+  validateJournalName,
+} from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
 
@@ -766,41 +770,66 @@ export class ImporterClient {
       .resolve(folderPath)
       .split(importDir)[1];
 
-    // if we've already generated a name for this folder, return it
+    // if we've already generated a name for this folder, return it; otherwise
+    // we'll make a new one (once) and cache it for the next round
     if (folderNameMaybeNestedWithIds in journals) {
       return journals[folderNameMaybeNestedWithIds];
     }
 
-    // strip notion ids from each (potential) folder name, then re-assmble
-    let journalName = folderNameMaybeNestedWithIds
-      // break into parts
-      .split(path.sep)
-      // if leading with path.sep, kick out ''
-      .filter(Boolean)
-      // Strip notionId from each part
-      // "Documents abc123eft" -> "Documents"
-      .map((part) => {
-        const [folderNameWithoutId] = stripNotionIdFromTitle(part);
-        return folderNameWithoutId;
-      })
+    // Break nested folder into parts, so we can attemp to make a unique journal
+    // name from sub-folders (if they exist)
+    let nameParts = [];
+
+    if (folderNameMaybeNestedWithIds === "") {
+      // no sub-folders, just markdown file(s) in the base import directory
+      nameParts = [path.basename(importDir)];
+    } else {
+      // strip notion ids from each (potential) folder name, then re-assmble
+      nameParts = folderNameMaybeNestedWithIds
+        // break into parts
+        .split(path.sep)
+        // if leading with path.sep, kick out ''
+        .filter(Boolean)
+        // Strip notionId from each part
+        // "Documents abc123eft" -> "Documents"
+        .map((part) => {
+          const [folderNameWithoutId] = stripNotionIdFromTitle(part);
+          return folderNameWithoutId;
+        });
+    }
+
+    let journalName = nameParts
       // re-join w/ _ to treat it as a single folder going forward
       .join("_");
 
     // confirm its valid.
     try {
-      validateJournalName(journalName);
+      try {
+        validateJournalName(journalName);
+      } catch (err) {
+        // try again using only the last part of the name
+        journalName = nameParts[nameParts.length - 1]?.slice(
+          0,
+          MAX_JOURNAL_NAME_LENGTH,
+        );
+        validateJournalName(journalName);
+      }
 
       // also ensure its unique
       if (Object.values(journals).includes(journalName)) {
         throw new Error(`Journal name ${journalName} not unique`);
       }
     } catch (err) {
+      // Generate a new, ugly name; user can decide what they want to do via
+      // re-naming later b/c rn its not worth the complexity of doing anything else
       journalName = uuidv7();
 
       // too long, reserved name, non-unique, etc.
+      // known cases from my own import:
+      // 1. Note in root import dir, so it had no folder name (todo: use import_dir name)
       console.warn(
         "Error validating journal name",
-        journalName,
+        nameParts.join(path.sep),
         err,
         "Generating a new name:",
         journalName,

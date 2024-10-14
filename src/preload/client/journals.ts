@@ -124,7 +124,7 @@ export class JournalsClient {
   };
 }
 
-const MAX_NAME_LENGTH = 25;
+export const MAX_NAME_LENGTH = 25;
 
 /**
  * A basic validation function for journal names.
