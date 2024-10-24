@@ -764,7 +764,21 @@ export class ImporterClient {
     importDir: string,
     // cache / unique names checker (for when we have to generate name)
     journals: Record<string, string>,
+    category?: string,
   ): string => {
+    // In _my_ Notion usage, most of my notes were in a "Documents" database and I
+    // used the category to denote the journal name. Very idiosyncratic - if Notion importer
+    // is generalized, could make sense to allow specifying a front matter key to use
+    // as the journal name. Super overkill though...
+    // if a category is provided, use it as the journal name
+    try {
+      if (category) {
+        validateJournalName(category);
+        return category;
+      }
+    } catch (err) {
+      console.warn("Unable to use category", category, "as journal name:", err);
+    }
     // Notion folder names have unique ids, just like the notes themselves.
     // Also, the folder may be nested, so we need to strip the ids from each
     // ex: "Documents abc123efg"
@@ -863,11 +877,6 @@ export class ImporterClient {
     // Only process markdown files
     if (ext !== ".md") return;
 
-    const journalName = this.inferOrGenerateJournalName(
-      dir,
-      importDir,
-      journals,
-    );
     // todo: handle repeat import, specifically if the imported folder / file already exists;
     // b/c that may happen when importing multiple sources...
 
@@ -878,7 +887,14 @@ export class ImporterClient {
     try {
       // todo: fallback title to filename - uuid
       const { frontMatter, body, title } = parseTitleAndFrontMatter(contents);
-      // console.log("parsed", JSON.stringify(frontMatter, null, 2));
+      const journalName = this.inferOrGenerateJournalName(
+        dir,
+        importDir,
+        journals,
+        // See notes in inferOrGenerateJournalName; this is a very specific
+        // to my Notion export.
+        frontMatter.Category,
+      );
 
       // In a directory that was pre-formatted by Chronicles, this should not
       // be needed. Will leave here as a reminder when I do the more generalized
@@ -951,18 +967,10 @@ export class ImporterClient {
       }
 
       await this.saveImportItemLinks(linkItems);
-      // this.saveImportItemLinks(
-      //   Array.from(links).map<ImportItemLink>((link) => {
-      //     // compute the destination (import_item) for each link
-
-      //   }),
-      // );
-
-      // temporarily skip importing, just logging links
       return;
     } catch (e) {
-      console.error("Error parsing front matter", file.path, e);
-      // console.log(contents);
+      // todo: this error handler is far too big, obviously
+      console.error("Error processing note", file.path, e);
       return;
     }
   };
