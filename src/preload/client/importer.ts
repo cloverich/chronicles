@@ -551,7 +551,11 @@ export class ImporterClient {
       const sourceUrlResolved = path.resolve(sourceFolderPath, link.url);
       const mapped = linkMapping[sourceUrlResolved];
       if (!mapped) {
-        console.error("no mapping for", sourceUrlResolved);
+        // NOTE: This came up only when referenced url (md file) was not found
+        // in the import dir; this is tracked as sourceUrlResolveable = false
+        // already; can pick up there if I need to better support this.
+        // Until then, just let the link be invalid in the source document.
+        // console.error("no mapping for", sourceUrlResolved);
         continue;
       }
       mappedLinks[link.url] = `../${mapped.journal}/${mapped.chroniclesId}.md`;
@@ -682,12 +686,11 @@ export class ImporterClient {
       // fucking hell.
       const url = decodeURIComponent(mdast.url);
       if (!(url in links)) {
-        // todo: track unmapped links
-        // technically I can pre-work this out in the database, and have done so for my import
-        // (44/44 note links mapped). But an error here would indicate programmatic issue so...
-        // hmmm where to record this?
-        console.error("link not found", links, url);
-        throw new Error("link not found");
+        // After testing, this was only when the linked file did not exist; this is already tracked
+        // On the import item link as sourceUrlResolveable = false so; pick up there if
+        // I need to better support this.
+        // Until then, just let the link be invalid in the source document.
+        // throw new Error("link not found");
       } else {
         mdast.url = links[url];
       }
@@ -924,9 +927,10 @@ export class ImporterClient {
       for (const link of links) {
         const sourceFolderPath = path.dirname(file.path);
         const sourceUrlResolved = path.resolve(sourceFolderPath, link.url);
-        const canAccessFile = await this.files.validFile(sourceUrlResolved);
-
-        //
+        const canAccessFile = await this.files.validFile(
+          sourceUrlResolved,
+          false,
+        );
 
         linkItems.push({
           importerId,
@@ -938,6 +942,7 @@ export class ImporterClient {
           // sourceUrlResolvedToTheFullTargetPath
           sourceUrlResolved: sourceUrlResolved,
           destChroniclesId: "", // todo: fill this in later
+          // todo: Uh re-name this "Accessable" or something
           sourceUrlResolveable: canAccessFile ? 1 : 0,
           kind: "link",
           title: link.title,

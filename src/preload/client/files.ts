@@ -205,7 +205,10 @@ export class FilesClient {
    *
    * @param filepath
    */
-  async validFile(filepath: string): Promise<boolean> {
+  async validFile(
+    filepath: string,
+    propagateErr: boolean = true,
+  ): Promise<boolean> {
     try {
       const file = await stat(filepath);
       if (!file.isFile()) {
@@ -214,8 +217,7 @@ export class FilesClient {
         );
       }
     } catch (err: any) {
-      console.error("Error files.validFile:", filepath, err);
-      // if (err.code !== "ENOENT") throw err;
+      if (err.code !== "ENOENT" && propagateErr) throw err;
       return false;
     }
 
@@ -223,8 +225,8 @@ export class FilesClient {
     try {
       await access(filepath, fs.constants.R_OK | fs.constants.W_OK);
       return true;
-    } catch (err) {
-      console.error("Error files.validFile.access:", filepath, err);
+    } catch (err: any) {
+      if (err.code !== "ENOENT" && propagateErr) throw err;
       return false;
     }
   }
