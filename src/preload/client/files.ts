@@ -256,4 +256,17 @@ export class FilesClient {
     // upload handlers.
     await access(directory, fs.constants.R_OK | fs.constants.W_OK);
   }
+
+  async copyFile(src: string, dest: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      fs.createReadStream(src)
+        .once("error", reject)
+        .pipe(
+          fs
+            .createWriteStream(dest)
+            .once("error", reject)
+            .once("close", () => resolve(dest)),
+        );
+    });
+  }
 }

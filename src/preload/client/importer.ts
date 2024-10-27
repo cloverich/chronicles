@@ -1,5 +1,6 @@
 import { Database } from "better-sqlite3";
 import { diff } from "deep-object-diff";
+import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
 import yaml from "yaml";
@@ -490,6 +491,22 @@ export class ImporterClient {
     }
   };
 
+  updateImportItemStatus = async (item: ImportItem, status: string) => {
+    try {
+      this.db
+        .prepare(
+          `UPDATE import_items SET status = :status WHERE importerId = :importerId AND sourcePath = :sourcePath`,
+        )
+        .run({
+          importerId: item.importerId,
+          sourcePath: item.sourcePath,
+          status,
+        });
+    } catch (err) {
+      console.error("Error updating import item status", item, err);
+    }
+  };
+
   saveImportItemLinks = async (items: ImportItemLink[]) => {
     try {
       items.forEach((item) => {
@@ -521,16 +538,25 @@ export class ImporterClient {
 
   stageImportItems = async (
     importDir: string,
-    rootFolderName: string,
     importerId: string,
+    chroniclesRoot: string, // absolute path to chronicles root dir
   ) => {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
+    const filesMapping: Record<string, string> = {};
+
     for await (const file of Files.walk(importDir, () => true, {
       // depth: dont go into subdirectories
       // depthLimit: 1,
     })) {
-      this.processNote(file, importDir, importerId, journalsMapping);
+      this.processNote(
+        file,
+        importDir,
+        importerId,
+        journalsMapping,
+        filesMapping,
+        chroniclesRoot,
+      );
     }
   };
 
@@ -569,11 +595,11 @@ export class ImporterClient {
    */
   import = async (importDir: string) => {
     const importerId = uuidv7();
-    const rootDir = await this.preferences.get("NOTES_DIR");
+    const chroniclesRoot = await this.preferences.get("NOTES_DIR");
 
     // Sanity check this is set first, because I'm hacking a lot of stuff together
     // in tiny increments, many things bound to get mixed up
-    if (!rootDir || typeof rootDir !== "string") {
+    if (!chroniclesRoot || typeof chroniclesRoot !== "string") {
       throw new Error("No chronicles root directory set");
     }
 
@@ -581,16 +607,15 @@ export class ImporterClient {
     await this.files.ensureDir(importDir);
 
     // Confirm its not a sub-directory of the notes root `rootDir`
-    if (importDir.startsWith(rootDir)) {
+    if (importDir.startsWith(chroniclesRoot)) {
       throw new Error(
         "Import directory must not reside within the chronicles root directory",
       );
     }
 
     console.log("importing directory", importDir);
-    const rootFolderName = path.basename(importDir);
 
-    await this.stageImportItems(importDir, rootFolderName, importerId);
+    await this.stageImportItems(importDir, importerId, chroniclesRoot);
 
     // At this point, import_items and import_links are populated;
     // we can iterate and update them, before syncing
@@ -599,8 +624,8 @@ export class ImporterClient {
     // todo: Calculate the disk size of my total note repository and see just how stupid
     // this effort is.
     const items: ImportItemDb[] = await this.db
-      .prepare("select * from import_items")
-      .all();
+      .prepare("select * from import_items where importerId = :importerId")
+      .all({ importerId });
 
     // Links point to the original documents path (sourcePath). Build a mapping
     // of each document's sourcePath to its eventual Chronicles path (journal/chroniclesId.md)
@@ -611,6 +636,7 @@ export class ImporterClient {
       string,
       { journal: string; chroniclesId: string }
     > = {};
+
     for (const item of items) {
       if ("error" in item && item.error) continue;
       const { journal, chroniclesId, sourcePath } = item;
@@ -646,7 +672,9 @@ export class ImporterClient {
           },
           false, // don't index; we'll call sync after import
         );
+        this.updateImportItemStatus(item, "document_created");
       } catch (err) {
+        this.updateImportItemStatus(item, "create_error");
         // todo: pre-validate ids are unique
         // https://github.com/cloverich/chronicles/issues/248
         console.error(
@@ -859,11 +887,173 @@ export class ImporterClient {
     return journalName;
   };
 
+  /**
+   * For files (images, etc., not markdown links) found in a note, move them to the
+   * ensure they are valid, then rename them, and move to _attachments directory
+   * in the chronicles root.
+   *
+   * @param sourcePath - relative path to source file
+   * @param destinationDir - absolute path to destination directory
+   * @param importDir - absolute path to import directory
+   * @returns
+   */
+  private validateAndMoveFile = async (
+    resolvedPath: string,
+    destinationDir: string,
+    importDir: string,
+  ): Promise<[string, null] | [null, string]> => {
+    // sourcePath = decodeURIComponent(sourcePath);
+
+    const sanitizedPath = path.normalize(resolvedPath);
+
+    // Check if file is contained within importDir to prevent path traversal
+    if (!sanitizedPath.startsWith(importDir))
+      return [null, "Potential path traversal detected"];
+
+    // Check if the file exists
+    if (!fs.existsSync(resolvedPath))
+      return [null, "Source file does not exist"];
+
+    // Check if file has read permissions
+    try {
+      await fs.promises.access(resolvedPath, fs.constants.R_OK);
+    } catch {
+      return [null, "No read access to the file"];
+    }
+
+    // Generate a unique destination filename in _attachments
+    const ext = path.extname(sanitizedPath);
+    const destFile = path.join(destinationDir, `${uuidv7()}${ext}`);
+
+    // Ensure destination directory exists
+    await fs.promises.mkdir(path.dirname(destFile), { recursive: true });
+
+    // Move the file and return destination filename or error
+    try {
+      await this.files.copyFile(resolvedPath, destFile);
+      const destFileName = path.basename(destFile);
+      return [destFileName, null];
+    } catch (err) {
+      return [null, `Error moving file: ${(err as Error).message}`];
+    }
+  };
+
+  /**
+   * Mdast helper to determine if a node is a file link
+   * @param mdast
+   * @returns
+   */
+  private isFileLink = (
+    mdast: mdast.Content | mdast.Root,
+  ): mdast is mdast.Image | mdast.Link => {
+    if (mdast.type === "image") return true;
+    return (
+      mdast.type === "link" &&
+      !this.isNoteLink(mdast.url) &&
+      !/^(https?|mailto|#|\/|\.|tel|sms|geo|data):/.test(mdast.url)
+    );
+  };
+
+  /**
+   * When moving files into _attachments, first check if the file has already been moved
+   * (in the cache); if not move it (and update cache). Return the new filename
+   * if the file was moved successfully; null if there was an error (and log it)
+   */
+  private findOrMoveFile = async (
+    importDir: string,
+    resolvedPath: string, // abs path to document the file link is from
+    cache: Record<string, string>,
+    attachmentsDir: string, // absolute path to destination _attachments dir
+  ) => {
+    if (!(resolvedPath in cache)) {
+      const [filename, err] = await this.validateAndMoveFile(
+        resolvedPath,
+        attachmentsDir,
+        importDir,
+      );
+
+      if (err) {
+        console.error("Error moving file", resolvedPath, err);
+        return;
+      }
+
+      // console.info("updating link", resolvedPath, "->", filename);
+      cache[resolvedPath] = filename!;
+    }
+
+    return cache[resolvedPath];
+  };
+
+  /**
+   * For each link in the file that points to a file, move the file to _attachments,
+   * rename the file based on chronicles conventions, and update the link in the file.
+   *
+   * @param importDir - The root import directory\
+   * @param sourcePath - The path to the source file that contains the link; used to resolve relative links
+   * @param mdast
+   * @param cache
+   * @param attachmentsDir - The absolute path to the _attachments directory
+   */
+  private moveAndUpdateFileLinks = async (
+    importDir: string,
+    sourcePath: string,
+    mdast: mdast.Content | mdast.Root,
+    cache: Record<string, string>,
+    attachmentsDir: string, // absolute path to _attachments
+    didMove = false,
+    // todo: return boolean for debugging, either stuff into import_items,
+    // or... cache technically has all this info...
+    // todo(2): track these as import item links because it simplifies debugging
+    // etc.
+  ): Promise<boolean> => {
+    if (this.isFileLink(mdast)) {
+      // convert url to absolute path
+      const resolvedUrl = decodeURIComponent(
+        path.resolve(path.dirname(sourcePath), mdast.url),
+      );
+
+      const filename = await this.findOrMoveFile(
+        importDir,
+        resolvedUrl,
+        cache,
+        attachmentsDir,
+      );
+      if (filename) {
+        // todo: stage and save the import item
+        mdast.url = `../_attachments/${filename}`;
+        return true;
+      }
+      return false;
+    } else {
+      if ("children" in mdast) {
+        let results = [];
+        for (const child of mdast.children) {
+          results.push(
+            await this.moveAndUpdateFileLinks(
+              importDir,
+              sourcePath,
+              child,
+              cache,
+              attachmentsDir,
+              didMove,
+            ),
+          );
+        }
+
+        return results.some((result) => result);
+      }
+
+      return false;
+    }
+  };
+
   private processNote = async (
     file: PathStatsFile,
     importDir: string,
     importerId: string,
     journals: Record<string, string>, // mapping of original folder path to journal name
+    filesMapping: Record<string, string>, // mapping of original file path to chronicles path
+    chroniclesRoot: string,
   ) => {
     const { ext, name, dir } = path.parse(file.path);
 
@@ -913,14 +1103,18 @@ export class ImporterClient {
       // and ensure they are not overwritten when editing existing files
       // https://github.com/cloverich/chronicles/issues/127
 
-      // todo: Unlike sync, here we need to handle images and note references
-      // there are two kinds of note references: file references, and [[Magic References]]
-      const mdast = stringToMdast(body) as any as mdast.Root; // todo: type these better...
-      const links = this.selectLinks(mdast);
+      // Files: move to _attachments, update links; must happen before we stage
+      // import item so we can use the updated markdown content
+      const mdast = stringToMdast(body) as any as mdast.Root;
 
-      // skip if no links for now
-      // if (!links.size) return;
-      // console.log(links);
+      const attachmentsDir = path.join(chroniclesRoot, "_attachments");
+      const moved = await this.moveAndUpdateFileLinks(
+        importDir,
+        file.path,
+        mdast,
+        filesMapping,
+        attachmentsDir,
+      );
 
       const chroniclesId = uuidv7();
       const importItem = {
@@ -932,14 +1126,20 @@ export class ImporterClient {
         sourcePath: file.path,
         title,
         journal: journalName,
-        content: body,
+        content: mdastToString(mdast),
         frontMatter: JSON.stringify(frontMatter),
         status: "pending",
       };
 
       this.saveImportItem(importItem);
 
+      // todo: Unlike sync, here we need to handle images and note references
+      // there are two kinds of note references: file references, and [[Magic References]], the latter
+      // only exist in Obsidian, and a few other note apps, not in Notion. So we can ignore them for now.
+
+      // stage links for later processing
       const linkItems: ImportItemLink[] = [];
+      const links = this.selectLinks(mdast);
       for (const link of links) {
         const sourceFolderPath = path.dirname(file.path);
         const sourceUrlResolved = path.resolve(sourceFolderPath, link.url);
