@@ -491,17 +491,36 @@ export class ImporterClient {
     }
   };
 
-  updateImportItemStatus = async (item: ImportItem, status: string) => {
+  updateImportItemStatus = async (
+    item: ImportItem,
+    status: string,
+    error?: string,
+  ) => {
     try {
-      this.db
-        .prepare(
-          `UPDATE import_items SET status = :status WHERE importerId = :importerId AND sourcePath = :sourcePath`,
-        )
-        .run({
-          importerId: item.importerId,
-          sourcePath: item.sourcePath,
-          status,
-        });
+      // todo: knex...
+      if ("error" in item) {
+        this.db
+          .prepare(
+            `UPDATE import_items SET status = :status, error = :error WHERE importerId = :importerId AND sourcePath = :sourcePath`,
+          )
+          .run({
+            importerId: item.importerId,
+            sourcePath: item.sourcePath,
+            status,
+            error,
+          });
+        return;
+      } else {
+        this.db
+          .prepare(
+            `UPDATE import_items SET status = :status WHERE importerId = :importerId AND sourcePath = :sourcePath`,
+          )
+          .run({
+            importerId: item.importerId,
+            sourcePath: item.sourcePath,
+            status,
+          });
+      }
     } catch (err) {
       console.error("Error updating import item status", item, err);
     }
@@ -525,17 +544,6 @@ export class ImporterClient {
     }
   };
 
-  updateImportItemLink = async (item: ImportItemLink) => {
-    // todo: try catch:
-    // error { code: SQLITE_CONSTRAINT_PRIMARYKEY } } --> already exists (acceptable!)
-    this.db
-      .prepare(
-        `UPDATE import_links SET sourceChroniclesId = :sourceChroniclesId, sourceChroniclesPath = :sourceChroniclesPath
-        WHERE sourcePath = :sourcePath AND sourceId = :sourceId`,
-      )
-      .run(item);
-  };
-
   stageImportItems = async (
     importDir: string,
     importerId: string,
@@ -549,7 +557,7 @@ export class ImporterClient {
       // depth: dont go into subdirectories
       // depthLimit: 1,
     })) {
-      this.processNote(
+      await this.processNote(
         file,
         importDir,
         importerId,
@@ -590,11 +598,7 @@ export class ImporterClient {
     this.updateLinks(mdast, mappedLinks);
   };
 
-  /**
-   * Sync the notes directory with the database
-   */
-  import = async (importDir: string) => {
-    const importerId = uuidv7();
+  ensureRoot = async () => {
     const chroniclesRoot = await this.preferences.get("NOTES_DIR");
 
     // Sanity check this is set first, because I'm hacking a lot of stuff together
@@ -602,6 +606,16 @@ export class ImporterClient {
     if (!chroniclesRoot || typeof chroniclesRoot !== "string") {
       throw new Error("No chronicles root directory set");
     }
+
+    return chroniclesRoot;
+  };
+
+  /**
+   * Sync the notes directory with the database
+   */
+  import = async (importDir: string) => {
+    const importerId = uuidv7();
+    const chroniclesRoot = await this.ensureRoot();
 
     // Ensure `importDir` is a directory and can be accessed
     await this.files.ensureDir(importDir);
@@ -613,16 +627,43 @@ export class ImporterClient {
       );
     }
 
+    // track, so if we have errors and want to re-run to fix remaining pending items,
+    // we can. This is mostly for debugging.
+    try {
+      this.db
+        .prepare(
+          "INSERT INTO imports (id, status, importDir) VALUES (:id, :status, :importDir)",
+        )
+        .run({
+          id: importerId,
+          status: "pending",
+          importDir: importDir,
+        });
+    } catch (err) {
+      console.error("Error saving import", importerId, importDir, err);
+      throw err;
+    }
+
     console.log("importing directory", importDir);
-
     await this.stageImportItems(importDir, importerId, chroniclesRoot);
+    await this.processStagedItems();
+  };
 
-    // At this point, import_items and import_links are populated;
-    // we can iterate and update them, before syncing
-    // This whole thing is a little silly because I am pulling all the contents
-    // out of the database, i could jsut do this whole ting in memory if I was going to do that
-    // todo: Calculate the disk size of my total note repository and see just how stupid
-    // this effort is.
+  processStagedItems = async () => {
+    await this.ensureRoot();
+    const { id: importerId, importDir } = this.db
+      .prepare(
+        "select id, importDir from imports where status = 'pending' order by id desc limit 1",
+      )
+      .get();
+
+    if (!importerId) {
+      console.log("No pending imports");
+      return;
+    } else {
+      console.log("Processing import", importerId, importDir);
+    }
+
     const items: ImportItemDb[] = await this.db
       .prepare("select * from import_items where importerId = :importerId")
       .all({ importerId });
@@ -630,21 +671,27 @@ export class ImporterClient {
     // Links point to the original documents path (sourcePath). Build a mapping
     // of each document's sourcePath to its eventual Chronicles path (journal/chroniclesId.md)
     // With this, we can update links in each document.
-    // TODO: I think we can generate the link mapping in the database,
-    // like destChroniclesId = joinedImportItemChroniclesId (join on sourceUrlResolved)
     const linkMapping: Record<
       string,
       { journal: string; chroniclesId: string }
     > = {};
 
-    for (const item of items) {
+    const allItems = await this.db
+      .prepare("select journal,chroniclesId,sourcePath from import_items")
+      .all();
+
+    for (const item of allItems) {
       if ("error" in item && item.error) continue;
       const { journal, chroniclesId, sourcePath } = item;
       linkMapping[sourcePath] = { journal, chroniclesId };
     }
 
-    for (const item of items) {
+    for await (const item of items) {
+      // todo: This is actually a staging error
+      // should set this while staging the item, and
+      // then not fetch it here.
       if ("error" in item && item.error) {
+        await this.updateImportItemStatus(item, "processing_error");
         console.log("skipping error item", item.sourcePath);
         continue;
       }
@@ -672,9 +719,9 @@ export class ImporterClient {
           },
           false, // don't index; we'll call sync after import
         );
-        this.updateImportItemStatus(item, "document_created");
+        await this.updateImportItemStatus(item, "document_created");
       } catch (err) {
-        this.updateImportItemStatus(item, "create_error");
+        await this.updateImportItemStatus(item, "create_error");
         // todo: pre-validate ids are unique
         // https://github.com/cloverich/chronicles/issues/248
         console.error(
@@ -682,8 +729,21 @@ export class ImporterClient {
           item.sourcePath,
           err,
         );
-        // todo: track create_error on the import_item
       }
+    }
+
+    // check for errors
+    const { error_count } = await this.db
+      .prepare(
+        "select count(*) as error_count from import_items where importerId = :importerId and status in ('processing_error', 'create_error')",
+      )
+      .get({ importerId });
+
+    console.log("import completed; errors count:", error_count);
+    if (!error_count) {
+      await this.db
+        .prepare("UPDATE imports SET status = 'complete' WHERE id = :id")
+        .run({ id: importerId });
     }
 
     console.log("import complete; calling sync to update indexes");

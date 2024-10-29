@@ -48,6 +48,15 @@ CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");
 -- In development, drop the import tables
 -- DROP TABLE IF EXISTS "import_items";
 -- DROP TABLE IF EXISTS "import_links";
+-- DROP TABLE IF EXISTS "imports";
+
+CREATE TABLE IF NOT EXISTS "imports" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "importDir" TEXT NOT NULL,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "status" TEXT NOT NULL -- active, inactive
+);
 
 -- First, Import Items table
 CREATE TABLE IF NOT EXISTS "import_items" (
