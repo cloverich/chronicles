@@ -1006,9 +1006,8 @@ export class ImporterClient {
   private isFileLink = (
     mdast: mdast.Content | mdast.Root,
   ): mdast is mdast.Image | mdast.Link => {
-    if (mdast.type === "image") return true;
     return (
-      mdast.type === "link" &&
+      (mdast.type === "image" || mdast.type === "link") &&
       !this.isNoteLink(mdast.url) &&
       !/^(https?|mailto|#|\/|\.|tel|sms|geo|data):/.test(mdast.url)
     );
@@ -1069,7 +1068,7 @@ export class ImporterClient {
     if (this.isFileLink(mdast)) {
       // convert url to absolute path
       const resolvedUrl = decodeURIComponent(
-        path.resolve(path.dirname(sourcePath), mdast.url),
+        path.resolve(path.dirname(sourcePath), mdast.url?.split(/\?/)[0] || ""),
       );
 
       const filename = await this.findOrMoveFile(
