@@ -1,3 +1,66 @@
+// Temporary helper to test frontmatter parsing and dump the results
+
+import { diff } from "deep-object-diff";
+import { ImporterClient } from "../importer";
+import { parseTitleAndFrontMatter } from "./frontmatter";
+
+// to the console; can convert to real tests at the end.
+export function runFrontmatterTests(importer: ImporterClient) {
+  for (const testCase of titleFrontMatterTestCases) {
+    const result = parseTitleAndFrontMatter(testCase.input);
+
+    if (!result.frontMatter) {
+      console.error("FAILED:", testCase.expected.title);
+      console.error("FAILED No front matter parsed");
+      console.error(testCase.input);
+      break;
+    } else {
+      if (result.title !== testCase.expected.title) {
+        console.error("FAILED:", testCase.expected.title);
+        console.error("FAILED title");
+        console.error("We should have:", testCase.expected.title);
+        console.error("We got:", result.title);
+        console.error();
+        break;
+      }
+
+      if (result.body !== testCase.expected.body) {
+        console.error("FAILED:", testCase.expected.title);
+        console.error("FAILED parsing body");
+        console.error("We should have:", testCase.expected.body);
+        console.error("We got:", result.body);
+        console.error();
+        break;
+      }
+
+      // expect(result.frontMatter).to.deep.equal(testCase.expected.frontMatter);
+
+      const difference = diff(
+        result.frontMatter,
+        testCase.expected.frontMatter,
+      );
+      if (Object.keys(difference).length) {
+        console.error("FAILED:", testCase.expected.title);
+        console.error("FAILED parsing front matter");
+        console.error(difference);
+        console.error("^ was diff, was it useless? lets log json instead...");
+        console.error(
+          "Should have (string):",
+          JSON.stringify(testCase.expected.frontMatter),
+        );
+        console.error("We got (string):", JSON.stringify(result.frontMatter));
+        console.error("We should have:", testCase.expected.frontMatter);
+        console.error("We got:", result.frontMatter);
+        break;
+      }
+
+      console.info("SUCCESS: ", testCase.expected.title);
+      console.info();
+      console.info();
+    }
+  }
+}
+
 export const titleFrontMatterTestCases = [
   // Title and simple front matter with no special characters
   {

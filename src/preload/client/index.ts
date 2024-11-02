@@ -2,7 +2,7 @@ import DB from "better-sqlite3";
 import Knex from "knex";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
-import { ImporterClient, runFrontmatterTests } from "./importer";
+import { ImporterClient } from "./importer";
 import { JournalsClient } from "./journals";
 import { PreferencesClient } from "./preferences";
 import { SyncClient } from "./sync";
@@ -10,6 +10,7 @@ import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
 import Store from "electron-store";
+import { runFrontmatterTests } from "./importer/importer.test";
 const settings = new Store({
   name: "settings",
 });
@@ -31,9 +32,16 @@ const knex = Knex({
 export { GetDocumentResponse } from "./documents";
 
 let client: IClient;
+
+class TestsClient {
+  constructor(private importer: ImporterClient) {}
+  runTests = () => {
+    runFrontmatterTests(this.importer);
+  };
+}
+
 export function create(): IClient {
   if (!client) {
-    runFrontmatterTests();
     const preferences = new PreferencesClient(settings);
     const files = new FilesClient(settings);
     const journals = new JournalsClient(db, files, preferences);
@@ -47,6 +55,16 @@ export function create(): IClient {
       preferences,
     );
 
+    const importer = new ImporterClient(
+      db,
+      knex,
+      journals,
+      documents,
+      files,
+      preferences,
+      sync,
+    );
+
     client = {
       journals: journals,
       documents: documents,
@@ -54,15 +72,8 @@ export function create(): IClient {
       preferences: preferences,
       files: files,
       sync,
-      importer: new ImporterClient(
-        db,
-        knex,
-        journals,
-        documents,
-        files,
-        preferences,
-        sync,
-      ),
+      importer,
+      tests: new TestsClient(importer),
     };
   }
 

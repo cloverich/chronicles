@@ -188,6 +188,23 @@ const Preferences = observer(() => {
             Sync folder
           </Button>
         </SettingsBox>
+        <SettingsBox>
+          <h4>Run tests</h4>
+          <p>
+            Run some tests, mostly around the frontmatter parsing and importing.
+            See output in console.
+          </p>
+          <Button
+            isLoading={store.loading}
+            disabled={store.loading}
+            onClick={() => {
+              console.log("Running tests");
+              client.tests.runTests();
+            }}
+          >
+            Run Tests
+          </Button>
+        </SettingsBox>
         <Base.BottomSpacer />
       </Base.ScrollContainer>
     </Base.Container>
