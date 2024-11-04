@@ -1,7 +1,6 @@
 import Store from "electron-store";
 
 import fs from "fs";
-import mkdirp from "mkdirp";
 import path from "path";
 import { uuidv7 } from "uuidv7";
 const { readFile, writeFile, access, stat } = fs.promises;
@@ -150,7 +149,7 @@ export class FilesClient {
       document.id,
     );
 
-    await mkdirp(journalPath);
+    await fs.promises.mkdir(journalPath, { recursive: true });
     await fs.promises.writeFile(docPath, document.content);
     return docPath;
   };
@@ -205,10 +204,10 @@ export class FilesClient {
    *
    * @param filepath
    */
-  async validFile(
+  validFile = async (
     filepath: string,
     propagateErr: boolean = true,
-  ): Promise<boolean> {
+  ): Promise<boolean> => {
     try {
       const file = await stat(filepath);
       if (!file.isFile()) {
@@ -229,7 +228,7 @@ export class FilesClient {
       if (err.code !== "ENOENT" && propagateErr) throw err;
       return false;
     }
-  }
+  };
 
   /**
    * Ensure directory exists and can be accessed
@@ -238,7 +237,7 @@ export class FilesClient {
    * are still needed as access check may be innaccurate or could change while
    * app is running.
    */
-  async ensureDir(directory: string): Promise<void> {
+  ensureDir = async (directory: string): Promise<void> => {
     try {
       const dir = await stat(directory);
       if (!dir.isDirectory()) {
@@ -248,16 +247,16 @@ export class FilesClient {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      await mkdirp(directory);
+      await fs.promises.mkdir(directory, { recursive: true });
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke
     // when actually writing. Better to move this logic to the actual file
     // upload handlers.
     await access(directory, fs.constants.R_OK | fs.constants.W_OK);
-  }
+  };
 
-  async copyFile(src: string, dest: string): Promise<string> {
+  copyFile = async (src: string, dest: string): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
       fs.createReadStream(src)
         .once("error", reject)
@@ -268,5 +267,5 @@ export class FilesClient {
             .once("close", () => resolve(dest)),
         );
     });
-  }
+  };
 }

@@ -43,11 +43,10 @@ CREATE INDEX IF NOT EXISTS "documents_title_idx" ON "documents"("title");
 CREATE INDEX IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
 CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");
 
--- IMPORTS
 
 -- DROP TABLE IF EXISTS "import_items";
--- DROP TABLE IF EXISTS "import_links";
 -- DROP TABLE IF EXISTS "imports";
+-- DROP TABLE IF EXISTS "import_files";
 
 CREATE TABLE IF NOT EXISTS "imports" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -55,6 +54,15 @@ CREATE TABLE IF NOT EXISTS "imports" (
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "status" TEXT NOT NULL -- active, inactive
+);
+
+CREATE TABLE IF NOT EXISTS "import_files" (
+    "importerId" TEXT NOT NULL,
+    "sourcePathResolved" TEXT NOT NULL PRIMARY KEY,
+    "status" TEXT NOT NULL DEFAULT "pending",
+    "chroniclesId" TEXT NOT NULL,
+    "extension" TEXT NOT NULL,
+    "error" TEXT
 );
 
 -- First, Import Items table
@@ -70,19 +78,4 @@ CREATE TABLE IF NOT EXISTS "import_items" (
     "journal" TEXT NOT NULL,
     "frontMatter" TEXT,
     "content" TEXT
-);
-
-CREATE TABLE IF NOT EXISTS "import_links" (
-    "importerId" TEXT NOT NULL,
-    "kind" TEXT NOT NULL, -- link, file
-    "sourceChroniclesId" TEXT NOT NULL, -- chroniclesId of file that owns the link
-    "sourceChroniclesPath" TEXT NOT NULL, -- chroniclesPath of file that owns the linkwhere
-    "sourceId" TEXT NOT NULL, -- notionId of document this link is in
-    "sourceUrl" TEXT NOT NULL, -- the original url of the link
-    "sourceUrlResolveable" BOOLEAN NOT NULL,
-    "sourceUrlResolved" TEXT NOT NULL, -- chroniclesId -- do we need this?
-    "destChroniclesId" TEXT, -- (eventual) chroniclesId of file that owns the link
-    "title" TEXT NOT NULL,
-    "journal" TEXT NOT NULL,
-    PRIMARY KEY ("sourceChroniclesId", "sourceId") -- not thought out... this is source document ids (importItemId, sourceId).
 );

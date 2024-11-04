@@ -108,33 +108,6 @@ type ImportItemDb = {
   status: string; // 'pending' | 'complete' | 'error'
 };
 
-/**
- * For processing links, we pass through documents multiple times. First,
- * we collect all the links, including their source document name and path.
- * Then, we annotate with the chronicles id and path (that it will eventually have)
- * and the journal name. In this way, we can re-name links on the second pass
- * to point to the correct (updated) path, before we save the document. Because
- * we do this before we save, there is some risk it won't be right.
- */
-interface ImportItemLink {
-  kind: "link" | "file";
-  importerId: string;
-  sourceChroniclesId: string; // chronicles id of document that owns the link
-  sourceChroniclesPath: string; // path of document that contains the link
-  sourceId?: string;
-  sourceUrl: string;
-  title: string;
-  journal: string;
-
-  destChroniclesId: string; // chronicles id of document this link points to
-
-  // todo: Maybe make this sourceUrlResolved (i.e. the path with decoded id)
-  sourceUrlResolved: string;
-  sourceUrlResolveable: number; // boolean
-}
-
-const importedItems: ImportItem[] = [];
-
 export class ImporterClient {
   constructor(
     private db: Database,
@@ -232,24 +205,9 @@ export class ImporterClient {
     }
   };
 
-  saveImportItemLinks = async (items: ImportItemLink[]) => {
-    try {
-      items.forEach((item) => {
-        this.db
-          .prepare(
-            `INSERT INTO import_links (importerId, sourceChroniclesId, sourceId, title, journal, sourceChroniclesPath, sourceUrl, kind, sourceUrlResolved, sourceUrlResolveable)
-          VALUES (:importerId, :sourceChroniclesId, :sourceId, :title, :journal, :sourceChroniclesPath, :sourceUrl, :kind, :sourceUrlResolved, :sourceUrlResolveable)`,
-          )
-          .run(item);
-      });
-    } catch (err: any) {
-      // already exists -- acceptable!
-      if (err?.code === "SQLITE_CONSTRAINT_PRIMARYKEY") return;
-
-      console.error("Error saving import links", items, err);
-    }
-  };
-
+  // stage all notes and files in the import directory for processing.
+  // we do this in two steps so we can generate mappings of source -> dest
+  // for links and files, and then update them in the second pass.
   stageImportItems = async (
     importDir: string,
     importerId: string,
@@ -257,20 +215,9 @@ export class ImporterClient {
   ) => {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
-    const filesMapping: Record<string, string> = {};
 
-    for await (const file of Files.walk(importDir, () => true, {
-      // depth: dont go into subdirectories
-      // depthLimit: 1,
-    })) {
-      await this.stageNote(
-        file,
-        importDir,
-        importerId,
-        journalsMapping,
-        filesMapping,
-        chroniclesRoot,
-      );
+    for await (const file of Files.walk(importDir, () => true, {})) {
+      await this.stageNote(file, importDir, importerId, journalsMapping);
     }
   };
 
@@ -353,10 +300,26 @@ export class ImporterClient {
 
     console.log("importing directory", importDir);
     await this.stageImportItems(importDir, importerId, chroniclesRoot);
-    await this.processStagedItems();
+    await this.processStagedItems(chroniclesRoot);
   };
 
-  processStagedItems = async () => {
+  linksMapping = async (importerId: string) => {
+    let linkMapping: Record<string, { journal: string; chroniclesId: string }> =
+      {};
+    const allItems = await this.db
+      .prepare("select journal,chroniclesId,sourcePath from import_items")
+      .all();
+
+    for (const item of allItems) {
+      if ("error" in item && item.error) continue;
+      const { journal, chroniclesId, sourcePath } = item;
+      linkMapping[sourcePath] = { journal, chroniclesId };
+    }
+
+    return linkMapping;
+  };
+
+  processStagedItems = async (chroniclesRoot: string) => {
     await this.ensureRoot();
     const { id: importerId, importDir } = this.db
       .prepare(
@@ -371,27 +334,13 @@ export class ImporterClient {
       console.log("Processing import", importerId, importDir);
     }
 
+    await this.moveStagedFiles(chroniclesRoot, importerId, importDir);
+    const filesMapping = await this.movedFilePaths(importerId);
+    const linkMapping = await this.linksMapping(importerId);
+
     const items: ImportItemDb[] = await this.db
       .prepare("select * from import_items where importerId = :importerId")
       .all({ importerId });
-
-    // Links point to the original documents path (sourcePath). Build a mapping
-    // of each document's sourcePath to its eventual Chronicles path (journal/chroniclesId.md)
-    // With this, we can update links in each document.
-    const linkMapping: Record<
-      string,
-      { journal: string; chroniclesId: string }
-    > = {};
-
-    const allItems = await this.db
-      .prepare("select journal,chroniclesId,sourcePath from import_items")
-      .all();
-
-    for (const item of allItems) {
-      if ("error" in item && item.error) continue;
-      const { journal, chroniclesId, sourcePath } = item;
-      linkMapping[sourcePath] = { journal, chroniclesId };
-    }
 
     for await (const item of items) {
       // todo: This is actually a staging error
@@ -409,6 +358,10 @@ export class ImporterClient {
       // pass since I already parsed it to mdast once?
       const mdast = stringToMdast(item.content) as any as mdast.Root;
       this.extractAndUpdateLinks(mdast, item, linkMapping);
+
+      // chris: if item.sourcePath isn't the same sourcePath used to make the file link the first
+      // time maybe wont be right. I changed a lot of code without testing yet.
+      this.updateFileLinks(item.sourcePath, mdast, filesMapping);
 
       // with updated links we can now save the document
       try {
@@ -552,7 +505,7 @@ export class ImporterClient {
    *
    * @returns The inferred or generated journal name
    */
-  private inferOrGenerateJournalName = (
+  private inferJournalName = (
     // Path to the documents folder, relative to import direcgory
     folderPath: string,
     // import directory, so we can ensure its stripped from the journal name
@@ -654,27 +607,15 @@ export class ImporterClient {
     return journalName;
   };
 
-  /**
-   * For files (images, etc., not markdown links) found in a note, move them to the
-   * ensure they are valid, then rename them, and move to _attachments directory
-   * in the chronicles root.
-   *
-   * @param sourcePath - relative path to source file
-   * @param destinationDir - absolute path to destination directory
-   * @param importDir - absolute path to import directory
-   * @returns
-   */
-  private validateAndMoveFile = async (
+  // Everything but copy file from validateAndMoveFile,
+  // return generated ID and dest filelname and whether it was resolved,
+  // store this in staging table in stageFile.
+  private fileExists = async (
     resolvedPath: string,
-    destinationDir: string,
     importDir: string,
-  ): Promise<[string, null] | [null, string]> => {
-    // sourcePath = decodeURIComponent(sourcePath);
-
-    const sanitizedPath = path.normalize(resolvedPath);
-
+  ): Promise<[null, string] | [string, null]> => {
     // Check if file is contained within importDir to prevent path traversal
-    if (!sanitizedPath.startsWith(importDir))
+    if (!resolvedPath.startsWith(importDir))
       return [null, "Potential path traversal detected"];
 
     // Check if the file exists
@@ -688,21 +629,19 @@ export class ImporterClient {
       return [null, "No read access to the file"];
     }
 
-    // Generate a unique destination filename in _attachments
-    const ext = path.extname(sanitizedPath);
-    const destFile = path.join(destinationDir, `${uuidv7()}${ext}`);
+    return [resolvedPath, null];
+  };
 
-    // Ensure destination directory exists
-    await fs.promises.mkdir(path.dirname(destFile), { recursive: true });
-
-    // Move the file and return destination filename or error
-    try {
-      await this.files.copyFile(resolvedPath, destFile);
-      const destFileName = path.basename(destFile);
-      return [destFileName, null];
-    } catch (err) {
-      return [null, `Error moving file: ${(err as Error).message}`];
-    }
+  // Because I keep forgetting extension already has a . in it, etc.
+  // Returns relative or absolute path based which one attachmentsPath
+  // Chronicles file references are always ../_attachments/chroniclesId.ext as
+  // of this writing.
+  private makeDestinationFilePath = (
+    attachmentsPath: string,
+    chroniclesId: string,
+    extension: string,
+  ) => {
+    return path.join(attachmentsPath, `${chroniclesId}${extension}`);
   };
 
   /**
@@ -721,33 +660,124 @@ export class ImporterClient {
   };
 
   /**
-   * When moving files into _attachments, first check if the file has already been moved
-   * (in the cache); if not move it (and update cache). Return the new filename
-   * if the file was moved successfully; null if there was an error (and log it)
+   * Resolve a file link to an absolute path, which we use as the primary key
+   * in the staging table for moving files; can be used to check if file was
+   * already moved, and to fetch the destination id for the link when updating
+   * the link in the document.
+   *
+   * @param noteSourcePath - absolute path to the note that contains the link
+   * @param url - mdast.url of the link
    */
-  private findOrMoveFile = async (
-    importDir: string,
-    resolvedPath: string, // abs path to document the file link is from
-    cache: Record<string, string>,
-    attachmentsDir: string, // absolute path to destination _attachments dir
-  ) => {
-    if (!(resolvedPath in cache)) {
-      const [filename, err] = await this.validateAndMoveFile(
-        resolvedPath,
-        attachmentsDir,
-        importDir,
-      );
+  private cleanFileUrl = (noteSourcePath: string, url: string): string => {
+    const urlWithoutQuery = url.split(/\?/)[0] || "";
+    return decodeURIComponent(
+      // todo: should we also normalize here?
+      path.normalize(
+        path.resolve(path.dirname(noteSourcePath), urlWithoutQuery),
+      ),
+    );
+  };
 
-      if (err) {
-        console.error("Error moving file", resolvedPath, err);
-        return;
+  // Sanitize the url and stage it into the import_files table
+  private stageFile = async (
+    importerId: string,
+    url: string, // mdast.url of the link
+    noteSourcePath: string, // path to the note that contains the link
+    // Might need this if we validate before staging
+    importDir: string, // absolute path to import directory
+  ) => {
+    const resolvedUrl = this.cleanFileUrl(noteSourcePath, url);
+
+    // todo: sourcePathResolved is the primary key; should be unique; but we don't need to error
+    // here if it fails to insert; we can skip because we only need to stage and move it once
+    // IDK what the error signature here is.
+    try {
+      await this.knex("import_files").insert({
+        importerId: importerId,
+        sourcePathResolved: resolvedUrl,
+        chroniclesId: uuidv7(),
+        extension: path.extname(resolvedUrl),
+      });
+    } catch (err: any) {
+      // file referenced more than once in note, or in more than one notes; if import logic
+      // is good really dont even need to log this, should just skip
+      if ("code" in err && err.code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
+        console.log("skipping file already staged", resolvedUrl);
+      } else {
+        throw err;
+      }
+    }
+  };
+
+  // Move all staged files to _attachments (if pending)
+  private moveStagedFiles = async (
+    chroniclesRoot: string,
+    importerId: string,
+    importDir: string,
+  ) => {
+    const files = await this.knex("import_files").where({
+      importerId,
+      status: "pending",
+    });
+
+    const attachmentsDir = path.join(chroniclesRoot, "_attachments");
+    await fs.promises.mkdir(attachmentsDir, { recursive: true });
+
+    for await (const file of files) {
+      const { sourcePathResolved, extension, chroniclesId } = file;
+
+      // todo: convert to just err checking
+      let [_, err] = await this.fileExists(sourcePathResolved, importDir);
+
+      if (err != null) {
+        console.error("this.fileExists test fails for ", sourcePathResolved);
+        await this.knex("import_files")
+          .where({ importerId, sourcePathResolved })
+          .update({ error: err });
+        continue;
       }
 
-      // console.info("updating link", resolvedPath, "->", filename);
-      cache[resolvedPath] = filename!;
+      const destinationFile = this.makeDestinationFilePath(
+        attachmentsDir,
+        chroniclesId,
+        extension,
+      );
+
+      try {
+        await this.files.copyFile(sourcePathResolved, destinationFile);
+      } catch (err) {
+        await this.knex("import_files")
+          .where({ importerId, sourcePathResolved })
+          .update({ error: (err as Error).message });
+        continue;
+      }
+
+      await this.knex("import_files")
+        .where({ importerId, sourcePathResolved })
+        .update({ status: "complete" });
+    }
+  };
+
+  // Fetch all files  successfully moved to _attachments, and return a mapping
+  // of the original source path to the new filename so document file links can be updated
+  private movedFilePaths = async (importerId: string) => {
+    const files = await this.knex("import_files").where({
+      importerId,
+      status: "complete",
+    });
+
+    // todo: Can pass in chronicles root; but since convention is always ../_attachments/file, should
+    // always be able to re-construct this...
+    const mapping: Record<string, string> = {};
+    for (const file of files) {
+      mapping[file.sourcePathResolved] = this.makeDestinationFilePath(
+        "../_attachments",
+        file.chroniclesId,
+        file.extension,
+      );
     }
 
-    return cache[resolvedPath];
+    return mapping;
   };
 
   /**
@@ -757,59 +787,42 @@ export class ImporterClient {
    * @param importDir - The root import directory\
    * @param sourcePath - The path to the source file that contains the link; used to resolve relative links
    * @param mdast
-   * @param cache
-   * @param attachmentsDir - The absolute path to the _attachments directory
    */
-  private moveAndUpdateFileLinks = async (
+  private stageNoteFiles = async (
+    importerId: string,
     importDir: string,
     sourcePath: string,
     mdast: mdast.Content | mdast.Root,
-    cache: Record<string, string>,
-    attachmentsDir: string, // absolute path to _attachments
-    didMove = false,
-    // todo: return boolean for debugging, either stuff into import_items,
-    // or... cache technically has all this info...
-    // todo(2): track these as import item links because it simplifies debugging
-    // etc.
-  ): Promise<boolean> => {
+  ): Promise<void> => {
     if (this.isFileLink(mdast)) {
-      // convert url to absolute path
-      const resolvedUrl = decodeURIComponent(
-        path.resolve(path.dirname(sourcePath), mdast.url?.split(/\?/)[0] || ""),
-      );
-
-      const filename = await this.findOrMoveFile(
-        importDir,
-        resolvedUrl,
-        cache,
-        attachmentsDir,
-      );
-      if (filename) {
-        // todo: stage and save the import item
-        mdast.url = `../_attachments/${filename}`;
-        return true;
-      }
-      return false;
+      await this.stageFile(importerId, mdast.url, sourcePath, importDir);
     } else {
       if ("children" in mdast) {
         let results = [];
-        for (const child of mdast.children) {
-          results.push(
-            await this.moveAndUpdateFileLinks(
-              importDir,
-              sourcePath,
-              child,
-              cache,
-              attachmentsDir,
-              didMove,
-            ),
-          );
+        for await (const child of mdast.children) {
+          await this.stageNoteFiles(importerId, importDir, sourcePath, child);
         }
-
-        return results.some((result) => result);
       }
+    }
+  };
 
-      return false;
+  // use the mapping of moved files to update the file links in the note
+  private updateFileLinks = (
+    noteSourcePath: string,
+    mdast: mdast.Content | mdast.Root,
+    filesMapping: Record<string, string>,
+  ) => {
+    if (this.isFileLink(mdast)) {
+      const url = this.cleanFileUrl(noteSourcePath, mdast.url);
+      if (url in filesMapping) {
+        mdast.url = filesMapping[url];
+      }
+    } else {
+      if ("children" in mdast) {
+        for (const child of mdast.children) {
+          this.updateFileLinks(noteSourcePath, child, filesMapping);
+        }
+      }
     }
   };
 
@@ -818,8 +831,6 @@ export class ImporterClient {
     importDir: string,
     importerId: string,
     journals: Record<string, string>, // mapping of original folder path to journal name
-    filesMapping: Record<string, string>, // mapping of original file path to chronicles path
-    chroniclesRoot: string,
   ) => {
     const { ext, name, dir } = path.parse(file.path);
 
@@ -843,7 +854,7 @@ export class ImporterClient {
     try {
       // todo: fallback title to filename - uuid
       const { frontMatter, body, title } = parseTitleAndFrontMatter(contents);
-      const journalName = this.inferOrGenerateJournalName(
+      const journalName = this.inferJournalName(
         dir,
         importDir,
         journals,
@@ -869,18 +880,9 @@ export class ImporterClient {
       // and ensure they are not overwritten when editing existing files
       // https://github.com/cloverich/chronicles/issues/127
 
-      // Files: move to _attachments, update links; must happen before we stage
-      // import item so we can use the updated markdown content
-      const mdast = stringToMdast(body) as any as mdast.Root;
+      const mdast = stringToMdast(body);
 
-      const attachmentsDir = path.join(chroniclesRoot, "_attachments");
-      const moved = await this.moveAndUpdateFileLinks(
-        importDir,
-        file.path,
-        mdast,
-        filesMapping,
-        attachmentsDir,
-      );
+      await this.stageNoteFiles(importerId, importDir, file.path, mdast);
 
       const chroniclesId = uuidv7();
       const importItem = {
@@ -891,53 +893,16 @@ export class ImporterClient {
         sourceId: notionId,
         sourcePath: file.path,
         title,
+        content: body,
         journal: journalName,
-        content: mdastToString(mdast),
         frontMatter: JSON.stringify(frontMatter),
         status: "pending",
       };
 
       this.saveImportItem(importItem);
-
-      // todo: Unlike sync, here we need to handle images and note references
-      // there are two kinds of note references: file references, and [[Magic References]], the latter
-      // only exist in Obsidian, and a few other note apps, not in Notion. So we can ignore them for now.
-
-      // stage links for later processing
-      const linkItems: ImportItemLink[] = [];
-      const links = this.selectLinks(mdast);
-      for (const link of links) {
-        const sourceFolderPath = path.dirname(file.path);
-        const sourceUrlResolved = path.resolve(sourceFolderPath, link.url);
-        const canAccessFile = await this.files.validFile(
-          sourceUrlResolved,
-          false,
-        );
-
-        linkItems.push({
-          importerId,
-          sourceChroniclesId: importItem.chroniclesId,
-          sourceChroniclesPath: importItem.chroniclesPath,
-          sourceId: notionId,
-          sourceUrl: link.url,
-
-          // sourceUrlResolvedToTheFullTargetPath
-          sourceUrlResolved: sourceUrlResolved,
-          destChroniclesId: "", // todo: fill this in later
-          // todo: Uh re-name this "Accessable" or something
-          sourceUrlResolveable: canAccessFile ? 1 : 0,
-          kind: "link",
-          title: link.title,
-          journal: journalName,
-        });
-      }
-
-      await this.saveImportItemLinks(linkItems);
-      return;
     } catch (e) {
       // todo: this error handler is far too big, obviously
       console.error("Error processing note", file.path, e);
-      return;
     }
   };
 }
