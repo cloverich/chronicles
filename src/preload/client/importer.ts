@@ -60,7 +60,7 @@ function stripNotionIdFromTitle(filename: string): [string, string?] {
   return [filename.trim(), undefined];
 }
 
-// Note as staged in the import_items table
+// Note as staged in the import_notes table
 interface StagedNote {
   // where the note comes from
   importerId: string;
@@ -225,7 +225,7 @@ export class ImporterClient {
         status: "pending",
       };
 
-      await this.knex("import_items").insert(importItem);
+      await this.knex("import_notes").insert(importItem);
     } catch (e) {
       // todo: this error handler is far too big, obviously
       console.error("Error processing note", file.path, e);
@@ -252,7 +252,7 @@ export class ImporterClient {
     const filesMapping = await this.movedFilePaths(importerId);
     const linkMapping = await this.noteLinksMapping(importerId);
 
-    const items = await this.knex<StagedNote>("import_items").where({
+    const items = await this.knex<StagedNote>("import_notes").where({
       importerId,
     });
 
@@ -283,11 +283,11 @@ export class ImporterClient {
           false, // don't index; we'll call sync after import
         );
 
-        await this.knex<StagedNote>("import_items")
+        await this.knex<StagedNote>("import_notes")
           .where({ importerId: item.importerId, sourcePath: item.sourcePath })
           .update({ status: "note_created", error: null });
       } catch (err: any) {
-        await this.knex<StagedNote>("import_items")
+        await this.knex<StagedNote>("import_notes")
           .where({ importerId: item.importerId, sourcePath: item.sourcePath })
           .update({ status: "note_created", error: err.message });
         // todo: pre-validate ids are unique
@@ -301,7 +301,7 @@ export class ImporterClient {
     }
 
     // check for errors
-    const { error_count } = (await this.knex("import_items")
+    const { error_count } = (await this.knex("import_notes")
       .where({ importerId })
       .whereIn("status", ["processing_error", "create_error"])
       .count({ error_count: "*" })
@@ -325,7 +325,7 @@ export class ImporterClient {
   // 2. Run this command
   // 3. Re-run import
   private clearImportTables = async () => {
-    await this.db.exec("DELETE FROM import_items");
+    await this.db.exec("DELETE FROM import_notes");
     await this.db.exec("DELETE FROM import_files");
     await this.db.exec("DELETE FROM imports");
   };
@@ -337,7 +337,7 @@ export class ImporterClient {
     let linkMapping: Record<string, { journal: string; chroniclesId: string }> =
       {};
 
-    const importedItems = await this.knex("import_items")
+    const importedItems = await this.knex("import_notes")
       .where({ importerId })
       .select("sourcePath", "journal", "chroniclesId");
 
