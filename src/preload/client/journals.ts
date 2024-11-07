@@ -124,12 +124,12 @@ export class JournalsClient {
   };
 }
 
-const MAX_NAME_LENGTH = 20;
+export const MAX_NAME_LENGTH = 25;
 
 /**
  * A basic validation function for journal names.
  */
-const validateJournalName = (name: string): string => {
+export const validateJournalName = (name: string): string => {
   name = name?.trim() || "";
   if (!name) {
     throw new Error("Journal name cannot be empty.");

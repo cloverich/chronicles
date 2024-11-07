@@ -1,9 +1,14 @@
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
+import { IImporterClient } from "./importer";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
 import { ITagsClient } from "./tags";
+
+interface TestsClient {
+  runTests: () => void;
+}
 
 // This interface was created with these "I" types like this
 // so non-preload code could import this type without the bundler
@@ -15,7 +20,9 @@ export interface IClient {
   documents: IDocumentsClient;
   preferences: IPreferencesClient;
   files: IFilesClient;
-  imports: ISyncClient;
+  sync: ISyncClient;
+  importer: IImporterClient;
+  tests: TestsClient;
 }
 
 export type JournalResponse = {

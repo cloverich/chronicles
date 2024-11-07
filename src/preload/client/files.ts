@@ -1,7 +1,6 @@
 import Store from "electron-store";
 
 import fs from "fs";
-import mkdirp from "mkdirp";
 import path from "path";
 import { uuidv7 } from "uuidv7";
 const { readFile, writeFile, access, stat } = fs.promises;
@@ -139,6 +138,7 @@ export class FilesClient {
    * @param baseDir - Chronicles root directory
    * @param document
    * @param journalName
+   * @returns - The path to the saved document
    */
   uploadDocument = async (
     document: { id: string; content: string },
@@ -149,8 +149,9 @@ export class FilesClient {
       document.id,
     );
 
-    await mkdirp(journalPath);
+    await fs.promises.mkdir(journalPath, { recursive: true });
     await fs.promises.writeFile(docPath, document.content);
+    return docPath;
   };
 
   deleteDocument = async (documentId: string, journal: string) => {
@@ -198,13 +199,45 @@ export class FilesClient {
   };
 
   /**
+   * Check if a filepath exists and can be accessed; useful for confirming
+   * imported / updated links are valid.
+   *
+   * @param filepath
+   */
+  validFile = async (
+    filepath: string,
+    propagateErr: boolean = true,
+  ): Promise<boolean> => {
+    try {
+      const file = await stat(filepath);
+      if (!file.isFile()) {
+        throw new Error(
+          `ensureFile called but ${filepath} already exists as a directory`,
+        );
+      }
+    } catch (err: any) {
+      if (err.code !== "ENOENT" && propagateErr) throw err;
+      return false;
+    }
+
+    // todo: idk if this is how the API is supposed to be used
+    try {
+      await access(filepath, fs.constants.R_OK | fs.constants.W_OK);
+      return true;
+    } catch (err: any) {
+      if (err.code !== "ENOENT" && propagateErr) throw err;
+      return false;
+    }
+  };
+
+  /**
    * Ensure directory exists and can be accessed
    *
    * WARN: Logic to handle errors when writing / reading files from directory
    * are still needed as access check may be innaccurate or could change while
    * app is running.
    */
-  async ensureDir(directory: string): Promise<void> {
+  ensureDir = async (directory: string): Promise<void> => {
     try {
       const dir = await stat(directory);
       if (!dir.isDirectory()) {
@@ -214,12 +247,25 @@ export class FilesClient {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      await mkdirp(directory);
+      await fs.promises.mkdir(directory, { recursive: true });
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke
     // when actually writing. Better to move this logic to the actual file
     // upload handlers.
     await access(directory, fs.constants.R_OK | fs.constants.W_OK);
-  }
+  };
+
+  copyFile = async (src: string, dest: string): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+      fs.createReadStream(src)
+        .once("error", reject)
+        .pipe(
+          fs
+            .createWriteStream(dest)
+            .once("error", reject)
+            .once("close", () => resolve(dest)),
+        );
+    });
+  };
 }

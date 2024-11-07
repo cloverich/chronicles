@@ -31,7 +31,7 @@ const Preferences = observer(() => {
     store.loading = true;
     try {
       const result = await client.preferences.openDialogNotesDir();
-      if (!result.value) {
+      if (!result) {
         store.loading = false;
         return;
       }
@@ -45,12 +45,30 @@ const Preferences = observer(() => {
     }
   }
 
+  async function openDialogImportDir() {
+    store.loading = true;
+    try {
+      const result = await client.preferences.openDialogImportDir();
+      if (!result) {
+        store.loading = false;
+        return;
+      }
+
+      await client.importer.import(result);
+      store.loading = false;
+    } catch (e) {
+      console.error("Error importing directory", e);
+      store.loading = false;
+      toaster.danger("Failed to import directory");
+    }
+  }
+
   async function sync() {
     if (store.loading) return;
 
     toaster.notify("Syncing cache...may take a few minutes");
     store.loading = true;
-    await client.imports.sync();
+    await client.sync.sync();
     await jstore.refresh();
     store.loading = false;
     toaster.success("Cache synced");
@@ -131,6 +149,19 @@ const Preferences = observer(() => {
           </Button>
         </SettingsBox>
         <SettingsBox>
+          <h4>Import markdown directory</h4>
+          <p>Import a directory of markdown files. Experimental.</p>
+
+          {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
+          <Button
+            isLoading={store.loading}
+            disabled={store.loading}
+            onClick={openDialogImportDir}
+          >
+            Select directory
+          </Button>
+        </SettingsBox>
+        <SettingsBox>
           <h4>Re-build cache (Sync)</h4>
           <p>
             Chronicles builds an index of all documents and journals (folders)
@@ -155,6 +186,23 @@ const Preferences = observer(() => {
             onClick={sync}
           >
             Sync folder
+          </Button>
+        </SettingsBox>
+        <SettingsBox>
+          <h4>Run tests</h4>
+          <p>
+            Run some tests, mostly around the frontmatter parsing and importing.
+            See output in console.
+          </p>
+          <Button
+            isLoading={store.loading}
+            disabled={store.loading}
+            onClick={() => {
+              console.log("Running tests");
+              client.tests.runTests();
+            }}
+          >
+            Run Tests
           </Button>
         </SettingsBox>
         <Base.BottomSpacer />

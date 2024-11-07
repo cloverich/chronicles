@@ -6,6 +6,7 @@ import { Node as SNode } from "slate";
 import { unified } from "unified";
 import { remarkToSlate, slateToRemark } from "./remark-slate-transformer";
 
+import * as Mdast from "ts-mdast";
 export * from "ts-mdast";
 
 // I usually forget how unified works, so just leaving some notes for reference
@@ -34,12 +35,11 @@ const stringToSlateProcessor = parser
   .use(remarkToSlate);
 
 export function mdastToString(mdast: any): string {
-  // todo: types
-  return stringifier.stringify(mdast) as any;
+  return stringifier.stringify(mdast) as any as string;
 }
 
-export function stringToMdast(text: string) {
-  return parser.parse(text);
+export function stringToMdast(text: string): Mdast.Root {
+  return parser.parse(text) as any as Mdast.Root;
 }
 
 export function stringToSlate(text: string) {
@@ -62,11 +62,11 @@ export function stringToSlate(text: string) {
  * debug helper function to see the slate to mdast conversion
  * before stringifying
  */
-export function slateToMdast(nodes: SNode[]): any {
+export function slateToMdast(nodes: SNode[]): Mdast.Root {
   return slateToStringProcessor.runSync({
     type: "root",
     children: nodes,
-  });
+  }) as any as Mdast.Root;
 }
 
 export function slateToString(nodes: SNode[]): string {
@@ -78,5 +78,5 @@ export function slateToString(nodes: SNode[]): string {
     children: nodes,
   });
 
-  return slateToStringProcessor.stringify(ast) as any;
+  return slateToStringProcessor.stringify(ast) as any as string;
 }

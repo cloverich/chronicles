@@ -32,6 +32,12 @@ export function toMdastLinkFactory(convertNodes: (nodes: Node[]) => any) {
 // For parsing note links, i.e. the `./<journalName>/<noteId>.md` format.
 const noteLinkRegex = /^\..\/(?:(.+)\/)?([a-zA-Z0-9-]+)\.md$/;
 
+/**
+ * Check if url conforms to the note link format.
+ *
+ * ex: `../journal/note_id.md`
+ *
+ */
 export function checkNoteLink(url: string) {
   if (!url) return null;
 
@@ -49,7 +55,10 @@ interface ToSlateLink {
   children: any;
 }
 
-export function toSlateLink({
+/**
+ * Converts a markdown link to a NoteLink, if it points to a markdown file.
+ */
+export function toSlateNoteLink({
   url,
   convertNodes,
   deco,

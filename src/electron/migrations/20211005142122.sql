@@ -42,3 +42,40 @@ CREATE TABLE IF NOT EXISTS "document_tags" (
 CREATE INDEX IF NOT EXISTS "documents_title_idx" ON "documents"("title");
 CREATE INDEX IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
 CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");
+
+
+-- DROP TABLE IF EXISTS "imports";
+-- DROP TABLE IF EXISTS "import_notes";
+-- DROP TABLE IF EXISTS "import_files";
+
+CREATE TABLE IF NOT EXISTS "imports" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "importDir" TEXT NOT NULL,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "status" TEXT NOT NULL -- active, inactive
+);
+
+CREATE TABLE IF NOT EXISTS "import_files" (
+    "importerId" TEXT NOT NULL,
+    "sourcePathResolved" TEXT NOT NULL PRIMARY KEY,
+    "status" TEXT NOT NULL DEFAULT "pending",
+    "chroniclesId" TEXT NOT NULL,
+    "extension" TEXT NOT NULL,
+    "error" TEXT
+);
+
+-- First, Import Items table
+CREATE TABLE IF NOT EXISTS "import_notes" (
+    "importerId" TEXT NOT NULL,
+    "status" TEXT NOT NULL, -- success, error
+    "chroniclesId" TEXT NOT NULL,
+    "chroniclesPath" TEXT NOT NULL,
+    "sourcePath" TEXT NOT NULL PRIMARY KEY,
+    "sourceId" TEXT,
+    "error" BOOLEAN,
+    "title" TEXT NOT NULL,
+    "journal" TEXT NOT NULL,
+    "frontMatter" TEXT,
+    "content" TEXT
+);

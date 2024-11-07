@@ -308,8 +308,9 @@ app.on("activate", () => {
 //   event.reply("preferences-updated");
 // });
 
-// Preferences in UI allows user to specify user files directory
-ipcMain.on("select-chronicles-root", async (event, arg) => {
+// Preferences in UI allows user to specify chronicles root
+// and imports directories
+ipcMain.on("select-directory", async (event, arg) => {
   if (!mainWindow) {
     console.error(
       "received request to open file picker but mainWindow is undefined",
@@ -325,26 +326,21 @@ ipcMain.on("select-chronicles-root", async (event, arg) => {
 
   // user selected cancel
   if (!filepath) {
-    event.reply("preferences-updated", {
-      name: "NOTES_DIR",
+    event.reply("directory-selected", {
       value: null,
       error: null,
     });
     return;
   }
 
-  // todo: feedback to user if error
-  // https://github.com/cloverich/chronicles/issues/52
   try {
     ensureDir(filepath);
-    settings.set("NOTES_DIR", filepath);
   } catch (err) {
     console.error(
       `Error accessing directory ${filepath}; canceling update to NOTES_DIR`,
       err,
     );
-    event.reply("preferences-updated", {
-      name: "NOTES_DIR",
+    event.reply("directory-selected", {
       value: null,
       error: `Error accessing directory ${filepath}; canceling update to NOTES_DIR`,
     });
@@ -352,8 +348,7 @@ ipcMain.on("select-chronicles-root", async (event, arg) => {
   }
 
   // NOTE: Do not change this name without updating UI handlers
-  event.reply("preferences-updated", {
-    name: "NOTES_DIR",
+  event.reply("directory-selected", {
     value: filepath,
     error: null,
   });
