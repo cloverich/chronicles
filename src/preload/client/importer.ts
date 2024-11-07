@@ -61,7 +61,7 @@ function stripNotionIdFromTitle(filename: string): [string, string?] {
 }
 
 // Note as staged in the import_items table
-interface ImportItem {
+interface StagedNote {
   // where the note comes from
   importerId: string;
   sourcePath: string;
@@ -77,26 +77,9 @@ interface ImportItem {
   // Where this note will end up
   chroniclesId: string;
   chroniclesPath: string;
-  status: string; // 'pending' | 'complete' | 'create_error'
+  status: string; // 'pending' | 'note_created'
+  error: string | null;
 }
-
-// ugh, when pulling from db we get full set of propeties so my interfaces
-// above dont' make sense; need to re-think this
-type ImportItemDb = {
-  importerId: string;
-  sourcePath: string;
-  sourceId?: string;
-
-  title: string;
-  journal: string;
-  content: string;
-  frontMatter: string;
-
-  // Where this item will end up
-  chroniclesId: string;
-  chroniclesPath: string;
-  status: string; // 'pending' | 'complete' | 'error'
-};
 
 export class ImporterClient {
   constructor(
@@ -269,7 +252,7 @@ export class ImporterClient {
     const filesMapping = await this.movedFilePaths(importerId);
     const linkMapping = await this.noteLinksMapping(importerId);
 
-    const items: ImportItemDb[] = await this.knex("import_items").where({
+    const items = await this.knex<StagedNote>("import_items").where({
       importerId,
     });
 
@@ -300,13 +283,13 @@ export class ImporterClient {
           false, // don't index; we'll call sync after import
         );
 
-        await this.knex("import_items")
+        await this.knex<StagedNote>("import_items")
           .where({ importerId: item.importerId, sourcePath: item.sourcePath })
-          .update({ status: "document_created", error: null });
+          .update({ status: "note_created", error: null });
       } catch (err: any) {
-        await this.knex("import_items")
+        await this.knex<StagedNote>("import_items")
           .where({ importerId: item.importerId, sourcePath: item.sourcePath })
-          .update({ status: "document_created", error: err.message });
+          .update({ status: "note_created", error: err.message });
         // todo: pre-validate ids are unique
         // https://github.com/cloverich/chronicles/issues/248
         console.error(
@@ -380,7 +363,7 @@ export class ImporterClient {
 
   private updateNoteLinks = async (
     mdast: mdast.Root | mdast.Content,
-    item: ImportItemDb,
+    item: StagedNote,
     linkMapping: Record<string, { journal: string; chroniclesId: string }>,
   ) => {
     if (mdast.type === "link" && this.isNoteLink(mdast.url)) {
@@ -566,7 +549,7 @@ export class ImporterClient {
   };
 
   // Mdast helper to determine if a node is a file link
-  private isFileLink = (
+  isFileLink = (
     mdast: mdast.Content | mdast.Root,
   ): mdast is mdast.Image | mdast.Link => {
     return (
