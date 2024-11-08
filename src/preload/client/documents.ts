@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
 import { Knex } from "knex";
-import { uuidv7 } from "uuidv7";
+import { uuidv7obj } from "uuidv7";
 import { IFilesClient } from "./files";
 
 export interface GetDocumentResponse {
@@ -233,7 +233,7 @@ updatedAt: ${document.updatedAt}
     args: SaveRequest,
     index: boolean = true,
   ): Promise<[string, string]> => {
-    const id = args.id || uuidv7();
+    const id = args.id || uuidv7obj().toHex();
     const content = this.contentsWithFrontMatter(args);
     const docPath = await this.files.uploadDocument(
       { id, content },

@@ -1,6 +1,7 @@
 import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import path from "path";
+import { UUID } from "uuidv7";
 import yaml from "yaml";
 import { Files } from "../files";
 import { GetDocumentResponse, IDocumentsClient } from "./documents";
@@ -27,10 +28,6 @@ function preprocessFrontMatter(content: string) {
       return match; // Return unchanged if no special characters
     });
 }
-
-// naive regex for matching uuidv7, for checking filenames match the format
-const uuidv7Regex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // naive frontmatter parser
 function parseFrontMatter(content: string) {
@@ -156,8 +153,10 @@ updatedAt: ${document.updatedAt}
       // filename is id; ensure it is formatted as a uuidv7
       const documentId = name;
 
-      if (!uuidv7Regex.test(documentId)) {
-        console.error("Invalid document id", documentId);
+      try {
+        UUID.parse(documentId);
+      } catch (e) {
+        console.error("Invalid document id", documentId, e);
         continue;
       }
 
