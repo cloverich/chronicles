@@ -18,13 +18,9 @@ import * as mdast from "../../markdown/remark-slate-transformer/models/mdast";
 
 export type IImporterClient = ImporterClient;
 
-import { uuidv7 } from "uuidv7";
+import { uuidv7obj } from "uuidv7";
 import { mdastToString, stringToMdast } from "../../markdown";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
-
-// naive regex for matching uuidv7, for checking filenames match the format
-const uuidv7Regex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const SKIPPABLE_FILES = new Set(".DS_Store");
 
@@ -104,7 +100,7 @@ export class ImporterClient {
    */
   import = async (importDir: string) => {
     await this.clearImportTables();
-    const importerId = uuidv7();
+    const importerId = uuidv7obj().toHex();
     const chroniclesRoot = await this.ensureRoot();
 
     // Ensure `importDir` is a directory and can be accessed
@@ -210,7 +206,7 @@ export class ImporterClient {
 
       await this.stageNoteFiles(importerId, importDir, file.path, mdast);
 
-      const chroniclesId = uuidv7();
+      const chroniclesId = uuidv7obj().toHex();
       const importItem = {
         importerId,
         chroniclesId: chroniclesId,
@@ -491,7 +487,7 @@ export class ImporterClient {
     } catch (err) {
       // Generate a new, ugly name; user can decide what they want to do via
       // re-naming later b/c rn its not worth the complexity of doing anything else
-      journalName = uuidv7();
+      journalName = uuidv7obj().toHex();
 
       // too long, reserved name, non-unique, etc.
       // known cases from my own import:
@@ -595,7 +591,7 @@ export class ImporterClient {
       await this.knex("import_files").insert({
         importerId: importerId,
         sourcePathResolved: resolvedUrl,
-        chroniclesId: uuidv7(),
+        chroniclesId: uuidv7obj().toHex(),
         extension: path.extname(resolvedUrl),
       });
     } catch (err: any) {
