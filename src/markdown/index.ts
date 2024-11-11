@@ -4,10 +4,33 @@ import remarkStringify from "remark-stringify";
 import remarkUnwrapImages from "remark-unwrap-images";
 import { Node as SNode } from "slate";
 import { unified } from "unified";
-import { remarkToSlate, slateToRemark } from "./remark-slate-transformer";
+import {
+  remarkToSlate,
+  slateToRemark,
+} from "./remark-slate-transformer/index.js";
 
+import * as Mdast2 from "mdast";
 import * as Mdast from "ts-mdast";
 export * from "ts-mdast";
+
+import { fromMarkdown } from "mdast-util-from-markdown";
+import { gfmFromMarkdown, gfmToMarkdown } from "mdast-util-gfm";
+import { toMarkdown } from "mdast-util-to-markdown";
+import { gfm } from "micromark-extension-gfm";
+import { ofmWikilinkFromMarkdown } from "./mdast-util-ofm-wikilink";
+import { ofmWikilink } from "./micromark-extension-ofm-wikilink";
+
+export const parseMarkdown = (markdown: string) => {
+  return fromMarkdown(markdown, {
+    extensions: [gfm(), ofmWikilink()],
+    mdastExtensions: [gfmFromMarkdown(), ofmWikilinkFromMarkdown()],
+  });
+};
+
+// todo: Expose as "toMarkdown" or "serializeMarkdown" instead
+export const stringifyMarkdown = (tree: Mdast2.Nodes) => {
+  return toMarkdown(tree, { extensions: [gfmToMarkdown() as any] });
+};
 
 // I usually forget how unified works, so just leaving some notes for reference
 // https://github.com/orgs/unifiedjs/discussions/113
@@ -22,6 +45,8 @@ export * from "ts-mdast";
 //                        +--------------+
 //                        | Transformers |
 //                        +--------------+
+// NOTE: The type error below is wrong, this definitely works becaus of
+// esmoduleInterop...
 const stringifier = unified().use(remarkStringify);
 const parser = unified().use(remarkParse).use(remarkGfm);
 
@@ -31,16 +56,25 @@ const slateToStringProcessor = unified()
   .use(remarkStringify);
 
 const stringToSlateProcessor = parser
+  // plugin to remove the wrapping paragraph (<p>) for images (<img>).
+  // but supposedly only works on html / rehype shrug
   .use(remarkUnwrapImages)
   .use(remarkToSlate);
 
 export function mdastToString(mdast: any): string {
-  return stringifier.stringify(mdast) as any as string;
+  return stringifyMarkdown(mdast);
+  // return stringifier.stringify(mdast) as any as string;
 }
 
-export function stringToMdast(text: string): Mdast.Root {
-  return parser.parse(text) as any as Mdast.Root;
+// todo: expose parseMarkdown instead its clearer
+export function stringToMdast(text: string): Mdast2.Root {
+  // return parser.parse(text) as any as Mdast.Root;
+  return parseMarkdown(text);
 }
+
+// export function stringToMdastLegacy(text: string): any {
+//   return parser.parse(text) as any as Mdast.Root;
+// }
 
 export function stringToSlate(text: string) {
   // remarkToSlate must use a newer version, where file.result exists

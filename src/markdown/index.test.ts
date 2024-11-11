@@ -1,286 +1,216 @@
 import { expect } from "chai";
-import { updatedDiff } from "deep-object-diff";
+import mdast from "mdast";
 import { describe, it } from "mocha";
-import { stringToMdast, stringToSlate } from "./";
 
-// Often asserting against sub-sets of the mdast tree
-// Usage: getNestedProperty(mdast, ["children", 0, "children", 1, "children", 0, "value"])
-function dig(obj: any, ...path: (string | number)[]) {
-  return path.reduce((acc, key, index) => {
-    if (acc && key in acc) {
-      return acc[key];
-    } else {
-      throw new Error(
-        `'.dig' errored at step "${key}" (index ${index})\n` +
-          `Requested path: ${path.join(" -> ")}\n` +
-          `Object at prior step: ${JSON.stringify(acc, null, 2)}`,
-      );
-    }
-  }, obj);
-}
+import { stringifyMarkdown } from "./index.js";
+import { dig, parseMarkdown } from "./test-utils.js";
 
-describe("Markdown to Slate conversion", function () {
-  it("unnests image tags", function () {
-    const input = `
-I have a few ideas to record:
+describe("Sanity check", function () {
+  const markdown = `
+# My First Note
 
--   My first idea 
--   My second idea
--   My third idea is \_nested\_
+Here is a typical note. It has a paragraph and a [reference link][1]. I hope it works!
 
-    -   It seems to work!
+...Let me also check this image:
+![alt text](https://example.com)
 
+The end. Oh, without a definition for the reference link, it won't interpret
+the reference link above as a linkReference. So here it is.
 
-
-Now lets add an image: 
-
-![](ckure3z1b00003u65tfr1m2ki.png)
-
-This works! _Seriously_, no **complaints**.
-
+[1]: https://example2.com
 `;
 
-    const slateDOM = [
-      {
-        type: "p",
-        children: [
-          {
-            text: "I have a few ideas to record:",
-          },
-        ],
-      },
-      {
-        type: "ul",
-        children: [
-          {
-            type: "li",
-            children: [
-              {
-                type: "lic",
-                children: [
-                  {
-                    text: "My first idea ",
-                  },
-                ],
-              },
-            ],
-            checked: null,
-            spread: false,
-          },
-          {
-            type: "li",
-            children: [
-              {
-                type: "lic",
-                children: [
-                  {
-                    text: "My second idea",
-                  },
-                ],
-              },
-            ],
-            checked: null,
-            spread: false,
-          },
-          {
-            type: "li",
-            children: [
-              {
-                type: "lic",
-                children: [
-                  {
-                    text: "My third idea is ",
-                  },
-                  {
-                    // todo: I expected this to be escaped; it is escaped if I use similar syntax in the editor.
-                    italic: true,
-                    text: "nested",
-                  },
-                ],
-              },
-              {
-                type: "ul",
-                children: [
-                  {
-                    type: "li",
-                    children: [
-                      {
-                        type: "lic",
-                        children: [
-                          {
-                            text: "It seems to work!",
-                          },
-                        ],
-                      },
-                    ],
-                    checked: null,
-                    spread: false,
-                  },
-                ],
-                ordered: false,
-                start: null,
-                spread: false,
-              },
-            ],
-            checked: null,
-            spread: true,
-          },
-        ],
-        ordered: false,
-        start: null,
-        spread: false,
-      },
-      {
-        type: "p",
-        children: [
-          {
-            text: "Now lets add an image: ",
-          },
-        ],
-      },
-      {
-        type: "img",
-        url: "chronicles://ckure3z1b00003u65tfr1m2ki.png",
-        title: null,
-        alt: null,
-        caption: [
-          {
-            text: "",
-          },
-        ],
-        children: [
-          {
-            text: "",
-          },
-        ],
-      },
-      {
-        type: "p",
-        children: [
-          {
-            text: "This works! ",
-          },
-          {
-            italic: true,
-            text: "Seriously",
-          },
-          {
-            text: ", no ",
-          },
-          {
-            bold: true,
-            text: "complaints",
-          },
-          {
-            text: ".",
-          },
-        ],
-      },
-    ];
+  it("parses markdown to mdast", function () {
+    const mdast = parseMarkdown(markdown);
+    expect(mdast).to.not.be.undefined;
+  });
 
-    const parsed = stringToSlate(input);
-    expect(parsed).to.deep.equal(slateDOM);
+  it("mdast structure is correct", async function () {
+    const tree = await parseMarkdown(markdown);
+    expect(tree.children).to.deep.equal([
+      {
+        type: "heading",
+        depth: 1,
+        children: [{ type: "text", value: "My First Note" }],
+      },
+      {
+        type: "paragraph",
+        children: [
+          {
+            type: "text",
+            value: "Here is a typical note. It has a paragraph and a ",
+          },
+          {
+            type: "linkReference",
+            children: [
+              {
+                type: "text",
+                value: "reference link",
+              },
+            ],
+            label: "1",
+            identifier: "1",
+            referenceType: "full",
+          },
+          { type: "text", value: ". I hope it works!" },
+        ],
+      },
+      {
+        type: "paragraph",
+        children: [
+          { type: "text", value: "...Let me also check this image:\n" },
+          {
+            type: "image",
+            title: null,
+            url: "https://example.com",
+            alt: "alt text",
+          },
+        ],
+      },
+      {
+        type: "paragraph",
+        children: [
+          {
+            type: "text",
+            value:
+              "The end. Oh, without a definition for the reference link, it won't interpret\n" +
+              "the reference link above as a linkReference. So here it is.",
+          },
+        ],
+      },
+      {
+        type: "definition",
+        identifier: "1",
+        label: "1",
+        title: null,
+        url: "https://example2.com",
+      },
+    ]);
   });
 });
 
-// Because I am adding custom Wikilink parsing, I need basic tests for the
-// existing markdown parsing.
-describe("Reference Links: [text][id] and ![alt][id] and [id]: url", () => {
-  it("[text][id]", function () {
-    const markdown = `[My Title][mylink1]`;
-    const actual = dig(stringToMdast(markdown), "children", 0);
-    expect(actual).to.not.be.undefined;
-
-    const expected = {
-      type: "paragraph",
-      children: [
-        {
-          type: "linkReference",
-          identifier: "mylink1",
-          label: "mylink1",
-          children: [{ value: "My Title", type: "text" }],
-        },
-      ],
-    };
-
-    const diffResult = updatedDiff(expected, actual);
-    expect(diffResult).to.deep.equal({});
-  });
-
-  it("![alt][id]", function () {
-    const markdown = `![My Title][mylink1]`;
-    const actual = dig(stringToMdast(markdown), "children", 0);
-    expect(actual).to.not.be.undefined;
-
-    const expected = {
-      type: "paragraph",
-      children: [
-        {
-          type: "imageReference",
-          identifier: "mylink1",
-          label: "mylink1",
-          alt: "My Title",
-          children: [],
-        },
-      ],
-    };
-
-    const diffResult = updatedDiff(expected, actual);
-    expect(diffResult).to.deep.equal({});
-  });
-
-  it("[title][id] + [id]: url", function () {
-    const markdown = `[My Title][mylink1] \n\n [mylink1]: https://example.com`;
-    const actual = stringToMdast(markdown);
-    expect(actual).to.not.be.undefined;
-
-    // first child [0] is the paragraphw/ the linkReference; we want the definition
-    // since we check linkReference in prior test
-    const definition = dig(actual, "children", 1);
-    const expected = {
-      type: "definition",
-      identifier: "mylink1",
-      label: "mylink1",
-      url: "https://example.com",
-      title: null,
-    };
-
-    expect(updatedDiff(expected, definition)).to.deep.equal({});
+// Because I am adding custom Wikilink parsing, I feel these are most likely to screw up
+describe("Reference Links", () => {
+  it("Parses reference links and images", function () {
+    const markdown =
+      "start [My Title][mylink1] and ![alt][myimage] end\n\n [mylink1]: https://example.com\n [myimage]: https://example.com";
+    const actual = dig(parseMarkdown(markdown), "children");
+    expect(actual).to.deep.equal([
+      {
+        type: "paragraph",
+        children: [
+          { type: "text", value: "start " },
+          {
+            type: "linkReference",
+            identifier: "mylink1",
+            label: "mylink1",
+            referenceType: "full",
+            children: [{ type: "text", value: "My Title" }],
+          },
+          {
+            type: "text",
+            value: " and ",
+          },
+          {
+            alt: "alt",
+            identifier: "myimage",
+            label: "myimage",
+            referenceType: "full",
+            type: "imageReference",
+          },
+          {
+            type: "text",
+            value: " end",
+          },
+        ],
+      },
+      {
+        type: "definition",
+        identifier: "mylink1",
+        label: "mylink1",
+        url: "https://example.com",
+        title: null,
+      },
+      {
+        type: "definition",
+        identifier: "myimage",
+        label: "myimage",
+        title: null,
+        url: "https://example.com",
+      },
+    ]);
   });
 });
 
 describe("[[Wikilinks]]", function () {
-  it("[[Standard wikilinks]] are converted to internal links", function () {
-    const markdown = `[[wikilink]]`;
-    const slate = stringToMdast(markdown);
-    // console.log(slate);
-    console.log(slate.children[0].children);
-    // { text: 'Hello\n I am a [' },
-    // {
-    //   type: 'linkReference',
-    //   children: [ [Object] ],
-    //   referenceType: 'shortcut',
-    //   identifier: 'wikilink',
-    //   label: 'wikilink'
-    // },
-    // { text: ']' }
+  // Since I am internally forking ofm-wikilnk parsing (esm import issues), also include the test so I can
+  // remove the fork later and know its still working.
+  // Lifted from https://github.com/MoritzRS/obsidian-ext/blob/main/packages/mdast-util-ofm-wikilink/test/base.test.ts
+  // MIT License
+  it("wikilinks", async function () {
+    const tree = parseMarkdown(
+      "a [[link]] [[link.md]] [[link#hash]] [[link#hash|alias]] ![[link]] ![[link.md]] ![[link#hash]] ![[link#hash|alias]] ![[Document.pdf#page=3]] b",
+    );
+
+    expect(dig(tree, "children.0.children")).to.deep.equal([
+      { type: "text", value: "a " },
+      { type: "ofmWikilink", value: "link", url: "link", hash: "" },
+      { type: "text", value: " " },
+      { type: "ofmWikilink", value: "link", url: "link.md", hash: "" },
+      { type: "text", value: " " },
+      { type: "ofmWikilink", value: "link", url: "link", hash: "hash" },
+      { type: "text", value: " " },
+      { type: "ofmWikilink", value: "alias", url: "link", hash: "hash" },
+      { type: "text", value: " " },
+      { type: "ofmWikiembedding", value: "link", url: "link", hash: "" },
+      { type: "text", value: " " },
+      { type: "ofmWikiembedding", value: "link", url: "link.md", hash: "" },
+      { type: "text", value: " " },
+      { type: "ofmWikiembedding", value: "link", url: "link", hash: "hash" },
+      { type: "text", value: " " },
+      { type: "ofmWikiembedding", value: "alias", url: "link", hash: "hash" },
+      { type: "text", value: " " },
+      {
+        type: "ofmWikiembedding",
+        value: "Document",
+        url: "Document.pdf",
+        hash: "page=3",
+      },
+      { type: "text", value: " b" },
+    ]);
+  });
+});
+
+// while migrating to latest remark / refactoring, notes with strike throughs in various places
+// were failing to stringify after parsing. Probably just a change in AST expectations.
+describe.only("~~strikethrough~~", function () {
+  it("parses strikethrough", function () {
+    const tree = parseMarkdown("~~struck through text~~");
+    expect(dig(tree, "children")).to.deep.equal([
+      {
+        type: "paragraph",
+        children: [
+          {
+            type: "delete",
+            children: [{ type: "text", value: "struck through text" }],
+          },
+        ],
+      },
+    ]);
   });
 
-  // Aliased wikilinks
-  it("[[Aliases|Nicknames]]");
-  it("[[Aliases|Nicknames]]");
-  // wikilink to a block
-  it("[[2023-01-01#^quote-of-the-day]]");
-
-  // wikilink to a heading
-  it("[[Obsidian#Links are first-class citizens]]");
-
-  // Embedded wikilinks (note is embedded in a note)
-  it("![[Internal links]]");
-  it("![[Engelbart.jpg]]");
-  it("![[Engelbart.jpg|100x145]]");
-  it("![[Document.pdf#page=3]]");
-  it("![[Document.pdf#height=400]]");
+  it("serializes strikethrough", function () {
+    const tree: mdast.BlockContent = {
+      type: "paragraph",
+      children: [
+        {
+          type: "delete",
+          children: [{ type: "text", value: "struck through text" }],
+        },
+      ],
+    };
+    expect(stringifyMarkdown(tree)).to.equal("~~struck through text~~\n");
+  });
 });
 
 describe("Heading conversion", function () {

@@ -11,7 +11,7 @@
     "postinstall": "yarn run electron-rebuild",
     "prestart": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
     "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
-    "start": "node ./scripts/dev.js",
+    "start": "node ./scripts/dev.mjs",
     "pretest": "node ./scripts/test.mjs",
     "test": "mocha 'src/**/*.test.bundle.js'"
   },
@@ -61,6 +61,9 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.314.0",
     "luxon": "^2.4.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-gfm": "^3.0.0",
+    "mdast-util-to-markdown": "^2.1.2",
     "mobx": "^5.15.4",
     "mobx-react-lite": "^2.0.7",
     "mocha": "^10.2.0",
@@ -72,11 +75,10 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
     "rehype-react": "^7.0.3",
-    "remark": "^14.0.1",
+    "remark": "^15.0.1",
     "remark-gfm": "^4.0.0",
-    "remark-parse": "^8.0.3",
-    "remark-rehype": "^10.0.0",
-    "remark-stringify": "^8.1.1",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
     "remark-unwrap-images": "^3.0.0",
     "slate": "^0.101.5",
     "slate-history": "^0.100.0",
@@ -88,7 +90,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-mdast": "^1.0.0",
     "typescript": "^5.3.3",
-    "unified": "^10.1.0",
+    "unified": "^11.0.5",
     "yaml": "^2.5.1"
   }
 }

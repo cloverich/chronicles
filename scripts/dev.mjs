@@ -1,7 +1,7 @@
-const esbuild = require("esbuild");
-const cp = require("child_process");
-const electron = require("electron");
-const lodash = require("lodash");
+import cp from "child_process";
+import electron from "electron";
+import esbuild from "esbuild";
+import lodash from "lodash";
 
 // Builds and watches the application for development
 // Bundles the renderer, preload, and main processes, and
