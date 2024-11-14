@@ -1,8 +1,35 @@
 import { expect } from "chai";
+import mdast from "mdast";
 import { describe, it } from "mocha";
-import { stringToSlate } from "./index.js";
+import { parseMarkdown } from "./index.js";
+import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
 
-describe.skip("Markdown to Slate conversion", function () {
+function unwrapImages(tree: mdast.Root) {
+  tree.children = tree.children.map((child) => {
+    if (
+      child.type === "paragraph" &&
+      child.children.length === 1 &&
+      child.children[0].type === "image"
+    ) {
+      return child.children[0];
+    }
+    return child;
+  });
+
+  return tree;
+}
+
+describe("Mdast -> Slate", function () {
+  describe("basic tests", function () {
+    it("parses a simple paragraph", function () {
+      const input = "This is a simple paragraph";
+      const result = mdastToSlate(parseMarkdown(input));
+      expect(result).to.deep.equal([
+        { type: "p", children: [{ text: "This is a simple paragraph" }] },
+      ]);
+    });
+  });
+
   it("unnests image tags", function () {
     const input = `
 I have a few ideas to record:
@@ -42,7 +69,7 @@ This works! _Seriously_, no **complaints**.
                 type: "lic",
                 children: [
                   {
-                    text: "My first idea ",
+                    text: "My first idea",
                   },
                 ],
               },
@@ -117,7 +144,7 @@ This works! _Seriously_, no **complaints**.
         type: "p",
         children: [
           {
-            text: "Now lets add an image: ",
+            text: "Now lets add an image:",
           },
         ],
       },
@@ -125,7 +152,7 @@ This works! _Seriously_, no **complaints**.
         type: "img",
         url: "chronicles://ckure3z1b00003u65tfr1m2ki.png",
         title: null,
-        alt: null,
+        alt: "",
         caption: [
           {
             text: "",
@@ -161,7 +188,7 @@ This works! _Seriously_, no **complaints**.
       },
     ];
 
-    const parsed = stringToSlate(input);
+    const parsed = mdastToSlate(unwrapImages(parseMarkdown(input)));
     expect(parsed).to.deep.equal(slateDOM);
   });
 });

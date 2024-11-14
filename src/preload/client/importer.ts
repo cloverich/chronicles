@@ -20,7 +20,7 @@ import * as mdast from "mdast";
 export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
-import { mdastToString, stringToMdast } from "../../markdown";
+import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
 
 const SKIPPABLE_FILES = new Set(".DS_Store");

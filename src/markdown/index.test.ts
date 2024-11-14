@@ -2,7 +2,7 @@ import { expect } from "chai";
 import mdast from "mdast";
 import { describe, it } from "mocha";
 
-import { stringifyMarkdown } from "./index.js";
+import { mdastToString } from "./index.js";
 import { dig, parseMarkdown } from "./test-utils.js";
 
 describe("Sanity check", function () {
@@ -183,7 +183,7 @@ describe("[[Wikilinks]]", function () {
 
 // while migrating to latest remark / refactoring, notes with strike throughs in various places
 // were failing to stringify after parsing. Probably just a change in AST expectations.
-describe.only("~~strikethrough~~", function () {
+describe("~~strikethrough~~", function () {
   it("parses strikethrough", function () {
     const tree = parseMarkdown("~~struck through text~~");
     expect(dig(tree, "children")).to.deep.equal([
@@ -209,7 +209,7 @@ describe.only("~~strikethrough~~", function () {
         },
       ],
     };
-    expect(stringifyMarkdown(tree)).to.equal("~~struck through text~~\n");
+    expect(mdastToString(tree)).to.equal("~~struck through text~~\n");
   });
 });
 
@@ -218,4 +218,20 @@ describe("Heading conversion", function () {
   it(
     'serializes markdown headings from type: "h1", "h2", to type: "heading" with correct depth',
   );
+});
+
+describe("Whacky shit that breaks Slate", function () {
+  // This crashes my _PRODUCTION_ Chronicles so its not related to the markdown changes
+  // It also reminds me I DESPERATELY need a way to work this out, something like:
+  // 1. ErrorBoundary so you can go back
+  // 2. Display the note (File location) that errored, and the error
+  // 3. Instruct user they m ay be able to modify the note, but then WHY DO I HAVE TO RECALL SYNC FOR IT TO PICK IT UP? Figure that part out!
+  const bunk = `
+
+  **~~~~**
+
+  -   ~~Attempt to add wikilink parsing + test~~
+  
+      -   ~~Test is ready;~~ [~~review OFM plugin~~](https://github.com/MoritzRS/obsidian-ext)
+`;
 });
