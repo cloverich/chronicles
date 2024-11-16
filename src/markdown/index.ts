@@ -48,7 +48,11 @@ export const parseMarkdown = (markdown: string): Mdast2.Root => {
 };
 
 export const mdastToString = (tree: Mdast2.Nodes) => {
-  return toMarkdown(tree, { extensions: [gfmToMarkdown() as any] });
+  return toMarkdown(tree, {
+    extensions: [gfmToMarkdown() as any],
+    bullet: "-",
+    emphasis: "_",
+  });
 };
 
 export const stringToSlate = (input: string) => {

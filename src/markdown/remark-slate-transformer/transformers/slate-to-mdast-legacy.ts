@@ -1,4 +1,3 @@
-import * as mdast2 from "mdast";
 import * as unistLib from "unist";
 import * as mdast from "../models/mdast";
 import * as slate from "../models/slate";
@@ -48,11 +47,16 @@ type TextOrDecoration =
   | mdast.Delete
   | mdast.InlineCode;
 
-export function slateToMdast(nodes: slate.Node[]): mdast2.Root {
-  return {
+export function slateToMdast(node: slate.Node): unistLib.Node {
+  return createMdastRoot(node);
+}
+
+function createMdastRoot(node: slate.Node): unistLib.Node {
+  const root: mdast.Root = {
     type: "root",
-    children: convertNodes(nodes),
+    children: convertNodes((node as any).children) as mdast.Root["children"],
   };
+  return root as any as unistLib.Node;
 }
 
 export function convertNodes(nodes: slate.Node[]): unistLib.Node[] {
@@ -287,7 +291,6 @@ function mergeTexts(nodes: TextOrDecoration[]): TextOrDecoration[] {
       res.push(cur);
     }
   }
-
   return res;
 }
 

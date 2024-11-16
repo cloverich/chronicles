@@ -41,6 +41,10 @@ export class SlateTransformer {
     const copiedNodes = JSON.parse(JSON.stringify(nodes));
 
     copiedNodes.forEach((n: any) => {
+      // todo: May no longer be necessary?
+      if (!n.type) {
+        console.warn('Slate node missing "type" property:', n);
+      }
       n.type = n.type || "paragraph";
     });
     return slateToString(copiedNodes);
