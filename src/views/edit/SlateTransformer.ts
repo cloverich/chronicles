@@ -1,5 +1,5 @@
-import { Node as SlateNode } from "slate";
 import { slateToMdast, slateToString, stringToSlate } from "../../markdown";
+import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 
 /**
  * Helper to convert markdown text into Slate nodes, and vice versa
@@ -10,7 +10,7 @@ export class SlateTransformer {
   /**
    * Convert raw text to a Slate DOM
    */
-  static nodify(text: string): SlateNode[] {
+  static nodify(text: string): SlateCustom.SlateNode[] {
     // If content is empty, this call prdouces invalid output
     // ([{text: ""}]) instead of a paragraph with an empty child
     // Content should not be empty, but because of UI or other bugs can happen
@@ -30,7 +30,7 @@ export class SlateTransformer {
   /**
    * Convert Slate JSON into a markdown string for persistence
    */
-  static stringify(nodes: SlateNode[]): string {
+  static stringify(nodes: SlateCustom.SlateNode[]): string {
     // todo: For some reason, the Slate text nodes are missing the "type: paragraph" property.
     // Whether that is expected or not, the parser does not seem to handle that, and
     // silently drops them. Manually adjusting with a defensive copy gets the job done for now,
@@ -50,7 +50,7 @@ export class SlateTransformer {
     return slateToString(copiedNodes);
   }
 
-  static mdastify(nodes: SlateNode[]): any {
+  static mdastify(nodes: SlateCustom.SlateNode[]): any {
     return slateToMdast(nodes);
   }
 }

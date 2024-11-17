@@ -13,8 +13,6 @@ import {
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
 
-// todo: this is a dumb way to do this.. see how ts-mdast is exported
-// import * as mdast from "../../markdown/remark-slate-transformer/models/mdast";
 import * as mdast from "mdast";
 
 export type IImporterClient = ImporterClient;

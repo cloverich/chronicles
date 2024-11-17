@@ -1,4 +1,4 @@
-import * as mdast from "../../../../../markdown/remark-slate-transformer/models/mdast";
+import mdast from "mdast";
 import { Node } from "../../../../../markdown/remark-slate-transformer/models/slate";
 import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
 

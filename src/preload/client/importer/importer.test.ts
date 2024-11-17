@@ -2,7 +2,7 @@
 // While I dev. May keep this around, but its pretty hacky and far
 // from complete or a real test suite.
 import { diff } from "deep-object-diff";
-import { stringToMdast } from "../../../markdown";
+import { parseMarkdown } from "../../../markdown";
 import { ImporterClient } from "../importer";
 import { parseTitleAndFrontMatter } from "./frontmatter";
 
@@ -374,7 +374,7 @@ function testIsFileLink(importer: ImporterClient) {
   // parse links out of the markdown string
   // maybe better to just manually create mdast objects
   const links = getLinkLike(
-    stringToMdast(`
+    parseMarkdown(`
 # Test case
 
 ![file](sers/cloverich/Documents/chronicles-development/export)

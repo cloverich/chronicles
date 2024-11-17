@@ -1,8 +1,5 @@
-import * as mdast2 from "mdast";
-import * as unistLib from "unist";
-import * as mdast from "../models/mdast";
-import * as slate from "../models/slate";
-import * as SlateNodes from "./mdast-to-slate";
+import * as mdast from "mdast";
+import * as SlateCustom from "./mdast-to-slate";
 
 import { Node as SNode } from "slate";
 
@@ -48,18 +45,20 @@ type TextOrDecoration =
   | mdast.Delete
   | mdast.InlineCode;
 
-export function slateToMdast(nodes: slate.Node[]): mdast2.Root {
+export function slateToMdast(nodes: SlateCustom.SlateNode[]): mdast.Root {
   return {
     type: "root",
     children: convertNodes(nodes),
   };
 }
 
-export function convertNodes(nodes: slate.Node[]): unistLib.Node[] {
-  const mdastNodes: unistLib.Node[] = [];
-  let textQueue: SlateNodes.Text[] = [];
+export function convertNodes(
+  nodes: SlateCustom.SlateNode[],
+): mdast.RootContent[] {
+  const mdastNodes: mdast.RootContent[] = [];
+  let textQueue: SlateCustom.Text[] = [];
   for (let i = 0; i <= nodes.length; i++) {
-    const n = nodes[i] as SlateNodes.SlateNode;
+    const n = nodes[i];
     if (n && isText(n)) {
       textQueue.push(n);
     } else {
@@ -164,12 +163,12 @@ export function convertNodes(nodes: slate.Node[]): unistLib.Node[] {
         textTemp = "";
       }
 
-      mdastNodes.push(...(mergeTexts(mdastTexts) as any as unistLib.Node[]));
+      mdastNodes.push(...mergeTexts(mdastTexts));
       textQueue = [];
       if (!n) continue;
       const node = createMdastNode(n);
       if (node) {
-        mdastNodes.push(node as unistLib.Node);
+        mdastNodes.push(node);
       }
     }
   }
@@ -217,10 +216,10 @@ function createMdastNode(
     case "code": // NOTE: don't think this is used by plate
     case ELEMENT_CODE_BLOCK:
       return createCode(node);
-    case "yaml":
-      return createYaml(node);
-    case "toml":
-      return createToml(node);
+    // case "yaml":
+    //   return createYaml(node);
+    // case "toml":
+    //   return createToml(node);
     case "definition":
       return createDefinition(node);
     case "footnoteDefinition":
@@ -241,28 +240,28 @@ function createMdastNode(
       return createLinkFromNoteLink(node);
     case "imageReference":
       return createImageReference(node);
-    case "footnote":
-      return createFootnote(node);
-    case "footnoteReference":
-      return creatFootnoteReference(node);
-    case "math":
-      return createMath(node);
-    case "inlineMath":
-      return createInlineMath(node);
+    // case "footnote":
+    //   return createFootnote(node);
+    // case "footnoteReference":
+    //   return creatFootnoteReference(node);
+    // case "math":
+    //   return createMath(node);
+    // case "inlineMath":
+    //   return createInlineMath(node);
     default:
-      console.warn(
-        "slateToMdast encountered unknown node type:",
-        node,
-        "If this is a custom node, it will not be converted to markdown (and likely not-persisted)",
-      );
-      // @ts-ignore
-      const _: never = node;
-      break;
+    // console.warn(
+    //   "slateToMdast encountered unknown node type:",
+    //   node,
+    //   "If this is a custom node, it will not be converted to markdown (and likely not-persisted)",
+    // );
+    // // @ts-ignore
+    // const _: never = node;
+    // break;
   }
   return null;
 }
 
-function isText(node: SlateNodes.SlateNode): node is SlateNodes.Text {
+function isText(node: SlateCustom.SlateNode): node is SlateCustom.Text {
   return "text" in node;
 }
 
@@ -291,7 +290,7 @@ function mergeTexts(nodes: TextOrDecoration[]): TextOrDecoration[] {
   return res;
 }
 
-function createParagraph(node: SlateNodes.Paragraph): mdast.Paragraph {
+function createParagraph(node: SlateCustom.Paragraph): mdast.Paragraph {
   const { type, children } = node;
   return {
     type: "paragraph",
@@ -313,7 +312,7 @@ function headingToDepth(heading: string): 1 | 2 | 3 {
   }
 }
 
-function createHeading(node: SlateNodes.Heading): mdast.Heading {
+function createHeading(node: SlateCustom.Heading): mdast.Heading {
   const { type, depth, children } = node;
   return {
     type: "heading",
@@ -325,7 +324,7 @@ function createHeading(node: SlateNodes.Heading): mdast.Heading {
 }
 
 function createThematicBreak(
-  node: SlateNodes.ThematicBreak,
+  node: SlateCustom.ThematicBreak,
 ): mdast.ThematicBreak {
   const { type } = node;
   return {
@@ -333,7 +332,7 @@ function createThematicBreak(
   };
 }
 
-function createBlockquote(node: SlateNodes.Blockquote): mdast.Blockquote {
+function createBlockquote(node: SlateCustom.Blockquote): mdast.Blockquote {
   const { type, children } = node;
   return {
     type,
@@ -341,7 +340,7 @@ function createBlockquote(node: SlateNodes.Blockquote): mdast.Blockquote {
   };
 }
 
-function createList(node: SlateNodes.List): mdast.List {
+function createList(node: SlateCustom.List): mdast.List {
   const { type, ordered, start, spread, children } = node;
 
   return {
@@ -354,7 +353,7 @@ function createList(node: SlateNodes.List): mdast.List {
   };
 }
 
-function createListItem(node: SlateNodes.ListItem): mdast.ListItem {
+function createListItem(node: SlateCustom.ListItem): mdast.ListItem {
   const { type, checked, spread, children } = node;
   return {
     type: "listItem",
@@ -364,7 +363,7 @@ function createListItem(node: SlateNodes.ListItem): mdast.ListItem {
   };
 }
 
-function createTable(node: SlateNodes.Table): mdast.Table {
+function createTable(node: SlateCustom.Table): mdast.Table {
   const { type, align, children } = node;
   return {
     type,
@@ -373,7 +372,7 @@ function createTable(node: SlateNodes.Table): mdast.Table {
   };
 }
 
-function createTableRow(node: SlateNodes.TableRow): mdast.TableRow {
+function createTableRow(node: SlateCustom.TableRow): mdast.TableRow {
   const { type, children } = node;
   return {
     type,
@@ -381,7 +380,7 @@ function createTableRow(node: SlateNodes.TableRow): mdast.TableRow {
   };
 }
 
-function createTableCell(node: SlateNodes.TableCell): mdast.TableCell {
+function createTableCell(node: SlateCustom.TableCell): mdast.TableCell {
   const { type, children } = node;
   return {
     type,
@@ -389,7 +388,7 @@ function createTableCell(node: SlateNodes.TableCell): mdast.TableCell {
   };
 }
 
-function createHtml(node: SlateNodes.Html): mdast.HTML {
+function createHtml(node: SlateCustom.Html): mdast.HTML {
   const { type, children } = node;
   return {
     type,
@@ -406,7 +405,7 @@ function createHtml(node: SlateNodes.Html): mdast.HTML {
  * MDAST (seems to) expect just text in its code block element. This code
  * implements that. See the reverse transformation in mdast-to-slate.ts - createCodeBlock
  */
-function createCode(node: SlateNodes.Code): mdast.Code {
+function createCode(node: SlateCustom.Code): mdast.Code {
   const { lang, meta } = node;
 
   // SNode.texts returns a generator that yields [{text: "foo"}, path] for each line
@@ -426,23 +425,23 @@ function createCode(node: SlateNodes.Code): mdast.Code {
   };
 }
 
-function createYaml(node: SlateNodes.Yaml): mdast.YAML {
-  const { type, children } = node;
-  return {
-    type,
-    value: children[0].text,
-  };
-}
+// function createYaml(node: SlateNodes.Yaml): mdast.YAML {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     value: children[0].text,
+//   };
+// }
 
-function createToml(node: SlateNodes.Toml): mdast.TOML {
-  const { type, children } = node;
-  return {
-    type,
-    value: children[0].text,
-  };
-}
+// function createToml(node: SlateNodes.Toml): mdast.TOML {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     value: children[0].text,
+//   };
+// }
 
-function createDefinition(node: SlateNodes.Definition): mdast.Definition {
+function createDefinition(node: SlateCustom.Definition): mdast.Definition {
   const { type, identifier, label, url, title } = node;
   return {
     type,
@@ -454,7 +453,7 @@ function createDefinition(node: SlateNodes.Definition): mdast.Definition {
 }
 
 function createFootnoteDefinition(
-  node: SlateNodes.FootnoteDefinition,
+  node: SlateCustom.FootnoteDefinition,
 ): mdast.FootnoteDefinition {
   const { type, identifier, label, children } = node;
   return {
@@ -467,14 +466,14 @@ function createFootnoteDefinition(
   };
 }
 
-function createBreak(node: SlateNodes.Break): mdast.Break {
+function createBreak(node: SlateCustom.Break): mdast.Break {
   const { type } = node;
   return {
     type,
   };
 }
 
-function createLink(node: SlateNodes.Link): mdast.Link {
+function createLink(node: SlateCustom.Link): mdast.Link {
   const { type, url, title, children } = node;
   return {
     type: "link",
@@ -486,7 +485,7 @@ function createLink(node: SlateNodes.Link): mdast.Link {
 
 const createLinkFromNoteLink = createLinkFromNoteLinkFactory(convertNodes);
 
-function createImage(node: SlateNodes.Image | SlateNodes.Video): mdast.Image {
+function createImage(node: SlateCustom.Image | SlateCustom.Video): mdast.Image {
   const { type, url, title, alt } = node;
   return {
     // 1. Slate image may have type: "img" -- convert to something mdast understands
@@ -508,7 +507,7 @@ function createImage(node: SlateNodes.Image | SlateNodes.Video): mdast.Image {
 }
 
 function createLinkReference(
-  node: SlateNodes.LinkReference,
+  node: SlateCustom.LinkReference,
 ): mdast.LinkReference {
   const { type, identifier, label, referenceType, children } = node;
   return {
@@ -521,7 +520,7 @@ function createLinkReference(
 }
 
 function createImageReference(
-  node: SlateNodes.ImageReference,
+  node: SlateCustom.ImageReference,
 ): mdast.ImageReference {
   const { type, identifier, label, alt, referenceType } = node;
   return {
@@ -533,16 +532,16 @@ function createImageReference(
   };
 }
 
-function createFootnote(node: SlateNodes.Footnote): mdast.Footnote {
-  const { type, children } = node;
-  return {
-    type,
-    children: convertNodes(children) as any as mdast.Footnote["children"],
-  };
-}
+// function createFootnote(node: SlateNodes.Footnote): mdast.Footnote {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     children: convertNodes(children) as any as mdast.Footnote["children"],
+//   };
+// }
 
 function creatFootnoteReference(
-  node: SlateNodes.FootnoteReference,
+  node: SlateCustom.FootnoteReference,
 ): mdast.FootnoteReference {
   const { type, identifier, label } = node;
   return {
@@ -552,18 +551,18 @@ function creatFootnoteReference(
   };
 }
 
-function createMath(node: SlateNodes.Math): mdast.Math {
-  const { type, children } = node;
-  return {
-    type,
-    value: children[0].text,
-  };
-}
+// function createMath(node: SlateNodes.Math): mdast.Math {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     value: children[0].text,
+//   };
+// }
 
-function createInlineMath(node: SlateNodes.InlineMath): mdast.InlineMath {
-  const { type, children } = node;
-  return {
-    type,
-    value: children[0].text,
-  };
-}
+// function createInlineMath(node: SlateNodes.InlineMath): mdast.InlineMath {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     value: children[0].text,
+//   };
+// }
