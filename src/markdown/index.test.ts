@@ -214,14 +214,14 @@ describe("Slate processing", function () {
     describe("stand-alone images", function () {
       const doc = {
         markdown:
-          "![75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg](../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg)",
+          "![75d97cd0e4b3f42f58aa80cefab00fec\\_res.jpeg](../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg)",
         mdast: {
           type: "root",
           children: [
             {
               type: "image",
               url: "../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
-              title: null,
+              title: undefined,
               alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
             },
           ],
@@ -230,7 +230,7 @@ describe("Slate processing", function () {
           {
             type: "img",
             url: "chronicles://../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
-            title: null,
+            title: undefined,
             alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
             caption: [
               {
@@ -450,7 +450,7 @@ describe("Known issues / limitations", function () {
   // i.e. (<p><img/></p> -> <img/>), this confuses the markdown context and it ends up stripping all newlines in the output
   // for whatever reason. Removing image unwrap fixes this problem (but introduces others), so I can try and re-wrap them then
   // use this test to verify the fix.
-  it.skip("does not collapse newlines when naked images", function () {
+  it("does not collapse newlines when naked images", function () {
     const markdown = `![alt text](https://example.com)\n\n![alt text](https://example.com)\n\n# Paragraph\n\nSome text\n`;
     const actual = slateToString(stringToSlate(markdown));
     expect(actual).to.equal(markdown);

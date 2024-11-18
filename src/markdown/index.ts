@@ -13,7 +13,8 @@ import { ofmWikilink } from "./micromark-extension-ofm-wikilink";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
 
 // stand-alone images are parsed as paragraphs with a single image child; this
-// converts them to just the image node
+// converts them to just the image node because in Slate rendering we don't want
+// imges to be children of paragraphs. But note this will confuse the mdast serializer
 function unwrapImages(tree: mdast.Root) {
   tree.children = tree.children.map((child) => {
     if (
@@ -22,6 +23,23 @@ function unwrapImages(tree: mdast.Root) {
       child.children[0].type === "image"
     ) {
       return child.children[0];
+    }
+    return child;
+  });
+
+  return tree;
+}
+
+// todo: Incorporate into mdast util properly, and do we need position nodes?
+// see unwrap images; we need to re-wrap top-level images with paragraphs otherwise
+// mdast-util-to-string FREAKS out and collapses all
+function wrapImages(tree: mdast.Root) {
+  tree.children = tree.children.map((child) => {
+    if (child.type === "image") {
+      return {
+        type: "paragraph",
+        children: [child],
+      };
     }
     return child;
   });
@@ -48,8 +66,6 @@ export const stringToSlate = (input: string) => {
   return mdastToSlate(unwrapImages(parseMarkdown(input)));
 };
 
-// todo: nodes should be of type custom nodes, not as the base
-// slate nodes... hmm...
 export const slateToString = (nodes: SlateCustom.SlateNode[]) => {
-  return mdastToString(slateToMdast(nodes));
+  return mdastToString(wrapImages(slateToMdast(nodes)));
 };
