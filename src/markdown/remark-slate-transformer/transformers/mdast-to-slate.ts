@@ -1,6 +1,5 @@
-// import * as mdast from "../models/mdast";
 import * as mdast from "mdast";
-import * as slate from "../models/slate";
+import * as slate from "slate";
 
 function toUndefined<T>(value: T | undefined | null): T | undefined {
   return value ?? undefined;
