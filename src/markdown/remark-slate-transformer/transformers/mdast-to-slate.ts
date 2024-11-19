@@ -127,11 +127,53 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
     // case "inlineMath":
     //   return [createInlineMath(node)];
     // case "yaml":
+    case "ofmWikiembedding":
+      return [createTextFromWikiLink(node)];
+    case "ofmWikilink":
+      return [createTextFromWikiLink(node)];
     default:
       // const _: never = node;
       break;
   }
   return [];
+}
+
+// NOTE: We added parsing of ofmWikiLinks so we can turn them into regular markdown links
+// on import; but we don't directly support them in the editor. Here we transform them into
+// plain text nodes, and when serialized back to markdown, they'll end up as e.g.
+// \[\[MyWikiLink]] - which will be parsed as regular text thereafter.
+// In practice; we generally shouldn't see wikilinks in Chronicles since we try to convert
+// them all in import; but if we dont, better to do this than die confusingly.
+function createTextFromWikiLink(
+  node: mdast.OfmWikilink | mdast.OfmWikiEmbedding,
+) {
+  // Given the parsed parts, reconstruct the original link:
+  // <url>#<hash>|<value> - [[my_file.md#my_header|A prettier name]]
+  let { type, url, hash, value } = node;
+
+  value = value ?? "";
+  url = url ?? "";
+
+  // Hash is optionally joined, if present
+  let namePart = url;
+  namePart = [namePart, hash].filter(Boolean).join("#");
+
+  // The library sets the url and value (alias) to the same thing, stripping the
+  // trailing extension (link.md -> link),  when no alias is present. So if they don't (sub)match,
+  // assume the alias differs and we should serialize as <name>|<alias>; otherwise we discard the alias.
+  if (!url.includes(value)) {
+    namePart = `${namePart}|${value}`;
+  }
+
+  // wrap in brackets
+  let text = `[[${namePart}]]`;
+
+  // Because this function handles both, prepend with ! if its an embedding.
+  if (type === "ofmWikiembedding") {
+    text = `!${text}`;
+  }
+
+  return { text };
 }
 
 export type Paragraph = ReturnType<typeof createParagraph>;

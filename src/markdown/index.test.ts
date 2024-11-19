@@ -3,7 +3,7 @@ import fs from "fs";
 import { describe, it } from "mocha";
 import path from "path";
 
-import { slateToMdast, slateToString, stringToSlate } from "./index.js";
+import { slateToString, stringToSlate } from "./index.js";
 import { dig, parseMarkdown } from "./test-utils.js";
 
 // Tests can structure the data this way and use runTests to
@@ -54,7 +54,7 @@ function runTests(doc: TestDoc) {
   // round trip properly if it does not parse at all (ex: wikilinks without a handler)
   if (doc.mdast) {
     it("markdown->mdast", function () {
-      const result = slateToMdast(stringToSlate(inputMarkdown(doc.markdown)));
+      const result = parseMarkdown(inputMarkdown(doc.markdown));
       expect(result).to.deep.equal(doc.mdast);
     });
   }
@@ -76,9 +76,6 @@ describe("Slate processing", function () {
 
     it("parses and serializes unaltered", function () {
       const slate = stringToSlate(markdown.toString());
-      // console.log(JSON.stringify(slate, null, 2));
-      // console.log(JSON.stringify(slateToMdast(slate), null, 2));
-      // console.log(JSON.stringify(mdastToString(slateToMdast(slate))));
       const result = slateToString(slate);
       expect(result).to.equal(markdown.toString());
     });
@@ -219,10 +216,15 @@ describe("Slate processing", function () {
           type: "root",
           children: [
             {
-              type: "image",
-              url: "../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
-              title: undefined,
-              alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
+              type: "paragraph",
+              children: [
+                {
+                  type: "image",
+                  url: "../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
+                  title: null,
+                  alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
+                },
+              ],
             },
           ],
         },
@@ -264,7 +266,7 @@ describe("Slate processing", function () {
                 {
                   type: "link",
                   url: "../research/01931c56fc2378079233d986767c519c.md",
-                  title: "",
+                  title: null,
                   children: [
                     {
                       type: "text",
@@ -312,7 +314,7 @@ describe("Slate processing", function () {
                 {
                   type: "link",
                   url: "../research/01931c56fc2378079233d986767c519c.md",
-                  title: "",
+                  title: null,
                   children: [],
                 },
               ],
@@ -403,38 +405,79 @@ describe("[[Wikilinks]]", function () {
   // remove the fork later and know its still working.
   // Lifted from https://github.com/MoritzRS/obsidian-ext/blob/main/packages/mdast-util-ofm-wikilink/test/base.test.ts
   // MIT License
-  it("wikilinks", async function () {
-    const tree = parseMarkdown(
-      "a [[link]] [[link.md]] [[link#hash]] [[link#hash|alias]] ![[link]] ![[link.md]] ![[link#hash]] ![[link#hash|alias]] ![[Document.pdf#page=3]] b",
-    );
+  const doc = {
+    markdown: {
+      in: "a [[link]] [[link.md]] [[link#hash]] [[link#hash|alias]] ![[link]] ![[link.md]] ![[link#hash]] ![[link#hash|alias]] ![[Document.pdf#page=3]] b",
+      // note: because we currently treat wikilinks as raw text, the output escapes the brackets; they won't be parsed as ofmwikilink's the second time around
+      out: "a \\[\\[link]] \\[\\[link.md]] \\[\\[link#hash]] \\[\\[link#hash|alias]] !\\[\\[link]] !\\[\\[link.md]] !\\[\\[link#hash]] !\\[\\[link#hash|alias]] !\\[\\[Document.pdf#page=3]] b",
+    },
 
-    expect(dig(tree, "children.0.children")).to.deep.equal([
-      { type: "text", value: "a " },
-      { type: "ofmWikilink", value: "link", url: "link", hash: "" },
-      { type: "text", value: " " },
-      { type: "ofmWikilink", value: "link", url: "link.md", hash: "" },
-      { type: "text", value: " " },
-      { type: "ofmWikilink", value: "link", url: "link", hash: "hash" },
-      { type: "text", value: " " },
-      { type: "ofmWikilink", value: "alias", url: "link", hash: "hash" },
-      { type: "text", value: " " },
-      { type: "ofmWikiembedding", value: "link", url: "link", hash: "" },
-      { type: "text", value: " " },
-      { type: "ofmWikiembedding", value: "link", url: "link.md", hash: "" },
-      { type: "text", value: " " },
-      { type: "ofmWikiembedding", value: "link", url: "link", hash: "hash" },
-      { type: "text", value: " " },
-      { type: "ofmWikiembedding", value: "alias", url: "link", hash: "hash" },
-      { type: "text", value: " " },
+    mdast: {
+      type: "root",
+      children: [
+        {
+          type: "paragraph",
+
+          children: [
+            { type: "text", value: "a " },
+            { type: "ofmWikilink", value: "link", url: "link", hash: "" },
+            { type: "text", value: " " },
+            { type: "ofmWikilink", value: "link", url: "link.md", hash: "" },
+            { type: "text", value: " " },
+            { type: "ofmWikilink", value: "link", url: "link", hash: "hash" },
+            { type: "text", value: " " },
+            { type: "ofmWikilink", value: "alias", url: "link", hash: "hash" },
+            { type: "text", value: " " },
+            { type: "ofmWikiembedding", value: "link", url: "link", hash: "" },
+            { type: "text", value: " " },
+            {
+              type: "ofmWikiembedding",
+              value: "link",
+              url: "link.md",
+              hash: "",
+            },
+            { type: "text", value: " " },
+            {
+              type: "ofmWikiembedding",
+              value: "link",
+              url: "link",
+              hash: "hash",
+            },
+            { type: "text", value: " " },
+            {
+              type: "ofmWikiembedding",
+              value: "alias",
+              url: "link",
+              hash: "hash",
+            },
+            { type: "text", value: " " },
+            {
+              type: "ofmWikiembedding",
+              value: "Document",
+              url: "Document.pdf",
+              hash: "page=3",
+            },
+            { type: "text", value: " b" },
+          ],
+        },
+      ],
+    },
+
+    // todo: Implement its just a bunch of { text } nodes,
+    // then leave follow-up issue marker
+    slate: [
       {
-        type: "ofmWikiembedding",
-        value: "Document",
-        url: "Document.pdf",
-        hash: "page=3",
+        type: "p",
+        children: [
+          {
+            text: "a [[link]] [[link.md]] [[link#hash]] [[link#hash|alias]] ![[link]] ![[link.md]] ![[link#hash]] ![[link#hash|alias]] ![[Document.pdf#page=3]] b",
+          },
+        ],
       },
-      { type: "text", value: " b" },
-    ]);
-  });
+    ],
+  };
+
+  runTests(doc);
 });
 
 // A place to put behavior that is not yet handled correctly; so I can store test

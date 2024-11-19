@@ -179,6 +179,8 @@ export function convertNodes(
 function createMdastNode(
   node: any, //Exclude<slateInternal.SlateNode, slateInternal.Text> --> as any because the switch thinks node.type is a string
 ): Exclude<mdast.Content, TextOrDecoration> | null {
+  // todo: convert to map and generate this mapping
+  // todo: replace all string case statements with plate types
   switch (node.type) {
     case ELEMENT_LIC: // NOTE: added.
     case "paragraph":
