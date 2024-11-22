@@ -1,8 +1,8 @@
 import { toaster } from "evergreen-ui";
 import { debounce, pick } from "lodash";
 import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
-import { Node as SlateNode } from "slate";
 import { IClient } from "../../hooks/useClient";
+import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 import { GetDocumentResponse } from "../../preload/client/documents";
 import { SlateTransformer } from "./SlateTransformer";
 
@@ -51,7 +51,7 @@ export class EditableDocument {
   @observable tags: string[] = [];
 
   // editor properties
-  slateContent: SlateNode[];
+  slateContent: SlateCustom.SlateNode[];
   @observable private changeCount = 0;
 
   // reaction clean-up when component unmounts; see constructor
@@ -96,7 +96,7 @@ export class EditableDocument {
     );
   }
 
-  setSlateContent = (nodes: SlateNode[]) => {
+  setSlateContent = (nodes: SlateCustom.SlateNode[]) => {
     // NOTE: This is called when the cursor moves, but the content appears to be unchanged
     // It seems like the slate nodes always change if any content changes, so this is
     // hopefully safe :|

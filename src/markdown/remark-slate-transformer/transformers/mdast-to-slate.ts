@@ -1,5 +1,9 @@
-import * as mdast from "../models/mdast";
-import * as slate from "../models/slate";
+import * as mdast from "mdast";
+import * as slate from "slate";
+
+function toUndefined<T>(value: T | undefined | null): T | undefined {
+  return value ?? undefined;
+}
 
 // One of the main reasons this fork exists:
 // NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
@@ -79,10 +83,10 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
       return [createHtml(node)];
     case "code":
       return [createCodeBlock(node)];
-    case "yaml":
-      return [createYaml(node)];
-    case "toml":
-      return [createToml(node)];
+    // case "yaml":
+    //   return [createYaml(node)];
+    // case "toml":
+    //   return [createToml(node)];
     case "definition":
       return [createDefinition(node)];
     case "footnoteDefinition":
@@ -114,19 +118,62 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
       return [createLinkReference(node, deco)];
     case "imageReference":
       return [createImageReference(node)];
-    case "footnote":
-      return [createFootnote(node, deco)];
+    // case "footnote":
+    //   return [createFootnote(node, deco)];
     case "footnoteReference":
       return [createFootnoteReference(node)];
-    case "math":
-      return [createMath(node)];
-    case "inlineMath":
-      return [createInlineMath(node)];
+    // case "math":
+    //   return [createMath(node)];
+    // case "inlineMath":
+    //   return [createInlineMath(node)];
+    // case "yaml":
+    case "ofmWikiembedding":
+      return [createTextFromWikiLink(node)];
+    case "ofmWikilink":
+      return [createTextFromWikiLink(node)];
     default:
-      const _: never = node;
+      // const _: never = node;
       break;
   }
   return [];
+}
+
+// NOTE: We added parsing of ofmWikiLinks so we can turn them into regular markdown links
+// on import; but we don't directly support them in the editor. Here we transform them into
+// plain text nodes, and when serialized back to markdown, they'll end up as e.g.
+// \[\[MyWikiLink]] - which will be parsed as regular text thereafter.
+// In practice; we generally shouldn't see wikilinks in Chronicles since we try to convert
+// them all in import; but if we dont, better to do this than die confusingly.
+function createTextFromWikiLink(
+  node: mdast.OfmWikilink | mdast.OfmWikiEmbedding,
+) {
+  // Given the parsed parts, reconstruct the original link:
+  // <url>#<hash>|<value> - [[my_file.md#my_header|A prettier name]]
+  let { type, url, hash, value } = node;
+
+  value = value ?? "";
+  url = url ?? "";
+
+  // Hash is optionally joined, if present
+  let namePart = url;
+  namePart = [namePart, hash].filter(Boolean).join("#");
+
+  // The library sets the url and value (alias) to the same thing, stripping the
+  // trailing extension (link.md -> link),  when no alias is present. So if they don't (sub)match,
+  // assume the alias differs and we should serialize as <name>|<alias>; otherwise we discard the alias.
+  if (!url.includes(value)) {
+    namePart = `${namePart}|${value}`;
+  }
+
+  // wrap in brackets
+  let text = `[[${namePart}]]`;
+
+  // Because this function handles both, prepend with ! if its an embedding.
+  if (type === "ofmWikiembedding") {
+    text = `!${text}`;
+  }
+
+  return { text };
 }
 
 export type Paragraph = ReturnType<typeof createParagraph>;
@@ -286,45 +333,45 @@ function createCodeBlock(node: mdast.Code) {
   };
 }
 
-export type Yaml = ReturnType<typeof createYaml>;
+// export type Yaml = ReturnType<typeof createYaml>;
 
-function createYaml(node: mdast.YAML) {
-  const { type, value } = node;
-  return {
-    type,
-    children: [{ text: value }],
-  };
-}
+// function createYaml(node: mdast.YAML) {
+//   const { type, value } = node;
+//   return {
+//     type,
+//     children: [{ text: value }],
+//   };
+// }
 
-export type Toml = ReturnType<typeof createToml>;
+// export type Toml = ReturnType<typeof createToml>;
 
-function createToml(node: mdast.TOML) {
-  const { type, value } = node;
-  return {
-    type,
-    children: [{ text: value }],
-  };
-}
+// function createToml(node: mdast.TOML) {
+//   const { type, value } = node;
+//   return {
+//     type,
+//     children: [{ text: value }],
+//   };
+// }
 
-export type Math = ReturnType<typeof createMath>;
+// export type Math = ReturnType<typeof createMath>;
 
-function createMath(node: mdast.Math) {
-  const { type, value } = node;
-  return {
-    type,
-    children: [{ text: value }],
-  };
-}
+// function createMath(node: mdast.Math) {
+//   const { type, value } = node;
+//   return {
+//     type,
+//     children: [{ text: value }],
+//   };
+// }
 
-export type InlineMath = ReturnType<typeof createInlineMath>;
+// export type InlineMath = ReturnType<typeof createInlineMath>;
 
-function createInlineMath(node: mdast.InlineMath) {
-  const { type, value } = node;
-  return {
-    type,
-    children: [{ text: value }],
-  };
-}
+// function createInlineMath(node: mdast.InlineMath) {
+//   const { type, value } = node;
+//   return {
+//     type,
+//     children: [{ text: value }],
+//   };
+// }
 
 export type Definition = ReturnType<typeof createDefinition>;
 
@@ -421,8 +468,8 @@ function createImage(node: mdast.Image): Image | Video {
     return {
       type: "video",
       url: prefixUrl(url),
-      title,
-      alt,
+      title: toUndefined(title),
+      alt: toUndefined(alt),
       // NOTE: Plate uses "caption" for alt (createCaptionPlugin + CaptionElement)
       caption: [{ text: alt || "" }],
       children: [{ text: "" }],
@@ -435,8 +482,8 @@ function createImage(node: mdast.Image): Image | Video {
     type: "img",
     // NOTE: I modify url's here which is a bit silly but i'm in hack-it-in mode so :|
     url: prefixUrl(url),
-    title,
-    alt,
+    title: toUndefined(title),
+    alt: toUndefined(alt),
     // NOTE: Plate uses "caption" for alt (createCaptionPlugin + CaptionElement)
     caption: [{ text: alt || "" }],
     // NOTE: All slate nodes need text children
@@ -471,15 +518,15 @@ function createImageReference(node: mdast.ImageReference) {
   };
 }
 
-export type Footnote = ReturnType<typeof createFootnote>;
+// export type Footnote = ReturnType<typeof createFootnote>;
 
-function createFootnote(node: mdast.Footnote, deco: Decoration) {
-  const { type, children } = node;
-  return {
-    type,
-    children: convertNodes(children, deco),
-  };
-}
+// function createFootnote(node: mdast.Footnote, deco: Decoration) {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     children: convertNodes(children, deco),
+//   };
+// }
 
 export type FootnoteReference = ReturnType<typeof createFootnoteReference>;
 
@@ -505,8 +552,8 @@ export type SlateNode =
   | TableCell
   | Html
   | Code
-  | Yaml
-  | Toml
+  // | Yaml
+  // | Toml
   | Definition
   | FootnoteDefinition
   | Text
@@ -516,7 +563,11 @@ export type SlateNode =
   | Video
   | LinkReference
   | ImageReference
-  | Footnote
-  | FootnoteReference
-  | Math
-  | InlineMath;
+
+  // NOTE: I add this because convertNodes claims it wants only SlateNode, but some convertNodes
+  // calls here return slate.Node[]... so I need to unify these types somehow.
+  | slate.Node;
+// | Footnote
+// | FootnoteReference
+// | Math
+// | InlineMath;

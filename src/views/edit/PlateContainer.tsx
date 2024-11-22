@@ -12,7 +12,8 @@ import {
 } from "@udecode/plate-common";
 import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
-import { Node as SNode } from "slate";
+// import { Node as SNode } from "slate";
+import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 
 import {
   ELEMENT_BLOCKQUOTE,
@@ -110,10 +111,10 @@ import { EditorMode } from "./EditorMode";
 
 export interface Props {
   saving: boolean;
-  value: SNode[];
+  value: SlateCustom.SlateNode[];
   document: EditableDocument;
   journals: JournalResponse[];
-  setValue: (n: SNode[]) => any;
+  setValue: (n: SlateCustom.SlateNode[]) => any;
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
 }

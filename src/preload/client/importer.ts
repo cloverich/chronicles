@@ -13,13 +13,12 @@ import {
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
 
-// todo: this is a dumb way to do this.. see how ts-mdast is exported
-import * as mdast from "../../markdown/remark-slate-transformer/models/mdast";
+import * as mdast from "mdast";
 
 export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
-import { mdastToString, stringToMdast } from "../../markdown";
+import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
 
 const SKIPPABLE_FILES = new Set(".DS_Store");
@@ -285,7 +284,7 @@ export class ImporterClient {
       } catch (err: any) {
         await this.knex<StagedNote>("import_notes")
           .where({ importerId: item.importerId, sourcePath: item.sourcePath })
-          .update({ status: "note_created", error: err.message });
+          .update({ status: "processing_error", error: err.message });
         // todo: pre-validate ids are unique
         // https://github.com/cloverich/chronicles/issues/248
         console.error(
@@ -375,7 +374,7 @@ export class ImporterClient {
     }
 
     if ("children" in mdast) {
-      for (const child of mdast.children) {
+      for (const child of mdast.children as any) {
         this.updateNoteLinks(child, item, linkMapping);
       }
     }
@@ -695,7 +694,7 @@ export class ImporterClient {
     } else {
       if ("children" in mdast) {
         let results = [];
-        for await (const child of mdast.children) {
+        for await (const child of mdast.children as any) {
           await this.stageNoteFiles(importerId, importDir, sourcePath, child);
         }
       }
@@ -715,7 +714,7 @@ export class ImporterClient {
       }
     } else {
       if ("children" in mdast) {
-        for (const child of mdast.children) {
+        for (const child of mdast.children as any) {
           this.updateFileLinks(noteSourcePath, child, filesMapping);
         }
       }
