@@ -73,7 +73,12 @@ interface StagedNote {
   chroniclesId: string;
   chroniclesPath: string;
   status: string; // 'pending' | 'note_created'
-  error: string | null;
+  error?: string | null;
+}
+
+enum SourceType {
+  Notion = "notion",
+  Other = "other",
 }
 
 export class ImporterClient {
@@ -97,7 +102,7 @@ export class ImporterClient {
    *
    * Designed for my own Notion export, and assumes sync will be called afterwards.
    */
-  import = async (importDir: string) => {
+  import = async (importDir: string, sourceType: SourceType) => {
     await this.clearImportTables();
     const importerId = uuidv7obj().toHex();
     const chroniclesRoot = await this.ensureRoot();
@@ -126,8 +131,8 @@ export class ImporterClient {
     }
 
     console.log("importing directory", importDir);
-    await this.stageNotes(importDir, importerId, chroniclesRoot);
-    await this.processStagedNotes(chroniclesRoot);
+    await this.stageNotes(importDir, importerId, chroniclesRoot, sourceType);
+    await this.processStagedNotes(chroniclesRoot, sourceType);
   };
 
   // stage all notes and files in the import directory for processing.
@@ -137,12 +142,19 @@ export class ImporterClient {
     importDir: string,
     importerId: string,
     chroniclesRoot: string, // absolute path to chronicles root dir
+    sourceType: SourceType,
   ) => {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
 
     for await (const file of Files.walk(importDir, () => true, {})) {
-      await this.stageNote(file, importDir, importerId, journalsMapping);
+      await this.stageNote(
+        file,
+        importDir,
+        importerId,
+        journalsMapping,
+        sourceType,
+      );
     }
   };
 
@@ -152,6 +164,7 @@ export class ImporterClient {
     importDir: string,
     importerId: string,
     journals: Record<string, string>, // mapping of original folder path to journal name
+    sourceType: SourceType,
   ) => {
     const { ext, name, dir } = path.parse(file.path);
 
@@ -170,7 +183,6 @@ export class ImporterClient {
 
     // todo: sha comparison
     const contents = await Files.read(file.path);
-    const [, notionId] = stripNotionIdFromTitle(name);
 
     try {
       // todo: fallback title to filename - uuid
@@ -179,6 +191,7 @@ export class ImporterClient {
         dir,
         importDir,
         journals,
+        sourceType,
         // See notes in inferOrGenerateJournalName; this is a very specific
         // to my Notion export.
         frontMatter.Category,
@@ -206,12 +219,11 @@ export class ImporterClient {
       await this.stageNoteFiles(importerId, importDir, file.path, mdast);
 
       const chroniclesId = uuidv7obj().toHex();
-      const importItem = {
+      const stagedNote: StagedNote = {
         importerId,
         chroniclesId: chroniclesId,
         // hmm... what am I going to do with this? Should it be absolute to NOTES_DIR?
         chroniclesPath: `${path.join(journalName, chroniclesId)}.md`,
-        sourceId: notionId,
         sourcePath: file.path,
         title,
         content: body,
@@ -220,7 +232,12 @@ export class ImporterClient {
         status: "pending",
       };
 
-      await this.knex("import_notes").insert(importItem);
+      if (sourceType === SourceType.Notion) {
+        const [, notionId] = stripNotionIdFromTitle(name);
+        stagedNote.sourceId = notionId;
+      }
+
+      await this.knex("import_notes").insert(stagedNote);
     } catch (e) {
       // todo: this error handler is far too big, obviously
       console.error("Error processing note", file.path, e);
@@ -228,7 +245,10 @@ export class ImporterClient {
   };
 
   // Second pass; process all staged notes and files
-  private processStagedNotes = async (chroniclesRoot: string) => {
+  private processStagedNotes = async (
+    chroniclesRoot: string,
+    sourceType: SourceType,
+  ) => {
     await this.ensureRoot();
     const { id: importerId, importDir } = await this.knex("imports")
       .where({
@@ -243,7 +263,13 @@ export class ImporterClient {
       console.log("Processing import", importerId, importDir);
     }
 
-    await this.moveStagedFiles(chroniclesRoot, importerId, importDir);
+    await this.moveStagedFiles(
+      chroniclesRoot,
+      importerId,
+      importDir,
+      sourceType,
+    );
+
     const filesMapping = await this.movedFilePaths(importerId);
     const linkMapping = await this.noteLinksMapping(importerId);
 
@@ -270,7 +296,7 @@ export class ImporterClient {
             id: item.chroniclesId,
             journal: item.journal, // using name as id
             content: mdastToString(mdast),
-            title: item.title, //stripNotionIdFromTitle(name),
+            title: item.title,
             tags: frontMatter.tags || [],
             createdAt: frontMatter.createdAt,
             updatedAt: frontMatter.updatedAt,
@@ -411,6 +437,7 @@ export class ImporterClient {
     importDir: string,
     // cache / unique names checker (for when we have to generate name)
     journals: Record<string, string>,
+    sourceType: SourceType,
     category?: string,
   ): string => {
     // In _my_ Notion usage, most of my notes were in a "Documents" database and I
@@ -454,11 +481,15 @@ export class ImporterClient {
         .split(path.sep)
         // if leading with path.sep, kick out ''
         .filter(Boolean)
-        // Strip notionId from each part
-        // "Documents abc123eft" -> "Documents"
         .map((part) => {
-          const [folderNameWithoutId] = stripNotionIdFromTitle(part);
-          return folderNameWithoutId;
+          // Strip notionId from each part
+          // "Documents abc123eft" -> "Documents"
+          if (sourceType === SourceType.Notion) {
+            const [folderNameWithoutId] = stripNotionIdFromTitle(part);
+            return folderNameWithoutId;
+          } else {
+            return part;
+          }
         });
     }
 
@@ -609,6 +640,7 @@ export class ImporterClient {
     chroniclesRoot: string,
     importerId: string,
     importDir: string,
+    sourceType: SourceType,
   ) => {
     const files = await this.knex("import_files").where({
       importerId,

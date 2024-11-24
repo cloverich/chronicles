@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS "import_notes" (
     "status" TEXT NOT NULL, -- success, error
     "chroniclesId" TEXT NOT NULL,
     "chroniclesPath" TEXT NOT NULL,
+    -- todo: sourcePath + hash of content
     "sourcePath" TEXT NOT NULL PRIMARY KEY,
     "sourceId" TEXT,
     "error" BOOLEAN,
