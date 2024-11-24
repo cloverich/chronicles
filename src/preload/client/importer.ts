@@ -76,7 +76,7 @@ interface StagedNote {
   error?: string | null;
 }
 
-enum SourceType {
+export enum SourceType {
   Notion = "notion",
   Other = "other",
 }
@@ -186,7 +186,12 @@ export class ImporterClient {
 
     try {
       // todo: fallback title to filename - uuid
-      const { frontMatter, body, title } = parseTitleAndFrontMatter(contents);
+      const { frontMatter, body, title } = parseTitleAndFrontMatter(
+        contents,
+        name,
+        sourceType,
+      );
+
       const journalName = this.inferJournalName(
         dir,
         importDir,
@@ -197,15 +202,12 @@ export class ImporterClient {
         frontMatter.Category,
       );
 
-      // In a directory that was pre-formatted by Chronicles, this should not
-      // be needed. Will leave here as a reminder when I do the more generalized
-      // import routine.
+      // Prefer front-matter supplied create and update times, but fallback to file stats
+      // todo: check updatedAt, "Updated At", "Last Edited", etc.
       if (!frontMatter.createdAt) {
         frontMatter.createdAt = file.stats.ctime.toISOString();
       }
 
-      // todo: check updatedAt Updated At, Last Edited, etc.
-      // createdAt
       if (!frontMatter.updatedAt) {
         frontMatter.updatedAt = file.stats.mtime.toISOString();
       }
