@@ -19,9 +19,10 @@ export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
 import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
+import { WikiFileResolver } from "./importer/WikiFileResolver";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
 
-const SKIPPABLE_FILES = new Set(".DS_Store");
+export const SKIPPABLE_FILES = new Set(".DS_Store");
 
 // UUID in Notion notes look like 32 character hex strings; make this somewhat more lenient
 const hexIdRegex = /\b[0-9a-f]{16,}\b/;
@@ -131,7 +132,14 @@ export class ImporterClient {
     }
 
     console.log("importing directory", importDir);
-    await this.stageNotes(importDir, importerId, chroniclesRoot, sourceType);
+    const resolver = await WikiFileResolver.init(importDir);
+    await this.stageNotes(
+      importDir,
+      importerId,
+      chroniclesRoot,
+      sourceType,
+      resolver,
+    );
     await this.processStagedNotes(chroniclesRoot, sourceType);
   };
 
@@ -143,6 +151,7 @@ export class ImporterClient {
     importerId: string,
     chroniclesRoot: string, // absolute path to chronicles root dir
     sourceType: SourceType,
+    resolver: WikiFileResolver,
   ) => {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
@@ -154,6 +163,7 @@ export class ImporterClient {
         importerId,
         journalsMapping,
         sourceType,
+        resolver,
       );
     }
   };
@@ -165,6 +175,7 @@ export class ImporterClient {
     importerId: string,
     journals: Record<string, string>, // mapping of original folder path to journal name
     sourceType: SourceType,
+    resolver: WikiFileResolver,
   ) => {
     const { ext, name, dir } = path.parse(file.path);
 
@@ -218,7 +229,13 @@ export class ImporterClient {
 
       const mdast = stringToMdast(body);
 
-      await this.stageNoteFiles(importerId, importDir, file.path, mdast);
+      await this.stageNoteFiles(
+        importerId,
+        importDir,
+        file.path,
+        mdast,
+        resolver,
+      );
 
       const chroniclesId = uuidv7obj().toHex();
       const stagedNote: StagedNote = {
@@ -579,10 +596,11 @@ export class ImporterClient {
   // Mdast helper to determine if a node is a file link
   isFileLink = (
     mdast: mdast.Content | mdast.Root,
-  ): mdast is mdast.Image | mdast.Link => {
+  ): mdast is mdast.Image | mdast.Link | mdast.OfmWikiEmbedding => {
     return (
-      (mdast.type === "image" || mdast.type === "link") &&
-      !this.isNoteLink(mdast.url) &&
+      (((mdast.type === "image" || mdast.type === "link") &&
+        !this.isNoteLink(mdast.url)) ||
+        mdast.type === "ofmWikiembedding") &&
       !/^(https?|mailto|#|\/|\.|tel|sms|geo|data):/.test(mdast.url)
     );
   };
@@ -606,15 +624,33 @@ export class ImporterClient {
     );
   };
 
-  // Sanitize the url and stage it into the import_files table
+  // Stage the file into the import_files table, so we can move it and later
+  // update references to it in the original note(s).
   private stageFile = async (
     importerId: string,
     url: string, // mdast.url of the link
     noteSourcePath: string, // path to the note that contains the link
     // Might need this if we validate before staging
     importDir: string, // absolute path to import directory
-  ) => {
-    const resolvedUrl = this.cleanFileUrl(noteSourcePath, url);
+    isWikiEmbedding: boolean,
+    resolver: WikiFileResolver,
+  ): Promise<void> => {
+    // todo: May want to keep hash / query params in the import item, and re-build the correct url
+    // after. Query params and hashes are often special (like page pointed in PDF, file-resize
+    // in editor, etc). Hmmm... may need more examples from the wild to know what to do here.
+    // Tracking would be a first step.
+    let resolvedUrl: string | undefined;
+
+    if (isWikiEmbedding) {
+      resolvedUrl = resolver.resolve(url);
+    } else {
+      resolvedUrl = this.cleanFileUrl(noteSourcePath, url);
+    }
+
+    if (!resolvedUrl) {
+      console.error("Failed to resolve file link", url);
+      return;
+    }
 
     // todo: sourcePathResolved is the primary key; should be unique; but we don't need to error
     // here if it fails to insert; we can skip because we only need to stage and move it once
@@ -722,14 +758,29 @@ export class ImporterClient {
     importDir: string,
     sourcePath: string,
     mdast: mdast.Content | mdast.Root,
+    resolver: WikiFileResolver,
   ): Promise<void> => {
     if (this.isFileLink(mdast)) {
-      await this.stageFile(importerId, mdast.url, sourcePath, importDir);
+      const isWikiEmbedding = mdast.type === "ofmWikiembedding";
+      await this.stageFile(
+        importerId,
+        mdast.url,
+        sourcePath,
+        importDir,
+        isWikiEmbedding,
+        resolver,
+      );
     } else {
       if ("children" in mdast) {
         let results = [];
         for await (const child of mdast.children as any) {
-          await this.stageNoteFiles(importerId, importDir, sourcePath, child);
+          await this.stageNoteFiles(
+            importerId,
+            importDir,
+            sourcePath,
+            child,
+            resolver,
+          );
         }
       }
     }
