@@ -33,6 +33,9 @@ export class WikiFileResolver {
     return new WikiFileResolver(files);
   }
 
+  // todo: accept notePath and resolve relative links
+  // i.e. [[../2024-11-17-20241118102000781.webp]] -> /path/to/2024-11-17-20241118102000781.webp
+  // that incorporates the notePath when resolving the link
   resolve(name: string): string | undefined {
     const filestats = this.nameMapping[name];
     if (!filestats) {

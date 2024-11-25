@@ -140,7 +140,7 @@ export class ImporterClient {
       sourceType,
       resolver,
     );
-    await this.processStagedNotes(chroniclesRoot, sourceType);
+    await this.processStagedNotes(chroniclesRoot, sourceType, resolver);
   };
 
   // stage all notes and files in the import directory for processing.
@@ -267,6 +267,7 @@ export class ImporterClient {
   private processStagedNotes = async (
     chroniclesRoot: string,
     sourceType: SourceType,
+    resolver: WikiFileResolver,
   ) => {
     await this.ensureRoot();
     const { id: importerId, importDir } = await this.knex("imports")
@@ -306,7 +307,8 @@ export class ImporterClient {
 
       // chris: if item.sourcePath isn't the same sourcePath used to make the file link the first
       // time maybe wont be right. I changed a lot of code without testing yet.
-      this.updateFileLinks(item.sourcePath, mdast, filesMapping);
+      this.updateFileLinks(item.sourcePath, mdast, filesMapping, resolver);
+      this.convertWikiLinks(mdast);
 
       // with updated links we can now save the document
       try {
@@ -634,7 +636,7 @@ export class ImporterClient {
     importDir: string, // absolute path to import directory
     isWikiEmbedding: boolean,
     resolver: WikiFileResolver,
-  ): Promise<void> => {
+  ): Promise<string | undefined> => {
     // todo: May want to keep hash / query params in the import item, and re-build the correct url
     // after. Query params and hashes are often special (like page pointed in PDF, file-resize
     // in editor, etc). Hmmm... may need more examples from the wild to know what to do here.
@@ -662,6 +664,8 @@ export class ImporterClient {
         chroniclesId: uuidv7obj().toHex(),
         extension: path.extname(resolvedUrl),
       });
+
+      return resolvedUrl;
     } catch (err: any) {
       // file referenced more than once in note, or in more than one notes; if import logic
       // is good really dont even need to log this, should just skip
@@ -791,16 +795,44 @@ export class ImporterClient {
     noteSourcePath: string,
     mdast: mdast.Content | mdast.Root,
     filesMapping: Record<string, string>,
+    resolver: WikiFileResolver,
   ) => {
     if (this.isFileLink(mdast)) {
-      const url = this.cleanFileUrl(noteSourcePath, mdast.url);
-      if (url in filesMapping) {
-        mdast.url = filesMapping[url];
+      // note: The mdast type will be updated in convertWikiLinks
+      // todo: handle ofmWikiLink
+      if (mdast.type === "ofmWikiembedding") {
+        const url = resolver.resolve(mdast.url);
+        if (url && url in filesMapping) {
+          mdast.url = url;
+        }
+      } else {
+        const url = this.cleanFileUrl(noteSourcePath, mdast.url);
+        if (url in filesMapping) {
+          mdast.url = filesMapping[url];
+        }
       }
     } else {
       if ("children" in mdast) {
         for (const child of mdast.children as any) {
-          this.updateFileLinks(noteSourcePath, child, filesMapping);
+          this.updateFileLinks(noteSourcePath, child, filesMapping, resolver);
+        }
+      }
+    }
+  };
+
+  // note: This assumes the mdast.url property of wikiembedding / link is already
+  // updated by the updateFileLinks routine.
+  private convertWikiLinks = (mdast: mdast.Content | mdast.Root) => {
+    // todo: also handle ofmWikiLink
+    if (mdast.type === "ofmWikiembedding") {
+      // todo: figure out what to do about hash
+      (mdast as any).type = "image";
+      mdast.title = mdast.value;
+      mdast.alt = mdast.value;
+    } else {
+      if ("children" in mdast) {
+        for (const child of mdast.children as any) {
+          this.convertWikiLinks(child);
         }
       }
     }
