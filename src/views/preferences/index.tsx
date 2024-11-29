@@ -54,6 +54,9 @@ const Preferences = observer(() => {
         return;
       }
 
+      // todo: make configurable
+      // NOTE: If I import the enum it results in a preload import which results in
+      // trying to pull in node BOOM EVERYTHING DIES
       await client.importer.import(result);
       store.loading = false;
     } catch (e) {

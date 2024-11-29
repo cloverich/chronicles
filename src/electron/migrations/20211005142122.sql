@@ -58,9 +58,10 @@ CREATE TABLE IF NOT EXISTS "imports" (
 
 CREATE TABLE IF NOT EXISTS "import_files" (
     "importerId" TEXT NOT NULL,
-    "sourcePathResolved" TEXT NOT NULL PRIMARY KEY,
     "status" TEXT NOT NULL DEFAULT "pending",
     "chroniclesId" TEXT NOT NULL,
+    "sourcePathResolved" TEXT NOT NULL PRIMARY KEY,
+    "filename" TEXT NOT NULL, -- filename without extension
     "extension" TEXT NOT NULL,
     "error" TEXT
 );

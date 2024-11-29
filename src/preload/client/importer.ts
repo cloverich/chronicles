@@ -1,5 +1,4 @@
 import { Database } from "better-sqlite3";
-import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
 import { Files, PathStatsFile } from "../files";
@@ -103,7 +102,10 @@ export class ImporterClient {
    *
    * Designed for my own Notion export, and assumes sync will be called afterwards.
    */
-  import = async (importDir: string, sourceType: SourceType) => {
+  import = async (
+    importDir: string,
+    sourceType: SourceType = SourceType.Other,
+  ) => {
     await this.clearImportTables();
     const importerId = uuidv7obj().toHex();
     const chroniclesRoot = await this.ensureRoot();
@@ -132,7 +134,13 @@ export class ImporterClient {
     }
 
     console.log("importing directory", importDir);
-    const resolver = await WikiFileResolver.init(importDir);
+    const resolver = await WikiFileResolver.init(
+      importDir,
+      this.knex,
+      importerId,
+      this.files,
+    );
+
     await this.stageNotes(
       importDir,
       importerId,
@@ -226,17 +234,6 @@ export class ImporterClient {
       // todo: handle additional kinds of frontMatter; just add a column for them
       // and ensure they are not overwritten when editing existing files
       // https://github.com/cloverich/chronicles/issues/127
-
-      const mdast = stringToMdast(body);
-
-      await this.stageNoteFiles(
-        importerId,
-        importDir,
-        file.path,
-        mdast,
-        resolver,
-      );
-
       const chroniclesId = uuidv7obj().toHex();
       const stagedNote: StagedNote = {
         importerId,
@@ -283,14 +280,8 @@ export class ImporterClient {
       console.log("Processing import", importerId, importDir);
     }
 
-    await this.moveStagedFiles(
-      chroniclesRoot,
-      importerId,
-      importDir,
-      sourceType,
-    );
+    await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
 
-    const filesMapping = await this.movedFilePaths(importerId);
     const linkMapping = await this.noteLinksMapping(importerId);
 
     const items = await this.knex<StagedNote>("import_notes").where({
@@ -305,9 +296,7 @@ export class ImporterClient {
       const mdast = stringToMdast(item.content) as any as mdast.Root;
       this.updateNoteLinks(mdast, item, linkMapping);
 
-      // chris: if item.sourcePath isn't the same sourcePath used to make the file link the first
-      // time maybe wont be right. I changed a lot of code without testing yet.
-      this.updateFileLinks(item.sourcePath, mdast, filesMapping, resolver);
+      await resolver.updateFileLinks(item.sourcePath, mdast);
       this.convertWikiLinks(mdast);
 
       // with updated links we can now save the document
@@ -558,268 +547,6 @@ export class ImporterClient {
     return journalName;
   };
 
-  // Everything but copy file from validateAndMoveFile,
-  // return generated ID and dest filelname and whether it was resolved,
-  // store this in staging table in stageFile.
-  private fileExists = async (
-    resolvedPath: string,
-    importDir: string,
-  ): Promise<[null, string] | [string, null]> => {
-    // Check if file is contained within importDir to prevent path traversal
-    if (!resolvedPath.startsWith(importDir))
-      return [null, "Potential path traversal detected"];
-
-    // Check if the file exists
-    if (!fs.existsSync(resolvedPath))
-      return [null, "Source file does not exist"];
-
-    // Check if file has read permissions
-    try {
-      await fs.promises.access(resolvedPath, fs.constants.R_OK);
-    } catch {
-      return [null, "No read access to the file"];
-    }
-
-    return [resolvedPath, null];
-  };
-
-  // Because I keep forgetting extension already has a . in it, etc.
-  // Returns relative or absolute path based which one attachmentsPath
-  // Chronicles file references are always ../_attachments/chroniclesId.ext as
-  // of this writing.
-  private makeDestinationFilePath = (
-    attachmentsPath: string,
-    chroniclesId: string,
-    extension: string,
-  ) => {
-    return path.join(attachmentsPath, `${chroniclesId}${extension}`);
-  };
-
-  // Mdast helper to determine if a node is a file link
-  isFileLink = (
-    mdast: mdast.Content | mdast.Root,
-  ): mdast is mdast.Image | mdast.Link | mdast.OfmWikiEmbedding => {
-    return (
-      (((mdast.type === "image" || mdast.type === "link") &&
-        !this.isNoteLink(mdast.url)) ||
-        mdast.type === "ofmWikiembedding") &&
-      !/^(https?|mailto|#|\/|\.|tel|sms|geo|data):/.test(mdast.url)
-    );
-  };
-
-  /**
-   * Resolve a file link to an absolute path, which we use as the primary key
-   * in the staging table for moving files; can be used to check if file was
-   * already moved, and to fetch the destination id for the link when updating
-   * the link in the document.
-   *
-   * @param noteSourcePath - absolute path to the note that contains the link
-   * @param url - mdast.url of the link
-   */
-  private cleanFileUrl = (noteSourcePath: string, url: string): string => {
-    const urlWithoutQuery = url.split(/\?/)[0] || "";
-    return decodeURIComponent(
-      // todo: should we also normalize here?
-      path.normalize(
-        path.resolve(path.dirname(noteSourcePath), urlWithoutQuery),
-      ),
-    );
-  };
-
-  // Stage the file into the import_files table, so we can move it and later
-  // update references to it in the original note(s).
-  private stageFile = async (
-    importerId: string,
-    url: string, // mdast.url of the link
-    noteSourcePath: string, // path to the note that contains the link
-    // Might need this if we validate before staging
-    importDir: string, // absolute path to import directory
-    isWikiEmbedding: boolean,
-    resolver: WikiFileResolver,
-  ): Promise<string | undefined> => {
-    // todo: May want to keep hash / query params in the import item, and re-build the correct url
-    // after. Query params and hashes are often special (like page pointed in PDF, file-resize
-    // in editor, etc). Hmmm... may need more examples from the wild to know what to do here.
-    // Tracking would be a first step.
-    let resolvedUrl: string | undefined;
-
-    if (isWikiEmbedding) {
-      resolvedUrl = resolver.resolve(url);
-    } else {
-      resolvedUrl = this.cleanFileUrl(noteSourcePath, url);
-    }
-
-    if (!resolvedUrl) {
-      console.error("Failed to resolve file link", url);
-      return;
-    }
-
-    // todo: sourcePathResolved is the primary key; should be unique; but we don't need to error
-    // here if it fails to insert; we can skip because we only need to stage and move it once
-    // IDK what the error signature here is.
-    try {
-      await this.knex("import_files").insert({
-        importerId: importerId,
-        sourcePathResolved: resolvedUrl,
-        chroniclesId: uuidv7obj().toHex(),
-        extension: path.extname(resolvedUrl),
-      });
-
-      return resolvedUrl;
-    } catch (err: any) {
-      // file referenced more than once in note, or in more than one notes; if import logic
-      // is good really dont even need to log this, should just skip
-      if ("code" in err && err.code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
-        console.log("skipping file already staged", resolvedUrl);
-      } else {
-        throw err;
-      }
-    }
-  };
-
-  // Move all staged files to _attachments (if pending)
-  private moveStagedFiles = async (
-    chroniclesRoot: string,
-    importerId: string,
-    importDir: string,
-    sourceType: SourceType,
-  ) => {
-    const files = await this.knex("import_files").where({
-      importerId,
-      status: "pending",
-    });
-
-    const attachmentsDir = path.join(chroniclesRoot, "_attachments");
-    await fs.promises.mkdir(attachmentsDir, { recursive: true });
-
-    for await (const file of files) {
-      const { sourcePathResolved, extension, chroniclesId } = file;
-
-      // todo: convert to just err checking
-      let [_, err] = await this.fileExists(sourcePathResolved, importDir);
-
-      if (err != null) {
-        console.error("this.fileExists test fails for ", sourcePathResolved);
-        await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
-          .update({ error: err });
-        continue;
-      }
-
-      const destinationFile = this.makeDestinationFilePath(
-        attachmentsDir,
-        chroniclesId,
-        extension,
-      );
-
-      try {
-        await this.files.copyFile(sourcePathResolved, destinationFile);
-      } catch (err) {
-        await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
-          .update({ error: (err as Error).message });
-        continue;
-      }
-
-      await this.knex("import_files")
-        .where({ importerId, sourcePathResolved })
-        .update({ status: "complete" });
-    }
-  };
-
-  // Fetch all files  successfully moved to _attachments, and return a mapping
-  // of the original source path to the new filename so document file links can be updated
-  private movedFilePaths = async (importerId: string) => {
-    const files = await this.knex("import_files").where({
-      importerId,
-      status: "complete",
-    });
-
-    // todo: Can pass in chronicles root; but since convention is always ../_attachments/file, should
-    // always be able to re-construct this...
-    const mapping: Record<string, string> = {};
-    for (const file of files) {
-      mapping[file.sourcePathResolved] = this.makeDestinationFilePath(
-        "../_attachments",
-        file.chroniclesId,
-        file.extension,
-      );
-    }
-
-    return mapping;
-  };
-
-  /**
-   * For each link in the file that points to a file, move the file to _attachments,
-   * rename the file based on chronicles conventions, and update the link in the file.
-   *
-   * @param importDir - The root import directory\
-   * @param sourcePath - The path to the source file that contains the link; used to resolve relative links
-   * @param mdast
-   */
-  private stageNoteFiles = async (
-    importerId: string,
-    importDir: string,
-    sourcePath: string,
-    mdast: mdast.Content | mdast.Root,
-    resolver: WikiFileResolver,
-  ): Promise<void> => {
-    if (this.isFileLink(mdast)) {
-      const isWikiEmbedding = mdast.type === "ofmWikiembedding";
-      await this.stageFile(
-        importerId,
-        mdast.url,
-        sourcePath,
-        importDir,
-        isWikiEmbedding,
-        resolver,
-      );
-    } else {
-      if ("children" in mdast) {
-        let results = [];
-        for await (const child of mdast.children as any) {
-          await this.stageNoteFiles(
-            importerId,
-            importDir,
-            sourcePath,
-            child,
-            resolver,
-          );
-        }
-      }
-    }
-  };
-
-  // use the mapping of moved files to update the file links in the note
-  private updateFileLinks = (
-    noteSourcePath: string,
-    mdast: mdast.Content | mdast.Root,
-    filesMapping: Record<string, string>,
-    resolver: WikiFileResolver,
-  ) => {
-    if (this.isFileLink(mdast)) {
-      // note: The mdast type will be updated in convertWikiLinks
-      // todo: handle ofmWikiLink
-      if (mdast.type === "ofmWikiembedding") {
-        const url = resolver.resolve(mdast.url);
-        if (url && url in filesMapping) {
-          mdast.url = url;
-        }
-      } else {
-        const url = this.cleanFileUrl(noteSourcePath, mdast.url);
-        if (url in filesMapping) {
-          mdast.url = filesMapping[url];
-        }
-      }
-    } else {
-      if ("children" in mdast) {
-        for (const child of mdast.children as any) {
-          this.updateFileLinks(noteSourcePath, child, filesMapping, resolver);
-        }
-      }
-    }
-  };
-
   // note: This assumes the mdast.url property of wikiembedding / link is already
   // updated by the updateFileLinks routine.
   private convertWikiLinks = (mdast: mdast.Content | mdast.Root) => {
@@ -829,6 +556,9 @@ export class ImporterClient {
       (mdast as any).type = "image";
       mdast.title = mdast.value;
       mdast.alt = mdast.value;
+      mdast.url = mdast.url;
+    } else if (mdast.type === "ofmWikilink") {
+      (mdast as any).type = "link";
     } else {
       if ("children" in mdast) {
         for (const child of mdast.children as any) {
