@@ -195,13 +195,6 @@ export class WikiFileResolver {
         const updatedUrl = await this.resolveToChroniclesByName(mdast.value);
         if (updatedUrl) {
           mdast.url = updatedUrl;
-          console.log(
-            "updated url (old)",
-            mdast.value,
-            "(new)",
-            mdast.url,
-            mdast,
-          );
         }
       } else {
         const updatedUrl = await this.resolveMarkdownFileLinkToChroniclesPath(

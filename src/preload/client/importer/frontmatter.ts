@@ -1,5 +1,5 @@
 import yaml from "yaml";
-import { SourceType } from "../importer";
+import { SourceType } from "../importer/SourceType";
 
 interface ParseTitleAndFrontMatterRes {
   title: string;

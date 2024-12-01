@@ -18,6 +18,7 @@ export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
 import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
+import { SourceType } from "./importer/SourceType";
 import { WikiFileResolver } from "./importer/WikiFileResolver";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
 
@@ -74,11 +75,6 @@ interface StagedNote {
   chroniclesPath: string;
   status: string; // 'pending' | 'note_created'
   error?: string | null;
-}
-
-export enum SourceType {
-  Notion = "notion",
-  Other = "other",
 }
 
 export class ImporterClient {
@@ -222,9 +218,15 @@ export class ImporterClient {
       );
 
       // Prefer front-matter supplied create and update times, but fallback to file stats
-      // todo: check updatedAt, "Updated At", "Last Edited", etc.
+      // todo: check updatedAt, "Updated At", "Last Edited", etc. i.e. support more possible
+      // front-matter keys for dates; probably needs to be configurable:
+      // 1. Which key(s) to check
+      // 2. Whether to use birthtime or mtime
+      // 3. Which timezone to use
+      // 4. Whether to use the front-matter date or the file date
       if (!frontMatter.createdAt) {
-        frontMatter.createdAt = file.stats.ctime.toISOString();
+        frontMatter.createdAt =
+          file.stats.birthtime.toISOString() || file.stats.mtime.toISOString();
       }
 
       if (!frontMatter.updatedAt) {
@@ -283,6 +285,7 @@ export class ImporterClient {
     await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
 
     const linkMapping = await this.noteLinksMapping(importerId);
+    const wikiLinkMapping = await this.noteLinksWikiMapping(importerId);
 
     const items = await this.knex<StagedNote>("import_notes").where({
       importerId,
@@ -291,10 +294,8 @@ export class ImporterClient {
     for await (const item of items) {
       const frontMatter = JSON.parse(item.frontMatter);
 
-      // todo: can I store the mdast in JSON? If so, should I just do this on the first
-      // pass since I already parsed it to mdast once?
       const mdast = stringToMdast(item.content) as any as mdast.Root;
-      this.updateNoteLinks(mdast, item, linkMapping);
+      await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
 
       await resolver.updateFileLinks(item.sourcePath, mdast);
       this.convertWikiLinks(mdast);
@@ -381,6 +382,26 @@ export class ImporterClient {
     return linkMapping;
   };
 
+  // Pull all staged notes and generate a mapping of original note title
+  // to the new file path (chroniclesPath). This is used to update
+  // wikilinks that point to other notes to chronicles-style markdown links.
+  private noteLinksWikiMapping = async (importerId: string) => {
+    let linkMapping: Record<string, { journal: string; chroniclesId: string }> =
+      {};
+
+    const importedItems = await this.knex("import_notes")
+      .where({ importerId })
+      .select("title", "journal", "chroniclesId");
+
+    for (const item of importedItems) {
+      if ("error" in item && item.error) continue;
+      const { journal, chroniclesId, title } = item;
+      linkMapping[title] = { journal, chroniclesId };
+    }
+
+    return linkMapping;
+  };
+
   // check if a markdown link is a link to a (markdown) note
   private isNoteLink = (url: string) => {
     // we are only interested in markdown links
@@ -395,8 +416,13 @@ export class ImporterClient {
   private updateNoteLinks = async (
     mdast: mdast.Root | mdast.Content,
     item: StagedNote,
+    // mapping of sourcePath to new journal and chroniclesId
     linkMapping: Record<string, { journal: string; chroniclesId: string }>,
+    // mapping of note title to new journal and chroniclesId
+    linkMappingWiki: Record<string, { journal: string; chroniclesId: string }>,
   ) => {
+    // todo: update ofmWikilink
+    // todo: update links that point to local files
     if (mdast.type === "link" && this.isNoteLink(mdast.url)) {
       const url = decodeURIComponent(mdast.url);
       const sourceFolderPath = path.dirname(item.sourcePath);
@@ -409,9 +435,20 @@ export class ImporterClient {
       mdast.url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
     }
 
+    if (mdast.type === "ofmWikilink") {
+      const title = mdast.value;
+      const mapped = linkMappingWiki[title];
+
+      if (!mapped) return;
+
+      // NOTE: This updates the url, but assumes the node type
+      // will be converted to regular link in later step
+      mdast.url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
+    }
+
     if ("children" in mdast) {
       for (const child of mdast.children as any) {
-        this.updateNoteLinks(child, item, linkMapping);
+        this.updateNoteLinks(child, item, linkMapping, linkMappingWiki);
       }
     }
   };
@@ -558,6 +595,7 @@ export class ImporterClient {
       mdast.alt = mdast.value;
       mdast.url = mdast.url;
     } else if (mdast.type === "ofmWikilink") {
+      mdast.children = [{ type: "text", value: mdast.value }];
       (mdast as any).type = "link";
     } else {
       if ("children" in mdast) {
