@@ -30,11 +30,11 @@ const Preferences = observer(() => {
   const client = useClient();
   const navigate = useNavigate();
 
-  async function openDialogNotesDir() {
+  async function selectNotesRoot() {
     store.loading = true;
     try {
       const result = await client.preferences.openDialogNotesDir();
-      if (!result) {
+      if (!result?.value) {
         store.loading = false;
         return;
       }
@@ -48,7 +48,7 @@ const Preferences = observer(() => {
     }
   }
 
-  async function openDialogImportDir() {
+  async function importDirectory() {
     store.loading = true;
     try {
       const result = await client.preferences.openDialogImportDir();
@@ -133,7 +133,7 @@ const Preferences = observer(() => {
           <Button
             isLoading={store.loading}
             disabled={store.loading}
-            onClick={openDialogNotesDir}
+            onClick={selectNotesRoot}
           >
             Select new directory
           </Button>
@@ -154,7 +154,7 @@ const Preferences = observer(() => {
           <Button
             isLoading={store.loading}
             disabled={store.loading}
-            onClick={openDialogImportDir}
+            onClick={importDirectory}
           >
             Select directory
           </Button>

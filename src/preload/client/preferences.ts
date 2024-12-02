@@ -78,9 +78,10 @@ export class PreferencesClient {
     return new Promise<{ error?: string; value?: string }>(
       (resolve, reject) => {
         ipcRenderer.once("directory-selected", (event, arg) => {
-          console.log("directory-selected", arg);
           if (arg.error) {
             reject(arg.error);
+          } else if (!arg.value) {
+            resolve({ value: undefined });
           } else {
             this.set("NOTES_DIR", arg.value);
             resolve(arg.value);
