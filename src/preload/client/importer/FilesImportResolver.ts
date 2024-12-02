@@ -3,53 +3,23 @@ import { Knex } from "knex";
 import mdast from "mdast";
 import path from "path";
 import { uuidv7obj } from "uuidv7";
-import { Files, PathStatsFile } from "../../files";
+import { PathStatsFile } from "../../files";
 import { IFilesClient } from "../files";
-import { SKIPPABLE_FILES } from "../importer";
 
 const ATTACHMENTS_DIR = "_attachments";
 
-// For resolving ![[Wiki Embedding]] links, I need a complete list of all non-.md
+// NOTE: For resolving ![[Wiki Embedding]] links, I need a complete list of all non-.md
 // files in the import directory, these ridiuclous things are not absolute or
 // relative and could be anywhere in the import directory.
-export class WikiFileResolver {
+export class FilesImportResolver {
   private knex: Knex;
   private importerId: string;
   private filesclient: IFilesClient;
 
-  private constructor(
-    knex: Knex,
-    importerId: string,
-    filesclient: IFilesClient,
-  ) {
+  constructor(knex: Knex, importerId: string, filesclient: IFilesClient) {
     this.knex = knex;
     this.importerId = importerId;
     this.filesclient = filesclient;
-  }
-
-  static async init(
-    importDir: string,
-    knex: Knex,
-    importerId: string,
-    filesclient: IFilesClient,
-  ) {
-    // todo: This routine was refactored and instead of walking interanlly, should
-    // extertnally pass files to the resolver to allow walkijng import directoroy only once,
-    // then do the filename resolving post-move.
-    const resolver = new WikiFileResolver(knex, importerId, filesclient);
-
-    for await (const file of Files.walk(importDir, (filestats) => {
-      if (!filestats.stats.isFile()) return false;
-
-      const name = path.basename(filestats.path);
-      if (name.startsWith(".")) return false;
-      if (SKIPPABLE_FILES.has(name)) return false;
-      return !filestats.path.endsWith(".md");
-    })) {
-      await resolver.stageFile(file);
-    }
-
-    return resolver;
   }
 
   // Resolve a wiki embedding link to a chronicles path, for updating the link
@@ -183,7 +153,10 @@ export class WikiFileResolver {
     return path.join("..", ATTACHMENTS_DIR, `${chroniclesId}${extension}`);
   };
 
-  // use the mapping of moved files to update the file links in the note
+  // use the previously generated list of staged files to update file links in the note,
+  // specifically to resolve ![[WikiLinks]] to the chronicles path, so they can be
+  // convereted to markdown links.
+  // NOTE: MUST have called stageFile on ALL files before calling this
   updateFileLinks = async (
     noteSourcePath: string,
     mdast: mdast.Content | mdast.Root,

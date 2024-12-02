@@ -18,8 +18,8 @@ export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
 import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
+import { FilesImportResolver } from "./importer/FilesImportResolver";
 import { SourceType } from "./importer/SourceType";
-import { WikiFileResolver } from "./importer/WikiFileResolver";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
 
 export const SKIPPABLE_FILES = new Set(".DS_Store");
@@ -130,13 +130,14 @@ export class ImporterClient {
     }
 
     console.log("importing directory", importDir);
-    const resolver = await WikiFileResolver.init(
-      importDir,
-      this.knex,
-      importerId,
-      this.files,
-    );
 
+    // todo: also create a NotesImportResolver to handle note links rather than mixing
+    // into this importer class
+    const resolver = new FilesImportResolver(this.knex, importerId, this.files);
+
+    // stage all notes and files in the import directory for processing.
+    // we do this in two steps so we can generate mappings of source -> dest
+    // for links and files, and then update them in the second pass.
     await this.stageNotes(
       importDir,
       importerId,
@@ -144,31 +145,50 @@ export class ImporterClient {
       sourceType,
       resolver,
     );
+
     await this.processStagedNotes(chroniclesRoot, sourceType, resolver);
   };
 
-  // stage all notes and files in the import directory for processing.
-  // we do this in two steps so we can generate mappings of source -> dest
-  // for links and files, and then update them in the second pass.
+  // pre-process all notes and files in the import directory, tracking in the import tables
+  // for later processing
   private stageNotes = async (
     importDir: string,
     importerId: string,
     chroniclesRoot: string, // absolute path to chronicles root dir
     sourceType: SourceType,
-    resolver: WikiFileResolver,
+    resolver: FilesImportResolver,
   ) => {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
 
-    for await (const file of Files.walk(importDir, () => true, {})) {
-      await this.stageNote(
-        file,
-        importDir,
-        importerId,
-        journalsMapping,
-        sourceType,
-        resolver,
-      );
+    for await (const file of Files.walk(
+      importDir,
+      // todo: Skip some directories (e.g. .git, .vscode, etc.)
+      (filestats) => {
+        // Skip directories, symbolic links, etc.
+        if (!filestats.stats.isFile()) return false;
+
+        const name = path.basename(filestats.path);
+
+        // Skip hidden files and directories
+        if (name.startsWith(".")) return false;
+        if (SKIPPABLE_FILES.has(name)) return false;
+
+        return true;
+      },
+      {},
+    )) {
+      if (file.path.endsWith(".md")) {
+        await this.stageNote(
+          file,
+          importDir,
+          importerId,
+          journalsMapping,
+          sourceType,
+        );
+      } else {
+        resolver.stageFile(file);
+      }
     }
   };
 
@@ -179,22 +199,8 @@ export class ImporterClient {
     importerId: string,
     journals: Record<string, string>, // mapping of original folder path to journal name
     sourceType: SourceType,
-    resolver: WikiFileResolver,
   ) => {
-    const { ext, name, dir } = path.parse(file.path);
-
-    // Skip hidden files and directories
-    if (name.startsWith(".")) return;
-    if (SKIPPABLE_FILES.has(name)) return;
-
-    // Skip directories, symbolic links, etc.
-    if (!file.stats.isFile()) return;
-
-    // Only process markdown files
-    if (ext !== ".md") return;
-
-    // todo: handle repeat import, specifically if the imported folder / file already exists;
-    // b/c that may happen when importing multiple sources...
+    const { name, dir } = path.parse(file.path);
 
     // todo: sha comparison
     const contents = await Files.read(file.path);
@@ -266,7 +272,7 @@ export class ImporterClient {
   private processStagedNotes = async (
     chroniclesRoot: string,
     sourceType: SourceType,
-    resolver: WikiFileResolver,
+    resolver: FilesImportResolver,
   ) => {
     await this.ensureRoot();
     const { id: importerId, importDir } = await this.knex("imports")
