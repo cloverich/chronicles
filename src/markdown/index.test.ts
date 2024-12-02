@@ -480,6 +480,27 @@ describe("[[Wikilinks]]", function () {
   runTests(doc);
 });
 
+suite("mdast-util-ofm-tag", async () => {
+  const doc = {
+    markdown: "a #b c",
+    mdast: {
+      type: "root",
+      children: [
+        {
+          type: "paragraph",
+          children: [
+            { type: "text", value: "a " },
+            { type: "ofmTag", value: "b" },
+            { type: "text", value: " c" },
+          ],
+        },
+      ],
+    },
+  };
+
+  runTests(doc);
+});
+
 // A place to put behavior that is not yet handled correctly; so I can store test
 // cases as I discover issues, making it easier to fix in the future when I have less
 // context.

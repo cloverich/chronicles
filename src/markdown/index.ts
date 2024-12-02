@@ -8,7 +8,9 @@ import { fromMarkdown } from "mdast-util-from-markdown";
 import { gfmFromMarkdown, gfmToMarkdown } from "mdast-util-gfm";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { gfm } from "micromark-extension-gfm";
+import { ofmTagFromMarkdown } from "./mdast-util-ofm-tag";
 import { ofmWikilinkFromMarkdown } from "./mdast-util-ofm-wikilink";
+import { ofmTag } from "./micromark-extension-ofm-tag";
 import { ofmWikilink } from "./micromark-extension-ofm-wikilink";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
 
@@ -47,10 +49,23 @@ function wrapImages(tree: mdast.Root) {
   return tree;
 }
 
+// The importer has additional support for #tag and [[WikiLink]], but converts them
+// to Chronicles tags and markdown links. Future versions may support these properly.
+export const parseMarkdownForImport = (markdown: string): mdast.Root => {
+  return fromMarkdown(markdown, {
+    extensions: [gfm(), ofmTag(), ofmWikilink()],
+    mdastExtensions: [
+      gfmFromMarkdown(),
+      ofmTagFromMarkdown(),
+      ofmWikilinkFromMarkdown(),
+    ],
+  });
+};
+
 export const parseMarkdown = (markdown: string): mdast.Root => {
   return fromMarkdown(markdown, {
-    extensions: [gfm(), ofmWikilink()],
-    mdastExtensions: [gfmFromMarkdown(), ofmWikilinkFromMarkdown()],
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()],
   });
 };
 

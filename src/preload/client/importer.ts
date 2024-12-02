@@ -17,7 +17,10 @@ import * as mdast from "mdast";
 export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
-import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
+import {
+  mdastToString,
+  parseMarkdownForImport as stringToMdast,
+} from "../../markdown";
 import { FilesImportResolver } from "./importer/FilesImportResolver";
 import { SourceType } from "./importer/SourceType";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
@@ -305,6 +308,11 @@ export class ImporterClient {
 
       await resolver.updateFileLinks(item.sourcePath, mdast);
       this.convertWikiLinks(mdast);
+
+      // process tags into front matter
+      frontMatter.tags = Array.from(
+        new Set(this.processAndConvertTags(mdast, frontMatter.tags || [])),
+      );
 
       // with updated links we can now save the document
       try {
@@ -609,6 +617,29 @@ export class ImporterClient {
           this.convertWikiLinks(child);
         }
       }
+    }
+  };
+
+  // 1. Find and collect all ofmTags, so they can be added to front matter
+  // 2. Convert ofmTags to text nodes otherwise later Slate will choke on them, since
+  // Chronicles does not (yet) natively support inline tags
+  private processAndConvertTags = (
+    mdast: mdast.Content | mdast.Root,
+    tags: string[] = [],
+  ): string[] => {
+    if (mdast.type === "ofmTag") {
+      (mdast as any).type = "text";
+      mdast.value = mdast.value;
+      tags.push(mdast.value);
+      return tags;
+    } else {
+      if ("children" in mdast) {
+        for (const child of mdast.children as any[]) {
+          this.processAndConvertTags(child, tags);
+        }
+      }
+
+      return tags;
     }
   };
 }
