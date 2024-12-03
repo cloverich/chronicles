@@ -626,14 +626,16 @@ export class ImporterClient {
   // 1. Find and collect all ofmTags, so they can be added to front matter
   // 2. Convert ofmTags to text nodes otherwise later Slate will choke on them, since
   // Chronicles does not (yet) natively support inline tags
+  // todo(test): Tag with #hash remains in document; tag without hash is stored in db
   private processAndConvertTags = (
     mdast: mdast.Content | mdast.Root,
     tags: string[] = [],
   ): string[] => {
     if (mdast.type === "ofmTag") {
       (mdast as any).type = "text";
-      mdast.value = mdast.value;
-      tags.push(mdast.value);
+      const tag = mdast.value; // without hash
+      mdast.value = `#${mdast.value}`;
+      tags.push(tag);
       return tags;
     } else {
       if ("children" in mdast) {

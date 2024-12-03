@@ -261,7 +261,6 @@ export class FilesImportResolver {
 
       try {
         await this.filesclient.copyFile(sourcePathResolved, destinationFile);
-        console.log("moving to completed", chroniclesId);
         await this.knex("import_files")
           .where({ chroniclesId })
           .update({ status: "complete", error: null });
