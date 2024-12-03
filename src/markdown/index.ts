@@ -77,8 +77,10 @@ export const mdastToString = (tree: mdast.Nodes) => {
   });
 };
 
-export const stringToSlate = (input: string) => {
-  return mdastToSlate(unwrapImages(parseMarkdown(input)));
+// parser param: support configuring for importer tests, which import and convert
+// a few otherwise unsupported markdown features (tags, wikilinks)
+export const stringToSlate = (input: string, parse = parseMarkdown) => {
+  return mdastToSlate(unwrapImages(parse(input)));
 };
 
 export const slateToString = (nodes: SlateCustom.SlateNode[]) => {

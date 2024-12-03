@@ -1,6 +1,9 @@
 import { Root } from "mdast";
 
-import { parseMarkdown as parseMarkdownRaw } from "./index.js";
+import {
+  parseMarkdownForImport as parseMarkdownForImportRaw,
+  parseMarkdown as parseMarkdownRaw,
+} from "./index.js";
 
 // Remove the parsed position information to simplify deep equals comparisons
 // There is a similar function that's an entire npm package; fuck that.
@@ -17,6 +20,9 @@ export function prunePositions(tree: any) {
 // Easier to deep.equal() without position information
 export const parseMarkdown = (markdown: string): Root =>
   prunePositions(parseMarkdownRaw(markdown));
+
+export const parseMarkdownForImport = (markdown: string): Root =>
+  prunePositions(parseMarkdownForImportRaw(markdown));
 
 // Like _.get but fail loud, helpful error messages
 // Usage: dig(mdast, 'children.0.children.1.value')

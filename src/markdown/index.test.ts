@@ -4,7 +4,7 @@ import { describe, it } from "mocha";
 import path from "path";
 
 import { slateToString, stringToSlate } from "./index.js";
-import { dig, parseMarkdown } from "./test-utils.js";
+import { dig, parseMarkdown, parseMarkdownForImport } from "./test-utils.js";
 
 // Tests can structure the data this way and use runTests to
 // test the various conversions.
@@ -41,7 +41,7 @@ function outputMarkdown(markdown: string | { in: string; out: string }) {
 //    but is sometimes configurable (ex: options -> bullet)
 // - markdown (string)->mdast
 // - markdown (string)->slate
-function runTests(doc: TestDoc) {
+function runTests(doc: TestDoc, parser = parseMarkdown) {
   it("roundtrips", function () {
     const result = slateToString(stringToSlate(inputMarkdown(doc.markdown)));
 
@@ -54,14 +54,14 @@ function runTests(doc: TestDoc) {
   // round trip properly if it does not parse at all (ex: wikilinks without a handler)
   if (doc.mdast) {
     it("markdown->mdast", function () {
-      const result = parseMarkdown(inputMarkdown(doc.markdown));
+      const result = parser(inputMarkdown(doc.markdown));
       expect(result).to.deep.equal(doc.mdast);
     });
   }
 
   if (doc.slate) {
     it("markdown->slate", function () {
-      const result = stringToSlate(outputMarkdown(doc.markdown));
+      const result = stringToSlate(outputMarkdown(doc.markdown), parser);
       expect(result).to.deep.equal(doc.slate);
     });
   }
@@ -477,10 +477,10 @@ describe("[[Wikilinks]]", function () {
     ],
   };
 
-  runTests(doc);
+  runTests(doc, parseMarkdownForImport);
 });
 
-suite("mdast-util-ofm-tag", async () => {
+describe("mdast-util-ofm-tag", async () => {
   const doc = {
     markdown: "a #b c",
     mdast: {
@@ -498,7 +498,7 @@ suite("mdast-util-ofm-tag", async () => {
     },
   };
 
-  runTests(doc);
+  runTests(doc, parseMarkdownForImport);
 });
 
 // A place to put behavior that is not yet handled correctly; so I can store test
