@@ -2,19 +2,22 @@
 // While I dev. May keep this around, but its pretty hacky and far
 // from complete or a real test suite.
 import { diff } from "deep-object-diff";
-import { parseMarkdown } from "../../../markdown";
 import { ImporterClient } from "../importer";
+import { SourceType } from "./SourceType";
 import { parseTitleAndFrontMatter } from "./frontmatter";
 
 export function runTests(importer: ImporterClient) {
   runFrontmatterTests(importer);
-  testIsFileLink(importer);
 }
 
 // to the console; can convert to real tests at the end.
 function runFrontmatterTests(importer: ImporterClient) {
   for (const testCase of titleFrontMatterTestCases) {
-    const result = parseTitleAndFrontMatter(testCase.input);
+    const result = parseTitleAndFrontMatter(
+      testCase.input,
+      "Dont use this title",
+      SourceType.Notion,
+    );
 
     if (!result.frontMatter) {
       console.error("FAILED:", testCase.expected.title);
@@ -360,37 +363,3 @@ export const inferOrGenerateJournalNameTestCases = [
     output: "TODO_...", // shorter
   },
 ];
-
-// todo: hacky AF, but just to get some tests running
-function testIsFileLink(importer: ImporterClient) {
-  function getLinkLike(mdast: any) {
-    if (mdast.type !== "root" && mdast.url) {
-      return mdast;
-    } else if (mdast.children) {
-      return mdast.children.map(getLinkLike);
-    }
-  }
-
-  // parse links out of the markdown string
-  // maybe better to just manually create mdast objects
-  const links = getLinkLike(
-    parseMarkdown(`
-# Test case
-
-![file](sers/cloverich/Documents/chronicles-development/export)
-[Google Software Engineer Interview](https://igotanoffer.com/blogs/tech/google-software-engineer-interview)
-![2020%20in%20review%204911c57a21aa4a0daa47c2e5f8d9df98/IMG_20200104_112600.jpg](2020%20in%20review%204911c57a21aa4a0daa47c2e5f8d9df98/IMG_20200104_112600.jpg)
-![file](file:///Users/cloverich/Documents/chronicles-development/export)
-  `),
-  )
-    .flat(Infinity)
-    .filter(Boolean);
-
-  [true, false, true, true].forEach((isFileLink, i) => {
-    if (isFileLink !== importer.isFileLink(links[i])) {
-      console.error("FAILED", links[i].url);
-    } else {
-      console.info("SUCCESS", links[i].url);
-    }
-  });
-}

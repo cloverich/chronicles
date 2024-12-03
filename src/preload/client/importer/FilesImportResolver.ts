@@ -24,7 +24,7 @@ export class FilesImportResolver {
 
   // Resolve a wiki embedding link to a chronicles path, for updating the link
   // i.e. [[2024-11-17-20241118102000781.webp]] -> ../_attachments/<chroniclesId>.webp
-  resolveToChroniclesByName = async (
+  private resolveToChroniclesByName = async (
     name: string,
   ): Promise<string | undefined> => {
     // check db for chronicles id matching name, if any
@@ -39,14 +39,15 @@ export class FilesImportResolver {
     const updatedPath = this.makeDestinationFilePath(chroniclesId, extension);
 
     if (updatedPath) {
+      await this.knex("import_files").where({ chroniclesId }).update({
+        status: "referenced",
+      });
+
       return updatedPath;
-    } else {
-      console.warn("Failed to resolve file link", name);
-      return;
     }
   };
 
-  resolveToChroniclesByPath = async (
+  private resolveToChroniclesByPath = async (
     path: string,
   ): Promise<string | undefined> => {
     const result = await this.knex("import_files")
@@ -60,10 +61,11 @@ export class FilesImportResolver {
     const updatedPath = this.makeDestinationFilePath(chroniclesId, extension);
 
     if (updatedPath) {
+      await this.knex("import_files").where({ chroniclesId }).update({
+        status: "referenced",
+      });
+
       return updatedPath;
-    } else {
-      console.warn("Failed to resolve file link", path);
-      return;
     }
   };
 
@@ -88,12 +90,12 @@ export class FilesImportResolver {
     );
   };
 
-  resolveMarkdownFileLinkToChroniclesPath = async (
+  private resolveMarkdownFileLinkToChroniclesPath = async (
     noteSourcePath: string,
     url: string,
   ): Promise<string | undefined> => {
     const absPath = this.resolveMarkdownFileLinkToAbsPath(noteSourcePath, url);
-    return this.resolveToChroniclesByPath(absPath);
+    return await this.resolveToChroniclesByPath(absPath);
   };
 
   stageFile = async (filestats: PathStatsFile) => {
@@ -215,9 +217,10 @@ export class FilesImportResolver {
     importerId: string,
     importDir: string,
   ) => {
+    // bug: at this point their status is all pending; someone is not awaiting
     const files = await this.knex("import_files").where({
       importerId,
-      status: "pending",
+      status: "referenced",
     });
 
     const attachmentsDir = path.join(chroniclesRoot, ATTACHMENTS_DIR);
@@ -245,15 +248,24 @@ export class FilesImportResolver {
 
       try {
         await this.filesclient.copyFile(sourcePathResolved, destinationFile);
+        console.log("moving to completed", chroniclesId);
         await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
+          .where({ chroniclesId })
           .update({ status: "complete", error: null });
       } catch (err) {
+        console.error("error moving file", chroniclesId, err);
         await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
+          .where({ chroniclesId })
           .update({ error: (err as Error).message });
         continue;
       }
     }
+
+    // Mark all remaining files as orphaned; can be used to debug import issues,
+    // and potentially also be configurable (i.e. whether to import orphaned files
+    // or not)
+    await this.knex("import_files")
+      .where({ status: "pending", importerId })
+      .update({ status: "orphaned" });
   };
 }

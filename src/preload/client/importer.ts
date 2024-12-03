@@ -291,8 +291,6 @@ export class ImporterClient {
       console.log("Processing import", importerId, importDir);
     }
 
-    await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
-
     const linkMapping = await this.noteLinksMapping(importerId);
     const wikiLinkMapping = await this.noteLinksWikiMapping(importerId);
 
@@ -306,7 +304,12 @@ export class ImporterClient {
       const mdast = stringToMdast(item.content) as any as mdast.Root;
       await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
 
+      // NOTE: A bit hacky: When we update file links, we also mark the file as referenced
+      // Then, we only move (copy) referenced files, and mark the remainder as orphaned.
+      // So these two calls must go in order:
       await resolver.updateFileLinks(item.sourcePath, mdast);
+      await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
+
       this.convertWikiLinks(mdast);
 
       // process tags into front matter
