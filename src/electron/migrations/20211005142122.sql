@@ -58,9 +58,10 @@ CREATE TABLE IF NOT EXISTS "imports" (
 
 CREATE TABLE IF NOT EXISTS "import_files" (
     "importerId" TEXT NOT NULL,
-    "sourcePathResolved" TEXT NOT NULL PRIMARY KEY,
     "status" TEXT NOT NULL DEFAULT "pending",
     "chroniclesId" TEXT NOT NULL,
+    "sourcePathResolved" TEXT NOT NULL PRIMARY KEY,
+    "filename" TEXT NOT NULL, -- filename without extension
     "extension" TEXT NOT NULL,
     "error" TEXT
 );
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS "import_notes" (
     "status" TEXT NOT NULL, -- success, error
     "chroniclesId" TEXT NOT NULL,
     "chroniclesPath" TEXT NOT NULL,
+    -- todo: sourcePath + hash of content
     "sourcePath" TEXT NOT NULL PRIMARY KEY,
     "sourceId" TEXT,
     "error" BOOLEAN,

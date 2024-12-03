@@ -1,5 +1,4 @@
 import { Database } from "better-sqlite3";
-import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
 import { Files, PathStatsFile } from "../files";
@@ -18,10 +17,15 @@ import * as mdast from "mdast";
 export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
-import { mdastToString, parseMarkdown as stringToMdast } from "../../markdown";
+import {
+  mdastToString,
+  parseMarkdownForImport as stringToMdast,
+} from "../../markdown";
+import { FilesImportResolver } from "./importer/FilesImportResolver";
+import { SourceType } from "./importer/SourceType";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
 
-const SKIPPABLE_FILES = new Set(".DS_Store");
+export const SKIPPABLE_FILES = new Set(".DS_Store");
 
 // UUID in Notion notes look like 32 character hex strings; make this somewhat more lenient
 const hexIdRegex = /\b[0-9a-f]{16,}\b/;
@@ -73,7 +77,7 @@ interface StagedNote {
   chroniclesId: string;
   chroniclesPath: string;
   status: string; // 'pending' | 'note_created'
-  error: string | null;
+  error?: string | null;
 }
 
 export class ImporterClient {
@@ -97,7 +101,10 @@ export class ImporterClient {
    *
    * Designed for my own Notion export, and assumes sync will be called afterwards.
    */
-  import = async (importDir: string) => {
+  import = async (
+    importDir: string,
+    sourceType: SourceType = SourceType.Other,
+  ) => {
     await this.clearImportTables();
     const importerId = uuidv7obj().toHex();
     const chroniclesRoot = await this.ensureRoot();
@@ -126,23 +133,65 @@ export class ImporterClient {
     }
 
     console.log("importing directory", importDir);
-    await this.stageNotes(importDir, importerId, chroniclesRoot);
-    await this.processStagedNotes(chroniclesRoot);
+
+    // todo: also create a NotesImportResolver to handle note links rather than mixing
+    // into this importer class
+    const resolver = new FilesImportResolver(this.knex, importerId, this.files);
+
+    // stage all notes and files in the import directory for processing.
+    // we do this in two steps so we can generate mappings of source -> dest
+    // for links and files, and then update them in the second pass.
+    await this.stageNotes(
+      importDir,
+      importerId,
+      chroniclesRoot,
+      sourceType,
+      resolver,
+    );
+
+    await this.processStagedNotes(chroniclesRoot, sourceType, resolver);
   };
 
-  // stage all notes and files in the import directory for processing.
-  // we do this in two steps so we can generate mappings of source -> dest
-  // for links and files, and then update them in the second pass.
+  // pre-process all notes and files in the import directory, tracking in the import tables
+  // for later processing
   private stageNotes = async (
     importDir: string,
     importerId: string,
     chroniclesRoot: string, // absolute path to chronicles root dir
+    sourceType: SourceType,
+    resolver: FilesImportResolver,
   ) => {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
 
-    for await (const file of Files.walk(importDir, () => true, {})) {
-      await this.stageNote(file, importDir, importerId, journalsMapping);
+    for await (const file of Files.walk(
+      importDir,
+      // todo: Skip some directories (e.g. .git, .vscode, etc.)
+      (filestats) => {
+        // Skip directories, symbolic links, etc.
+        if (!filestats.stats.isFile()) return false;
+
+        const name = path.basename(filestats.path);
+
+        // Skip hidden files and directories
+        if (name.startsWith(".")) return false;
+        if (SKIPPABLE_FILES.has(name)) return false;
+
+        return true;
+      },
+      {},
+    )) {
+      if (file.path.endsWith(".md")) {
+        await this.stageNote(
+          file,
+          importDir,
+          importerId,
+          journalsMapping,
+          sourceType,
+        );
+      } else {
+        resolver.stageFile(file);
+      }
     }
   };
 
@@ -152,47 +201,43 @@ export class ImporterClient {
     importDir: string,
     importerId: string,
     journals: Record<string, string>, // mapping of original folder path to journal name
+    sourceType: SourceType,
   ) => {
-    const { ext, name, dir } = path.parse(file.path);
-
-    // Skip hidden files and directories
-    if (name.startsWith(".")) return;
-    if (SKIPPABLE_FILES.has(name)) return;
-
-    // Skip directories, symbolic links, etc.
-    if (!file.stats.isFile()) return;
-
-    // Only process markdown files
-    if (ext !== ".md") return;
-
-    // todo: handle repeat import, specifically if the imported folder / file already exists;
-    // b/c that may happen when importing multiple sources...
+    const { name, dir } = path.parse(file.path);
 
     // todo: sha comparison
     const contents = await Files.read(file.path);
-    const [, notionId] = stripNotionIdFromTitle(name);
 
     try {
       // todo: fallback title to filename - uuid
-      const { frontMatter, body, title } = parseTitleAndFrontMatter(contents);
+      const { frontMatter, body, title } = parseTitleAndFrontMatter(
+        contents,
+        name,
+        sourceType,
+      );
+
       const journalName = this.inferJournalName(
         dir,
         importDir,
         journals,
+        sourceType,
         // See notes in inferOrGenerateJournalName; this is a very specific
         // to my Notion export.
         frontMatter.Category,
       );
 
-      // In a directory that was pre-formatted by Chronicles, this should not
-      // be needed. Will leave here as a reminder when I do the more generalized
-      // import routine.
+      // Prefer front-matter supplied create and update times, but fallback to file stats
+      // todo: check updatedAt, "Updated At", "Last Edited", etc. i.e. support more possible
+      // front-matter keys for dates; probably needs to be configurable:
+      // 1. Which key(s) to check
+      // 2. Whether to use birthtime or mtime
+      // 3. Which timezone to use
+      // 4. Whether to use the front-matter date or the file date
       if (!frontMatter.createdAt) {
-        frontMatter.createdAt = file.stats.ctime.toISOString();
+        frontMatter.createdAt =
+          file.stats.birthtime.toISOString() || file.stats.mtime.toISOString();
       }
 
-      // todo: check updatedAt Updated At, Last Edited, etc.
-      // createdAt
       if (!frontMatter.updatedAt) {
         frontMatter.updatedAt = file.stats.mtime.toISOString();
       }
@@ -200,18 +245,12 @@ export class ImporterClient {
       // todo: handle additional kinds of frontMatter; just add a column for them
       // and ensure they are not overwritten when editing existing files
       // https://github.com/cloverich/chronicles/issues/127
-
-      const mdast = stringToMdast(body);
-
-      await this.stageNoteFiles(importerId, importDir, file.path, mdast);
-
       const chroniclesId = uuidv7obj().toHex();
-      const importItem = {
+      const stagedNote: StagedNote = {
         importerId,
         chroniclesId: chroniclesId,
         // hmm... what am I going to do with this? Should it be absolute to NOTES_DIR?
         chroniclesPath: `${path.join(journalName, chroniclesId)}.md`,
-        sourceId: notionId,
         sourcePath: file.path,
         title,
         content: body,
@@ -220,7 +259,12 @@ export class ImporterClient {
         status: "pending",
       };
 
-      await this.knex("import_notes").insert(importItem);
+      if (sourceType === SourceType.Notion) {
+        const [, notionId] = stripNotionIdFromTitle(name);
+        stagedNote.sourceId = notionId;
+      }
+
+      await this.knex("import_notes").insert(stagedNote);
     } catch (e) {
       // todo: this error handler is far too big, obviously
       console.error("Error processing note", file.path, e);
@@ -228,7 +272,11 @@ export class ImporterClient {
   };
 
   // Second pass; process all staged notes and files
-  private processStagedNotes = async (chroniclesRoot: string) => {
+  private processStagedNotes = async (
+    chroniclesRoot: string,
+    sourceType: SourceType,
+    resolver: FilesImportResolver,
+  ) => {
     await this.ensureRoot();
     const { id: importerId, importDir } = await this.knex("imports")
       .where({
@@ -243,9 +291,8 @@ export class ImporterClient {
       console.log("Processing import", importerId, importDir);
     }
 
-    await this.moveStagedFiles(chroniclesRoot, importerId, importDir);
-    const filesMapping = await this.movedFilePaths(importerId);
     const linkMapping = await this.noteLinksMapping(importerId);
+    const wikiLinkMapping = await this.noteLinksWikiMapping(importerId);
 
     const items = await this.knex<StagedNote>("import_notes").where({
       importerId,
@@ -254,14 +301,21 @@ export class ImporterClient {
     for await (const item of items) {
       const frontMatter = JSON.parse(item.frontMatter);
 
-      // todo: can I store the mdast in JSON? If so, should I just do this on the first
-      // pass since I already parsed it to mdast once?
       const mdast = stringToMdast(item.content) as any as mdast.Root;
-      this.updateNoteLinks(mdast, item, linkMapping);
+      await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
 
-      // chris: if item.sourcePath isn't the same sourcePath used to make the file link the first
-      // time maybe wont be right. I changed a lot of code without testing yet.
-      this.updateFileLinks(item.sourcePath, mdast, filesMapping);
+      // NOTE: A bit hacky: When we update file links, we also mark the file as referenced
+      // Then, we only move (copy) referenced files, and mark the remainder as orphaned.
+      // So these two calls must go in order:
+      await resolver.updateFileLinks(item.sourcePath, mdast);
+      await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
+
+      this.convertWikiLinks(mdast);
+
+      // process tags into front matter
+      frontMatter.tags = Array.from(
+        new Set(this.processAndConvertTags(mdast, frontMatter.tags || [])),
+      );
 
       // with updated links we can now save the document
       try {
@@ -270,7 +324,7 @@ export class ImporterClient {
             id: item.chroniclesId,
             journal: item.journal, // using name as id
             content: mdastToString(mdast),
-            title: item.title, //stripNotionIdFromTitle(name),
+            title: item.title,
             tags: frontMatter.tags || [],
             createdAt: frontMatter.createdAt,
             updatedAt: frontMatter.updatedAt,
@@ -345,6 +399,26 @@ export class ImporterClient {
     return linkMapping;
   };
 
+  // Pull all staged notes and generate a mapping of original note title
+  // to the new file path (chroniclesPath). This is used to update
+  // wikilinks that point to other notes to chronicles-style markdown links.
+  private noteLinksWikiMapping = async (importerId: string) => {
+    let linkMapping: Record<string, { journal: string; chroniclesId: string }> =
+      {};
+
+    const importedItems = await this.knex("import_notes")
+      .where({ importerId })
+      .select("title", "journal", "chroniclesId");
+
+    for (const item of importedItems) {
+      if ("error" in item && item.error) continue;
+      const { journal, chroniclesId, title } = item;
+      linkMapping[title] = { journal, chroniclesId };
+    }
+
+    return linkMapping;
+  };
+
   // check if a markdown link is a link to a (markdown) note
   private isNoteLink = (url: string) => {
     // we are only interested in markdown links
@@ -359,8 +433,13 @@ export class ImporterClient {
   private updateNoteLinks = async (
     mdast: mdast.Root | mdast.Content,
     item: StagedNote,
+    // mapping of sourcePath to new journal and chroniclesId
     linkMapping: Record<string, { journal: string; chroniclesId: string }>,
+    // mapping of note title to new journal and chroniclesId
+    linkMappingWiki: Record<string, { journal: string; chroniclesId: string }>,
   ) => {
+    // todo: update ofmWikilink
+    // todo: update links that point to local files
     if (mdast.type === "link" && this.isNoteLink(mdast.url)) {
       const url = decodeURIComponent(mdast.url);
       const sourceFolderPath = path.dirname(item.sourcePath);
@@ -373,9 +452,20 @@ export class ImporterClient {
       mdast.url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
     }
 
+    if (mdast.type === "ofmWikilink") {
+      const title = mdast.value;
+      const mapped = linkMappingWiki[title];
+
+      if (!mapped) return;
+
+      // NOTE: This updates the url, but assumes the node type
+      // will be converted to regular link in later step
+      mdast.url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
+    }
+
     if ("children" in mdast) {
       for (const child of mdast.children as any) {
-        this.updateNoteLinks(child, item, linkMapping);
+        this.updateNoteLinks(child, item, linkMapping, linkMappingWiki);
       }
     }
   };
@@ -411,6 +501,7 @@ export class ImporterClient {
     importDir: string,
     // cache / unique names checker (for when we have to generate name)
     journals: Record<string, string>,
+    sourceType: SourceType,
     category?: string,
   ): string => {
     // In _my_ Notion usage, most of my notes were in a "Documents" database and I
@@ -454,11 +545,15 @@ export class ImporterClient {
         .split(path.sep)
         // if leading with path.sep, kick out ''
         .filter(Boolean)
-        // Strip notionId from each part
-        // "Documents abc123eft" -> "Documents"
         .map((part) => {
-          const [folderNameWithoutId] = stripNotionIdFromTitle(part);
-          return folderNameWithoutId;
+          // Strip notionId from each part
+          // "Documents abc123eft" -> "Documents"
+          if (sourceType === SourceType.Notion) {
+            const [folderNameWithoutId] = stripNotionIdFromTitle(part);
+            return folderNameWithoutId;
+          } else {
+            return part;
+          }
         });
     }
 
@@ -506,218 +601,50 @@ export class ImporterClient {
     return journalName;
   };
 
-  // Everything but copy file from validateAndMoveFile,
-  // return generated ID and dest filelname and whether it was resolved,
-  // store this in staging table in stageFile.
-  private fileExists = async (
-    resolvedPath: string,
-    importDir: string,
-  ): Promise<[null, string] | [string, null]> => {
-    // Check if file is contained within importDir to prevent path traversal
-    if (!resolvedPath.startsWith(importDir))
-      return [null, "Potential path traversal detected"];
-
-    // Check if the file exists
-    if (!fs.existsSync(resolvedPath))
-      return [null, "Source file does not exist"];
-
-    // Check if file has read permissions
-    try {
-      await fs.promises.access(resolvedPath, fs.constants.R_OK);
-    } catch {
-      return [null, "No read access to the file"];
-    }
-
-    return [resolvedPath, null];
-  };
-
-  // Because I keep forgetting extension already has a . in it, etc.
-  // Returns relative or absolute path based which one attachmentsPath
-  // Chronicles file references are always ../_attachments/chroniclesId.ext as
-  // of this writing.
-  private makeDestinationFilePath = (
-    attachmentsPath: string,
-    chroniclesId: string,
-    extension: string,
-  ) => {
-    return path.join(attachmentsPath, `${chroniclesId}${extension}`);
-  };
-
-  // Mdast helper to determine if a node is a file link
-  isFileLink = (
-    mdast: mdast.Content | mdast.Root,
-  ): mdast is mdast.Image | mdast.Link => {
-    return (
-      (mdast.type === "image" || mdast.type === "link") &&
-      !this.isNoteLink(mdast.url) &&
-      !/^(https?|mailto|#|\/|\.|tel|sms|geo|data):/.test(mdast.url)
-    );
-  };
-
-  /**
-   * Resolve a file link to an absolute path, which we use as the primary key
-   * in the staging table for moving files; can be used to check if file was
-   * already moved, and to fetch the destination id for the link when updating
-   * the link in the document.
-   *
-   * @param noteSourcePath - absolute path to the note that contains the link
-   * @param url - mdast.url of the link
-   */
-  private cleanFileUrl = (noteSourcePath: string, url: string): string => {
-    const urlWithoutQuery = url.split(/\?/)[0] || "";
-    return decodeURIComponent(
-      // todo: should we also normalize here?
-      path.normalize(
-        path.resolve(path.dirname(noteSourcePath), urlWithoutQuery),
-      ),
-    );
-  };
-
-  // Sanitize the url and stage it into the import_files table
-  private stageFile = async (
-    importerId: string,
-    url: string, // mdast.url of the link
-    noteSourcePath: string, // path to the note that contains the link
-    // Might need this if we validate before staging
-    importDir: string, // absolute path to import directory
-  ) => {
-    const resolvedUrl = this.cleanFileUrl(noteSourcePath, url);
-
-    // todo: sourcePathResolved is the primary key; should be unique; but we don't need to error
-    // here if it fails to insert; we can skip because we only need to stage and move it once
-    // IDK what the error signature here is.
-    try {
-      await this.knex("import_files").insert({
-        importerId: importerId,
-        sourcePathResolved: resolvedUrl,
-        chroniclesId: uuidv7obj().toHex(),
-        extension: path.extname(resolvedUrl),
-      });
-    } catch (err: any) {
-      // file referenced more than once in note, or in more than one notes; if import logic
-      // is good really dont even need to log this, should just skip
-      if ("code" in err && err.code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
-        console.log("skipping file already staged", resolvedUrl);
-      } else {
-        throw err;
-      }
-    }
-  };
-
-  // Move all staged files to _attachments (if pending)
-  private moveStagedFiles = async (
-    chroniclesRoot: string,
-    importerId: string,
-    importDir: string,
-  ) => {
-    const files = await this.knex("import_files").where({
-      importerId,
-      status: "pending",
-    });
-
-    const attachmentsDir = path.join(chroniclesRoot, "_attachments");
-    await fs.promises.mkdir(attachmentsDir, { recursive: true });
-
-    for await (const file of files) {
-      const { sourcePathResolved, extension, chroniclesId } = file;
-
-      // todo: convert to just err checking
-      let [_, err] = await this.fileExists(sourcePathResolved, importDir);
-
-      if (err != null) {
-        console.error("this.fileExists test fails for ", sourcePathResolved);
-        await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
-          .update({ error: err });
-        continue;
-      }
-
-      const destinationFile = this.makeDestinationFilePath(
-        attachmentsDir,
-        chroniclesId,
-        extension,
-      );
-
-      try {
-        await this.files.copyFile(sourcePathResolved, destinationFile);
-      } catch (err) {
-        await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
-          .update({ error: (err as Error).message });
-        continue;
-      }
-
-      await this.knex("import_files")
-        .where({ importerId, sourcePathResolved })
-        .update({ status: "complete" });
-    }
-  };
-
-  // Fetch all files  successfully moved to _attachments, and return a mapping
-  // of the original source path to the new filename so document file links can be updated
-  private movedFilePaths = async (importerId: string) => {
-    const files = await this.knex("import_files").where({
-      importerId,
-      status: "complete",
-    });
-
-    // todo: Can pass in chronicles root; but since convention is always ../_attachments/file, should
-    // always be able to re-construct this...
-    const mapping: Record<string, string> = {};
-    for (const file of files) {
-      mapping[file.sourcePathResolved] = this.makeDestinationFilePath(
-        "../_attachments",
-        file.chroniclesId,
-        file.extension,
-      );
-    }
-
-    return mapping;
-  };
-
-  /**
-   * For each link in the file that points to a file, move the file to _attachments,
-   * rename the file based on chronicles conventions, and update the link in the file.
-   *
-   * @param importDir - The root import directory\
-   * @param sourcePath - The path to the source file that contains the link; used to resolve relative links
-   * @param mdast
-   */
-  private stageNoteFiles = async (
-    importerId: string,
-    importDir: string,
-    sourcePath: string,
-    mdast: mdast.Content | mdast.Root,
-  ): Promise<void> => {
-    if (this.isFileLink(mdast)) {
-      await this.stageFile(importerId, mdast.url, sourcePath, importDir);
-    } else {
-      if ("children" in mdast) {
-        let results = [];
-        for await (const child of mdast.children as any) {
-          await this.stageNoteFiles(importerId, importDir, sourcePath, child);
-        }
-      }
-    }
-  };
-
-  // use the mapping of moved files to update the file links in the note
-  private updateFileLinks = (
-    noteSourcePath: string,
-    mdast: mdast.Content | mdast.Root,
-    filesMapping: Record<string, string>,
-  ) => {
-    if (this.isFileLink(mdast)) {
-      const url = this.cleanFileUrl(noteSourcePath, mdast.url);
-      if (url in filesMapping) {
-        mdast.url = filesMapping[url];
-      }
+  // note: This assumes the mdast.url property of wikiembedding / link is already
+  // updated by the updateFileLinks routine.
+  private convertWikiLinks = (mdast: mdast.Content | mdast.Root) => {
+    // todo: also handle ofmWikiLink
+    if (mdast.type === "ofmWikiembedding") {
+      // todo: figure out what to do about hash
+      (mdast as any).type = "image";
+      mdast.title = mdast.value;
+      mdast.alt = mdast.value;
+      mdast.url = mdast.url;
+    } else if (mdast.type === "ofmWikilink") {
+      mdast.children = [{ type: "text", value: mdast.value }];
+      (mdast as any).type = "link";
     } else {
       if ("children" in mdast) {
         for (const child of mdast.children as any) {
-          this.updateFileLinks(noteSourcePath, child, filesMapping);
+          this.convertWikiLinks(child);
         }
       }
+    }
+  };
+
+  // 1. Find and collect all ofmTags, so they can be added to front matter
+  // 2. Convert ofmTags to text nodes otherwise later Slate will choke on them, since
+  // Chronicles does not (yet) natively support inline tags
+  // todo(test): Tag with #hash remains in document; tag without hash is stored in db
+  private processAndConvertTags = (
+    mdast: mdast.Content | mdast.Root,
+    tags: string[] = [],
+  ): string[] => {
+    if (mdast.type === "ofmTag") {
+      (mdast as any).type = "text";
+      const tag = mdast.value; // without hash
+      mdast.value = `#${mdast.value}`;
+      tags.push(tag);
+      return tags;
+    } else {
+      if ("children" in mdast) {
+        for (const child of mdast.children as any[]) {
+          this.processAndConvertTags(child, tags);
+        }
+      }
+
+      return tags;
     }
   };
 }

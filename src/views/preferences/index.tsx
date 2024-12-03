@@ -9,8 +9,10 @@ import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Select } from "../../components/Select";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { SourceType } from "../../preload/client/importer/SourceType";
 import { Preferences } from "../../preload/client/preferences";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
@@ -21,17 +23,18 @@ const Preferences = observer(() => {
     observable({
       preferences: {} as Preferences,
       loading: true,
+      sourceType: SourceType.Other,
     }),
   );
 
   const client = useClient();
   const navigate = useNavigate();
 
-  async function openDialogNotesDir() {
+  async function selectNotesRoot() {
     store.loading = true;
     try {
       const result = await client.preferences.openDialogNotesDir();
-      if (!result) {
+      if (!result?.value) {
         store.loading = false;
         return;
       }
@@ -45,7 +48,7 @@ const Preferences = observer(() => {
     }
   }
 
-  async function openDialogImportDir() {
+  async function importDirectory() {
     store.loading = true;
     try {
       const result = await client.preferences.openDialogImportDir();
@@ -54,7 +57,7 @@ const Preferences = observer(() => {
         return;
       }
 
-      await client.importer.import(result);
+      await client.importer.import(result, store.sourceType);
       store.loading = false;
     } catch (e) {
       console.error("Error importing directory", e);
@@ -112,22 +115,6 @@ const Preferences = observer(() => {
             located at {client.preferences.settingsPath()}
           </p>
         </SettingsBox>
-        {/* <SettingsBox>
-          <h4>Export</h4>
-          <Button
-            isLoading={store.loading}
-            disabled={store.loading}
-            onClick={() =>
-              client.export.export(
-                "/Users/cloverich/Documents/chronicles-development/export",
-              )
-            }
-          >
-            Export database to
-            "/Users/cloverich/Documents/chronicles-development/export"
-          </Button>
-        </SettingsBox> */}
-
         <SettingsBox>
           <h4>Chronicles Notes Root</h4>
           <p>
@@ -143,7 +130,7 @@ const Preferences = observer(() => {
           <Button
             isLoading={store.loading}
             disabled={store.loading}
-            onClick={openDialogNotesDir}
+            onClick={selectNotesRoot}
           >
             Select new directory
           </Button>
@@ -152,11 +139,19 @@ const Preferences = observer(() => {
           <h4>Import markdown directory</h4>
           <p>Import a directory of markdown files. Experimental.</p>
 
+          <Select
+            selected={store.sourceType}
+            options={[SourceType.Notion, SourceType.Other]}
+            onSelect={(selected) => (store.sourceType = selected)}
+            label="Import type"
+            description="Whether to use the Notion specific parser, which checks for ids in titles and pseudo-front matter in content"
+          />
+
           {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
           <Button
             isLoading={store.loading}
             disabled={store.loading}
-            onClick={openDialogImportDir}
+            onClick={importDirectory}
           >
             Select directory
           </Button>

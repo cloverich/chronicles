@@ -13,3 +13,5 @@ https://github.com/inokawa/remark-slate-transformer/issues/67
 # mdast-util-ofm
 
 Partial fork of https://github.com/MoritzRS/obsidian-ext initially because of ESM import issues. I need no immediate modifications of this project and if / once this project completes esm updates may be preferable to move this back to a dependency.
+
+ofm-\* packages are Copyright Moritz R. Schulz and MIT licensed

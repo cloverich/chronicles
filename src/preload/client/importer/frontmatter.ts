@@ -1,4 +1,5 @@
 import yaml from "yaml";
+import { SourceType } from "../importer/SourceType";
 
 interface ParseTitleAndFrontMatterRes {
   title: string;
@@ -12,11 +13,31 @@ interface RawExtractFrontMatterResponse {
   body: string;
 }
 
+export const parseTitleAndFrontMatter = (
+  contents: string,
+  filename: string,
+  sourceType: SourceType,
+): ParseTitleAndFrontMatterRes => {
+  // My Notion files were all in a database and hence exported with
+  // a kind of "front matter"; can pull title from that.
+  if (sourceType === "notion") {
+    return parseTitleAndFrontMatterNotion(contents);
+  } else {
+    // Otherwise for other import types, for now, make no attempt at finding
+    // or parsing front matter.
+    return {
+      title: filename,
+      frontMatter: {},
+      body: contents,
+    };
+  }
+};
+
 /**
  * Parses a string of contents into a title, front matter, and body; strips title / frontmatter
  * from the body.
  */
-export function parseTitleAndFrontMatter(
+function parseTitleAndFrontMatterNotion(
   contents: string,
 ): ParseTitleAndFrontMatterRes {
   const { title, rawFrontMatter, body } = extractRawFrontMatter(contents);
