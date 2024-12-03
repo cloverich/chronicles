@@ -8,9 +8,16 @@ import { IFilesClient } from "../files";
 
 const ATTACHMENTS_DIR = "_attachments";
 
-// NOTE: For resolving ![[Wiki Embedding]] links, I need a complete list of all non-.md
-// files in the import directory, these ridiuclous things are not absolute or
-// relative and could be anywhere in the import directory.
+// Manages the staging and moving of files during the import process, and
+// resolves file links in markdown notes to the chronicles path, so they can
+// be converted to markdown links.
+// The import process is as follows:
+// 1. stageFile: Stage all files in the import directory, and store their metadata in the
+//   import_files table.
+// 2. updateFileLinks: Update all file links in the notes to the chronicles path, so they can be
+//  converted to markdown links.
+// 3. moveStagedFiles: Move all staged files to the chronicles directory, and update their status
+//  in the import_files table.
 export class FilesImportResolver {
   private knex: Knex;
   private importerId: string;
@@ -22,8 +29,9 @@ export class FilesImportResolver {
     this.filesclient = filesclient;
   }
 
-  // Resolve a wiki embedding link to a chronicles path, for updating the link
-  // i.e. [[2024-11-17-20241118102000781.webp]] -> ../_attachments/<chroniclesId>.webp
+  // Resolve wikilink to markdown link (w/ chronicles id), and mark the staged
+  // file as used (so it will be moved in the next step).
+  // [[2024-11-17-20241118102000781.webp]] -> ../_attachments/<chroniclesId>.webp
   private resolveToChroniclesByName = async (
     name: string,
   ): Promise<string | undefined> => {
@@ -47,6 +55,10 @@ export class FilesImportResolver {
     }
   };
 
+  // Resolve a file path (from a markdown link) from its original path to the
+  // chronicles path, and mark the staged file as used (so it will be moved in
+  // the next step).
+  // /path/to/file.jpg -> ../_attachments/<chroniclesId>.jpg
   private resolveToChroniclesByPath = async (
     path: string,
   ): Promise<string | undefined> => {
@@ -98,6 +110,9 @@ export class FilesImportResolver {
     return await this.resolveToChroniclesByPath(absPath);
   };
 
+  // Add a file to the import_files table, so it can be moved in the next step;
+  // generate a chronicles id so the future chronicles path can be resolved prior
+  // to moving the file.
   stageFile = async (filestats: PathStatsFile) => {
     const ext = path.extname(filestats.path);
 
@@ -120,7 +135,7 @@ export class FilesImportResolver {
     }
   };
 
-  //todo: Move this back out to importer, just copy pasted to get things working
+  // todo: Move this back out to importer, just copy pasted to get things working
   // check if a markdown link is a link to a (markdown) note
   private isNoteLink = (url: string) => {
     // we are only interested in markdown links
@@ -132,7 +147,7 @@ export class FilesImportResolver {
     return true;
   };
 
-  // Mdast helper to determine if a node is a file link
+  // Determine if an mdast node is a file link
   isFileLink = (
     mdast: mdast.Content | mdast.Root,
   ): mdast is mdast.Image | mdast.Link | mdast.OfmWikiEmbedding => {
@@ -144,10 +159,7 @@ export class FilesImportResolver {
     );
   };
 
-  // Because I keep forgetting extension already has a . in it, etc.
-  // Returns relative or absolute path based which one attachmentsPath
-  // Chronicles file references are always ../_attachments/chroniclesId.ext as
-  // of this writing.
+  //../_attachments/chroniclesId.ext
   private makeDestinationFilePath = (
     chroniclesId: string,
     extension: string,
@@ -158,7 +170,7 @@ export class FilesImportResolver {
   // use the previously generated list of staged files to update file links in the note,
   // specifically to resolve ![[WikiLinks]] to the chronicles path, so they can be
   // convereted to markdown links.
-  // NOTE: MUST have called stageFile on ALL files before calling this
+  // NOTE: MUST have called stageFile on ALL files before calling this!!!
   updateFileLinks = async (
     noteSourcePath: string,
     mdast: mdast.Content | mdast.Root,
@@ -212,6 +224,7 @@ export class FilesImportResolver {
     return [resolvedPath, null];
   };
 
+  // After all files staged and links updated, move all staged files to the
   moveStagedFiles = async (
     chroniclesRoot: string,
     importerId: string,
