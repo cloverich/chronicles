@@ -35,10 +35,11 @@ const noteLinkRegex = /^\..\/(?:(.+)\/)?([a-zA-Z0-9-]+)\.md$/;
 /**
  * Check if url conforms to the note link format.
  *
- * ex: `../journal/note_id.md`
+ * todo: fuse with isNoteLink in markdown/index.ts
  *
+ * ex: `../journal/note_id.md`
  */
-export function checkNoteLink(url: string) {
+export function parseNoteLink(url: string) {
   if (!url) return null;
 
   const match = url.match(noteLinkRegex);
@@ -64,7 +65,7 @@ export function toSlateNoteLink({
   deco,
   children,
 }: ToSlateLink) {
-  const res = checkNoteLink(url);
+  const res = parseNoteLink(url);
 
   if (res) {
     return {

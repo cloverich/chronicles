@@ -172,7 +172,17 @@ export class FilesClient {
     const baseDir = this.settings.get("NOTES_DIR") as string;
     const newPath = path.join(baseDir, name);
 
-    return fs.promises.mkdir(newPath);
+    try {
+      await fs.promises.mkdir(newPath, { recursive: true });
+    } catch (err) {
+      // If it already exists, good to go
+      // note: ts can't find this type: instanceof ErrnoException
+      if ((err as any).code === "EEXIST") {
+        return newPath;
+      } else {
+        throw err;
+      }
+    }
   };
 
   removeFolder = async (name: string) => {

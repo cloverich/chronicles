@@ -38,7 +38,18 @@ CREATE TABLE IF NOT EXISTS "document_tags" (
     PRIMARY KEY ("documentId", "tag")
 );
 
+CREATE TABLE IF NOT EXISTS "document_links" (
+    "documentId" TEXT NOT NULL,
+    -- tagetId is not a foreign key, because if we delete the document, we leave
+    -- orphaned links in the original (would be weird to remove markdown links in the dependent notes)
+    "targetId" TEXT NOT NULL,
+    "targetJournal" TEXT NOT NULL,
+    "resolvedAt" TEXT,
+    FOREIGN KEY ("documentId") REFERENCES "documents" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY ("documentId", "targetId")
+);
 
+CREATE INDEX IF NOT EXISTS "document_links_target_idx" ON "document_links"("targetId");
 CREATE INDEX IF NOT EXISTS "documents_title_idx" ON "documents"("title");
 CREATE INDEX IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
 CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");

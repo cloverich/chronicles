@@ -18,6 +18,7 @@ export type IImporterClient = ImporterClient;
 
 import { uuidv7obj } from "uuidv7";
 import {
+  isNoteLink,
   mdastToString,
   parseMarkdownForImport as stringToMdast,
 } from "../../markdown";
@@ -419,17 +420,6 @@ export class ImporterClient {
     return linkMapping;
   };
 
-  // check if a markdown link is a link to a (markdown) note
-  private isNoteLink = (url: string) => {
-    // we are only interested in markdown links
-    if (!url.endsWith(".md")) return false;
-
-    // ensure its not a url with an .md domain
-    if (url.includes("://")) return false;
-
-    return true;
-  };
-
   private updateNoteLinks = async (
     mdast: mdast.Root | mdast.Content,
     item: StagedNote,
@@ -440,8 +430,8 @@ export class ImporterClient {
   ) => {
     // todo: update ofmWikilink
     // todo: update links that point to local files
-    if (mdast.type === "link" && this.isNoteLink(mdast.url)) {
-      const url = decodeURIComponent(mdast.url);
+    if (isNoteLink(mdast as mdast.RootContent)) {
+      const url = decodeURIComponent((mdast as mdast.Link).url);
       const sourceFolderPath = path.dirname(item.sourcePath);
       const sourceUrlResolved = path.resolve(sourceFolderPath, url);
       const mapped = linkMapping[sourceUrlResolved];

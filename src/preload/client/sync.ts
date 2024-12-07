@@ -107,6 +107,8 @@ updatedAt: ${document.updatedAt}
     this.db.exec("delete from document_tags");
     this.db.exec("delete from documents");
     this.db.exec("delete from journals");
+    // should be automatic, from documents delete cascade
+    this.db.exec("delete from document_links");
 
     const rootDir = await this.preferences.get("NOTES_DIR");
 

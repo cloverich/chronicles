@@ -3,6 +3,7 @@ import { Knex } from "knex";
 import mdast from "mdast";
 import path from "path";
 import { uuidv7obj } from "uuidv7";
+import { isNoteLink } from "../../../markdown";
 import { PathStatsFile } from "../../files";
 import { IFilesClient } from "../files";
 
@@ -135,25 +136,13 @@ export class FilesImportResolver {
     }
   };
 
-  // todo: Move this back out to importer, just copy pasted to get things working
-  // check if a markdown link is a link to a (markdown) note
-  private isNoteLink = (url: string) => {
-    // we are only interested in markdown links
-    if (!url.endsWith(".md")) return false;
-
-    // ensure its not a url with an .md domain
-    if (url.includes("://")) return false;
-
-    return true;
-  };
-
   // Determine if an mdast node is a file link
   isFileLink = (
     mdast: mdast.Content | mdast.Root,
   ): mdast is mdast.Image | mdast.Link | mdast.OfmWikiEmbedding => {
     return (
       (((mdast.type === "image" || mdast.type === "link") &&
-        !this.isNoteLink(mdast.url)) ||
+        !isNoteLink(mdast)) ||
         mdast.type === "ofmWikiembedding") &&
       !/^(https?|mailto|#|\/|\.|tel|sms|geo|data):/.test(mdast.url)
     );
