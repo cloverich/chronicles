@@ -1,6 +1,8 @@
 import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import { uuidv7obj } from "uuidv7";
+import { mdastToString, parseMarkdown, selectNoteLinks } from "../../markdown";
+import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
 import { IFilesClient } from "./files";
 
 export interface GetDocumentResponse {
@@ -11,6 +13,14 @@ export interface GetDocumentResponse {
   content: string;
   journal: string;
   tags: string[];
+}
+
+// table structure of document_links
+interface DocumentLinkDb {
+  documentId: string;
+  targetId: string;
+  targetJournal: string;
+  resolvedAt: string; // todo: unused
 }
 
 /**
@@ -241,7 +251,7 @@ updatedAt: ${document.updatedAt}
     );
 
     if (index) {
-      return [this.createIndex({ id, ...args }), docPath];
+      return [await this.createIndex({ id, ...args }), docPath];
     } else {
       return [id, docPath];
     }
@@ -257,12 +267,47 @@ updatedAt: ${document.updatedAt}
     if (origDoc.journal !== args.journal) {
       // no await, optimistic delete
       this.files.deleteDocument(args.id!, origDoc.journal);
+      this.updateDependentLinks([args.id!], args.journal);
     }
 
-    return this.updateIndex(args);
+    return await this.updateIndex(args);
   };
 
-  createIndex = ({
+  // todo: also need to update dependent title, if the title of the original note
+  // changes...again wikilinks simplify this.
+  updateDependentLinks = async (documentIds: string[], journal: string) => {
+    for (const targetId of documentIds) {
+      const links = await this.knex<DocumentLinkDb>("document_links").where({
+        targetId,
+      });
+
+      for (const link of links) {
+        const dependentNote = await this.findById({ id: link.documentId });
+        console.log("udating links for", dependentNote.title, dependentNote.id);
+        const mdast = parseMarkdown(dependentNote.content);
+        const noteLinks = selectNoteLinks(mdast);
+
+        // update the note links to point to the new journal
+        noteLinks.forEach((link) => {
+          const parsed = parseNoteLink(link.url);
+          if (!parsed) return;
+          const { noteId } = parsed;
+          if (noteId === targetId) {
+            // update url to new journal
+            link.url = `../${journal}/${noteId}.md`;
+            link.journalName = journal;
+          }
+        });
+
+        await this.save({
+          ...dependentNote,
+          content: mdastToString(mdast),
+        });
+      }
+    }
+  };
+
+  createIndex = async ({
     id,
     createdAt,
     updatedAt,
@@ -270,12 +315,12 @@ updatedAt: ${document.updatedAt}
     content,
     title,
     tags,
-  }: SaveRequest): string => {
+  }: SaveRequest): Promise<string> => {
     if (!id) {
       throw new Error("id required to create document index");
     }
 
-    return this.db.transaction(() => {
+    return this.db.transaction(async () => {
       this.db
         .prepare(
           `INSERT INTO documents (id, journal, content, title, createdAt, updatedAt) VALUES (:id, :journal, :content, :title, :createdAt, :updatedAt)`,
@@ -298,11 +343,13 @@ updatedAt: ${document.updatedAt}
           .run({ documentId: id });
       }
 
+      await this.addNoteLinks(id, content);
+
       return id;
     })();
   };
 
-  updateIndex = ({
+  updateIndex = async ({
     id,
     createdAt,
     updatedAt,
@@ -310,8 +357,8 @@ updatedAt: ${document.updatedAt}
     content,
     title,
     tags,
-  }: SaveRequest): void => {
-    return this.db.transaction(() => {
+  }: SaveRequest): Promise<void> => {
+    return this.db.transaction(async () => {
       this.db
         .prepare(
           `UPDATE documents SET journal=:journal, content=:content, title=:title, updatedAt=:updatedAt, createdAt=:createdAt WHERE id=:id`,
@@ -325,6 +372,7 @@ updatedAt: ${document.updatedAt}
           createdAt,
         });
 
+      // re-create tags to avoid diffing
       this.db
         .prepare(`DELETE FROM document_tags WHERE documentId = :documentId`)
         .run({ documentId: id });
@@ -336,7 +384,39 @@ updatedAt: ${document.updatedAt}
           )
           .run({ documentId: id });
       }
+
+      // re-create note links to avoid diffing
+      await this.knex("document_links").where({ documentId: id }).del();
+      await this.addNoteLinks(id!, content);
     })();
+  };
+
+  private addNoteLinks = async (documentId: string, content: string) => {
+    const mdast = parseMarkdown(content);
+    const noteLinks = selectNoteLinks(mdast)
+      .map((link) => parseNoteLink(link.url))
+      .filter(Boolean) as { noteId: string; journalName: string }[];
+
+    // drop duplicate note links, should only point to a noteId once
+    const seen = new Set<string>();
+    const noteLinksUnique = noteLinks.filter((link) => {
+      if (seen.has(link.noteId)) {
+        return false;
+      } else {
+        seen.add(link.noteId);
+        return true;
+      }
+    });
+
+    if (noteLinks.length > 0) {
+      await this.knex("document_links").insert(
+        noteLinksUnique.map((link) => ({
+          documentId,
+          targetId: link.noteId,
+          targetJournal: link.journalName,
+        })),
+      );
+    }
   };
 
   /**

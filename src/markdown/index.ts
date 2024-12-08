@@ -86,3 +86,32 @@ export const stringToSlate = (input: string, parse = parseMarkdown) => {
 export const slateToString = (nodes: SlateCustom.SlateNode[]) => {
   return mdastToString(wrapImages(slateToMdast(nodes)));
 };
+
+// is a markdown link a link to another note?
+// NOTE: Confusing name; dont have a distinct noteLink type in mdast, maybe
+// should be targetsNote or something
+export const isNoteLink = (mdast: mdast.RootContent): mdast is mdast.Link => {
+  if (mdast.type !== "link") return false;
+
+  // we are only interested in markdown links
+  if (!mdast.url.endsWith(".md")) return false;
+
+  // ensure its not a url with an .md domain
+  if (mdast.url.includes("://")) return false;
+
+  return true;
+};
+
+export const selectNoteLinks = (
+  mdast: mdast.Content | mdast.Root,
+): mdast.Link[] => {
+  const links: mdast.Link[] = [];
+  if (mdast.type === "link" && isNoteLink(mdast)) {
+    links.push(mdast);
+  } else if ("children" in mdast) {
+    for (const child of mdast.children as any) {
+      links.push(...selectNoteLinks(child));
+    }
+  }
+  return links;
+};
