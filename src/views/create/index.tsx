@@ -4,14 +4,14 @@ import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useClient from "../../hooks/useClient";
 import { useIsMounted } from "../../hooks/useIsMounted";
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import { useJournals } from "../../hooks/useJournals";
 import { SearchStoreContext } from "../documents/SearchStore";
 import { EditLoadingComponent } from "../edit/loading";
 
 // Creates a new document and immediately navigates to it; re-directs back to
 // /documents if no journals are available
 function useCreateDocument() {
-  const journalsStore = useContext(JournalsStoreContext)!;
+  const journalsStore = useJournals();
 
   // NOTE: Could move this hook but, but it assumes searchStore is defined, and its setup
   // in the root documents view. So better to keep it here for now.

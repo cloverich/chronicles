@@ -1,5 +1,5 @@
 import React from "react";
-import { JournalsStoreContext } from "./useJournalsLoader";
+import { JournalsStoreContext } from "./useApplicationLoader";
 
 /**
  * Simple hepler for accessing the journals store

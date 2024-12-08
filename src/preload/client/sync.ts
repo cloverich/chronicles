@@ -3,10 +3,11 @@ import { Knex } from "knex";
 import path from "path";
 import { UUID } from "uuidv7";
 import { Files } from "../files";
-import { GetDocumentResponse, IDocumentsClient } from "./documents";
+import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
+import { GetDocumentResponse } from "./types";
 
 export type ISyncClient = SyncClient;
 
@@ -39,12 +40,27 @@ updatedAt: ${document.updatedAt}
   /**
    * Sync the notes directory with the database
    */
-  sync = async () => {
+  sync = async (force = false) => {
+    // Skip sync if completed recently; not much thought put into this
+    const lastSync = await this.knex("sync").orderBy("id", "desc").first();
+    if (lastSync?.completedAt && !force) {
+      const lastSyncDate = new Date(lastSync.completedAt);
+      const now = new Date();
+      const diff = now.getTime() - lastSyncDate.getTime();
+      const diffHours = diff / (1000 * 60 * 60);
+      console.log(`last sync was ${diffHours} ago`);
+      if (diffHours < 1) {
+        console.log("skipping sync; last sync was less than an hour ago");
+        return;
+      }
+    }
+
+    const id = (await this.knex("sync").returning("id").insert({}))[0];
+    const start = performance.now();
+
     this.db.exec("delete from document_tags");
     this.db.exec("delete from documents");
     this.db.exec("delete from journals");
-    // should be automatic, from documents delete cascade
-    this.db.exec("delete from document_links");
 
     const rootDir = await this.preferences.get("NOTES_DIR");
 
@@ -61,6 +77,8 @@ updatedAt: ${document.updatedAt}
     // sync issues
     const journals: Record<string, number> = {};
     const erroredDocumentPaths: string[] = [];
+
+    let syncedCount = 0;
 
     for await (const file of Files.walk(rootDir, () => true, {
       // depth: dont go into subdirectories
@@ -135,6 +153,7 @@ updatedAt: ${document.updatedAt}
           createdAt: frontMatter.createdAt,
           updatedAt: frontMatter.updatedAt,
         });
+        syncedCount++;
       } catch (e) {
         erroredDocumentPaths.push(file.path);
 
@@ -170,7 +189,14 @@ updatedAt: ${document.updatedAt}
 
     await this.preferences.set("ARCHIVED_JOURNALS", archivedJournals);
 
-    // todo: track this in a useful way...
+    const end = performance.now();
+    const durationMs = (end - start).toFixed(2);
+    await this.knex("sync").where("id", id).update({
+      completedAt: new Date().toISOString(),
+      errorCount: erroredDocumentPaths.length,
+      syncedCount,
+      durationMs,
+    });
     console.log("Errored documents (during sync)", erroredDocumentPaths);
   };
 }

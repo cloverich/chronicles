@@ -1,15 +1,15 @@
 import { Heading, Pane, Paragraph } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import React, { useContext } from "react";
+import React from "react";
 
 import { useNavigate } from "react-router-dom";
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import { useJournals } from "../../hooks/useJournals";
 import { DocumentItem } from "./DocumentItem";
 import { Layout } from "./Layout";
 import { SearchStore, useSearchStore } from "./SearchStore";
 
 function DocumentsContainer() {
-  const journalsStore = useContext(JournalsStoreContext)!;
+  const journalsStore = useJournals();
   const searchStore = useSearchStore()!;
   const navigate = useNavigate();
 

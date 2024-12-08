@@ -3,12 +3,12 @@ import { cn } from "@udecode/cn";
 import { toaster } from "evergreen-ui";
 import { noop } from "lodash";
 import { observer } from "mobx-react-lite";
-import React, { useContext } from "react";
+import React from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Icons } from "../../../components/icons";
 import { JournalResponse } from "../../../hooks/useClient";
 import { useIsMounted } from "../../../hooks/useIsMounted";
-import { JournalsStoreContext } from "../../../hooks/useJournalsLoader";
+import { useJournals } from "../../../hooks/useJournals";
 import { SidebarStore } from "./store";
 
 export function JournalCreateForm({ done }: { done: () => any }) {
@@ -136,7 +136,7 @@ const JournalEditor = observer(function JournalEditor({
 }) {
   const [name, setName] = React.useState(journal.name);
   const [saving, setSaving] = React.useState(false);
-  const store = useContext(JournalsStoreContext)!;
+  const store = useJournals();
   const isMounted = useIsMounted();
 
   const onSave = async () => {

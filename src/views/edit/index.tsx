@@ -1,9 +1,9 @@
 import { ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { JournalResponse } from "../../hooks/useClient";
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import { useJournals } from "../../hooks/useJournals";
 import Titlebar from "../../titlebar/macos";
 import { useSearchStore } from "../documents/SearchStore";
 import * as Base from "../layout";
@@ -20,7 +20,7 @@ import { useEditableDocument } from "./useEditableDocument";
 
 // Loads document, with loading and error placeholders
 const DocumentLoadingContainer = observer(() => {
-  const journalsStore = useContext(JournalsStoreContext)!;
+  const journalsStore = useJournals();
   const { document: documentId } = useParams();
 
   // todo: handle missing or invalid documentId; loadingError may be fine for this, but

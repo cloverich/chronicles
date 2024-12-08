@@ -1,9 +1,9 @@
 import { toaster } from "evergreen-ui";
 import { computed, observable } from "mobx";
-import React, { useContext } from "react";
+import React from "react";
 import { JournalsStore } from "../../../hooks/stores/journals";
 import { JournalResponse } from "../../../hooks/useClient";
-import { JournalsStoreContext } from "../../../hooks/useJournalsLoader";
+import { useJournals } from "../../../hooks/useJournals";
 import { SearchStore } from "../SearchStore";
 
 export function useSidebarStore(
@@ -11,7 +11,7 @@ export function useSidebarStore(
   setIsShown: (isShown: boolean) => any,
 ) {
   const searchStore = search;
-  const jstore = useContext(JournalsStoreContext)!;
+  const jstore = useJournals();
 
   const [sidebarStore, _] = React.useState(
     () => new SidebarStore(jstore, searchStore, setIsShown),

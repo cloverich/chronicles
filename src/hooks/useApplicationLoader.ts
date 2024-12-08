@@ -7,9 +7,10 @@ export const JournalsStoreContext = React.createContext<JournalsStore | null>(
 );
 
 /**
- * Loads the journal store. After loading it should be passed down in context
+ * Runs sync and loads the journal store. After loading it should be passed down in context.
+ * Could put other application loading state here.
  */
-export function useJournalsLoader() {
+export function useAppLoader() {
   const [journals, setJournals] = React.useState<JournalResponse[]>();
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
   const [loading, setLoading] = React.useState(true);
@@ -21,6 +22,15 @@ export function useJournalsLoader() {
     setLoading(true);
 
     async function load() {
+      try {
+        await client.sync.sync();
+      } catch (err: any) {
+        console.error("error syncing at startup", err);
+        setLoadingErr(err);
+        setLoading(false);
+        return;
+      }
+
       try {
         const journalStore = await JournalsStore.init(client);
         if (!isEffectMounted) return;

@@ -366,7 +366,7 @@ export class ImporterClient {
 
     console.log("import complete; calling sync to update indexes");
 
-    await this.syncs.sync();
+    await this.syncs.sync(true);
   };
 
   // probably shouldn't make it to final version
