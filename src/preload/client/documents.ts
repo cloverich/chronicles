@@ -3,7 +3,11 @@ import { Knex } from "knex";
 import { uuidv7obj } from "uuidv7";
 import { mdastToString, parseMarkdown, selectNoteLinks } from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
+import { Files } from "../files";
 import { IFilesClient } from "./files";
+import { parseChroniclesFrontMatter } from "./importer/frontmatter";
+import { IPreferencesClient } from "./preferences";
+const path = require("path");
 
 export interface GetDocumentResponse {
   id: string;
@@ -116,9 +120,10 @@ export class DocumentsClient {
     private db: Database,
     private knex: Knex,
     private files: IFilesClient,
+    private preferences: IPreferencesClient,
   ) {}
 
-  findById = ({ id }: { id: string }): Promise<GetDocumentResponse> => {
+  findById = async ({ id }: { id: string }): Promise<GetDocumentResponse> => {
     const document = this.db
       .prepare(`SELECT * FROM documents WHERE id = :id`)
       .get({ id });
@@ -126,10 +131,34 @@ export class DocumentsClient {
       .prepare(`SELECT tag FROM document_tags WHERE documentId = :documentId`)
       .all({ documentId: id })
       .map((row) => row.tag);
+
+    const filepath = path.join(
+      this.preferences.get("NOTES_DIR"),
+      document.journal,
+      `${id}.md`,
+    );
+
+    // freshly load the document from disk to avoid desync issues
+    // todo: a real strategy for keeping db in sync w/ filesystem, that allows
+    // loading from db.
+    const { contents } = await this.loadDoc(filepath);
+
     return {
       ...document,
+      contents,
       tags: documentTags,
     };
+  };
+
+  // load a document + parse frontmatter from a file
+  loadDoc = async (path: string) => {
+    // todo: validate path is in notes dir
+    // const rootDir = await this.preferences.get("NOTES_DIR");
+    // todo: sha comparison
+    const contents = await Files.read(path);
+    const { frontMatter, body } = parseChroniclesFrontMatter(contents);
+
+    return { contents: body, frontMatter };
   };
 
   del = async (id: string, journal: string) => {
