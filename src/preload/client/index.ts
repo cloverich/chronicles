@@ -45,7 +45,7 @@ export function create(): IClient {
     const preferences = new PreferencesClient(settings);
     const files = new FilesClient(settings);
     const journals = new JournalsClient(db, files, preferences);
-    const documents = new DocumentsClient(db, knex, files);
+    const documents = new DocumentsClient(db, knex, files, preferences);
     const sync = new SyncClient(
       db,
       knex,

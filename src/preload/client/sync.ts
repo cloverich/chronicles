@@ -2,7 +2,6 @@ import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import path from "path";
 import { UUID } from "uuidv7";
-import yaml from "yaml";
 import { Files } from "../files";
 import { GetDocumentResponse, IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
@@ -10,55 +9,6 @@ import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
 
 export type ISyncClient = SyncClient;
-
-function preprocessFrontMatter(content: string) {
-  // Regular expression to match key-value pairs in front matter
-  return content
-    .replace(/^(\w+):\s*$/gm, '$1: ""') // Handle keys with no values
-    .replace(/^(\w+):\s*(.+)$/gm, (match, key, value) => {
-      // Check if value contains special characters that need quoting
-      if (value.match(/[:{}[\],&*#?|\-<>=!%@`]/) || value.includes("\n")) {
-        // If the value is not already quoted, wrap it in double quotes
-        if (!/^['"].*['"]$/.test(value)) {
-          // Escape any existing double quotes in the value
-          value = value.replace(/"/g, '\\"');
-          return `${key}: "${value}"`;
-        }
-      }
-      return match; // Return unchanged if no special characters
-    });
-}
-
-// naive frontmatter parser
-function parseFrontMatter(content: string) {
-  // Regular expression to match front matter (--- at the beginning and end)
-  const frontMatterRegex = /^---\n([\s\S]*?)\n---\n*/;
-
-  // Match the front matter
-  const match = content.match(frontMatterRegex);
-  if (!match) {
-    return {
-      frontMatter: {}, // No front matter found
-      body: content, // Original content without changes
-    };
-  }
-
-  // Extract front matter and body
-  const frontMatterContent = preprocessFrontMatter(match[1]);
-  const body = content.slice(match[0].length); // Content without front matter
-
-  // Parse the front matter using yaml
-  const frontMatter = yaml.parse(frontMatterContent);
-  frontMatter.tags = frontMatter.tags
-    .split(",")
-    .map((tag: string) => tag.trim())
-    .filter(Boolean);
-
-  return {
-    frontMatter,
-    body,
-  };
-}
 
 const SKIPPABLE_FILES = new Set(".DS_Store");
 
@@ -71,20 +21,6 @@ export class SyncClient {
     private files: IFilesClient,
     private preferences: IPreferencesClient,
   ) {}
-
-  // private selectImages = (mdast: any, images: any = new Set()) => {
-  //   if (mdast.type === "image") {
-  //     images.add(mdast.url);
-  //   }
-
-  //   if (mdast.children) {
-  //     for (const child of mdast.children) {
-  //       this.selectImages(child, images);
-  //     }
-  //   }
-
-  //   return images;
-  // };
 
   /**
    * Convert the properties we track to frontmatter
@@ -120,7 +56,6 @@ updatedAt: ${document.updatedAt}
     await this.files.ensureDir(path.join(rootDir, "_attachments"));
 
     console.log("syncing directory", rootDir);
-    const rootFolderName = path.basename(rootDir);
 
     // Track created journals and number of documents to help troubleshoot
     // sync issues
@@ -158,7 +93,12 @@ updatedAt: ${document.updatedAt}
       try {
         UUID.parse(documentId);
       } catch (e) {
-        console.error("Invalid document id", documentId, e);
+        console.error(
+          "Invalid document id in sync; skipping",
+          file.path,
+          documentId,
+          e,
+        );
         continue;
       }
 
@@ -179,17 +119,7 @@ updatedAt: ${document.updatedAt}
         journals[dirname] = 0;
       }
 
-      // todo: sha comparison
-      const contents = await Files.read(file.path);
-      const { frontMatter, body } = parseFrontMatter(contents);
-
-      // In a directory that was pre-formatted by Chronicles, this should not
-      // be needed. Will leave here as a reminder when I do the more generalized
-      // import routine.
-      if (!frontMatter.createdAt) {
-        frontMatter.createdAt = file.stats.ctime.toISOString();
-        frontMatter.updatedAt = file.stats.mtime.toISOString();
-      }
+      const { contents, frontMatter } = await this.documents.loadDoc(file.path);
 
       // todo: handle additional kinds of frontMatter; just add a column for them
       // and ensure they are not overwritten when editing existing files
@@ -199,7 +129,7 @@ updatedAt: ${document.updatedAt}
         await this.documents.createIndex({
           id: documentId,
           journal: dirname, // using name as id
-          content: body,
+          content: contents,
           title: frontMatter.title,
           tags: frontMatter.tags || [],
           createdAt: frontMatter.createdAt,
