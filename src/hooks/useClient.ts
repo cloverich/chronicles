@@ -1,8 +1,11 @@
 import React, { useContext } from "react";
 import { IClient } from "../preload/client/types";
 
-export { SearchResponse } from "../preload/client/documents";
-export { IClient, JournalResponse } from "../preload/client/types";
+export {
+  IClient,
+  JournalResponse,
+  SearchResponse,
+} from "../preload/client/types";
 
 export const ClientContext = React.createContext<any>(
   (window as any).chronicles.createClient(),

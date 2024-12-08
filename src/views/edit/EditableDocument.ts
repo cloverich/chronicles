@@ -3,7 +3,7 @@ import { debounce, pick } from "lodash";
 import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
 import { IClient } from "../../hooks/useClient";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import { GetDocumentResponse } from "../../preload/client/documents";
+import { GetDocumentResponse } from "../../preload/client/types";
 import { SlateTransformer } from "./SlateTransformer";
 
 function isExistingDocument(

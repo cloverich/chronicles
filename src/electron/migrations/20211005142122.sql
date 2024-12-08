@@ -49,6 +49,15 @@ CREATE TABLE IF NOT EXISTS "document_links" (
     PRIMARY KEY ("documentId", "targetId")
 );
 
+CREATE TABLE IF NOT EXISTS "sync" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    "startedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TEXT,
+    "syncedCount" INTEGER,
+    "errorCount" INTEGER,
+    "durationMs" INTEGER
+);
+
 CREATE INDEX IF NOT EXISTS "document_links_target_idx" ON "document_links"("targetId");
 CREATE INDEX IF NOT EXISTS "documents_title_idx" ON "documents"("title");
 CREATE INDEX IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");

@@ -11,7 +11,7 @@ import {
   isSelectionAtBlockStart,
 } from "@udecode/plate-common";
 import { observer } from "mobx-react-lite";
-import React, { useContext } from "react";
+import React from "react";
 // import { Node as SNode } from "slate";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 
@@ -104,7 +104,7 @@ import {
 } from "./editor/plugins/createVideoPlugin";
 
 import useClient, { JournalResponse } from "../../hooks/useClient";
-import { JournalsStoreContext } from "../../hooks/useJournalsLoader";
+import { useJournals } from "../../hooks/useJournals";
 import { SearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import { EditorMode } from "./EditorMode";
@@ -121,7 +121,7 @@ export interface Props {
 
 export default observer(
   ({ children, saving, value, setValue }: React.PropsWithChildren<Props>) => {
-    const jstore = useContext(JournalsStoreContext);
+    const jstore = useJournals();
     const client = useClient();
     const store = new SearchStore(client, jstore!, () => {}, []);
 

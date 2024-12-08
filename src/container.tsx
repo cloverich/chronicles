@@ -5,8 +5,8 @@ import "react-day-picker/dist/style.css";
 import { Navigate, Route, Routes } from "react-router-dom";
 import {
   JournalsStoreContext,
-  useJournalsLoader,
-} from "./hooks/useJournalsLoader";
+  useAppLoader,
+} from "./hooks/useApplicationLoader";
 import Layout, { LayoutDummy } from "./layout";
 import DocumentCreator from "./views/create";
 import Documents from "./views/documents";
@@ -15,7 +15,7 @@ import Editor from "./views/edit";
 import Preferences from "./views/preferences";
 
 export default observer(function Container() {
-  const { journalsStore, loading, loadingErr } = useJournalsLoader();
+  const { journalsStore, loading, loadingErr } = useAppLoader();
 
   if (loading) {
     return (

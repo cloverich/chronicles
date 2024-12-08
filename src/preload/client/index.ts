@@ -29,7 +29,7 @@ const knex = Knex({
   },
 });
 
-export { GetDocumentResponse } from "./documents";
+export { GetDocumentResponse } from "./types";
 
 let client: IClient;
 

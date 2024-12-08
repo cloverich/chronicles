@@ -71,7 +71,9 @@ const Preferences = observer(() => {
 
     toaster.notify("Syncing cache...may take a few minutes");
     store.loading = true;
-    await client.sync.sync();
+
+    // force sync when called manually
+    await client.sync.sync(true);
     await jstore.refresh();
     store.loading = false;
     toaster.success("Cache synced");
