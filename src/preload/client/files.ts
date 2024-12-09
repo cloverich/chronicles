@@ -3,6 +3,7 @@ import Store from "electron-store";
 import fs from "fs";
 import path from "path";
 import { uuidv7obj } from "uuidv7";
+import { Files } from "../files";
 const { readFile, writeFile, access, stat } = fs.promises;
 
 interface UploadResponse {
@@ -149,7 +150,7 @@ export class FilesClient {
       document.id,
     );
 
-    await fs.promises.mkdir(journalPath, { recursive: true });
+    await Files.mkdirp(journalPath);
     await fs.promises.writeFile(docPath, document.content);
     return docPath;
   };
@@ -171,18 +172,7 @@ export class FilesClient {
   createFolder = async (name: string) => {
     const baseDir = this.settings.get("NOTES_DIR") as string;
     const newPath = path.join(baseDir, name);
-
-    try {
-      await fs.promises.mkdir(newPath, { recursive: true });
-    } catch (err) {
-      // If it already exists, good to go
-      // note: ts can't find this type: instanceof ErrnoException
-      if ((err as any).code === "EEXIST") {
-        return newPath;
-      } else {
-        throw err;
-      }
-    }
+    await Files.mkdirp(newPath);
   };
 
   removeFolder = async (name: string) => {
@@ -257,7 +247,7 @@ export class FilesClient {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      await fs.promises.mkdir(directory, { recursive: true });
+      await Files.mkdirp(directory);
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke

@@ -127,16 +127,16 @@ export interface SaveRequest {
   createdAt?: string;
   updatedAt?: string;
 }
+
 // Nobody would put node_modules in their note directory... right?
 // todo: Make this configurable
-
 export const SKIPPABLE_FILES = new Set([
   "node_modules",
   "dist",
   "build",
   "out",
 ]);
+
 // Skip hidden folders and files, especially .git, .DS_Store, .Thumbs.db, etc
 // NOTE: This also skips _attachments, so add exclusion in importer routine
-
 export const SKIPPABLE_PREFIXES = new Set([".", "_", "*", "~"]);

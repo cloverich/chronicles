@@ -1,5 +1,4 @@
 import fs, { Stats } from "fs";
-import mkdirp from "mkdirp";
 import path from "path";
 import { NotFoundError, ValidationError } from "./errors";
 const { readFile, writeFile, access, stat } = fs.promises;
@@ -39,6 +38,20 @@ export class Files {
     );
   }
 
+  static async mkdirp(dir: string) {
+    try {
+      await fs.promises.mkdir(dir, { recursive: true });
+    } catch (err) {
+      // If it already exists, good to go
+      // note: ts can't find this type: instanceof ErrnoException
+      if ((err as any).code === "EEXIST") {
+        return dir;
+      } else {
+        throw err;
+      }
+    }
+  }
+
   static async read(fp: string) {
     try {
       return await readFileStr(fp);
@@ -69,7 +82,7 @@ export class Files {
     const fp = Files.pathForEntry(journalPath, date);
     const dir = path.parse(fp).dir;
 
-    await mkdirp(dir);
+    await Files.mkdirp(dir);
     return await writeFile(fp, contents);
   }
 
@@ -154,7 +167,7 @@ export class Files {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      await mkdirp(directory);
+      await Files.mkdirp(directory);
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke
