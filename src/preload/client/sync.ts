@@ -8,22 +8,13 @@ import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import { GetDocumentResponse } from "./types";
+import {
+  GetDocumentResponse,
+  SKIPPABLE_FILES,
+  SKIPPABLE_PREFIXES,
+} from "./types";
 
 export type ISyncClient = SyncClient;
-
-// Nobody would put node_modules in their note directory... right?
-// todo: Make this configurable
-export const SKIPPABLE_FILES = new Set([
-  "node_modules",
-  "dist",
-  "build",
-  "out",
-]);
-
-// Skip hidden folders and files, especially .git, .DS_Store, .Thumbs.db, etc
-// NOTE: This also skips _attachments, so add exclusion in importer routine
-export const SKIPPABLE_PREFIXES = new Set([".", "_", "*", "~"]);
 
 // Indicates which files to index when syncing
 const shouldIndex = (dirent: fs.Dirent) => {
@@ -70,7 +61,7 @@ updatedAt: ${document.updatedAt}
   /**
    * Sync the notes directory with the database
    */
-  sync = async (force = true) => {
+  sync = async (force = false) => {
     // Skip sync if completed recently; not much thought put into this
     const lastSync = await this.knex("sync").orderBy("id", "desc").first();
     if (lastSync?.completedAt && !force) {

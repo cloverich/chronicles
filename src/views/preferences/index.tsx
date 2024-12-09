@@ -14,6 +14,10 @@ import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import { Preferences } from "../../preload/client/preferences";
+import {
+  SKIPPABLE_FILES,
+  SKIPPABLE_PREFIXES,
+} from "../../preload/client/types";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
 
@@ -140,6 +144,21 @@ const Preferences = observer(() => {
         <SettingsBox>
           <h4>Import markdown directory</h4>
           <p>Import a directory of markdown files. Experimental.</p>
+          <p>The following file / directory names will be skipped:</p>
+          <ul>
+            {Array.from(SKIPPABLE_FILES).map((file) => (
+              <li key={file}>{file}</li>
+            ))}
+          </ul>
+          <p>
+            Other than _attachments, the following prefixes will cause a file or
+            directory to be skipped:
+          </p>
+          <ul>
+            {Array.from(SKIPPABLE_PREFIXES).map((prefix) => (
+              <li key={prefix}>{prefix}</li>
+            ))}
+          </ul>
 
           <Select
             selected={store.sourceType}

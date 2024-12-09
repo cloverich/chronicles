@@ -10,7 +10,8 @@ import {
   validateJournalName,
 } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import { ISyncClient, SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./sync";
+import { ISyncClient } from "./sync";
+import { SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
 
 import * as mdast from "mdast";
 
