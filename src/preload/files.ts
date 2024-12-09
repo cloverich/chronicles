@@ -1,8 +1,6 @@
 import fs, { Stats } from "fs";
-import mkdirp from "mkdirp";
 import path from "path";
 import { NotFoundError, ValidationError } from "./errors";
-import walk = require("klaw");
 const { readFile, writeFile, access, stat } = fs.promises;
 const readFileStr = (path: string) => readFile(path, "utf8");
 
@@ -13,7 +11,7 @@ export interface PathStatsFile {
   stats: Stats;
 }
 
-type ShouldIndex = (file: PathStatsFile) => boolean;
+type ShouldIndex = (file: fs.Dirent) => boolean;
 
 // for matching exact (ex: 2020-05-01)
 const reg = /^\d{4}-\d{2}-\d{2}$/;
@@ -38,6 +36,26 @@ export class Files {
       date.slice(5, 7),
       date + ".md",
     );
+  }
+
+  static async mkdirp(dir: string) {
+    try {
+      await fs.promises.mkdir(dir, { recursive: true });
+    } catch (err) {
+      // note: ts can't find this type: instanceof ErrnoException
+      if ((err as any).code === "EEXIST") {
+        // confirm it's a directory
+        const stats = await fs.promises.stat(dir);
+        if (!stats.isDirectory()) {
+          throw new Error(`[Files.mkdirp] ${dir} already exists as a file`);
+        }
+
+        // already exists, good to go
+        return dir;
+      } else {
+        throw err;
+      }
+    }
   }
 
   static async read(fp: string) {
@@ -70,7 +88,7 @@ export class Files {
     const fp = Files.pathForEntry(journalPath, date);
     const dir = path.parse(fp).dir;
 
-    await mkdirp(dir);
+    await Files.mkdirp(dir);
     return await writeFile(fp, contents);
   }
 
@@ -102,27 +120,38 @@ export class Files {
   }
 
   /**
+   * Walk directory, for index and sync routines
+   * @param dir - Where to start walking
+   * @param depthLimit - A limit on how deep to walk
+   * @param shouldIndex - A function that determines whether to index a file / directory
    *
-   * @param directory - The folder to walk
-   * @param shouldIndex - A function that determines whether to index a file
-   * @param opts - Klaw options https://github.com/jprichardson/node-klaw
-   *
-   * todo: If bored, implement a more efficient and easier to work with API:
-   * - Implement walk with w/ node APIs
-   * - Filter on filename -- avoid non-journal directories and calling fs.stat needlessly
+   * usage:
+   * ```
+   * for await (const file of Files.walk2(rootDir, 1, shouldIndex)) { ... }
+   * ```
    */
   static async *walk(
-    directory: string,
+    dir: string,
+    depthLimit = Infinity,
     shouldIndex: ShouldIndex,
-    opts: walk.Options = {},
-  ) {
-    // todo: statistics
-    const walking = walk(directory, opts);
+    currentDepth = 0,
+  ): AsyncGenerator<PathStatsFile> {
+    if (currentDepth > depthLimit) return;
 
-    // NOTE: Docs say walk is lexicographical but if I log out statements, its not walking in order
-    for await (const entry of walking) {
-      if (shouldIndex(entry)) {
-        yield entry as PathStatsFile;
+    const dirHandle = await fs.promises.opendir(dir);
+    for await (const entry of dirHandle) {
+      const fullPath = path.join(dir, entry.name);
+
+      // Skip hidden files/directories or other excluded names
+      if (entry.isSymbolicLink()) continue; // Skip symlinks entirely
+      if (!shouldIndex(entry)) continue;
+
+      if (entry.isDirectory()) {
+        // we don't yield directories, just contents
+        yield* Files.walk(fullPath, depthLimit, shouldIndex, currentDepth + 1);
+      } else {
+        const stats = await fs.promises.lstat(fullPath); // Use lstat to check for symlinks
+        yield { path: fullPath, stats }; // Yield file path and stats
       }
     }
   }
@@ -144,7 +173,7 @@ export class Files {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      await mkdirp(directory);
+      await Files.mkdirp(directory);
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke

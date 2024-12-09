@@ -1,4 +1,5 @@
 import { Database } from "better-sqlite3";
+import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
 import { UUID } from "uuidv7";
@@ -7,11 +8,31 @@ import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import { GetDocumentResponse } from "./types";
+import {
+  GetDocumentResponse,
+  SKIPPABLE_FILES,
+  SKIPPABLE_PREFIXES,
+} from "./types";
 
 export type ISyncClient = SyncClient;
 
-const SKIPPABLE_FILES = new Set(".DS_Store");
+// Indicates which files to index when syncing
+const shouldIndex = (dirent: fs.Dirent) => {
+  for (const prefix of SKIPPABLE_PREFIXES) {
+    if (dirent.name.startsWith(prefix)) return false;
+  }
+
+  if (SKIPPABLE_FILES.has(dirent.name)) return false;
+
+  if (dirent.isFile()) {
+    // for files, only index markdown files, unlike importer
+    // which will import markdown and other files (if referenced)
+    return dirent.name.endsWith(".md");
+  } else {
+    // at this point assume its a directory that likely has markdown files
+    return true;
+  }
+};
 
 export class SyncClient {
   constructor(
@@ -80,31 +101,8 @@ updatedAt: ${document.updatedAt}
 
     let syncedCount = 0;
 
-    for await (const file of Files.walk(rootDir, () => true, {
-      // depth: dont go into subdirectories
-      depthLimit: 1,
-    })) {
-      // For some reason it yields the root folder first, what is the point of that shrug
-      if (file.path == rootDir) continue;
-
-      const { ext, name, dir } = path.parse(file.path);
-      if (name.startsWith(".")) continue;
-      if (SKIPPABLE_FILES.has(name)) continue;
-
-      if (file.stats.isDirectory()) {
-        const dirname = name;
-        if (dirname === "_attachments") {
-          continue;
-        }
-
-        // Defer creating journals until we find a markdown file
-        // in the directory
-        continue;
-      }
-
-      // Only process markdown files
-      if (ext !== ".md") continue;
-
+    for await (const file of Files.walk(rootDir, 1, shouldIndex)) {
+      const { name, dir } = path.parse(file.path);
       // filename is id; ensure it is formatted as a uuidv7
       const documentId = name;
 
@@ -123,11 +121,6 @@ updatedAt: ${document.updatedAt}
       // treated as journal name
       // NOTE: This directory check only works because we limit depth to 1
       const dirname = path.basename(dir);
-
-      // _attachments is for images (etc), not notes
-      if (dirname === "_attachments") {
-        continue;
-      }
 
       // Once we find at least one markdown file, we treat this directory
       // as a journal

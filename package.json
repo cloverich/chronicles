@@ -22,7 +22,6 @@
     "better-sqlite3": "^9.2.2",
     "electron-store": "^8.0.1",
     "knex": "^2.5.0",
-    "mkdirp": "^1.0.4",
     "uuidv7": "^0.6.3"
   },
   "devDependencies": {
@@ -41,7 +40,6 @@
     "@radix-ui/react-visually-hidden": "^1.1.0",
     "@types/better-sqlite3": "^5.4.0",
     "@types/chai": "^4.3.11",
-    "@types/klaw": "^3.0.1",
     "@types/luxon": "^2.4.0",
     "@types/mkdirp": "^1.0.1",
     "@types/mocha": "^7.0.2",
@@ -56,7 +54,6 @@
     "electron": "^28.2.0",
     "esbuild": "^0.20.0",
     "evergreen-ui": "^7.1.9",
-    "klaw": "^3.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.314.0",
     "luxon": "^2.4.0",

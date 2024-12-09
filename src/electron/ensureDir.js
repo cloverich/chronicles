@@ -1,11 +1,10 @@
 const fs = require("fs");
-const mkdirp = require("mkdirp");
 
 /**
  * Borrowed from api files, since its typescript and this is not
  * Reconcile that later
  */
-exports.ensureDir = function ensureDir(directory) {
+exports.ensureDir = function ensureDir(directory, create = true) {
   if (!directory) {
     throw new Error("ensureDir called with no directory path");
   }
@@ -19,7 +18,11 @@ exports.ensureDir = function ensureDir(directory) {
     }
   } catch (err) {
     if (err.code !== "ENOENT") throw err;
-    mkdirp.sync(directory);
+    try {
+      fs.mkdirSync(directory, { recursive: true });
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
   }
 
   // NOTE: Documentation suggests Windows may report ok here, but then choke

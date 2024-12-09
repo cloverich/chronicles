@@ -4,7 +4,7 @@ import mdast from "mdast";
 import path from "path";
 import { uuidv7obj } from "uuidv7";
 import { isNoteLink } from "../../../markdown";
-import { PathStatsFile } from "../../files";
+import { Files, PathStatsFile } from "../../files";
 import { IFilesClient } from "../files";
 
 const ATTACHMENTS_DIR = "_attachments";
@@ -226,7 +226,7 @@ export class FilesImportResolver {
     });
 
     const attachmentsDir = path.join(chroniclesRoot, ATTACHMENTS_DIR);
-    await fs.promises.mkdir(attachmentsDir, { recursive: true });
+    await Files.mkdirp(attachmentsDir);
 
     for await (const file of files) {
       const { sourcePathResolved, extension, chroniclesId } = file;
