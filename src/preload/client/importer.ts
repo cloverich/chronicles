@@ -10,7 +10,7 @@ import {
   validateJournalName,
 } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import { ISyncClient } from "./sync";
+import { ISyncClient, SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./sync";
 
 import * as mdast from "mdast";
 
@@ -25,8 +25,6 @@ import {
 import { FilesImportResolver } from "./importer/FilesImportResolver";
 import { SourceType } from "./importer/SourceType";
 import { parseTitleAndFrontMatter } from "./importer/frontmatter";
-
-export const SKIPPABLE_FILES = new Set(".DS_Store");
 
 // UUID in Notion notes look like 32 character hex strings; make this somewhat more lenient
 const hexIdRegex = /\b[0-9a-f]{16,}\b/;
@@ -167,20 +165,21 @@ export class ImporterClient {
 
     for await (const file of Files.walk(
       importDir,
-      // todo: Skip some directories (e.g. .git, .vscode, etc.)
-      (filestats) => {
-        // Skip directories, symbolic links, etc.
-        if (!filestats.stats.isFile()) return false;
+      30, // avoid infinite loops, random guess at reasoable depth
 
-        const name = path.basename(filestats.path);
-
+      (dirent) => {
         // Skip hidden files and directories
-        if (name.startsWith(".")) return false;
-        if (SKIPPABLE_FILES.has(name)) return false;
+        if (dirent.name.startsWith(".")) return false;
+        if (SKIPPABLE_FILES.has(dirent.name)) return false;
+
+        // Skip prefixes including _, unless its _attachments
+        if (dirent.name === "_attachments") return true;
+        for (const prefix of SKIPPABLE_PREFIXES) {
+          if (dirent.name.startsWith(prefix)) return false;
+        }
 
         return true;
       },
-      {},
     )) {
       if (file.path.endsWith(".md")) {
         await this.stageNote(
