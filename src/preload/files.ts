@@ -42,9 +42,15 @@ export class Files {
     try {
       await fs.promises.mkdir(dir, { recursive: true });
     } catch (err) {
-      // If it already exists, good to go
       // note: ts can't find this type: instanceof ErrnoException
       if ((err as any).code === "EEXIST") {
+        // confirm it's a directory
+        const stats = await fs.promises.stat(dir);
+        if (!stats.isDirectory()) {
+          throw new Error(`[Files.mkdirp] ${dir} already exists as a file`);
+        }
+
+        // already exists, good to go
         return dir;
       } else {
         throw err;

@@ -4,7 +4,7 @@ const fs = require("fs");
  * Borrowed from api files, since its typescript and this is not
  * Reconcile that later
  */
-exports.ensureDir = function ensureDir(directory) {
+exports.ensureDir = function ensureDir(directory, create = true) {
   if (!directory) {
     throw new Error("ensureDir called with no directory path");
   }
