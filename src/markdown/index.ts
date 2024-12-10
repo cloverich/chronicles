@@ -5,8 +5,13 @@ import * as mdast from "mdast";
 export { slateToMdast } from "./remark-slate-transformer/transformers/slate-to-mdast.js";
 
 import { fromMarkdown } from "mdast-util-from-markdown";
+import {
+  frontmatterFromMarkdown,
+  frontmatterToMarkdown,
+} from "mdast-util-frontmatter";
 import { gfmFromMarkdown, gfmToMarkdown } from "mdast-util-gfm";
 import { toMarkdown } from "mdast-util-to-markdown";
+import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
 import { ofmTagFromMarkdown } from "./mdast-util-ofm-tag";
 import { ofmWikilinkFromMarkdown } from "./mdast-util-ofm-wikilink";
@@ -53,25 +58,28 @@ function wrapImages(tree: mdast.Root) {
 // to Chronicles tags and markdown links. Future versions may support these properly.
 export const parseMarkdownForImport = (markdown: string): mdast.Root => {
   return fromMarkdown(markdown, {
-    extensions: [gfm(), ofmTag(), ofmWikilink()],
+    extensions: [gfm(), ofmTag(), ofmWikilink(), frontmatter(["yaml"])],
     mdastExtensions: [
       gfmFromMarkdown(),
       ofmTagFromMarkdown(),
       ofmWikilinkFromMarkdown(),
+      // https://github.com/micromark/micromark-extension-frontmatter?tab=readme-ov-file#preset
+      // todo: support toml (need toml parser)
+      frontmatterFromMarkdown(["yaml"]),
     ],
   });
 };
 
 export const parseMarkdown = (markdown: string): mdast.Root => {
   return fromMarkdown(markdown, {
-    extensions: [gfm()],
-    mdastExtensions: [gfmFromMarkdown()],
+    extensions: [gfm(), frontmatter(["yaml"])],
+    mdastExtensions: [gfmFromMarkdown(), frontmatterFromMarkdown(["yaml"])],
   });
 };
 
 export const mdastToString = (tree: mdast.Nodes) => {
   return toMarkdown(tree, {
-    extensions: [gfmToMarkdown() as any],
+    extensions: [gfmToMarkdown() as any, frontmatterToMarkdown(["yaml"])],
     bullet: "-",
     emphasis: "_",
   });

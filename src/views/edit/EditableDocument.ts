@@ -49,6 +49,7 @@ export class EditableDocument {
   @observable createdAt: string;
   @observable updatedAt: string; // read-only outside this class
   @observable tags: string[] = [];
+  @observable frontMatter: Record<string, any> = {};
 
   // editor properties
   slateContent: SlateCustom.SlateNode[];
@@ -68,6 +69,7 @@ export class EditableDocument {
     this.createdAt = doc.createdAt;
     this.updatedAt = doc.updatedAt;
     this.tags = doc.tags;
+    this.frontMatter = doc.frontMatter;
     const content = doc.content;
     const slateNodes = SlateTransformer.nodify(content);
     this.slateContent = slateNodes;
@@ -131,6 +133,7 @@ export class EditableDocument {
           "id",
           "createdAt",
           "tags",
+          "frontMatter",
         ),
       );
       this.id = res.id;

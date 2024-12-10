@@ -1,6 +1,7 @@
 import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import path from "path";
+import yaml from "yaml";
 import { Files, PathStatsFile } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
@@ -222,7 +223,7 @@ export class ImporterClient {
         importDir,
         journals,
         sourceType,
-        // See notes in inferOrGenerateJournalName; this is a very specific
+        // See notes in inferOrGenerateJournalName; this is very specific
         // to my Notion export.
         frontMatter.Category,
       );
@@ -256,7 +257,7 @@ export class ImporterClient {
         title,
         content: body,
         journal: journalName,
-        frontMatter: JSON.stringify(frontMatter),
+        frontMatter: yaml.stringify(frontMatter),
         status: "pending",
       };
 
@@ -300,7 +301,7 @@ export class ImporterClient {
     });
 
     for await (const item of items) {
-      const frontMatter = JSON.parse(item.frontMatter);
+      const frontMatter = yaml.parse(item.frontMatter);
 
       const mdast = stringToMdast(item.content) as any as mdast.Root;
       await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
@@ -313,7 +314,7 @@ export class ImporterClient {
 
       this.convertWikiLinks(mdast);
 
-      // process tags into front matter
+      // process inline tags into front matter
       frontMatter.tags = Array.from(
         new Set(this.processAndConvertTags(mdast, frontMatter.tags || [])),
       );
@@ -329,6 +330,7 @@ export class ImporterClient {
             tags: frontMatter.tags || [],
             createdAt: frontMatter.createdAt,
             updatedAt: frontMatter.updatedAt,
+            frontMatter: frontMatter,
           },
           false, // don't index; we'll call sync after import
         );

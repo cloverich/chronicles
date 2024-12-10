@@ -70,6 +70,7 @@ function useCreateDocument() {
           content: "",
           journal: journal,
           tags: searchStore.selectedTags,
+          frontMatter: {},
         });
 
         if (!isMounted) return;

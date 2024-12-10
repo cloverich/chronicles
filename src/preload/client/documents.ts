@@ -2,6 +2,7 @@ import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import path from "path";
 import { uuidv7obj } from "uuidv7";
+import yaml from "yaml";
 import { mdastToString, parseMarkdown, selectNoteLinks } from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
 import { Files } from "../files";
@@ -11,6 +12,7 @@ import { IPreferencesClient } from "./preferences";
 
 import {
   GetDocumentResponse,
+  IndexRequest,
   SaveRequest,
   SearchItem,
   SearchRequest,
@@ -36,13 +38,19 @@ export class DocumentsClient {
   ) {}
 
   findById = async ({ id }: { id: string }): Promise<GetDocumentResponse> => {
-    const document = this.db
-      .prepare(`SELECT * FROM documents WHERE id = :id`)
-      .get({ id });
-    const documentTags = this.db
-      .prepare(`SELECT tag FROM document_tags WHERE documentId = :documentId`)
-      .all({ documentId: id })
-      .map((row) => row.tag);
+    const document = await this.knex("documents").where({ id }).first();
+
+    // todo: test 404 behavior
+    if (!document) {
+      throw new Error(`Document ${id} not found`);
+    }
+
+    // todo: confirm this pulls out tags correctly post knex change
+    // todo: should this be dropped, and we just pull tags from the content?
+    // tags table is then only used for search as a cache, similar to content and title
+    const documentTags = await this.knex("document_tags")
+      .where({ documentId: id })
+      .select("tag");
 
     const filepath = path.join(
       await this.preferences.get("NOTES_DIR"),
@@ -53,10 +61,11 @@ export class DocumentsClient {
     // freshly load the document from disk to avoid desync issues
     // todo: a real strategy for keeping db in sync w/ filesystem, that allows
     // loading from db.
-    const { contents } = await this.loadDoc(filepath);
+    const { contents, frontMatter } = await this.loadDoc(filepath);
 
     return {
       ...document,
+      frontMatter,
       contents,
       tags: documentTags,
     };
@@ -75,7 +84,7 @@ export class DocumentsClient {
 
   del = async (id: string, journal: string) => {
     await this.files.deleteDocument(id, journal);
-    this.db.prepare("delete from documents where id = :id").run({ id });
+    await this.knex("documents").where({ id }).del();
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
@@ -154,25 +163,29 @@ export class DocumentsClient {
       id = args.id;
     } else {
       args.createdAt = new Date().toISOString();
-      args.updatedAt = new Date().toISOString();
       [id] = await this.createDocument(args);
     }
 
     return this.findById({ id });
   };
 
-  /**
-   * Convert the properties we track to frontmatter
-   */
-  contentsWithFrontMatter = (document: SaveRequest) => {
-    const fm = `---
-title: ${document.title}
-tags: ${document.tags.join(", ")}
-createdAt: ${document.createdAt}
-updatedAt: ${document.updatedAt}
----`;
+  // Extend front-matter (if any) with Chronicles standard properties, then
+  // add to serialized document contents.
+  prependFrontMatter = (contents: string, frontMatter: Record<string, any>) => {
+    // need to re-add ---, and also double-newline the ending frontmatter
+    const fm = ["---", yaml.stringify(frontMatter), "---"].join("\n");
 
-    return `${fm}\n\n${document.content}`;
+    return `${fm}\n\n${contents}`;
+  };
+
+  mergedFrontMatter = (document: SaveRequest): Record<string, any> => {
+    return {
+      ...(document.frontMatter || {}),
+      title: document.title,
+      tags: document.tags,
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt,
+    };
   };
 
   /**
@@ -185,21 +198,37 @@ updatedAt: ${document.updatedAt}
     index: boolean = true,
   ): Promise<[string, string]> => {
     const id = args.id || uuidv7obj().toHex();
-    const content = this.contentsWithFrontMatter(args);
+    const frontMatter = this.mergedFrontMatter(args);
+    frontMatter.createdAt = frontMatter.createdAt || new Date().toISOString();
+    frontMatter.updatedAt = frontMatter.updatedAt || new Date().toISOString();
+
+    const content = this.prependFrontMatter(args.content, frontMatter);
     const docPath = await this.files.uploadDocument(
       { id, content },
       args.journal,
     );
 
     if (index) {
-      return [await this.createIndex({ id, ...args }), docPath];
+      return [
+        await this.createIndex({
+          id,
+          journal: args.journal,
+          content,
+          frontMatter,
+        }),
+        docPath,
+      ];
     } else {
       return [id, docPath];
     }
   };
 
   private updateDocument = async (args: SaveRequest): Promise<void> => {
-    const content = this.contentsWithFrontMatter(args);
+    if (!args.id) throw new Error("id required to update document");
+
+    const frontMatter = this.mergedFrontMatter(args);
+    frontMatter.updatedAt = new Date().toISOString();
+    const content = this.prependFrontMatter(args.content, frontMatter);
 
     const origDoc = await this.findById({ id: args.id! });
     await this.files.uploadDocument({ id: args.id!, content }, args.journal);
@@ -211,7 +240,12 @@ updatedAt: ${document.updatedAt}
       this.updateDependentLinks([args.id!], args.journal);
     }
 
-    return await this.updateIndex(args);
+    return await this.updateIndex({
+      id: args.id!,
+      content,
+      journal: args.journal,
+      frontMatter,
+    });
   };
 
   // todo: also need to update dependent title, if the title of the original note
@@ -250,89 +284,71 @@ updatedAt: ${document.updatedAt}
 
   createIndex = async ({
     id,
-    createdAt,
-    updatedAt,
     journal,
     content,
-    title,
-    tags,
-  }: SaveRequest): Promise<string> => {
+    frontMatter,
+  }: IndexRequest): Promise<string> => {
     if (!id) {
       throw new Error("id required to create document index");
     }
 
-    return this.db.transaction(async () => {
-      this.db
-        .prepare(
-          `INSERT INTO documents (id, journal, content, title, createdAt, updatedAt) VALUES (:id, :journal, :content, :title, :createdAt, :updatedAt)`,
-        )
-        .run({
-          id,
-          journal,
-          content,
-          title,
-          // allow passing createdAt to support backfilling prior notes
-          createdAt: createdAt || new Date().toISOString(),
-          updatedAt: updatedAt || new Date().toISOString(),
-        });
+    return this.knex.transaction(async (trx) => {
+      await trx("documents").insert({
+        id,
+        journal,
+        content,
+        title: frontMatter.title,
+        createdAt: frontMatter.createdAt,
+        updatedAt: frontMatter.updatedAt,
+        frontMatter: yaml.stringify(frontMatter || {}),
+      });
 
-      if (tags.length > 0) {
-        this.db
-          .prepare(
-            `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
-          )
-          .run({ documentId: id });
+      if (frontMatter.tags.length > 0) {
+        await trx("document_tags").insert(
+          frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
+        );
       }
 
-      await this.addNoteLinks(id, content);
+      await this.addNoteLinks(trx, id, content);
 
       return id;
-    })();
+    });
   };
 
   updateIndex = async ({
     id,
-    createdAt,
-    updatedAt,
     journal,
     content,
-    title,
-    tags,
-  }: SaveRequest): Promise<void> => {
-    return this.db.transaction(async () => {
-      this.db
-        .prepare(
-          `UPDATE documents SET journal=:journal, content=:content, title=:title, updatedAt=:updatedAt, createdAt=:createdAt WHERE id=:id`,
-        )
-        .run({
-          id,
+    frontMatter,
+  }: IndexRequest): Promise<void> => {
+    return this.knex.transaction(async (trx) => {
+      await trx("documents")
+        .update({
           content,
-          title,
+          title: frontMatter.title,
           journal,
-          updatedAt: updatedAt || new Date().toISOString(),
-          createdAt,
-        });
+          updatedAt: frontMatter.updatedAt,
+          frontMatter: yaml.stringify(frontMatter),
+        })
+        .where({ id });
 
-      // re-create tags to avoid diffing
-      this.db
-        .prepare(`DELETE FROM document_tags WHERE documentId = :documentId`)
-        .run({ documentId: id });
-
-      if (tags.length > 0) {
-        this.db
-          .prepare(
-            `INSERT INTO document_tags (documentId, tag) VALUES ${tags.map((tag) => `(:documentId, '${tag}')`).join(", ")}`,
-          )
-          .run({ documentId: id });
+      await trx("document_tags").where({ documentId: id }).del();
+      if (frontMatter.tags.length > 0) {
+        await trx("document_tags").insert(
+          frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
+        );
       }
 
-      // re-create note links to avoid diffing
-      await this.knex("document_links").where({ documentId: id }).del();
-      await this.addNoteLinks(id!, content);
-    })();
+      // todo: pass trx to addNoteLinks
+      await this.addNoteLinks(trx, id!, content);
+    });
   };
 
-  private addNoteLinks = async (documentId: string, content: string) => {
+  private addNoteLinks = async (
+    trx: Knex.Transaction,
+    documentId: string,
+    content: string,
+  ) => {
     const mdast = parseMarkdown(content);
     const noteLinks = selectNoteLinks(mdast)
       .map((link) => parseNoteLink(link.url))
@@ -350,7 +366,7 @@ updatedAt: ${document.updatedAt}
     });
 
     if (noteLinks.length > 0) {
-      await this.knex("document_links").insert(
+      await trx("document_links").insert(
         noteLinksUnique.map((link) => ({
           documentId,
           targetId: link.noteId,
@@ -363,10 +379,8 @@ updatedAt: ${document.updatedAt}
   /**
    * When removing a journal, call this to de-index all documents from that journal.
    */
-  deindexJournal = (journal: string): void => {
-    this.db
-      .prepare("DELETE FROM documents WHERE journal = :journal")
-      .run({ journal });
+  deindexJournal = (journal: string): Promise<void> => {
+    return this.knex("documents").where({ journal }).del();
   };
 
   /**
