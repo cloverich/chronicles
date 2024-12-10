@@ -8,11 +8,7 @@ import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import {
-  GetDocumentResponse,
-  SKIPPABLE_FILES,
-  SKIPPABLE_PREFIXES,
-} from "./types";
+import { SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
 
 export type ISyncClient = SyncClient;
 
@@ -43,20 +39,6 @@ export class SyncClient {
     private files: IFilesClient,
     private preferences: IPreferencesClient,
   ) {}
-
-  /**
-   * Convert the properties we track to frontmatter
-   */
-  contentsWithFrontMatter = (document: GetDocumentResponse) => {
-    const fm = `---
-title: ${document.title}
-tags: ${document.tags.join(", ")}
-createdAt: ${document.createdAt}
-updatedAt: ${document.updatedAt}
----`;
-
-    return `${fm}\n\n${document.content}`;
-  };
 
   /**
    * Sync the notes directory with the database
@@ -132,19 +114,12 @@ updatedAt: ${document.updatedAt}
 
       const { contents, frontMatter } = await this.documents.loadDoc(file.path);
 
-      // todo: handle additional kinds of frontMatter; just add a column for them
-      // and ensure they are not overwritten when editing existing files
-      // https://github.com/cloverich/chronicles/issues/127
-
       try {
         await this.documents.createIndex({
           id: documentId,
           journal: dirname, // using name as id
           content: contents,
-          title: frontMatter.title,
-          tags: frontMatter.tags || [],
-          createdAt: frontMatter.createdAt,
-          updatedAt: frontMatter.updatedAt,
+          frontMatter,
         });
         syncedCount++;
       } catch (e) {

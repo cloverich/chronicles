@@ -25,11 +25,11 @@ function runFrontmatterTests(importer: ImporterClient) {
       console.error(testCase.input);
       break;
     } else {
-      if (result.title !== testCase.expected.title) {
+      if (result.frontMatter.title !== testCase.expected.title) {
         console.error("FAILED:", testCase.expected.title);
         console.error("FAILED title");
         console.error("We should have:", testCase.expected.title);
-        console.error("We got:", result.title);
+        console.error("We got:", result.frontMatter.title);
         console.error();
         break;
       }
