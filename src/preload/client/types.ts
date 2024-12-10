@@ -40,6 +40,8 @@ export interface GetDocumentResponse {
   content: string;
   journal: string;
   tags: string[];
+  // todo: Define keys required on frontMatter
+  frontMatter: Record<string, any>;
 }
 
 /**
@@ -126,6 +128,15 @@ export interface SaveRequest {
   // to support the import process
   createdAt?: string;
   updatedAt?: string;
+  frontMatter: Record<string, any>;
+}
+
+// todo: Define keys required on frontMatter
+export interface IndexRequest {
+  id: string;
+  journal: string;
+  content: string;
+  frontMatter: Record<string, any>;
 }
 
 // Nobody would put node_modules in their note directory... right?

@@ -132,19 +132,12 @@ updatedAt: ${document.updatedAt}
 
       const { contents, frontMatter } = await this.documents.loadDoc(file.path);
 
-      // todo: handle additional kinds of frontMatter; just add a column for them
-      // and ensure they are not overwritten when editing existing files
-      // https://github.com/cloverich/chronicles/issues/127
-
       try {
         await this.documents.createIndex({
           id: documentId,
           journal: dirname, // using name as id
           content: contents,
-          title: frontMatter.title,
-          tags: frontMatter.tags || [],
-          createdAt: frontMatter.createdAt,
-          updatedAt: frontMatter.updatedAt,
+          frontMatter,
         });
         syncedCount++;
       } catch (e) {

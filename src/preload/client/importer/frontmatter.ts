@@ -1,4 +1,5 @@
 import yaml from "yaml";
+import { mdastToString, parseMarkdownForImport } from "../../../markdown";
 import { SourceType } from "../importer/SourceType";
 
 interface ParseTitleAndFrontMatterRes {
@@ -23,15 +24,64 @@ export const parseTitleAndFrontMatter = (
   if (sourceType === "notion") {
     return parseTitleAndFrontMatterNotion(contents);
   } else {
-    // Otherwise for other import types, for now, make no attempt at finding
-    // or parsing front matter.
+    return parseTitleAndFrontMatterMarkdown(contents, filename);
+  }
+};
+
+function parseTitleAndFrontMatterMarkdown(
+  contents: string,
+  filename: string,
+): ParseTitleAndFrontMatterRes {
+  const { frontMatter, body } = extractFronMatter(contents);
+  return {
+    title: frontMatter.title || filename,
+    frontMatter,
+    body,
+  };
+}
+
+function extractFronMatter(contents: string): {
+  frontMatter: Record<string, any>;
+  body: string;
+} {
+  const mdast = parseMarkdownForImport(contents);
+  if (mdast.children[0].type === "yaml") {
+    const frontMatter = yaml.parse(mdast.children[0].value);
+    mdast.children = mdast.children.slice(1);
+    const contents = mdastToString(mdast);
     return {
-      title: filename,
+      frontMatter,
+      body: contents,
+    };
+  } else {
+    return {
       frontMatter: {},
       body: contents,
     };
   }
-};
+}
+
+// extract front matter from content, and return the front matter and body
+export function parseChroniclesFrontMatter(content: string) {
+  const { frontMatter, body } = extractFronMatter(content);
+
+  frontMatter.tags = frontMatter.tags || [];
+
+  // Prior version of Chronicles manually encoded as comma separated tags,
+  // then re-parsed out. Now using proper yaml parsing, this can be removed
+  // once all my personal notes are migrated.
+  if (frontMatter.tags && typeof frontMatter.tags === "string") {
+    frontMatter.tags = frontMatter.tags
+      .split(",")
+      .map((tag: string) => tag.trim())
+      .filter(Boolean);
+  }
+
+  return {
+    frontMatter,
+    body,
+  };
+}
 
 /**
  * Parses a string of contents into a title, front matter, and body; strips title / frontmatter
@@ -265,55 +315,4 @@ function preprocessRawFrontMatter(content: string) {
         return match; // Return unchanged if no special characters
       })
   );
-}
-
-function preprocessChroniclesFrontMatter(content: string) {
-  // Regular expression to match key-value pairs in front matter
-  return content
-    .replace(/^(\w+):\s*$/gm, '$1: ""') // Handle keys with no values
-    .replace(/^(\w+):\s*(.+)$/gm, (match, key, value) => {
-      // Check if value contains special characters that need quoting
-      if (value.match(/[:{}[\],&*#?|\-<>=!%@`]/) || value.includes("\n")) {
-        // If the value is not already quoted, wrap it in double quotes
-        if (!/^['"].*['"]$/.test(value)) {
-          // Escape any existing double quotes in the value
-          value = value.replace(/"/g, '\\"');
-          return `${key}: "${value}"`;
-        }
-      }
-      return match; // Return unchanged if no special characters
-    });
-}
-
-// naive frontmatter parser for files formatted in chronicles style...
-// which  just means a regular markdown file + yaml front matter
-// ... todo: use remark ecosystem parser
-export function parseChroniclesFrontMatter(content: string) {
-  // Regular expression to match front matter (--- at the beginning and end)
-  const frontMatterRegex = /^---\n([\s\S]*?)\n---\n*/;
-
-  // Match the front matter
-  const match = content.match(frontMatterRegex);
-  if (!match) {
-    return {
-      frontMatter: {}, // No front matter found
-      body: content, // Original content without changes
-    };
-  }
-
-  // Extract front matter and body
-  const frontMatterContent = preprocessChroniclesFrontMatter(match[1]);
-  const body = content.slice(match[0].length); // Content without front matter
-
-  // Parse the front matter using yaml
-  const frontMatter = yaml.parse(frontMatterContent);
-  frontMatter.tags = frontMatter.tags
-    .split(",")
-    .map((tag: string) => tag.trim())
-    .filter(Boolean);
-
-  return {
-    frontMatter,
-    body,
-  };
 }

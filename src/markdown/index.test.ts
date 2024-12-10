@@ -2,6 +2,7 @@ import { expect } from "chai";
 import fs from "fs";
 import { describe, it } from "mocha";
 import path from "path";
+import yaml from "yaml";
 
 import { slateToString, stringToSlate } from "./index.js";
 import { dig, parseMarkdown, parseMarkdownForImport } from "./test-utils.js";
@@ -615,4 +616,40 @@ describe("Whacky shit", function () {
 [Resume Deep Dive and Behavioral Questions Q&A](Resume%20Deep%20Dive%20and%20Behavioral%20Questions%20Q&A%20c83beed68bcb45e7b88398a6fd7d0ff9.md) 
 
 ****[5 variations of Binary search (A Self Note)](https://leetcode.com/discuss/interview-question/1322500/5-variations-of-Binary-search-(A-Self-Note))****`;
+});
+
+describe.only("front matter parsing", function () {
+  const content = `---
+title: 2024-09-29
+tags: weekly-persona
+createdAt: 2024-09-30T17:50:22.000Z
+updatedAt: 2024-11-04T16:24:11.000Z
+---
+
+\#weekly-persona
+
+Last week: [2024-09-22](../persona/0193acd4fa3574698c36c4514b907c70.md)
+
+**I am on call this week** [On call week of 2024-09-30](../persona/0193acd4fa45731f81350d4443c1ed16.md)
+
+## Monday
+  
+`;
+
+  // it.skip("should parse front matter", function () {
+  //   const parsed = parseMarkdown(content);
+  //   console.log(yaml.parse(parsed.children[0].value as string));
+  // });
+
+  it.only("test how to splice it back in", function () {
+    const parsed = parseMarkdown(content);
+    const frontMatter = yaml.parse(parsed.children[0].value as string);
+    const newFrontMatter = yaml.stringify({
+      ...frontMatter,
+      title: "2024-09-29",
+    });
+
+    // ok, it needs --- added
+    console.log(newFrontMatter);
+  });
 });
