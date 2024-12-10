@@ -1,10 +1,15 @@
+import { Stats } from "fs";
 import yaml from "yaml";
-import { mdastToString, parseMarkdownForImport } from "../../../markdown";
+import {
+  mdastToString,
+  parseMarkdown,
+  parseMarkdownForImport,
+} from "../../../markdown";
 import { SourceType } from "../importer/SourceType";
+import { FrontMatter } from "../types";
 
 interface ParseTitleAndFrontMatterRes {
-  title: string;
-  frontMatter: Record<string, any>;
+  frontMatter: Partial<FrontMatter>;
   body: string;
 }
 
@@ -32,19 +37,26 @@ function parseTitleAndFrontMatterMarkdown(
   contents: string,
   filename: string,
 ): ParseTitleAndFrontMatterRes {
-  const { frontMatter, body } = extractFronMatter(contents);
+  const { frontMatter, body } = extractFronMatter(
+    contents,
+    parseMarkdownForImport,
+  );
+
+  frontMatter.title = frontMatter.title || filename;
   return {
-    title: frontMatter.title || filename,
     frontMatter,
     body,
   };
 }
 
-function extractFronMatter(contents: string): {
-  frontMatter: Record<string, any>;
+function extractFronMatter(
+  contents: string,
+  parse = parseMarkdown,
+): {
+  frontMatter: Partial<FrontMatter>;
   body: string;
 } {
-  const mdast = parseMarkdownForImport(contents);
+  const mdast = parse(contents);
   if (mdast.children[0].type === "yaml") {
     const frontMatter = yaml.parse(mdast.children[0].value);
     mdast.children = mdast.children.slice(1);
@@ -61,17 +73,22 @@ function extractFronMatter(contents: string): {
   }
 }
 
-// extract front matter from content, and return the front matter and body
-export function parseChroniclesFrontMatter(content: string) {
+// extract well formatted front matter from content, and return the front matter and body
+// stats to set defaults and ensure dates are always present
+export function parseChroniclesFrontMatter(content: string, stats: Stats) {
   const { frontMatter, body } = extractFronMatter(content);
 
   frontMatter.tags = frontMatter.tags || [];
+  frontMatter.title = frontMatter.title;
+  frontMatter.createdAt =
+    frontMatter.createdAt || (stats.birthtime || stats.mtime).toISOString();
+  frontMatter.updatedAt = frontMatter.updatedAt || stats.mtime.toISOString();
 
   // Prior version of Chronicles manually encoded as comma separated tags,
   // then re-parsed out. Now using proper yaml parsing, this can be removed
   // once all my personal notes are migrated.
-  if (frontMatter.tags && typeof frontMatter.tags === "string") {
-    frontMatter.tags = frontMatter.tags
+  if ("tags" in frontMatter && typeof frontMatter.tags === "string") {
+    frontMatter.tags = (frontMatter.tags as string)
       .split(",")
       .map((tag: string) => tag.trim())
       .filter(Boolean);
@@ -80,7 +97,7 @@ export function parseChroniclesFrontMatter(content: string) {
   return {
     frontMatter,
     body,
-  };
+  } as { frontMatter: FrontMatter; body: string };
 }
 
 /**
@@ -94,7 +111,9 @@ function parseTitleAndFrontMatterNotion(
   const frontMatter = rawFrontMatter.length
     ? parseExtractedFrontMatter(rawFrontMatter)
     : {};
-  return { title, frontMatter, body };
+
+  frontMatter.title = title;
+  return { frontMatter, body };
 }
 
 /**

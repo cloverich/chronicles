@@ -1,7 +1,6 @@
 import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import path from "path";
-import yaml from "yaml";
 import { Files, PathStatsFile } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
@@ -12,7 +11,7 @@ import {
 } from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { ISyncClient } from "./sync";
-import { SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
+import { FrontMatter, SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
 
 import * as mdast from "mdast";
 
@@ -70,9 +69,8 @@ interface StagedNote {
   // may be empty if could not parse body
   // correctly
   journal: string;
-  title: string;
   content: string;
-  frontMatter: string; // json
+  frontMatter: string; // FrontMatter (json)
 
   // Where this note will end up
   chroniclesId: string;
@@ -212,7 +210,7 @@ export class ImporterClient {
 
     try {
       // todo: fallback title to filename - uuid
-      const { frontMatter, body, title } = parseTitleAndFrontMatter(
+      const { frontMatter, body } = parseTitleAndFrontMatter(
         contents,
         name,
         sourceType,
@@ -235,14 +233,19 @@ export class ImporterClient {
       // 2. Whether to use birthtime or mtime
       // 3. Which timezone to use
       // 4. Whether to use the front-matter date or the file date
-      if (!frontMatter.createdAt) {
-        frontMatter.createdAt =
-          file.stats.birthtime.toISOString() || file.stats.mtime.toISOString();
-      }
-
-      if (!frontMatter.updatedAt) {
-        frontMatter.updatedAt = file.stats.mtime.toISOString();
-      }
+      const requiredFm: FrontMatter = {
+        ...frontMatter,
+        tags: frontMatter.tags || [],
+        createdAt:
+          frontMatter.createdAt ||
+          file.stats.birthtime.toISOString() ||
+          file.stats.mtime.toISOString() ||
+          new Date().toISOString(),
+        updatedAt:
+          frontMatter.updatedAt ||
+          file.stats.mtime.toISOString() ||
+          new Date().toISOString(),
+      };
 
       // todo: handle additional kinds of frontMatter; just add a column for them
       // and ensure they are not overwritten when editing existing files
@@ -254,10 +257,9 @@ export class ImporterClient {
         // hmm... what am I going to do with this? Should it be absolute to NOTES_DIR?
         chroniclesPath: `${path.join(journalName, chroniclesId)}.md`,
         sourcePath: file.path,
-        title,
         content: body,
         journal: journalName,
-        frontMatter: yaml.stringify(frontMatter),
+        frontMatter: JSON.stringify(requiredFm),
         status: "pending",
       };
 
@@ -301,7 +303,7 @@ export class ImporterClient {
     });
 
     for await (const item of items) {
-      const frontMatter = yaml.parse(item.frontMatter);
+      const frontMatter: FrontMatter = JSON.parse(item.frontMatter);
 
       const mdast = stringToMdast(item.content) as any as mdast.Root;
       await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
@@ -326,11 +328,7 @@ export class ImporterClient {
             id: item.chroniclesId,
             journal: item.journal, // using name as id
             content: mdastToString(mdast),
-            title: item.title,
-            tags: frontMatter.tags || [],
-            createdAt: frontMatter.createdAt,
-            updatedAt: frontMatter.updatedAt,
-            frontMatter: frontMatter,
+            frontMatter,
           },
           false, // don't index; we'll call sync after import
         );

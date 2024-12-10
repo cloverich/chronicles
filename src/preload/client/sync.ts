@@ -8,11 +8,7 @@ import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import {
-  GetDocumentResponse,
-  SKIPPABLE_FILES,
-  SKIPPABLE_PREFIXES,
-} from "./types";
+import { SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
 
 export type ISyncClient = SyncClient;
 
@@ -43,20 +39,6 @@ export class SyncClient {
     private files: IFilesClient,
     private preferences: IPreferencesClient,
   ) {}
-
-  /**
-   * Convert the properties we track to frontmatter
-   */
-  contentsWithFrontMatter = (document: GetDocumentResponse) => {
-    const fm = `---
-title: ${document.title}
-tags: ${document.tags.join(", ")}
-createdAt: ${document.createdAt}
-updatedAt: ${document.updatedAt}
----`;
-
-    return `${fm}\n\n${document.content}`;
-  };
 
   /**
    * Sync the notes directory with the database

@@ -1,9 +1,9 @@
 import { toaster } from "evergreen-ui";
-import { debounce, pick } from "lodash";
+import { debounce } from "lodash";
 import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
 import { IClient } from "../../hooks/useClient";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import { GetDocumentResponse } from "../../preload/client/types";
+import { FrontMatter, GetDocumentResponse } from "../../preload/client/types";
 import { SlateTransformer } from "./SlateTransformer";
 
 function isExistingDocument(
@@ -48,8 +48,8 @@ export class EditableDocument {
   @observable id: string;
   @observable createdAt: string;
   @observable updatedAt: string; // read-only outside this class
-  @observable tags: string[] = [];
-  @observable frontMatter: Record<string, any> = {};
+  @observable tags: string[];
+  @observable frontMatter: FrontMatter;
 
   // editor properties
   slateContent: SlateCustom.SlateNode[];
@@ -62,13 +62,13 @@ export class EditableDocument {
     private client: IClient,
     doc: GetDocumentResponse,
   ) {
-    this.title = doc.title;
+    this.title = doc.frontMatter.title;
     this.journal = doc.journal;
     this.content = doc.content;
     this.id = doc.id;
-    this.createdAt = doc.createdAt;
-    this.updatedAt = doc.updatedAt;
-    this.tags = doc.tags;
+    this.createdAt = doc.frontMatter.createdAt;
+    this.updatedAt = doc.frontMatter.updatedAt;
+    this.tags = doc.frontMatter.tags;
     this.frontMatter = doc.frontMatter;
     const content = doc.content;
     const slateNodes = SlateTransformer.nodify(content);
@@ -109,49 +109,51 @@ export class EditableDocument {
     }
   };
 
-  save = debounce(async () => {
-    if (this.saving || !this.dirty) return;
-    this.saving = true;
+  save = debounce(
+    async () => {
+      if (this.saving || !this.dirty) return;
+      this.saving = true;
 
-    // note: Immediately reset dirty so if edits happen while (auto) saving,
-    // it can call save again on completion
-    // Error case is kind of hacky but unlikely an issue in practice
-    this.dirty = false;
+      // note: Immediately reset dirty so if edits happen while (auto) saving,
+      // it can call save again on completion
+      // Error case is kind of hacky but unlikely an issue in practice
+      this.dirty = false;
 
-    this.content = SlateTransformer.stringify(toJS(this.slateContent));
-    let wasError = false;
+      this.content = SlateTransformer.stringify(toJS(this.slateContent));
+      let wasError = false;
 
-    try {
-      // note: I was passing documentId instead of id, and because id is optional in save it wasn't complaining.
-      // Maybe 'save' and optional, unvalidated params is a bad idea :|
-      const res = await this.client.documents.save(
-        pick(
-          toJS(this),
-          "title",
-          "content",
-          "journal",
-          "id",
-          "createdAt",
-          "tags",
-          "frontMatter",
-        ),
-      );
-      this.id = res.id;
-      this.createdAt = res.createdAt;
-      this.updatedAt = res.updatedAt;
-    } catch (err) {
-      this.saving = false;
-      this.dirty = true;
-      wasError = true;
-      toaster.danger(JSON.stringify(err));
-    } finally {
-      this.saving = false;
+      try {
+        this.updatedAt = this.frontMatter.updatedAt = new Date().toISOString();
+        this.frontMatter.title = this.title;
+        this.frontMatter.tags = this.tags;
 
-      // if edits made after last save attempt, re-run
-      // Check error to avoid infinite save loop
-      if (this.dirty && !wasError) this.save();
-    }
-  }, 1000);
+        // todo: is toJS necessary here, i.e. copying this.journal to journal, loses Proxy or not?
+        // todo: use mobx viewmodel over GetDocumentResponse; track frontMatter properties directly rather
+        // than copying back and forth
+        await this.client.documents.updateDocument(
+          toJS({
+            journal: this.journal,
+            content: this.content,
+            id: this.id,
+            frontMatter: this.frontMatter,
+          }),
+        );
+      } catch (err) {
+        this.saving = false;
+        this.dirty = true;
+        wasError = true;
+        toaster.danger(JSON.stringify(err));
+      } finally {
+        this.saving = false;
+
+        // if edits made after last save attempt, re-run
+        // Check error to avoid infinite save loop
+        if (this.dirty && !wasError) this.save();
+      }
+    },
+    5000,
+    { trailing: true },
+  );
 
   del = async () => {
     // overload saving for deleting

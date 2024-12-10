@@ -618,7 +618,7 @@ describe("Whacky shit", function () {
 ****[5 variations of Binary search (A Self Note)](https://leetcode.com/discuss/interview-question/1322500/5-variations-of-Binary-search-(A-Self-Note))****`;
 });
 
-describe.only("front matter parsing", function () {
+describe("front matter parsing", function () {
   const content = `---
 title: 2024-09-29
 tags: weekly-persona
@@ -641,7 +641,7 @@ Last week: [2024-09-22](../persona/0193acd4fa3574698c36c4514b907c70.md)
   //   console.log(yaml.parse(parsed.children[0].value as string));
   // });
 
-  it.only("test how to splice it back in", function () {
+  it("test how to splice it back in", function () {
     const parsed = parseMarkdown(content);
     const frontMatter = yaml.parse(parsed.children[0].value as string);
     const newFrontMatter = yaml.stringify({
