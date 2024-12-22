@@ -66,7 +66,14 @@ export function useEditableDocument(documentId: string) {
 
     load();
     return () => {
-      if (state.document?.teardown) state.document.teardown();
+      if (state.document?.teardown) {
+        console.log(
+          `save count for ${state.document.id}: ${state.document.saveCount}`,
+        );
+        state.document.teardown();
+      }
+      if (state.document?.saveCount)
+        console.log("saved", state.document.saveCount, "times");
     };
   }, [documentId]);
 

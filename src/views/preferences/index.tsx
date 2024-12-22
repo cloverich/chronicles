@@ -194,7 +194,7 @@ const Preferences = observer(() => {
           </p>
           <p>
             The current Chronicles cache is located at{" "}
-            {store.preferences.CACHE_DIR}
+            {store.preferences.DATABASE_URL}
           </p>
           <Button
             isLoading={store.loading}

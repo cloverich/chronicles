@@ -214,13 +214,16 @@ export class DocumentsClient {
     if (!args.id) throw new Error("id required to update document");
 
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
+    // todo: I think we accept this from the client now and just expect
+    // callers to update updatedAt, to support importers and sync manually configuring
+    // this...
     args.frontMatter.updatedAt =
       args.frontMatter.updatedAt || new Date().toISOString();
 
     const content = this.prependFrontMatter(args.content, args.frontMatter);
 
-    const origDoc = await this.findById({ id: args.id! });
-    await this.files.uploadDocument({ id: args.id!, content }, args.journal);
+    const origDoc = await this.findById({ id: args.id });
+    await this.files.uploadDocument({ id: args.id, content }, args.journal);
 
     // sigh; this is a bit of a mess.
     if (origDoc.journal !== args.journal) {
@@ -233,7 +236,7 @@ export class DocumentsClient {
     }
 
     await this.updateIndex({
-      id: args.id!,
+      id: args.id,
       content,
       journal: args.journal,
       frontMatter: args.frontMatter,
@@ -338,6 +341,7 @@ export class DocumentsClient {
         );
       }
 
+      await trx("document_links").where({ documentId: id }).del();
       await this.addNoteLinks(trx, id!, content);
     });
   };

@@ -55,6 +55,11 @@ export class EditableDocument {
   slateContent: SlateCustom.SlateNode[];
   @observable private changeCount = 0;
 
+  // todo: save queue. I'm saving too often, but need to do this until I allow exiting note
+  // while save is in progress; track and report saveCount to discover if this is a major issue
+  // or not.
+  saveCount = 0;
+
   // reaction clean-up when component unmounts; see constructor
   teardown?: IReactionDisposer;
 
@@ -135,13 +140,15 @@ export class EditableDocument {
             journal: this.journal,
             content: this.content,
             id: this.id,
-            frontMatter: this.frontMatter,
+            frontMatter: toJS(this.frontMatter),
           }),
         );
+        this.saveCount++;
       } catch (err) {
         this.saving = false;
         this.dirty = true;
         wasError = true;
+        console.error("Error saving document", err);
         toaster.danger(JSON.stringify(err));
       } finally {
         this.saving = false;
@@ -151,8 +158,8 @@ export class EditableDocument {
         if (this.dirty && !wasError) this.save();
       }
     },
-    5000,
-    { trailing: true },
+    3000,
+    { leading: true },
   );
 
   del = async () => {

@@ -621,14 +621,14 @@ describe("Whacky shit", function () {
 describe("front matter parsing", function () {
   const content = `---
 title: 2024-09-29
-tags: weekly-persona
+tags: weekly-todo
 createdAt: 2024-09-30T17:50:22.000Z
 updatedAt: 2024-11-04T16:24:11.000Z
 ---
 
-\#weekly-persona
+#weekly-todo
 
-Last week: [2024-09-22](../persona/0193acd4fa3574698c36c4514b907c70.md)
+Last week: [2024-09-22](../work/0193acd4fa3574698c36c4514b907c70.md)
 
 **I am on call this week** [On call week of 2024-09-30](../persona/0193acd4fa45731f81350d4443c1ed16.md)
 
@@ -636,20 +636,24 @@ Last week: [2024-09-22](../persona/0193acd4fa3574698c36c4514b907c70.md)
   
 `;
 
-  // it.skip("should parse front matter", function () {
-  //   const parsed = parseMarkdown(content);
-  //   console.log(yaml.parse(parsed.children[0].value as string));
-  // });
-
-  it("test how to splice it back in", function () {
+  // A very basic "it works" test
+  // todo: End to end test with a real document, asserting against the database values
+  it("parses front matter as an mdast node, and can be parsed with yaml.parse", function () {
     const parsed = parseMarkdown(content);
-    const frontMatter = yaml.parse(parsed.children[0].value as string);
-    const newFrontMatter = yaml.stringify({
-      ...frontMatter,
-      title: "2024-09-29",
-    });
+    expect(parsed.children[0].type).to.equal("yaml");
+    expect(parsed.children[0].value).to.equal(
+      "title: 2024-09-29\n" +
+        "tags: weekly-todo\n" +
+        "createdAt: 2024-09-30T17:50:22.000Z\n" +
+        "updatedAt: 2024-11-04T16:24:11.000Z",
+    );
 
-    // ok, it needs --- added
-    console.log(newFrontMatter);
+    const frontMatter = yaml.parse(parsed.children[0].value as string);
+    expect(frontMatter).to.deep.equal({
+      title: "2024-09-29",
+      tags: "weekly-todo",
+      createdAt: "2024-09-30T17:50:22.000Z",
+      updatedAt: "2024-11-04T16:24:11.000Z",
+    });
   });
 });

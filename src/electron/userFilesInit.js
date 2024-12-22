@@ -13,7 +13,6 @@ const { ensureDir } = require("./ensureDir");
  */
 exports.initUserFilesDir = (userDataDir) => {
   initDir("NOTES_DIR", path.join(userDataDir, "/notes"));
-  initDir("CACHE_DIR", userDataDir);
   initDir("SETTINGS_DIR", userDataDir);
 };
 

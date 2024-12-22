@@ -136,14 +136,19 @@ export class SyncClient {
       }
     }
 
-    // Ensure default journal exists; attempt to declare one otherwise
+    // Ensure default journal exists; attempt to declare one. Otherwise,
+    // new documents will default to a journal that does not exist, and fail
+    // to create.
     const defaultJournal = await this.preferences.get("DEFAULT_JOURNAL");
 
     if (!defaultJournal || !(defaultJournal in journals)) {
       console.log("updating default journal", defaultJournal, journals);
 
-      if (journals.length) {
-        await this.preferences.set("DEFAULT_JOURNAL", journals[0]);
+      if (Object.keys(journals).length) {
+        await this.preferences.set("DEFAULT_JOURNAL", Object.keys(journals)[0]);
+      } else {
+        await this.journals.create({ name: "default_journal" });
+        await this.preferences.set("DEFAULT_JOURNAL", "default_journal");
       }
     }
 
