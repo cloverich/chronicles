@@ -23,7 +23,7 @@ export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
           border="none"
           icon={ChevronLeftIcon}
           className="drag-none"
-          onClick={() => {}}
+          onClick={() => navigate(-1)}
           marginRight={8}
         >
           Back to documents
@@ -32,7 +32,9 @@ export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
       </Titlebar>
       <Pane padding={50} paddingTop={98} flexGrow={1} display="flex">
         <Pane flexGrow={1} display="flex" flexDirection="column" width="100%">
-          <Pane flexGrow={1} paddingTop={24}></Pane>
+          <Pane flexGrow={1} paddingTop={24}>
+            {props.error && props.error?.message}
+          </Pane>
         </Pane>
       </Pane>
     </>

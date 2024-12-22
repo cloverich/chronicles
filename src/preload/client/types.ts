@@ -34,12 +34,9 @@ export type JournalResponse = {
 
 export interface GetDocumentResponse {
   id: string;
-  createdAt: string;
-  updatedAt: string;
-  title?: string;
   content: string;
   journal: string;
-  tags: string[];
+  frontMatter: FrontMatter;
 }
 
 /**
@@ -113,19 +110,33 @@ export interface SaveMdastRequest {
   date: string;
   mdast: any;
 }
-// export type SaveRequest = SaveRawRequest | SaveMdastRequest;
 
-export interface SaveRequest {
+export interface CreateRequest {
   id?: string;
   journal: string;
   content: string;
+  frontMatter: FrontMatter;
+}
+
+export interface UpdateRequest extends CreateRequest {
+  id: string;
+}
+
+// arbitrary front matter is allowed, but a subset of properties
+// are tracked as first-class citizens by the application
+export interface FrontMatter {
   title?: string;
   tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: any;
+}
 
-  // these included for override, originally,
-  // to support the import process
-  createdAt?: string;
-  updatedAt?: string;
+export interface IndexRequest {
+  id: string;
+  journal: string;
+  content: string;
+  frontMatter: FrontMatter;
 }
 
 // Nobody would put node_modules in their note directory... right?

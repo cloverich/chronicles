@@ -66,18 +66,25 @@ function useCreateDocument() {
       }
 
       try {
-        const document = await client.documents.save({
+        const document = {
           content: "",
           journal: journal,
-          tags: searchStore.selectedTags,
-        });
+          frontMatter: {
+            title: undefined,
+            tags: searchStore.selectedTags,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        };
+
+        const [id, _] = await client.documents.createDocument(document);
 
         if (!isMounted) return;
 
         // Ensure the document is added to the search, so its available when user hits
         // back (even when that doesn't make sense!)
-        searchStore.updateSearch(document, "create");
-        navigate(`/documents/edit/${document.id}`, { replace: true });
+        searchStore.updateSearch({ ...document, id }, "create");
+        navigate(`/documents/edit/${id}`, { replace: true });
       } catch (err) {
         console.error("Error creating document", err);
         if (!isMounted) return;

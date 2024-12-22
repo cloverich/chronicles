@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 import Store from "electron-store";
 
 export interface Preferences {
-  CACHE_DIR: string;
+  DATABASE_URL: string;
   DEFAULT_JOURNAL: string | null;
   ARCHIVED_JOURNALS: Record<string, boolean>;
   NOTES_DIR: string;
@@ -10,7 +10,7 @@ export interface Preferences {
 }
 
 const defaults = (): Preferences => ({
-  CACHE_DIR: "",
+  DATABASE_URL: "",
   DEFAULT_JOURNAL: null,
   ARCHIVED_JOURNALS: {},
   NOTES_DIR: "",

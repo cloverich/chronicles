@@ -27,6 +27,10 @@ const knex = Knex({
   connection: {
     filename: settings.get("DATABASE_URL") as string,
   },
+  // https://knexjs.org/guide/query-builder.html#insert
+  // don't replace undefined with "DEFAULT" in insert statements; replace
+  // it with NULL instead (SQLite raises otherwise)
+  useNullAsDefault: true,
 });
 
 export { GetDocumentResponse } from "./types";

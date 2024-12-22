@@ -7,21 +7,30 @@ import { SearchToken } from "./search/tokens";
 
 export interface SearchItem {
   id: string;
+  journal: string;
   createdAt: string;
   title?: string;
+}
+
+interface DocumentBase {
+  id: string;
   journal: string;
+  frontMatter: {
+    createdAt: string;
+    title?: string;
+  };
 }
 
 // Accepts any document satisfying the SearchItem interface, and copies properties
 // into an actual SearchItem; i.e. I dont want to stuff an EditableDocument or other smart
 // object into search results b/c may get weird.
-function toSearchItem(doc: SearchItem): SearchItem | null {
+function toSearchItem(doc: DocumentBase): SearchItem | null {
   if (!doc.id) return null;
 
   return {
     id: doc.id,
-    createdAt: doc.createdAt,
-    title: doc.title,
+    createdAt: doc.frontMatter.createdAt,
+    title: doc.frontMatter.title,
     journal: doc.journal,
   };
 }
@@ -137,7 +146,7 @@ export class SearchStore {
    * in the search results.
    */
   updateSearch = (
-    document: SearchItem,
+    document: DocumentBase,
     operation: "edit" | "create" | "del" = "edit",
   ) => {
     const idx = this.docs.findIndex((d) => d.id === document.id);
