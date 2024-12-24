@@ -21,11 +21,11 @@ import { uuidv7obj } from "uuidv7";
 import {
   isNoteLink,
   mdastToString,
-  parseMarkdownForImport as stringToMdast,
+  parseMarkdownForImportProcessing,
 } from "../../markdown";
 import { FilesImportResolver } from "./importer/FilesImportResolver";
 import { SourceType } from "./importer/SourceType";
-import { parseTitleAndFrontMatter } from "./importer/frontmatter";
+import { parseTitleAndFrontMatterForImport } from "./importer/frontmatter";
 
 // UUID in Notion notes look like 32 character hex strings; make this somewhat more lenient
 const hexIdRegex = /\b[0-9a-f]{16,}\b/;
@@ -90,6 +90,20 @@ export class ImporterClient {
     private syncs: ISyncClient, // sync is keyword?
   ) {}
 
+  processPending = async () => {
+    const pendingImports = await this.knex("imports").where({
+      status: "pending",
+    });
+
+    for (const pendingImport of pendingImports) {
+      await this.processStagedNotes(
+        await this.ensureRoot(),
+        SourceType.Other,
+        new FilesImportResolver(this.knex, pendingImport.id, this.files),
+      );
+    }
+  };
+
   /**
    * Imports importDir into the chronicles root directory, grabbing all markdown
    * and linked files; makes the following changes:
@@ -104,7 +118,8 @@ export class ImporterClient {
     importDir: string,
     sourceType: SourceType = SourceType.Other,
   ) => {
-    await this.clearImportTables();
+    // await this.clearImportTables();
+    await this.clearIncomplete();
     const importerId = uuidv7obj().toHex();
     const chroniclesRoot = await this.ensureRoot();
 
@@ -165,7 +180,7 @@ export class ImporterClient {
 
     for await (const file of Files.walk(
       importDir,
-      30, // avoid infinite loops, random guess at reasoable depth
+      10, // random guess at reasoable max depth
 
       (dirent) => {
         // Skip hidden files and directories
@@ -210,7 +225,7 @@ export class ImporterClient {
 
     try {
       // todo: fallback title to filename - uuid
-      const { frontMatter, body } = parseTitleAndFrontMatter(
+      const { frontMatter, body } = parseTitleAndFrontMatterForImport(
         contents,
         name,
         sourceType,
@@ -270,8 +285,32 @@ export class ImporterClient {
 
       await this.knex("import_notes").insert(stagedNote);
     } catch (e) {
-      // todo: this error handler is far too big, obviously
-      console.error("Error processing note", file.path, e);
+      // todo: this error handler is too big
+      if ((e as any).code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
+        console.log("Skipping re-import of note", file.path);
+      } else {
+        // track staging errors for review. For example, if a note has a title
+        // that is too long, or a front-matter key that is not supported, etc, user
+        // can use table logs to fix and re-run th e import
+        try {
+          const noteId = uuidv7obj().toHex();
+          await this.knex("import_notes").insert({
+            importerId,
+            sourcePath: file.path,
+            content: contents,
+            error: (e as any).message,
+
+            // note: these all have non-null / unique constraints:
+            chroniclesId: noteId,
+            chroniclesPath: "staging_error",
+            journal: "staging_error",
+            frontMatter: {},
+            status: "staging_error",
+          });
+        } catch (err) {
+          console.error("Error tracking staging import error", file.path, err);
+        }
+      }
     }
   };
 
@@ -300,12 +339,18 @@ export class ImporterClient {
 
     const items = await this.knex<StagedNote>("import_notes").where({
       importerId,
+      status: "pending",
     });
 
     for await (const item of items) {
       const frontMatter: FrontMatter = JSON.parse(item.frontMatter);
 
-      const mdast = stringToMdast(item.content) as any as mdast.Root;
+      // note: At this stage, we parse ofmTags and ofmWikilinks, to convert them to
+      // Chronicles tags and markdown links; they are not supported natively in Chronicles
+      // as of now.
+      const mdast = parseMarkdownForImportProcessing(
+        item.content,
+      ) as any as mdast.Root;
       await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
 
       // NOTE: A bit hacky: When we update file links, we also mark the file as referenced
@@ -374,30 +419,46 @@ export class ImporterClient {
   // 1. Delete notes directory
   // 2. Run this command
   // 3. Re-run import
-  private clearImportTables = async () => {
+  clearImportTables = async () => {
     await this.db.exec("DELETE FROM import_notes");
     await this.db.exec("DELETE FROM import_files");
     await this.db.exec("DELETE FROM imports");
+  };
+
+  // todo: optionally allow re-importing form a specific import directory by clearing
+  // all imports
+
+  // Clear errored or stuck notes so re-import can be attempted; all notes that
+  // are not in the 'note_created' state are deleted.
+  clearIncomplete = async () => {
+    await this.knex("import_notes").not.where({ status: "note_created" }).del();
   };
 
   // Pull all staged notes and generate a mapping of original file path
   // (sourcePath) to the new file path (chroniclesPath). This is used to update
   // links in the notes after they are moved.
   private noteLinksMapping = async (importerId: string) => {
-    let linkMapping: Record<string, { journal: string; chroniclesId: string }> =
-      {};
+    try {
+      let linkMapping: Record<
+        string,
+        { journal: string; chroniclesId: string }
+      > = {};
 
-    const importedItems = await this.knex("import_notes")
-      .where({ importerId })
-      .select("sourcePath", "journal", "chroniclesId");
+      const importedItems = await this.knex("import_notes")
+        .where({ importerId })
+        .select("sourcePath", "journal", "chroniclesId");
 
-    for (const item of importedItems) {
-      if ("error" in item && item.error) continue;
-      const { journal, chroniclesId, sourcePath } = item;
-      linkMapping[sourcePath] = { journal, chroniclesId };
+      for (const item of importedItems) {
+        if ("error" in item && item.error) continue;
+        const { journal, chroniclesId, sourcePath } = item;
+        linkMapping[sourcePath] = { journal, chroniclesId };
+      }
+
+      return linkMapping;
+    } catch (err) {
+      console.error("Error generating link mappings", err);
+      throw err;
     }
-
-    return linkMapping;
   };
 
   // Pull all staged notes and generate a mapping of original note title
@@ -409,11 +470,12 @@ export class ImporterClient {
 
     const importedItems = await this.knex("import_notes")
       .where({ importerId })
-      .select("title", "journal", "chroniclesId");
+      .select("frontMatter", "journal", "chroniclesId", "error");
 
     for (const item of importedItems) {
       if ("error" in item && item.error) continue;
-      const { journal, chroniclesId, title } = item;
+      const { journal, chroniclesId } = item;
+      const title = JSON.parse(item.frontMatter).title;
       linkMapping[title] = { journal, chroniclesId };
     }
 

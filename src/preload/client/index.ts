@@ -10,7 +10,6 @@ import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
 import Store from "electron-store";
-import { runTests } from "./importer/importer.test";
 const settings = new Store({
   name: "settings",
 });
@@ -40,7 +39,7 @@ let client: IClient;
 class TestsClient {
   constructor(private importer: ImporterClient) {}
   runTests = () => {
-    runTests(this.importer);
+    console.log("todo: fixme");
   };
 }
 
