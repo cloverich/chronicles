@@ -70,6 +70,19 @@ const Preferences = observer(() => {
     }
   }
 
+  async function clearImportTable() {
+    store.loading = true;
+    try {
+      await client.importer.clearImportTables();
+      store.loading = false;
+      toaster.success("Import table cleared");
+    } catch (e) {
+      console.error("Error clearing import table", e);
+      store.loading = false;
+      toaster.danger("Failed to clear import table");
+    }
+  }
+
   async function sync() {
     if (store.loading) return;
 
@@ -115,10 +128,10 @@ const Preferences = observer(() => {
       <Base.TitlebarSpacer />
       <Base.ScrollContainer>
         <SettingsBox>
-          <h4>Settings directory</h4>
+          <h4>Settings</h4>
+          <p>Settings file: {client.preferences.settingsPath()}</p>
           <p>
-            Location of files / directories are persisted to the settings file
-            located at {client.preferences.settingsPath()}
+            Database file: <code>{store.preferences.DATABASE_URL}</code>
           </p>
         </SettingsBox>
         <SettingsBox>
@@ -144,21 +157,14 @@ const Preferences = observer(() => {
         <SettingsBox>
           <h4>Import markdown directory</h4>
           <p>Import a directory of markdown files. Experimental.</p>
-          <p>The following file / directory names will be skipped:</p>
-          <ul>
-            {Array.from(SKIPPABLE_FILES).map((file) => (
-              <li key={file}>{file}</li>
-            ))}
-          </ul>
+          <p>
+            The following file / directory names will be skipped:&nbsp;
+            {Array.from(SKIPPABLE_FILES).join(", ")}
+          </p>
           <p>
             Other than _attachments, the following prefixes will cause a file or
-            directory to be skipped:
+            directory to be skipped: {Array.from(SKIPPABLE_PREFIXES).join(", ")}
           </p>
-          <ul>
-            {Array.from(SKIPPABLE_PREFIXES).map((prefix) => (
-              <li key={prefix}>{prefix}</li>
-            ))}
-          </ul>
 
           <Select
             selected={store.sourceType}
@@ -174,7 +180,25 @@ const Preferences = observer(() => {
             disabled={store.loading}
             onClick={importDirectory}
           >
-            Select directory
+            Import directory
+          </Button>
+
+          <h3>Clear Import Tables</h3>
+          <p>
+            ADVANCED: Re-running import from same location will skip previously
+            imported files. To fully re-run the import, you can clear the import
+            tables by clicking below, but this will result in duplicate files
+            unless the prior imported files are removed (manually, by you) from
+            root directory. Note ids are generated and tracked in the import
+            table prior to creating the files, so these can be used to
+            (manually) link imported files to their location in Chronicles.
+          </p>
+          <Button
+            intent="danger"
+            onClick={clearImportTable}
+            disabled={store.loading}
+          >
+            Clear import table
           </Button>
         </SettingsBox>
         <SettingsBox>

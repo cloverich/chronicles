@@ -1,19 +1,23 @@
-// Temporary helper to test frontmatter parsing and dump the results
-// While I dev. May keep this around, but its pretty hacky and far
-// from complete or a real test suite.
+// todo drop this diff lib if migrated to mocha
 import { diff } from "deep-object-diff";
-import { ImporterClient } from "../importer";
 import { SourceType } from "./SourceType";
-import { parseTitleAndFrontMatter } from "./frontmatter";
+import { parseTitleAndFrontMatterForImport } from "./frontmatter";
 
-export function runTests(importer: ImporterClient) {
-  runFrontmatterTests(importer);
-}
+import { expect } from "chai";
+import { describe, it } from "mocha";
+import { dedent } from "../../../markdown/test-utils";
 
 // to the console; can convert to real tests at the end.
-function runFrontmatterTests(importer: ImporterClient) {
+// todo(chris): Finish refactoring all these tests to be run with Mocha
+// they are left over from some manual testing that required preload
+// i.e could not be run via mocha
+function runFrontmatterTests() {
   for (const testCase of titleFrontMatterTestCases) {
-    const result = parseTitleAndFrontMatter(
+    it(testCase.input, () => {
+      expect(testCase.input).to.be.a("string");
+    });
+
+    const result = parseTitleAndFrontMatterForImport(
       testCase.input,
       "Dont use this title",
       SourceType.Notion,
@@ -363,3 +367,65 @@ export const inferOrGenerateJournalNameTestCases = [
     output: "TODO_...", // shorter
   },
 ];
+
+describe("Frontmatter parsing", () => {
+  it("this does not break?", () => {
+    const parsed = parseTitleAndFrontMatterForImport(
+      dedent(
+        `---
+title: What chronicles was
+tags:
+  - tags, thesixthprototype
+createdAt: 2024-06-30T14:19:17.801Z
+updatedAt: 2024-07-02T04:52:50.639Z
+---`,
+      ),
+      "",
+      SourceType.Other,
+    );
+  });
+
+  // note: Rather than trying to repair front matter issues, like colons in values (title),
+  // I ended up manually fixing in my source (imported) documents; leaving this breadcrumb
+  // here in case I want to revisit this later.
+  // it("colons in front matter values", () => {
+  //   const parsedDoc = parseDocument(
+  //     `title: 2024-01-01: a  new year\ncreatedAt: 2024-01-01:00:00:00\n`,
+  //   );
+  //   console.log(parsedDoc.errors[0].linePos); // code: BLOCK_AS_IMPLICIT_KEY, pos: [7,8], [ { line: 1, col: 8 }, { line: 1, col: 9 } ]
+  //   const parsed = parseTitleAndFrontMatterForImport(
+  //     dedent(`---
+  //     title: 2024-01-01: A new year
+  //     ---
+  //     `),
+  //     "",
+  //     SourceType.Other,
+  //   );
+  // });
+
+  it("tags or wikilinks in content, when importing from default source", () => {
+    const parsed = parseTitleAndFrontMatterForImport(
+      dedent(`---
+        title: What chronicles was
+        ---
+
+        This is some content with a #tag and a [[wikilink]].`),
+      "",
+      SourceType.Other,
+    );
+
+    // actually testing ^ does not throw, because it re-serializes the body without
+    // the front matter, and was choking when the wrong parser was used, which parsed
+    // ofmTags but could not re-serialize them at this step.
+    expect(parsed.frontMatter.title).to.equal("What chronicles was");
+  });
+
+  it.only("empty contents -> default front matter / no error", () => {
+    const parsed = parseTitleAndFrontMatterForImport("", "", SourceType.Other);
+    expect(parsed.body).to.equal("");
+    expect(parsed.frontMatter).to.deep.equal({
+      title: "",
+      tags: [],
+    });
+  });
+});

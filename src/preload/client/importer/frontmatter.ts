@@ -1,10 +1,6 @@
 import { Stats } from "fs";
 import yaml from "yaml";
-import {
-  mdastToString,
-  parseMarkdown,
-  parseMarkdownForImport,
-} from "../../../markdown";
+import { mdastToString, parseMarkdown } from "../../../markdown";
 import { SourceType } from "../importer/SourceType";
 import { FrontMatter } from "../types";
 
@@ -19,62 +15,14 @@ interface RawExtractFrontMatterResponse {
   body: string;
 }
 
-export const parseTitleAndFrontMatter = (
-  contents: string,
-  filename: string,
-  sourceType: SourceType,
-): ParseTitleAndFrontMatterRes => {
-  // My Notion files were all in a database and hence exported with
-  // a kind of "front matter"; can pull title from that.
-  if (sourceType === "notion") {
-    return parseTitleAndFrontMatterNotion(contents);
-  } else {
-    return parseTitleAndFrontMatterMarkdown(contents, filename);
-  }
-};
-
-function parseTitleAndFrontMatterMarkdown(
-  contents: string,
-  filename: string,
-): ParseTitleAndFrontMatterRes {
-  const { frontMatter, body } = extractFronMatter(
-    contents,
-    parseMarkdownForImport,
-  );
-
-  frontMatter.title = frontMatter.title || filename;
-  return {
-    frontMatter,
-    body,
-  };
-}
-
-function extractFronMatter(
-  contents: string,
-  parse = parseMarkdown,
-): {
-  frontMatter: Partial<FrontMatter>;
-  body: string;
-} {
-  const mdast = parse(contents);
-  if (mdast.children[0].type === "yaml") {
-    const frontMatter = yaml.parse(mdast.children[0].value);
-    mdast.children = mdast.children.slice(1);
-    const contents = mdastToString(mdast);
-    return {
-      frontMatter,
-      body: contents,
-    };
-  } else {
-    return {
-      frontMatter: {},
-      body: contents,
-    };
-  }
-}
-
-// extract well formatted front matter from content, and return the front matter and body
-// stats to set defaults and ensure dates are always present
+/**
+ * For notes within Chronicles (created by it, or already imported). Other logic in this file
+ * is for importing documents that may have front matter, or may not, in different formats, etc.
+ *
+ * @param content
+ * @param stats - to set defaults and ensure dates are always present
+ * @returns - { frontMatter, body }
+ */
 export function parseChroniclesFrontMatter(content: string, stats: Stats) {
   const { frontMatter, body } = extractFronMatter(content);
 
@@ -84,20 +32,74 @@ export function parseChroniclesFrontMatter(content: string, stats: Stats) {
     frontMatter.createdAt || (stats.birthtime || stats.mtime).toISOString();
   frontMatter.updatedAt = frontMatter.updatedAt || stats.mtime.toISOString();
 
-  // Prior version of Chronicles manually encoded as comma separated tags,
-  // then re-parsed out. Now using proper yaml parsing, this can be removed
-  // once all my personal notes are migrated.
-  if ("tags" in frontMatter && typeof frontMatter.tags === "string") {
-    frontMatter.tags = (frontMatter.tags as string)
-      .split(",")
-      .map((tag: string) => tag.trim())
-      .filter(Boolean);
-  }
-
   return {
     frontMatter,
     body,
   } as { frontMatter: FrontMatter; body: string };
+}
+
+export const parseTitleAndFrontMatterForImport = (
+  contents: string,
+  filename: string,
+  sourceType: SourceType,
+): ParseTitleAndFrontMatterRes => {
+  let fm;
+
+  // My Notion files were all in a database and hence exported with
+  // a kind of "front matter"; can pull title from that.
+  if (sourceType === "notion") {
+    fm = parseTitleAndFrontMatterNotion(contents);
+  } else {
+    fm = parseTitleAndFrontMatterDefault(contents, filename);
+  }
+
+  if (!Array.isArray(fm.frontMatter.tags)) {
+    fm.frontMatter.tags = [fm.frontMatter.tags as any].filter(
+      Boolean,
+    ) as string[];
+  }
+
+  return fm;
+};
+
+// For importing documents, staging phase; this is for
+// non-Notion markdown documents, that may have front matter
+// demarcated the typical way (--- at top of file), or not at all.
+function parseTitleAndFrontMatterDefault(
+  contents: string,
+  filename: string,
+): ParseTitleAndFrontMatterRes {
+  // note: unlike the importer processing phase, we do not parse ofmWiki or ofmTags
+  // here; because we don't convert them here, only re-serialize the body without the
+  // front matter. If they are parsed here, this routine will phase since it lacks
+  // serialization logic for those nodes.
+  const { frontMatter, body } = extractFronMatter(contents);
+
+  frontMatter.title = frontMatter.title || filename;
+  return {
+    frontMatter,
+    body,
+  };
+}
+
+function extractFronMatter(contents: string): {
+  frontMatter: Partial<FrontMatter>;
+  body: string;
+} {
+  let frontMatter = {};
+  let body = contents.trim();
+
+  if (body) {
+    const mdast = parseMarkdown(body);
+
+    if (mdast.children[0].type === "yaml") {
+      frontMatter = yaml.parse(mdast.children[0].value);
+      mdast.children = mdast.children.slice(1);
+      body = mdastToString(mdast);
+    }
+  }
+
+  return { frontMatter, body };
 }
 
 /**
@@ -107,9 +109,9 @@ export function parseChroniclesFrontMatter(content: string, stats: Stats) {
 function parseTitleAndFrontMatterNotion(
   contents: string,
 ): ParseTitleAndFrontMatterRes {
-  const { title, rawFrontMatter, body } = extractRawFrontMatter(contents);
+  const { title, rawFrontMatter, body } = extractRawFrontMatterNotion(contents);
   const frontMatter = rawFrontMatter.length
-    ? parseExtractedFrontMatter(rawFrontMatter)
+    ? parseExtractedFrontMatterNotion(rawFrontMatter)
     : {};
 
   frontMatter.title = title;
@@ -120,7 +122,7 @@ function parseTitleAndFrontMatterNotion(
  * Attempt to extract a title and front matter from a string of contents;
  * return the original body on error.
  */
-function extractRawFrontMatter(
+function extractRawFrontMatterNotion(
   contents: string,
 ): RawExtractFrontMatterResponse {
   try {
@@ -241,8 +243,8 @@ function extractRawFrontMatter(
  * Parse the front matter from a string that has already been processed
  * by preprocessRawFrontMatter.
  */
-function parseExtractedFrontMatter(rawFrontMatter: string) {
-  const processedFrontMatter = preprocessRawFrontMatter(rawFrontMatter);
+function parseExtractedFrontMatterNotion(rawFrontMatter: string) {
+  const processedFrontMatter = preprocessRawFrontMatterNotion(rawFrontMatter);
 
   try {
     // NOTE: Returns a string if no front matter is present...wtf.
@@ -314,7 +316,7 @@ function parseExtractedFrontMatter(rawFrontMatter: string) {
  * See body comments for explanations. Should be called on the raw string before
  * calling yaml.parse.
  */
-function preprocessRawFrontMatter(content: string) {
+function preprocessRawFrontMatterNotion(content: string) {
   return (
     content
       // Handle keys with no values by assigning empty strings

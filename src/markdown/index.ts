@@ -54,9 +54,11 @@ function wrapImages(tree: mdast.Root) {
   return tree;
 }
 
-// The importer has additional support for #tag and [[WikiLink]], but converts them
+// During import (processing) parse #tag and [[WikiLink]]; importer converts them
 // to Chronicles tags and markdown links. Future versions may support these properly.
-export const parseMarkdownForImport = (markdown: string): mdast.Root => {
+export const parseMarkdownForImportProcessing = (
+  markdown: string,
+): mdast.Root => {
   return fromMarkdown(markdown, {
     extensions: [gfm(), ofmTag(), ofmWikilink(), frontmatter(["yaml"])],
     mdastExtensions: [
@@ -64,7 +66,6 @@ export const parseMarkdownForImport = (markdown: string): mdast.Root => {
       ofmTagFromMarkdown(),
       ofmWikilinkFromMarkdown(),
       // https://github.com/micromark/micromark-extension-frontmatter?tab=readme-ov-file#preset
-      // todo: support toml (need toml parser)
       frontmatterFromMarkdown(["yaml"]),
     ],
   });

@@ -97,7 +97,6 @@ CREATE TABLE IF NOT EXISTS "import_notes" (
     "sourcePath" TEXT NOT NULL PRIMARY KEY,
     "sourceId" TEXT,
     "error" BOOLEAN,
-    "title" TEXT NOT NULL,
     "journal" TEXT NOT NULL,
     "frontMatter" TEXT,
     "content" TEXT
