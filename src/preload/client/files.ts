@@ -237,7 +237,7 @@ export class FilesClient {
    * are still needed as access check may be innaccurate or could change while
    * app is running.
    */
-  ensureDir = async (directory: string): Promise<void> => {
+  ensureDir = async (directory: string, create = true): Promise<void> => {
     try {
       const dir = await stat(directory);
       if (!dir.isDirectory()) {
@@ -247,7 +247,7 @@ export class FilesClient {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      await Files.mkdirp(directory);
+      if (create) await Files.mkdirp(directory);
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke

@@ -107,7 +107,8 @@ export class SyncClient {
       // Once we find at least one markdown file, we treat this directory
       // as a journal
       if (!(dirname in journals)) {
-        await this.files.ensureDir(dirname);
+        // probably unnecessary
+        await this.files.ensureDir(dir, false);
         await this.journals.index(dirname);
         journals[dirname] = 0;
       }
