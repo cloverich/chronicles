@@ -38,7 +38,7 @@ export class FilesImportResolver {
   ): Promise<string | undefined> => {
     // check db for chronicles id matching name, if any
     const result = await this.knex("import_files")
-      .where({ filename: name })
+      .where({ filename: name, importerId: this.importerId })
       .select("chroniclesId", "extension")
       .first()!;
 
