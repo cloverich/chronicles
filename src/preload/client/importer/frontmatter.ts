@@ -15,6 +15,26 @@ interface RawExtractFrontMatterResponse {
   body: string;
 }
 
+function parseAndNormalizeDate(dateString: string): Date | null {
+  if (isNaN(Date.parse(dateString))) {
+    return null;
+  }
+
+  const parsedDate = new Date(dateString); // Parse the best-effort date
+
+  return new Date(
+    // interpret as UTC
+    Date.UTC(
+      parsedDate.getFullYear(),
+      parsedDate.getMonth(),
+      parsedDate.getDate(),
+      parsedDate.getHours(),
+      parsedDate.getMinutes(),
+      parsedDate.getSeconds(),
+    ),
+  );
+}
+
 /**
  * For notes within Chronicles (created by it, or already imported). Other logic in this file
  * is for importing documents that may have front matter, or may not, in different formats, etc.
@@ -277,27 +297,31 @@ function parseExtractedFrontMatterNotion(rawFrontMatter: string) {
       const lastEdited = frontMatter["Last Edited"];
       if (lastEdited === "") {
         delete frontMatter["Last Edited"];
-      } else if (!isNaN(Date.parse(lastEdited))) {
-        const date = new Date(lastEdited);
-        frontMatter.updatedAt = date.toISOString();
-        delete frontMatter["Last Edited"];
       } else {
-        console.warn("Invalid date format for 'Last Edited':", lastEdited);
+        const date = parseAndNormalizeDate(lastEdited);
+        if (date) {
+          frontMatter.updatedAt = date.toISOString();
+          delete frontMatter["Last Edited"];
+        } else {
+          console.warn("Invalid date format for 'Last Edited':", lastEdited);
+        }
       }
     }
 
     if (frontMatter.createdAt != null) {
       if (frontMatter.createdAt === "") {
         delete frontMatter.createdAt;
-      } else if (!isNaN(Date.parse(frontMatter.createdAt))) {
-        const date = new Date(frontMatter.createdAt);
-        frontMatter.createdAt = date.toISOString();
       } else {
-        console.warn(
-          "Invalid date format for 'createdAt':",
-          frontMatter.createdAt,
-        );
-        delete frontMatter.createdAt;
+        const date = parseAndNormalizeDate(frontMatter.createdAt);
+        if (date) {
+          frontMatter.createdAt = date.toISOString();
+        } else {
+          console.warn(
+            "Invalid date format for 'createdAt':",
+            frontMatter.createdAt,
+          );
+          delete frontMatter.createdAt;
+        }
       }
     }
 
