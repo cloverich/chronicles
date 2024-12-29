@@ -1,11 +1,9 @@
-import { Database } from "better-sqlite3";
 import { Knex } from "knex";
 import path from "path";
 import { Files, PathStatsFile } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import {
-  IJournalsClient,
   MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
   validateJournalName,
 } from "./journals";
@@ -81,9 +79,7 @@ interface StagedNote {
 
 export class ImporterClient {
   constructor(
-    private db: Database,
     private knex: Knex,
-    private journals: IJournalsClient,
     private documents: IDocumentsClient,
     private files: IFilesClient,
     private preferences: IPreferencesClient,
@@ -119,6 +115,8 @@ export class ImporterClient {
     sourceType: SourceType = SourceType.Other,
   ) => {
     // await this.clearImportTables();
+    importDir = path.resolve(importDir);
+
     await this.clearIncomplete();
     const importerId = uuidv7obj().toHex();
     const chroniclesRoot = await this.ensureRoot();
@@ -145,8 +143,6 @@ export class ImporterClient {
       console.error("Error saving import", importerId, importDir, err);
       throw err;
     }
-
-    console.log("importing directory", importDir);
 
     // todo: also create a NotesImportResolver to handle note links rather than mixing
     // into this importer class
@@ -420,9 +416,9 @@ export class ImporterClient {
   // 2. Run this command
   // 3. Re-run import
   clearImportTables = async () => {
-    await this.db.exec("DELETE FROM import_notes");
-    await this.db.exec("DELETE FROM import_files");
-    await this.db.exec("DELETE FROM imports");
+    await this.knex("import_notes").delete();
+    await this.knex("import_files").delete();
+    await this.knex("imports").delete();
   };
 
   // todo: optionally allow re-importing form a specific import directory by clearing
@@ -490,7 +486,6 @@ export class ImporterClient {
     // mapping of note title to new journal and chroniclesId
     linkMappingWiki: Record<string, { journal: string; chroniclesId: string }>,
   ) => {
-    // todo: update ofmWikilink
     // todo: update links that point to local files
     if (isNoteLink(mdast as mdast.RootContent)) {
       const url = decodeURIComponent((mdast as mdast.Link).url);

@@ -66,7 +66,7 @@ export class FilesImportResolver {
     const result = await this.knex("import_files")
       .where({ sourcePathResolved: path })
       .select("chroniclesId", "extension")
-      .first()!;
+      .first();
 
     if (!result) return;
 
@@ -96,6 +96,7 @@ export class FilesImportResolver {
     url: string,
   ): string => {
     const urlWithoutQuery = url.split(/\?/)[0] || "";
+
     return decodeURIComponent(
       path.normalize(
         path.resolve(path.dirname(noteSourcePath), urlWithoutQuery),
@@ -120,7 +121,9 @@ export class FilesImportResolver {
     try {
       await this.knex("import_files").insert({
         importerId: this.importerId,
-        sourcePathResolved: filestats.path, // todo: re-name to pathAbs or pathRelative
+        // note: assumes here and later this is an absolute path; assumption
+        // based on Files.walk behavior
+        sourcePathResolved: filestats.path,
         filename: path.basename(filestats.path, ext),
         chroniclesId: uuidv7obj().toHex(),
         extension: ext,
@@ -177,6 +180,7 @@ export class FilesImportResolver {
           noteSourcePath,
           mdast.url,
         );
+
         if (updatedUrl) {
           mdast.url = updatedUrl;
         }
@@ -219,7 +223,6 @@ export class FilesImportResolver {
     importerId: string,
     importDir: string,
   ) => {
-    // bug: at this point their status is all pending; someone is not awaiting
     const files = await this.knex("import_files").where({
       importerId,
       status: "referenced",
@@ -235,7 +238,11 @@ export class FilesImportResolver {
       let [_, err] = await this.safeAccess(sourcePathResolved, importDir);
 
       if (err != null) {
-        console.error("this.fileExists test fails for ", sourcePathResolved);
+        console.error(
+          "this.fileExists test fails for ",
+          sourcePathResolved,
+          err,
+        );
         await this.knex("import_files")
           .where({ importerId, sourcePathResolved })
           .update({ error: err });

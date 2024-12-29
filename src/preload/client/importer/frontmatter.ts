@@ -1,6 +1,11 @@
 import { Stats } from "fs";
 import yaml from "yaml";
-import { mdastToString, parseMarkdown } from "../../../markdown";
+import {
+  mdastToString,
+  parseMarkdown,
+  parseMarkdownForImportProcessing,
+  serializeMarkdownForImportProcessing,
+} from "../../../markdown";
 import { SourceType } from "../importer/SourceType";
 import { FrontMatter } from "../types";
 
@@ -93,7 +98,11 @@ function parseTitleAndFrontMatterDefault(
   // here; because we don't convert them here, only re-serialize the body without the
   // front matter. If they are parsed here, this routine will phase since it lacks
   // serialization logic for those nodes.
-  const { frontMatter, body } = extractFronMatter(contents);
+  const { frontMatter, body } = extractFronMatter(
+    contents,
+    parseMarkdownForImportProcessing,
+    serializeMarkdownForImportProcessing,
+  );
 
   frontMatter.title = frontMatter.title || filename;
   return {
@@ -102,7 +111,11 @@ function parseTitleAndFrontMatterDefault(
   };
 }
 
-function extractFronMatter(contents: string): {
+function extractFronMatter(
+  contents: string,
+  parse = parseMarkdown,
+  serialize = mdastToString,
+): {
   frontMatter: Partial<FrontMatter>;
   body: string;
 } {
@@ -110,12 +123,12 @@ function extractFronMatter(contents: string): {
   let body = contents.trim();
 
   if (body) {
-    const mdast = parseMarkdown(body);
+    const mdast = parse(body);
 
     if (mdast.children[0].type === "yaml") {
       frontMatter = yaml.parse(mdast.children[0].value);
       mdast.children = mdast.children.slice(1);
-      body = mdastToString(mdast);
+      body = serialize(mdast);
     }
   }
 

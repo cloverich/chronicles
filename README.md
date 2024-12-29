@@ -16,7 +16,7 @@ yarn
 yarn start
 
 # If error with sqlite library versions
-yarn run electron-rebuild
+yarn run electron-rebuild --force
 ```
 
 See scripts/dev.js for specifics on how the source files are compiled and re-loaded in development.

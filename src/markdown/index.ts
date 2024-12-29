@@ -13,8 +13,11 @@ import { gfmFromMarkdown, gfmToMarkdown } from "mdast-util-gfm";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
-import { ofmTagFromMarkdown } from "./mdast-util-ofm-tag";
-import { ofmWikilinkFromMarkdown } from "./mdast-util-ofm-wikilink";
+import { ofmTagFromMarkdown, ofmTagToMarkdown } from "./mdast-util-ofm-tag";
+import {
+  ofmWikilinkFromMarkdown,
+  ofmWikilinkToMarkdown,
+} from "./mdast-util-ofm-wikilink";
 import { ofmTag } from "./micromark-extension-ofm-tag";
 import { ofmWikilink } from "./micromark-extension-ofm-wikilink";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
@@ -68,6 +71,19 @@ export const parseMarkdownForImportProcessing = (
       // https://github.com/micromark/micromark-extension-frontmatter?tab=readme-ov-file#preset
       frontmatterFromMarkdown(["yaml"]),
     ],
+  });
+};
+
+export const serializeMarkdownForImportProcessing = (tree: mdast.Nodes) => {
+  return toMarkdown(tree, {
+    extensions: [
+      gfmToMarkdown() as any,
+      ofmTagToMarkdown(),
+      ofmWikilinkToMarkdown(),
+      frontmatterToMarkdown(["yaml"]),
+    ],
+    bullet: "-",
+    emphasis: "_",
   });
 };
 

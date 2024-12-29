@@ -138,10 +138,12 @@ export class Files {
   ): AsyncGenerator<PathStatsFile> {
     if (currentDepth > depthLimit) return;
 
+    // Ensure dir is absolute path
+    dir = path.resolve(dir);
+
     const dirHandle = await fs.promises.opendir(dir);
     for await (const entry of dirHandle) {
       const fullPath = path.join(dir, entry.name);
-
       // Skip hidden files/directories or other excluded names
       if (entry.isSymbolicLink()) continue; // Skip symlinks entirely
       if (!shouldIndex(entry)) continue;

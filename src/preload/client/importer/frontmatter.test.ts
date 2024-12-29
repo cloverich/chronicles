@@ -289,7 +289,7 @@ export const cases = {
           title: "What chronicles was",
           tags: [],
         },
-        body: "This is some content with a #tag and a \\[\\[wikilink]].\n",
+        body: "This is some content with a #tag and a [[wikilink]].\n",
       },
     },
     {
