@@ -26,46 +26,37 @@ const DATABASE_URL = "DATABASE_URL";
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow;
 
-// when not available, dbfile is undefined
-let dbfile = settings.get(DATABASE_URL);
-
-/**
- * Persist the database url to settings file
- * assumes url is a full, valid filepath
- *
- * todo: Add validation here; call migration scripts
- */
-function setDatabaseUrl(url) {
-  if (!url) throw new Error("setDatabaseUrl called with null or empty string");
-
-  dbfile = url;
-  settings.set(DATABASE_URL, url);
-}
-
-// Provide and set a default DB if one is not found.
-if (!dbfile) {
-  try {
-    setDatabaseUrl(path.join(app.getPath("userData"), "chronicles.db"));
-  } catch (err) {
-    // note: this is defensive (untested)
-    console.error(
-      "Error saving DATABASE_URL to settings file after using a default location",
-    );
-    console.error(
-      "This will result in the user being unable to change the location of the file without an obvious reason why",
-    );
-    console.error(err);
+function setupDefaultDatabaseUrl() {
+  let dbUrl = settings.get(DATABASE_URL);
+  if (!dbUrl) {
+    dbUrl = path.join(app.getPath("userData"), "chronicles.db");
+    settings.set(DATABASE_URL, dbUrl);
   }
+
+  return dbUrl;
 }
+
+// when not available, dbfile is undefined
+const dbUrl = setupDefaultDatabaseUrl();
 
 try {
-  migrate(dbfile);
+  migrate(dbUrl);
 } catch (err) {
   console.error("Error migrating the database:", err);
   throw new Error(
     "Error migrating the database. This is required for initial app setup",
   );
 }
+
+ipcMain.handle("setup-database", async (event, dbUrl) => {
+  try {
+    await migrate(dbUrl);
+    return { success: true };
+  } catch (err) {
+    console.error(`Error migrating the database using url: ${dbUrl}:`, err);
+    return { success: false, error: err.message };
+  }
+});
 
 // Allow files in <img> and <video> tags to load using the "chronicles://" protocol
 // https://www.electronjs.org/docs/api/protocol

@@ -3,6 +3,7 @@ import Knex from "knex";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
 import { ImporterClient } from "./importer";
+import { runTests } from "./importer/test";
 import { JournalsClient } from "./journals";
 import { PreferencesClient } from "./preferences";
 import { SyncClient } from "./sync";
@@ -36,10 +37,12 @@ export { GetDocumentResponse } from "./types";
 
 let client: IClient;
 
+// no CI test runner for electron tests; so exposed via client so they can be called from the app
+// todo: run via cli, then via CI
 class TestsClient {
-  constructor(private importer: ImporterClient) {}
-  runTests = () => {
-    console.log("todo: fixme");
+  constructor() {}
+  runTests = async () => {
+    await runTests();
   };
 }
 
@@ -59,9 +62,7 @@ export function create(): IClient {
     );
 
     const importer = new ImporterClient(
-      db,
       knex,
-      journals,
       documents,
       files,
       preferences,
@@ -71,12 +72,12 @@ export function create(): IClient {
     client = {
       journals: journals,
       documents: documents,
-      tags: new TagsClient(db, knex),
+      tags: new TagsClient(knex),
       preferences: preferences,
       files: files,
       sync,
       importer,
-      tests: new TestsClient(importer),
+      tests: new TestsClient(),
     };
   }
 
