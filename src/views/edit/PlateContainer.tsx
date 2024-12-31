@@ -337,12 +337,7 @@ export default observer(
     );
 
     return (
-      <Plate
-        initialValue={value as any}
-        onChange={setValue}
-        plugins={plugins}
-        readOnly={saving}
-      >
+      <Plate initialValue={value as any} onChange={setValue} plugins={plugins}>
         {children}
       </Plate>
     );
