@@ -158,8 +158,8 @@ export class EditableDocument {
         if (this.dirty && !wasError) this.save();
       }
     },
-    3000,
-    { leading: true },
+    1000,
+    { trailing: true },
   );
 
   del = async () => {
