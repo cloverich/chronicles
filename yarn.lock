@@ -6019,6 +6019,11 @@ util-deprecate@^1.0.1, util-deprecate@^1.0.2:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=
 
+uuid25@^0.1.5:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/uuid25/-/uuid25-0.1.5.tgz#81031c8de17561e9a7de0b18ad24dd6e03054b9f"
+  integrity sha512-ZckmfbOOQXhcavtkqtT9wY+spMyqeAvDHZcWcyEc0qV1R/MtQ9ZbZ+Zd/g/W6DBK5BewFeTbWcsAOMKcxhv6mA==
+
 uuidv7@^0.6.3:
   version "0.6.3"
   resolved "https://registry.yarnpkg.com/uuidv7/-/uuidv7-0.6.3.tgz#2abcfa683b4ad4a0cbbbaedffc3ef940c110cf10"

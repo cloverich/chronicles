@@ -2,7 +2,6 @@ import { Database } from "better-sqlite3";
 import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
-import { uuidv7obj } from "uuidv7";
 import yaml from "yaml";
 import { mdastToString, parseMarkdown, selectNoteLinks } from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
@@ -20,6 +19,7 @@ import {
   SearchResponse,
   UpdateRequest,
 } from "./types";
+import { createId } from "./util";
 
 // document as it appears in the database
 interface DocumentDb {
@@ -182,12 +182,13 @@ export class DocumentsClient {
     args: CreateRequest,
     index: boolean = true,
   ): Promise<[string, string]> => {
-    const id = args.id || uuidv7obj().toHex();
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
     args.frontMatter.createdAt =
       args.frontMatter.createdAt || new Date().toISOString();
     args.frontMatter.updatedAt =
       args.frontMatter.updatedAt || new Date().toISOString();
+
+    const id = args.id || createId(Date.parse(args.frontMatter.createdAt));
 
     const content = this.prependFrontMatter(args.content, args.frontMatter);
     const docPath = await this.files.uploadDocument(

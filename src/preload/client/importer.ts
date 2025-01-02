@@ -15,7 +15,6 @@ import * as mdast from "mdast";
 
 export type IImporterClient = ImporterClient;
 
-import { uuidv7obj } from "uuidv7";
 import {
   isNoteLink,
   mdastToString,
@@ -24,6 +23,7 @@ import {
 import { FilesImportResolver } from "./importer/FilesImportResolver";
 import { SourceType } from "./importer/SourceType";
 import { parseTitleAndFrontMatterForImport } from "./importer/frontmatter";
+import { createId } from "./util";
 
 // UUID in Notion notes look like 32 character hex strings; make this somewhat more lenient
 const hexIdRegex = /\b[0-9a-f]{16,}\b/;
@@ -118,7 +118,7 @@ export class ImporterClient {
     importDir = path.resolve(importDir);
 
     await this.clearIncomplete();
-    const importerId = uuidv7obj().toHex();
+    const importerId = createId();
     const chroniclesRoot = await this.ensureRoot();
 
     // Ensure `importDir` is a directory and can be accessed
@@ -244,24 +244,22 @@ export class ImporterClient {
       // 2. Whether to use birthtime or mtime
       // 3. Which timezone to use
       // 4. Whether to use the front-matter date or the file date
+      const createdAtDate = frontMatter.createdAt
+        ? new Date(Date.parse(frontMatter.createdAt))
+        : file.stats.birthtime || file.stats.mtime || new Date();
+
       const requiredFm: FrontMatter = {
         ...frontMatter,
         tags: frontMatter.tags || [],
-        createdAt:
-          frontMatter.createdAt ||
-          file.stats.birthtime.toISOString() ||
-          file.stats.mtime.toISOString() ||
-          new Date().toISOString(),
+        createdAt: frontMatter.createdAt || createdAtDate.toISOString(),
         updatedAt:
           frontMatter.updatedAt ||
           file.stats.mtime.toISOString() ||
           new Date().toISOString(),
       };
 
-      // todo: handle additional kinds of frontMatter; just add a column for them
-      // and ensure they are not overwritten when editing existing files
-      // https://github.com/cloverich/chronicles/issues/127
-      const chroniclesId = uuidv7obj().toHex();
+      const chroniclesId = createId(createdAtDate.getTime());
+
       const stagedNote: StagedNote = {
         importerId,
         chroniclesId: chroniclesId,
@@ -289,15 +287,15 @@ export class ImporterClient {
         // that is too long, or a front-matter key that is not supported, etc, user
         // can use table logs to fix and re-run th e import
         try {
-          const noteId = uuidv7obj().toHex();
           await this.knex("import_notes").insert({
             importerId,
             sourcePath: file.path,
             content: contents,
             error: (e as any).message,
 
-            // note: these all have non-null / unique constraints:
-            chroniclesId: noteId,
+            // note: these all have non-null / unique constraints;
+            // its expected re-processing will delete / replace these values
+            chroniclesId: createId(),
             chroniclesPath: "staging_error",
             journal: "staging_error",
             frontMatter: {},
@@ -628,7 +626,7 @@ export class ImporterClient {
     } catch (err) {
       // Generate a new, ugly name; user can decide what they want to do via
       // re-naming later b/c rn its not worth the complexity of doing anything else
-      journalName = uuidv7obj().toHex();
+      journalName = createId();
 
       // too long, reserved name, non-unique, etc.
       // known cases from my own import:

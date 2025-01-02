@@ -2,9 +2,10 @@ import Store from "electron-store";
 
 import fs from "fs";
 import path from "path";
-import { uuidv7obj } from "uuidv7";
 import { Files } from "../files";
 const { readFile, writeFile, access, stat } = fs.promises;
+
+import { createId } from "./util";
 
 interface UploadResponse {
   filename: string;
@@ -69,7 +70,7 @@ export class FilesClient {
     const dir = path.join(chronRoot, "_attachments");
 
     const { buffer, extension } = dataURLToBufferAndExtension(dataUrl);
-    const filename = `${uuidv7obj().toHex()}${extension}`;
+    const filename = `${createId()}${extension}`;
     const filepath = path.join(dir, filename);
 
     return new Promise<UploadResponse>((resolve, reject) => {
@@ -92,7 +93,7 @@ export class FilesClient {
     const dir = path.join(chronRoot, "_attachments");
 
     const ext = path.parse(file.name).ext;
-    const filename = `${uuidv7obj().toHex()}${ext || ".unknown"}`;
+    const filename = `${createId()}${ext || ".unknown"}`;
     const filepath = path.join(dir as string, filename);
     return new Promise<UploadResponse>((res, rej) => {
       const stream = fs.createWriteStream(filepath);
