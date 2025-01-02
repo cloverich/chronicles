@@ -2,13 +2,13 @@ import { Database } from "better-sqlite3";
 import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
-import { UUID } from "uuidv7";
 import { Files } from "../files";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
 import { SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
+import { checkId } from "./util";
 
 export type ISyncClient = SyncClient;
 
@@ -85,11 +85,11 @@ export class SyncClient {
 
     for await (const file of Files.walk(rootDir, 1, shouldIndex)) {
       const { name, dir } = path.parse(file.path);
-      // filename is id; ensure it is formatted as a uuidv7
+      // filename is id; ensure it is formatted correctly
       const documentId = name;
 
       try {
-        UUID.parse(documentId);
+        checkId(documentId);
       } catch (e) {
         console.error(
           "Invalid document id in sync; skipping",

@@ -2,10 +2,10 @@ import fs from "fs";
 import { Knex } from "knex";
 import mdast from "mdast";
 import path from "path";
-import { uuidv7obj } from "uuidv7";
 import { isNoteLink } from "../../../markdown";
 import { Files, PathStatsFile } from "../../files";
 import { IFilesClient } from "../files";
+import { createId } from "../util";
 
 const ATTACHMENTS_DIR = "_attachments";
 
@@ -125,7 +125,7 @@ export class FilesImportResolver {
         // based on Files.walk behavior
         sourcePathResolved: filestats.path,
         filename: path.basename(filestats.path, ext),
-        chroniclesId: uuidv7obj().toHex(),
+        chroniclesId: createId(filestats.stats.birthtimeMs),
         extension: ext,
       });
     } catch (err: any) {
