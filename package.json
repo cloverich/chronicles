@@ -1,5 +1,5 @@
 {
-  "name": "chronicles",
+  "name": "Chronicles",
   "version": "1.0.0",
   "main": "main.bundle.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "lint:types:check": "tsc --noEmit --skipLibCheck",
     "postinstall": "yarn run electron-rebuild",
     "prestart": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
-    "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
+    "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css && node ./scripts/icon.js",
     "start": "node ./scripts/dev.mjs",
     "pretest": "node ./scripts/test.mjs",
     "test": "mocha 'src/**/*.test.bundle.js'"
@@ -54,6 +54,7 @@
     "electron": "^28.2.0",
     "esbuild": "^0.20.0",
     "evergreen-ui": "^7.1.9",
+    "icon-gen": "^5.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.314.0",
     "luxon": "^2.4.0",
@@ -73,6 +74,7 @@
     "react-day-picker": "^8.10.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
+    "sharp": "^0.33.5",
     "slate": "^0.101.5",
     "slate-history": "^0.100.0",
     "slate-hyperscript": "^0.100.0",

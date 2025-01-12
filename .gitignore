@@ -13,6 +13,7 @@ tmp/
 # build output
 dist/
 packaged/
+icons/out
 
 # bundler (dev) outputs .bundle files
 # along-side src files, used during development

@@ -17,6 +17,7 @@
  */
 const { packager } = require("@electron/packager");
 const { rebuild } = require("@electron/rebuild");
+const path = require("path");
 
 // These arguments are provided by build.sh
 const srcDir = process.argv[2];
@@ -35,9 +36,24 @@ console.log(
   outDir,
 );
 
+const iconPath = {
+  darwin: path.resolve("./icons/out/app.icns"), // macOS
+  win32: path.resolve("./icons/out/app.ico"), // Windows
+  linux: path.resolve("./icons/out/app-512.png"), // Linux (recommended 512x512 PNG)
+}[process.platform];
+
+if (!iconPath) {
+  console.error(
+    "Unsupported platform -- cannot find application icon",
+    platform,
+  );
+  process.exit(1);
+}
+
 packager({
   dir: srcDir,
   out: outDir,
+  icon: iconPath,
   // … other options
   // Documentation does this in afterCopy. Why did I do this in afterPrune?
   afterPrune: [
