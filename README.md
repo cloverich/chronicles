@@ -11,9 +11,7 @@
   <br>
 </div>
 
-Electron based markdown journaling application, in the spirit of [incremental note taking][incr-notes].
-
-**Status**: Hobby project, prototyping and re-working UX to try out various concepts with little regard for usability, stability, or appearances. Check [releases](https://github.com/cloverich/chronicles/releases) for latest updates and [roadmap](https://github.com/cloverich/chronicles/issues/160) for the plan.
+**Status**: Experimental. This application is still in the prototype phase, the UX, functionality, and storage format may change at any time and with little regard for usability, stability, or appearances. However breaking changes will be called out in [releases](https://github.com/cloverich/chronicles/releases) and upcoming changes may be found in pinned issues; see the [roadmap](https://github.com/cloverich/chronicles/issues/160) for the longer term plan. As long as the application is developed it will be kept up to date.
 
 ## Development
 
