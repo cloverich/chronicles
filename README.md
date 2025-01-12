@@ -1,8 +1,19 @@
-# Chronicles
+#
+
+<div align="center">
+    <img src="icons/src/input_icon.png" width="200" height="200">
+  <h1>Chronicles</h1>
+  <p>
+    <b>Journaling for the absent minded</b>
+  </p>
+  <br>
+  <br>
+  <br>
+</div>
 
 Electron based markdown journaling application, in the spirit of [incremental note taking][incr-notes].
 
-**Status**: Hobby project, prototyping and re-working UX to try out various concepts with little regard for usability, stability, or appearances.
+**Status**: Hobby project, prototyping and re-working UX to try out various concepts with little regard for usability, stability, or appearances. Check [releases](https://github.com/cloverich/chronicles/releases) for latest updates and [roadmap](https://github.com/cloverich/chronicles/issues/160) for the plan.
 
 ## Development
 
