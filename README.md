@@ -44,19 +44,35 @@ See scripts/dev.js for specifics on how the source files are compiled and re-loa
 
 Unit tests rely on esbuild to bundle test files, after conflicts getting esm, ts-node, and mocha to play nice.
 
-## Build and release
+## Build and release (MacOS)
 
+Builds are run locally; the build output is manually uploaded to Github releases. As of this writing, only MacoS is supported; PRs for Windows or Linux support are welcome, but open an issue with a suggested plan first (it may require multiple changes).
+
+- Tag the latest commit
 - Use `yarn build`
-- Make a Github release
+- Delete the .app file, keep the .pkg file; zip the contents
+- Make a Github release; attach the build output (zip file)
 
 At a high level, the build is comprised of:
 
 - generate bundles ([esbuild][1]) from source files
 - install production dependencies
 - [re-build][2] native dependencies for the targeted electron version
-- [package][3] the app
+- [package][3] the app and [sign it][4]
+
+### OSX Certificates
+
+To sign the application, you need the signing certificate from Apple. Electron has good documentation on this process. This is roughly:
+
+- Create and pay for an Apple developer account
+- Generate certificates in xcode
+- Export them; install them to local keychain
+- The build process picks up this info and prompts you for them, "Allow all" (it signs repeatedly)
+
+This is only necessary for official releases. If you want to download this repo, customize it, and build your test changes, comment out the osx sign attribute in `package.js` and run `yarn build`, then check the `packaged` directory for the latest build.
 
 [1]: https://esbuild.github.io
 [2]: https://github.com/electron/electron-rebuild
 [3]: https://github.com/electron/electron-packager
 [incr-notes]: https://thesephist.com/posts/inc/
+[4]: https://github.com/electron/osx-sign
