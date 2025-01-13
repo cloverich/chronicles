@@ -53,6 +53,7 @@ if (!iconPath) {
 packager({
   dir: srcDir,
   out: outDir,
+  osxSign: true,
   icon: iconPath,
   // … other options
   // Documentation does this in afterCopy. Why did I do this in afterPrune?

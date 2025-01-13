@@ -10,7 +10,7 @@
     "lint:types:check": "tsc --noEmit --skipLibCheck",
     "postinstall": "yarn run electron-rebuild",
     "prestart": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
-    "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css && node ./scripts/icon.js",
+    "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
     "pretest": "node ./scripts/test.mjs",
     "test": "mocha 'src/**/*.test.bundle.js'"
