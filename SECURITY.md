@@ -6,10 +6,13 @@ Only the latest stable version is supported with security updates. Critical upda
 
 ## Reporting a Vulnerability
 
-Please open a Github Issue in this repository **with a proof of concept** that shows the security vulnerability. Please do not open an issue without this proof of concept, as we cannot fix anything without this.
+To report a vulnerability, there are two options:
 
-For feedback or discussions about general security practices (e.g., feature requests, opinions on improving security), please open an issue in this repository. See also the electron guidelines on security practices, which this repository intends to follow: https://www.electronjs.org/docs/latest/tutorial/security
+1. (Private) use the Security tab on this Github repo, and select "Report a vulnerability". Use this if you believe the issue puts current users at risk
+2. File a Github issue for less severa or more general security concerns.
+
+For general information on Chronicles security practices (e.g., feature requests, opinions on improving security), please see the electron guidelines on security practices, which this repository intends to follow where appropriate: https://www.electronjs.org/docs/latest/tutorial/security
 
 ## Bounty
 
-We **currently do not** offer a bounty for discovering vulnerabilities. However, we greatly appreciate your contributions and can credit your work in our changelog and release announcement. Thank you for helping to improve the app's security.
+This application is unfunded and **currently does not** offer a bounty for discovering vulnerabilities. However, I greatly appreciate your contributions and can credit your work in related changelog and release announcements. Thank you for helping to improve the app's security.
