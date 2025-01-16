@@ -1,6 +1,6 @@
-import { toaster } from "evergreen-ui";
 import { computed, observable } from "mobx";
 import React from "react";
+import { toast } from "sonner";
 import { JournalsStore } from "../../../hooks/stores/journals";
 import { JournalResponse } from "../../../hooks/useClient";
 import { useJournals } from "../../../hooks/useJournals";
@@ -95,7 +95,7 @@ export class SidebarStore {
     try {
       await this.journalStore.toggleArchive(journal);
     } catch (err) {
-      toaster.danger(`Error archiving journal ${String(err)}`);
+      toast.error(`Error archiving journal ${String(err)}`);
     } finally {
       this.saving = false;
     }
@@ -111,7 +111,7 @@ export class SidebarStore {
         this.searchStore.removeToken(`in:${journal.name}`);
       }
     } catch (err) {
-      toaster.danger(`Error deleting journal ${String(err)}`);
+      toast.error(`Error deleting journal ${String(err)}`);
     } finally {
       this.saving = false;
     }
@@ -124,7 +124,7 @@ export class SidebarStore {
     try {
       await this.journalStore.setDefault(journal.name);
     } catch (err) {
-      toaster.danger(`Error setting journal as default ${String(err)}`);
+      toast.error(`Error setting journal as default ${String(err)}`);
     } finally {
       this.saving = false;
     }

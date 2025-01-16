@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "sonner";
 import { JournalsStore } from "./stores/journals";
 import useClient, { JournalResponse } from "./useClient";
 
@@ -22,9 +23,20 @@ export function useAppLoader() {
     setLoading(true);
 
     async function load() {
+      let toastId = null;
       try {
-        await client.sync.sync();
+        if (await client.sync.needsSync()) {
+          toastId = toast("Syncing notes database", {
+            duration: Infinity,
+          });
+
+          await client.sync.sync();
+
+          toast.dismiss(toastId);
+        }
       } catch (err: any) {
+        if (toastId) toast.dismiss(toastId);
+
         console.error("error syncing at startup", err);
         setLoadingErr(err);
         setLoading(false);

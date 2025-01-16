@@ -1,9 +1,9 @@
 import { observable } from "mobx";
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import useClient from "../../hooks/useClient";
 import { EditableDocument } from "./EditableDocument";
-const { useNavigate } = require("react-router-dom");
-const { toaster } = require("evergreen-ui");
 
 interface LoodingState {
   document: EditableDocument | null;
@@ -15,7 +15,7 @@ interface LoodingState {
  * Load a new or existing document into a view model
  */
 export function useEditableDocument(documentId: string) {
-  const { navigate } = useNavigate();
+  const navigate = useNavigate();
   const client = useClient();
   const [state, _] = React.useState<LoodingState>(() => {
     return observable({
@@ -48,7 +48,7 @@ export function useEditableDocument(documentId: string) {
         if (!isEffectMounted) return;
         if (!doc) {
           navigate("/documents");
-          toaster.warning("Document not found, redirecting to documents list");
+          toast.warning("Document not found, redirecting to documents list");
           return state;
         }
 

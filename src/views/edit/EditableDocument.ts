@@ -1,6 +1,6 @@
-import { toaster } from "evergreen-ui";
 import { debounce } from "lodash";
 import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
+import { toast } from "sonner";
 import { IClient } from "../../hooks/useClient";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 import { FrontMatter, GetDocumentResponse } from "../../preload/client/types";
@@ -149,7 +149,7 @@ export class EditableDocument {
         this.dirty = true;
         wasError = true;
         console.error("Error saving document", err);
-        toaster.danger(JSON.stringify(err));
+        toast.error(JSON.stringify(err));
       } finally {
         this.saving = false;
 

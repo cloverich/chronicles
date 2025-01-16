@@ -1,14 +1,9 @@
-import {
-  Button,
-  ChevronLeftIcon,
-  IconButton,
-  Pane,
-  toaster,
-} from "evergreen-ui";
+import { Button, ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Select } from "../../components/Select";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
@@ -48,7 +43,7 @@ const Preferences = observer(() => {
       sync();
     } catch (e) {
       store.loading = false;
-      toaster.danger("Failed to set new directory");
+      toast.error("Failed to set new directory");
     }
   }
 
@@ -66,7 +61,7 @@ const Preferences = observer(() => {
     } catch (e) {
       console.error("Error importing directory", e);
       store.loading = false;
-      toaster.danger("Failed to import directory");
+      toast.error("Failed to import directory");
     }
   }
 
@@ -75,25 +70,25 @@ const Preferences = observer(() => {
     try {
       await client.importer.clearImportTables();
       store.loading = false;
-      toaster.success("Import table cleared");
+      toast.success("Import table cleared");
     } catch (e) {
       console.error("Error clearing import table", e);
       store.loading = false;
-      toaster.danger("Failed to clear import table");
+      toast.error("Failed to clear import table");
     }
   }
 
   async function sync() {
     if (store.loading) return;
 
-    toaster.notify("Syncing cache...may take a few minutes");
+    toast.info("Syncing cache...may take a few minutes");
     store.loading = true;
 
     // force sync when called manually
     await client.sync.sync(true);
     await jstore.refresh();
     store.loading = false;
-    toaster.success("Cache synced");
+    toast.success("Cache synced");
   }
 
   useEffect(() => {

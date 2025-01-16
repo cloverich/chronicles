@@ -1,6 +1,7 @@
-import { Pane } from "evergreen-ui";
 import React from "react";
 import ErrorBoundary from "./error";
+import Titlebar from "./titlebar/macos";
+import * as Base from "./views/layout";
 
 interface Props2 {
   children: any;
@@ -9,14 +10,9 @@ interface Props2 {
 export default function Layout(props: Props2) {
   return (
     <ErrorBoundary>
-      <Pane
-        minWidth={480}
-        minHeight="100vh"
-        display="flex"
-        flexDirection="column"
-      >
+      <div className="flex min-h-screen min-w-[480px] flex-col">
         {props.children}
-      </Pane>
+      </div>
     </ErrorBoundary>
   );
 }
@@ -24,21 +20,11 @@ export default function Layout(props: Props2) {
 export function LayoutDummy({ children }: any) {
   return (
     <ErrorBoundary>
-      <Pane minWidth={480}>
-        <Pane borderBottom="default" elevation={1} padding={15} display="flex">
-          <Pane marginRight={25}>
-            <span className="mono" style={{ color: "#6E62B6" }}>
-              chronicles
-            </span>
-          </Pane>
-          <Pane flexGrow={1} marginRight={24}>
-            <a href="">documents</a>
-            <a href="">journals</a>
-            <a href="">preferences</a>
-          </Pane>
-        </Pane>
-        <Pane margin={50}>{children}</Pane>
-      </Pane>
+      <Base.Container>
+        <Titlebar className="pr-16"></Titlebar>
+        <Base.TitlebarSpacer />
+        <Base.ScrollContainer>{children}</Base.ScrollContainer>
+      </Base.Container>
     </ErrorBoundary>
   );
 }

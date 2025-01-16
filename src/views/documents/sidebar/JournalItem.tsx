@@ -1,10 +1,10 @@
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { cn } from "@udecode/cn";
-import { toaster } from "evergreen-ui";
 import { noop } from "lodash";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
 import { Icons } from "../../../components/icons";
 import { JournalResponse } from "../../../hooks/useClient";
 import { useIsMounted } from "../../../hooks/useIsMounted";
@@ -156,7 +156,7 @@ const JournalEditor = observer(function JournalEditor({
     } catch (err) {
       console.error(err);
       if (isMounted()) {
-        toaster.danger(`Error saving journal: ${String(err)}`);
+        toast.error(`Error saving journal: ${String(err)}`);
       }
     } finally {
       if (isMounted()) {
