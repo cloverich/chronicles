@@ -20,11 +20,13 @@ export default observer(function Container() {
   if (loading) {
     return (
       <LayoutDummy>
-        <h1>Loading Journals...</h1>
+        <h1>Loading...</h1>
       </LayoutDummy>
     );
   }
 
+  // todo: This loading error is ugly, and not very helpful. Why does it
+  // happen? Is it only journal loading errors?
   if (loadingErr) {
     return (
       <LayoutDummy>

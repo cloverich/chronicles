@@ -1,7 +1,7 @@
-import { toaster } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import useClient from "../../hooks/useClient";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { useJournals } from "../../hooks/useJournals";
@@ -61,7 +61,7 @@ function useCreateDocument() {
       // than be stuck.
       if (!journal) {
         navigate("/documents");
-        toaster.warning("No journals available to create a document");
+        toast.warning("No journals available to create a document");
         return;
       }
 

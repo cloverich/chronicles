@@ -41,22 +41,34 @@ export class SyncClient {
   ) {}
 
   /**
-   * Sync the notes directory with the database
+   * Check if a sync is needed based on the last sync time
+   *
+   * note: extremely naive; revisit in https://github.com/cloverich/chronicles/issues/282
+   * @returns true if a sync is needed
    */
-  sync = async (force = false) => {
-    // Skip sync if completed recently; not much thought put into this
+  needsSync = async () => {
     const lastSync = await this.knex("sync").orderBy("id", "desc").first();
-    if (lastSync?.completedAt && !force) {
+    if (lastSync?.completedAt) {
       const lastSyncDate = new Date(lastSync.completedAt);
       const now = new Date();
       const diff = now.getTime() - lastSyncDate.getTime();
-      const diffHours = diff / (1000 * 60 * 60);
-      console.log(`last sync was ${diffHours} ago`);
+      const diffHours = Math.trunc(diff / (1000 * 60 * 60));
+      console.log(`last sync was ${diffHours} hours ago`);
+
       if (diffHours < 1) {
         console.log("skipping sync; last sync was less than an hour ago");
-        return;
+        return false;
       }
     }
+
+    return true;
+  };
+
+  /**
+   * Sync the notes directory with the database
+   */
+  sync = async (force = false) => {
+    if (!force && !this.needsSync()) return;
 
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
