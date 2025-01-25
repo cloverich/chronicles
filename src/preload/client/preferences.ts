@@ -7,6 +7,7 @@ export interface Preferences {
   ARCHIVED_JOURNALS: Record<string, boolean>;
   NOTES_DIR: string;
   SETTINGS_DIR: string;
+  ONBOARDING: "new" | "complete";
 }
 
 const defaults = (): Preferences => ({
@@ -15,6 +16,7 @@ const defaults = (): Preferences => ({
   ARCHIVED_JOURNALS: {},
   NOTES_DIR: "",
   SETTINGS_DIR: "",
+  ONBOARDING: "new",
 });
 
 export type IPreferencesClient = PreferencesClient;
@@ -28,7 +30,7 @@ export class PreferencesClient {
     return this.settings.store as unknown as Preferences;
   };
 
-  get = async <T extends keyof Preferences>(key: T | string): Promise<any> => {
+  get = async (key: keyof Preferences): Promise<any> => {
     const setting = this.settings.get(key);
     return setting !== undefined
       ? setting
