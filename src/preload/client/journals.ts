@@ -32,9 +32,8 @@ export class JournalsClient {
   };
 
   index = async (journalName: string): Promise<JournalResponse> => {
-    const existing = await this.preferences.get(
-      `ARCHIVED_JOURNALS.${journalName}`,
-    );
+    const archived = await this.preferences.get(`ARCHIVED_JOURNALS`);
+    const existing = journalName in archived;
 
     if (existing == null) {
       await this.preferences.set(`ARCHIVED_JOURNALS.${journalName}`, false);

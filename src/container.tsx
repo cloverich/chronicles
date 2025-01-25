@@ -25,8 +25,7 @@ export default observer(function Container() {
     );
   }
 
-  // todo: This loading error is ugly, and not very helpful. Why does it
-  // happen? Is it only journal loading errors?
+  // todo: This loading error is ugly, and not very helpful.
   if (loadingErr) {
     return (
       <LayoutDummy>

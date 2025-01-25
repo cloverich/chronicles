@@ -3,25 +3,62 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 
 import { useNavigate } from "react-router-dom";
+import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { DocumentItem } from "./DocumentItem";
 import { Layout } from "./Layout";
 import { SearchStore, useSearchStore } from "./SearchStore";
+import Welcome from "./welcome";
+
+function useOnboarding() {
+  const client = useClient();
+  const [onboarding, setOnboarding] = React.useState<"new" | "complete">("new");
+  const [loading, setLoading] = React.useState(true);
+
+  async function fetchOnboarding() {
+    setOnboarding(await client.preferences.get("ONBOARDING"));
+    setLoading(false);
+  }
+
+  function completeOnboarding() {
+    client.preferences.set("ONBOARDING", "complete");
+    setOnboarding("complete");
+  }
+
+  React.useEffect(() => {
+    fetchOnboarding();
+  }, []);
+
+  return { onboarding, loading, completeOnboarding };
+}
 
 function DocumentsContainer() {
   const journalsStore = useJournals();
   const searchStore = useSearchStore()!;
   const navigate = useNavigate();
+  const {
+    onboarding,
+    loading: onboardingLoading,
+    completeOnboarding,
+  } = useOnboarding();
 
   function edit(docId: string) {
     navigate(`/documents/edit/${docId}`);
   }
 
   // loading states
-  if (searchStore.loading && !searchStore.docs.length) {
+  if ((searchStore.loading || onboardingLoading) && !searchStore.docs.length) {
     return (
       <Layout store={searchStore} empty>
         <Heading>Loading</Heading>
+      </Layout>
+    );
+  }
+
+  if (onboarding === "new") {
+    return (
+      <Layout store={searchStore}>
+        <Welcome onComplete={completeOnboarding} />
       </Layout>
     );
   }
@@ -45,7 +82,7 @@ function DocumentsContainer() {
       return (
         <Layout store={searchStore}>
           <Heading>No documents found</Heading>
-          <Paragraph>Broaden your search, or add more documents.</Paragraph>
+          <Paragraph>Broaden your search, or add more notes.</Paragraph>
         </Layout>
       );
     } else {

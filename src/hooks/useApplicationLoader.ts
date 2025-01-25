@@ -24,6 +24,7 @@ export function useAppLoader() {
 
     async function load() {
       let toastId = null;
+
       try {
         if (await client.sync.needsSync()) {
           toastId = toast("Syncing notes database", {
