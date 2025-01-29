@@ -1,22 +1,51 @@
+import { observable } from "mobx";
 import React from "react";
 import { toast } from "sonner";
 import { JournalsStore } from "./stores/journals";
-import useClient, { JournalResponse } from "./useClient";
+import useClient from "./useClient";
 
-export const JournalsStoreContext = React.createContext<JournalsStore | null>(
+interface PreferencesUiState {
+  isOpen: boolean;
+  toggle: (state: boolean) => void;
+}
+
+export interface ApplicationState {
+  preferences: PreferencesUiState;
+  journals: JournalsStore;
+}
+
+export const ApplicationContext = React.createContext<ApplicationState | null>(
   null,
 );
+
+// todo: Allow selecting part of state
+export function useApplicationState() {
+  const applicationStore = React.useContext(ApplicationContext)!;
+  return applicationStore;
+}
 
 /**
  * Runs sync and loads the journal store. After loading it should be passed down in context.
  * Could put other application loading state here.
  */
 export function useAppLoader() {
-  const [journals, setJournals] = React.useState<JournalResponse[]>();
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
   const client = useClient();
+
+  const [preferences] = React.useState<PreferencesUiState>(
+    observable({
+      isOpen: false,
+      toggle: (state: boolean) => {
+        if (state) {
+          preferences.isOpen = state;
+        } else {
+          preferences.isOpen = !preferences.isOpen;
+        }
+      },
+    }),
+  );
 
   React.useEffect(() => {
     let isEffectMounted = true;
@@ -48,7 +77,6 @@ export function useAppLoader() {
         const journalStore = await JournalsStore.init(client);
         if (!isEffectMounted) return;
 
-        setJournals(journalStore.journals);
         setJournalsStore(journalStore);
         setLoading(false);
       } catch (err: any) {
@@ -65,5 +93,5 @@ export function useAppLoader() {
     };
   }, []);
 
-  return { journals, journalsStore, loading, loadingErr };
+  return { journals: journalsStore, loading, loadingErr, preferences };
 }

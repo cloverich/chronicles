@@ -1,6 +1,5 @@
 import { EditIcon, PanelStatsIcon, SettingsIcon } from "evergreen-ui";
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/Button";
 import {
   Dialog,
@@ -10,12 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/Dialog";
-import useClient from "../../../hooks/useClient";
 
 export default function Welcome({ onComplete }: { onComplete: () => void }) {
-  const navigate = useNavigate();
-  const client = useClient();
-
   function ackNewUser() {
     onComplete();
   }
