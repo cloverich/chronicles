@@ -1,10 +1,10 @@
 import React from "react";
-import { JournalsStoreContext } from "./useApplicationLoader";
+import { ApplicationContext } from "./useApplicationLoader";
 
 /**
  * Simple hepler for accessing the journals store
  */
 export function useJournals() {
-  const journalsStore = React.useContext(JournalsStoreContext)!;
-  return journalsStore;
+  const applicationStore = React.useContext(ApplicationContext)!;
+  return applicationStore.journals;
 }

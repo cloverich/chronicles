@@ -8,6 +8,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { SheetTrigger } from "../../components/Sidesheet";
+import { useApplicationState } from "../../hooks/useApplicationLoader";
 import { useJournals } from "../../hooks/useJournals";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
@@ -23,6 +24,7 @@ interface Props {
 
 export const Layout = observer((props: Props) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const { preferences } = useApplicationState();
   const navigate = useNavigate();
   const jstore = useJournals();
 
@@ -66,7 +68,7 @@ export const Layout = observer((props: Props) => {
           border="none"
           icon={SettingsIcon}
           className="drag-none"
-          onClick={() => navigate("/preferences")}
+          onClick={() => preferences.toggle(true)}
           marginLeft={8}
         >
           Preferences
