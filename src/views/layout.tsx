@@ -17,7 +17,24 @@ import React from "react";
  * </Base.Container>
  * ```
  */
-export const Container = ({ children }: React.PropsWithChildren) => {
+export const Container: React.FC<ClickableDivProps> = ({ children }) => {
+  return (
+    <div className="flex h-screen flex-col overflow-hidden">{children}</div>
+  );
+};
+
+const noop = () => {};
+
+/**
+ * For wrapping divs that are optionally clickable; specifically supporting
+ * the editor focus-on-click behavior, accounting for the fact that these wrappers
+ * are also used outside the editor page.
+ */
+interface ClickableDivProps extends React.HTMLAttributes<HTMLDivElement> {
+  onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+}
+
+export const EditorContainer: React.FC<ClickableDivProps> = ({ children }) => {
   return (
     <div className="flex h-screen flex-col overflow-hidden">{children}</div>
   );
@@ -34,16 +51,22 @@ export const TitlebarSpacer = () => {
  * Add padding at the bottom of ScrollContainer without disrupting the scrollbar on the parent.
  * See Container for usage.
  */
-export const BottomSpacer = () => {
-  return <div className="h-16 min-h-16" />;
+export const BottomSpacer: React.FC<ClickableDivProps> = ({ onClick }) => {
+  return <div className="h-16 min-h-16" onClick={onClick || noop} />;
 };
 
 /**
  * Scrollable container for main content. See Container for usage.
  */
-export const ScrollContainer = ({ children }: React.PropsWithChildren) => {
+export const ScrollContainer: React.FC<ClickableDivProps> = ({
+  children,
+  onClick,
+}) => {
   return (
-    <div className="flex flex-grow flex-col overflow-y-scroll p-12">
+    <div
+      className="flex flex-grow flex-col overflow-y-scroll p-12"
+      onClick={onClick || noop}
+    >
       {children}
     </div>
   );
