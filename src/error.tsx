@@ -6,6 +6,10 @@ interface State {
   error: any;
 }
 
+interface Props {
+  children: React.ReactNode;
+}
+
 export default class ErrorBoundary extends React.Component<any, State> {
   constructor(props: any) {
     super(props);

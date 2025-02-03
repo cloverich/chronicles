@@ -64,7 +64,7 @@ export const ScrollContainer: React.FC<ClickableDivProps> = ({
 }) => {
   return (
     <div
-      className="flex flex-grow flex-col overflow-y-scroll p-12"
+      className="flex flex-grow flex-col overflow-y-auto p-12"
       onClick={onClick || noop}
     >
       {children}
