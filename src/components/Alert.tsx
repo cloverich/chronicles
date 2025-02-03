@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
+import { AngryIcon, InfoIcon, OctagonIcon, TriangleIcon } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@udecode/cn";
@@ -11,6 +12,8 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        warning: "border-warning/50 text-warning dark:border-warning",
+        error: "border-error/50 text-error dark:border-error",
       },
     },
     defaultVariants: {
@@ -19,7 +22,51 @@ const alertVariants = cva(
   },
 );
 
+const iconForVariant = {
+  default: InfoIcon,
+  destructive: OctagonIcon,
+  warning: TriangleIcon,
+  error: AngryIcon,
+};
+
+interface IAlert {
+  // variant: "default" | "destructive" | "warning" | "error";
+  title: string;
+}
+
 const Alert = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> &
+    VariantProps<typeof alertVariants> &
+    IAlert
+>(({ className, variant, title, children }, ref) => {
+  const Icon = iconForVariant[variant || "default"];
+  return (
+    <AlertBase ref={ref} variant={variant} className={className}>
+      <div className="flex">
+        {/* This worked ok to display Icon but layout wasn't great */}
+        {/* <div className="mr-2 h-6 w-6">
+          <Icon
+            strokeWidth={1}
+            className="mr-2 h-6 w-6"
+            size={32}
+            fontSize={32}
+            height={32}
+            width={32}
+          />
+        </div> */}
+        <div>
+          <AlertTitle>{title}</AlertTitle>
+          <AlertDescription>{children}</AlertDescription>
+        </div>
+      </div>
+    </AlertBase>
+  );
+});
+
+Alert.displayName = "Alert";
+
+const AlertBase = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
 >(({ className, variant, ...props }, ref) => (
@@ -30,21 +77,22 @@ const Alert = React.forwardRef<
     {...props}
   />
 ));
-Alert.displayName = "Alert";
+AlertBase.displayName = "AlertBase";
 
 const AlertTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h5
+  <div
     ref={ref}
     className={cn(
-      "mb-1 mt-1 font-medium leading-none tracking-tight",
+      "mb-1 mt-1 text-lg font-medium leading-none tracking-tight",
       className,
     )}
     {...props}
   />
 ));
+
 AlertTitle.displayName = "AlertTitle";
 
 const AlertDescription = React.forwardRef<
@@ -59,4 +107,4 @@ const AlertDescription = React.forwardRef<
 ));
 AlertDescription.displayName = "AlertDescription";
 
-export { Alert, AlertDescription, AlertTitle };
+export { Alert, AlertBase, AlertDescription, AlertTitle };

@@ -10,6 +10,7 @@ import Titlebar from "../../titlebar/macos";
 import { useSearchStore } from "../documents/SearchStore";
 import * as Base from "../layout";
 import { EditableDocument } from "./EditableDocument";
+import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
 import FrontMatter from "./FrontMatter";
 import PlateContainer from "./PlateContainer";
@@ -42,8 +43,6 @@ const DocumentLoadingContainer = observer(() => {
   const journalsStore = useJournals();
   const { document: documentId } = useParams();
 
-  // todo: handle missing or invalid documentId; loadingError may be fine for this, but
-  // haven't done any UX / design thinking around it.
   const {
     document,
     error: loadingError,
@@ -54,6 +53,8 @@ const DocumentLoadingContainer = observer(() => {
   // the current document's journal if its archived
   const [journals, setJournals] = useState<any>();
 
+  // Filter journals to non-archived ones, but must also add
+  // the current document's journal if its archived
   useEffect(() => {
     if (!document) return;
 
@@ -69,13 +70,24 @@ const DocumentLoadingContainer = observer(() => {
   }, [document, loadingError]);
 
   if (loadingError) {
-    return <EditLoadingComponent error={loadingError} />;
+    return (
+      <EditLoadingComponent
+        journal={document?.journal}
+        documentId={documentId}
+        error={loadingError}
+      />
+    );
   }
 
   // `loading` acts as a break when navigating from one document to another, effectively
   // resetting the state of the editor
   if (!document || !journals || loading) {
-    return <EditLoadingComponent />;
+    return (
+      <EditLoadingComponent
+        journal={document?.journal}
+        documentId={documentId}
+      />
+    );
   }
 
   return <DocumentEditView document={document} journals={journals} />;
@@ -128,13 +140,19 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
       selectedEditorMode={selectedViewMode}
       setSelectedEditorMode={setSelectedViewMode}
     >
-      <EditorInner
-        document={document}
-        selectedViewMode={selectedViewMode}
-        setSelectedViewMode={setSelectedViewMode}
-        journals={journals}
-        goBack={goBack}
-      />
+      <EditorErrorBoundary
+        documentId={document.id}
+        journal={document.journal}
+        navigate={navigate}
+      >
+        <EditorInner
+          document={document}
+          selectedViewMode={selectedViewMode}
+          setSelectedViewMode={setSelectedViewMode}
+          journals={journals}
+          goBack={goBack}
+        />
+      </EditorErrorBoundary>
     </PlateContainer>
   );
 });

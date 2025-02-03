@@ -14,7 +14,7 @@ interface LoodingState {
 /**
  * Load a new or existing document into a view model
  */
-export function useEditableDocument(documentId: string) {
+export function useEditableDocument(documentId?: string) {
   const navigate = useNavigate();
   const client = useClient();
   const [state, _] = React.useState<LoodingState>(() => {
@@ -33,24 +33,17 @@ export function useEditableDocument(documentId: string) {
     async function load() {
       state.error = null;
 
+      // NOTE: If this navigation removed, MUST review consumption of useEditableDocument
+      // to ensure missing documentId is handled correctly.
       if (!documentId) {
-        // Fail safe; this shouldn't happen. If scenarios come up where it could; maybe toast and navigate
-        // to documents list instead?
-        state.error = new Error(
-          "Called useEditableDocument without a documentId, unable to load document",
-        );
-
+        navigate("/documents");
+        toast.warning(`Document ${documentId} not found`);
         return;
       }
 
       try {
         const doc = await client.documents.findById({ id: documentId });
         if (!isEffectMounted) return;
-        if (!doc) {
-          navigate("/documents");
-          toast.warning("Document not found, redirecting to documents list");
-          return state;
-        }
 
         state.document = new EditableDocument(client, doc);
 
@@ -60,7 +53,14 @@ export function useEditableDocument(documentId: string) {
           state.loading = false;
         });
       } catch (err) {
-        state.error = err as Error;
+        const message = err instanceof Error ? err.message : String(err);
+
+        if (message.match(/not found/)) {
+          navigate("/documents");
+          toast.warning(`Document ${documentId} not found`);
+        } else {
+          state.error = err as Error;
+        }
       }
     }
 
