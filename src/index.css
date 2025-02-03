@@ -5,8 +5,8 @@
 /* This section initially added as recommended copypasta https://platejs.org/docs/components/installation/manual */
 @layer base {
   :root {
-    --font-sans: "Space Grotesk", sans-serif;
-    --font-heading: "Space Grotesk";
+    --font-sans: sans-serif;
+    --font-heading: sans-serif;
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 

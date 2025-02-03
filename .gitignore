@@ -14,6 +14,7 @@ tmp/
 dist/
 packaged/
 icons/out
+icons/src/temp-icon.png
 
 # bundler (dev) outputs .bundle files
 # along-side src files, used during development
