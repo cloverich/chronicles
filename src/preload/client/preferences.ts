@@ -92,8 +92,4 @@ export class PreferencesClient {
       },
     );
   };
-
-  setArchivedJournals = async (journals: string[]) => {
-    this.settings.set("ARCHIVED_JOURNALS", journals);
-  };
 }

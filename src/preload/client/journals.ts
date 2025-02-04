@@ -18,9 +18,19 @@ export class JournalsClient {
     const journals = await this.knex("journals").select("*").orderBy("name");
 
     const archived = await this.preferences.get("ARCHIVED_JOURNALS");
-    journals.forEach((j) => {
-      j.archived = archived[j.name];
-    });
+    for (const j of journals) {
+      if (!(j.name in archived)) {
+        console.warn(
+          "journal",
+          j.name,
+          "not found in archived when listing journals. Patching, but this is likely a bug.",
+        );
+        j.archived = false;
+        await this.preferences.set("ARCHIVED_JOURNALS." + j.name, false);
+      } else {
+        j.archived = archived[j.name] || false;
+      }
+    }
 
     return journals;
   };
@@ -32,11 +42,18 @@ export class JournalsClient {
   };
 
   index = async (journalName: string): Promise<JournalResponse> => {
+    // index called on initial create, and when syncing (re-building the index)
+    // so we need to sync prior archived state, if present.
+    // todo: journal.archived state management is shit. Improve it.
     const archived = await this.preferences.get(`ARCHIVED_JOURNALS`);
     const existing = journalName in archived;
+    let isArchived: boolean;
 
-    if (existing == null) {
+    if (!existing) {
       await this.preferences.set(`ARCHIVED_JOURNALS.${journalName}`, false);
+      isArchived = false;
+    } else {
+      isArchived = archived[journalName];
     }
 
     const timestamp = new Date().toISOString();
@@ -47,7 +64,11 @@ export class JournalsClient {
       updatedAt: timestamp,
     });
 
-    return await this.knex("journals").where("name", journalName).first();
+    const journal = await this.knex("journals")
+      .where("name", journalName)
+      .first();
+    journal.archived = isArchived;
+    return journal;
   };
 
   rename = async (
@@ -68,6 +89,14 @@ export class JournalsClient {
       .where("journal", journal.name);
 
     await this.preferences.delete(`ARCHIVED_JOURNALS.${journal.name}`);
+
+    if (journal.archived == null) {
+      console.warn(
+        "journal.archived is null, defaulting to false. This is likely a bug.",
+      );
+      journal.archived = false;
+    }
+
     await this.preferences.set(
       `ARCHIVED_JOURNALS.${newName}`,
       journal.archived,
@@ -92,6 +121,11 @@ export class JournalsClient {
   };
 
   archive = async (journal: string): Promise<JournalResponse[]> => {
+    if ((await this.list()).length === 1) {
+      throw new Error(
+        "Cannot archive the last journal. Create a new journal first.",
+      );
+    }
     await this.preferences.set(`ARCHIVED_JOURNALS.${journal}`, true);
     return this.list();
   };

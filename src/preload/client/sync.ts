@@ -173,6 +173,13 @@ export class SyncClient {
       }
     }
 
+    // ensure all existing journals are in the archived journals
+    for (const journal of Object.keys(journals)) {
+      if (!(journal in archivedJournals)) {
+        archivedJournals[journal] = false;
+      }
+    }
+
     await this.preferences.set("ARCHIVED_JOURNALS", archivedJournals);
 
     const end = performance.now();
