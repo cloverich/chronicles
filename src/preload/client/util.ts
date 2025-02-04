@@ -12,7 +12,9 @@ const uuidV7Generator = new V7Generator();
  */
 export function createId(unixTsMs?: number): string {
   const uuid = unixTsMs
-    ? uuidV7Generator.generateOrResetCore(unixTsMs, 10_000)
+    ? // note: round to eliminate decimal / sub-ms precision which is uneeded and causes
+      // an error in the uuidv7 library. Very little thought put into this change.
+      uuidV7Generator.generateOrResetCore(Math.round(unixTsMs), 10_000)
     : uuidv7obj();
   const id = Uuid25.fromBytes(uuid.bytes);
   return id.value;

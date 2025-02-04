@@ -122,7 +122,7 @@ export async function setup(): Promise<ISetupResponse> {
   const store = new Store({
     name: "test",
   });
-  store.reset();
+  store.clear();
 
   const tempDir = fs.mkdtempSync(path.join(tmpdir(), "chronicles-test-"));
 

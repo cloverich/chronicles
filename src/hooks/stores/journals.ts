@@ -123,6 +123,7 @@ export class JournalsStore {
         { name: journal.name, archived: journal.archived },
         newName,
       );
+
       Object.assign(journal, updatedAttrs);
     } catch (err: any) {
       console.error(`Error updating journal name for ${journal.name}:`, err);

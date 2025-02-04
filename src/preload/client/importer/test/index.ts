@@ -62,6 +62,11 @@ export async function runTests() {
 
 // rudiemntary tests for importing from an exported Notion directory
 async function testNotion(client: Client, testdir: string, knex: Knex) {
+  await test("preferences is reset to defaults before starting", async () => {
+    const archivedStates = await client.preferences.get("ARCHIVED_JOURNALS");
+    assert.deepEqual(archivedStates, {});
+  });
+
   const notionImportDir = path.join(testdir, "notion");
   await client.importer.import(
     path.resolve(notionImportDir),
@@ -89,6 +94,14 @@ async function testNotion(client: Client, testdir: string, knex: Knex) {
           `Note import failed with status ${note.status}: ${note.sourcePathResolved} (error, if any): ${note.error}`,
         );
       }
+    });
+  });
+
+  await test("it creates archived entries for each journal", async () => {
+    const archivedStates = await client.preferences.get("ARCHIVED_JOURNALS");
+    assert.deepEqual(archivedStates, {
+      Documents: false,
+      notion: false,
     });
   });
 
