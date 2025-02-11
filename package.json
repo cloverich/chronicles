@@ -54,7 +54,7 @@
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.3.1",
     "electron": "^28.2.0",
-    "esbuild": "^0.20.0",
+    "esbuild": "^0.25.0",
     "evergreen-ui": "^7.1.9",
     "icon-gen": "^5.0.0",
     "lodash": "^4.17.21",
