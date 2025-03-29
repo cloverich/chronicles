@@ -43,7 +43,7 @@ const Alert = React.forwardRef<
   const Icon = iconForVariant[variant || "default"];
   return (
     <AlertBase ref={ref} variant={variant} className={className}>
-      <div className="flex">
+      <div className="flex overflow-auto">
         {/* This worked ok to display Icon but layout wasn't great */}
         {/* <div className="mr-2 h-6 w-6">
           <Icon

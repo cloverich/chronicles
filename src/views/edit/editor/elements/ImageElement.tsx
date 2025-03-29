@@ -1,8 +1,9 @@
 import { cn } from "@udecode/cn";
 import { PlateElement, PlateRenderElementProps } from "@udecode/plate-common";
-import { ELEMENT_IMAGE, Image, useMediaState } from "@udecode/plate-media";
+import { ELEMENT_IMAGE, useMediaState } from "@udecode/plate-media";
 import React from "react";
 
+import { Alert } from "../../../../components/Alert";
 import { MediaPopover } from "./MediaPopover";
 
 // https://platejs.org/docs/components/image-element
@@ -12,11 +13,25 @@ export const ImageElement = ({
   nodeProps,
   ...props
 }: PlateRenderElementProps) => {
-  // NOTE: props.element contains url, alt, etc. This is never passed directly to
-  // the ImageElement; I guess the downstream image pulls it from context?
-  // Read plate-media source to see how it's used.
-  // todo: Incorporate chronicles:// prefix here
-  const { readOnly, focused, selected, align = "center" } = useMediaState();
+  const {
+    readOnly,
+    focused,
+    selected,
+    align = "center",
+    url,
+  } = useMediaState();
+
+  // When image fails to load, show a placeholder otherwise instead of the image, there's a small blank space
+  // and its not obvious anything is wrong, unless you know there is meant to be an image there.
+  const [showPlaceholder, setShowPlaceholder] = React.useState(false);
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    // todo: Unsure how to distinguish a 404 from other errors; there will be an associated
+    // global GET error, but unclear if its tied to _this_ error.
+    e.preventDefault();
+    e.stopPropagation();
+    setShowPlaceholder(true);
+  };
 
   return (
     <MediaPopover pluginKey={ELEMENT_IMAGE}>
@@ -24,16 +39,28 @@ export const ImageElement = ({
         className={cn("flex max-h-96 justify-start py-2.5", className)}
         {...props}
       >
-        <Image
-          className={cn(
-            "max-h-full max-w-full cursor-pointer object-scale-down px-0",
-            "rounded-sm",
-            focused && selected && "ring-2 ring-ring ring-offset-2",
-          )}
-          alt=""
-          {...nodeProps}
-        />
-
+        {showPlaceholder ? (
+          <div className="flex h-full w-full items-center justify-center rounded-sm bg-slate-200">
+            <Alert variant="warning" title="Missing image" className="mt-2">
+              <p>
+                There was an error loading this image. It may have been deleted
+                or moved?
+              </p>
+              <code className="mt-2 break-all">URL: {url}</code>
+            </Alert>
+          </div>
+        ) : (
+          <img
+            src={url}
+            onError={handleError}
+            className={cn(
+              "max-h-full max-w-full cursor-pointer object-scale-down px-0",
+              "rounded-sm",
+              focused && selected && "ring-2 ring-ring ring-offset-2",
+            )}
+            alt=""
+          />
+        )}
         {children}
       </PlateElement>
     </MediaPopover>
