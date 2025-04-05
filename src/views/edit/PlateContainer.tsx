@@ -108,6 +108,11 @@ import { useJournals } from "../../hooks/useJournals";
 import { SearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import { EditorMode } from "./EditorMode";
+import { createImageGroupPlugin } from "./editor/features/image-group";
+import {
+  ELEMENT_IMAGE_GROUP,
+  ImageGroupElement,
+} from "./editor/features/image-group/ImageGroupElement";
 
 export interface Props {
   saving: boolean;
@@ -166,6 +171,7 @@ export default observer(
         createFilesPlugin(),
         createNoteLinkDropdownPlugin({ options: { store } } as any),
         createNoteLinkElementPlugin(),
+        createImageGroupPlugin(),
 
         // Backspacing into an element selects the block before deleting it.
         createSelectOnBackspacePlugin({
@@ -291,7 +297,7 @@ export default observer(
         // being confused about how to exit an e.g. code block to add more content.
         createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
 
-        // convert markdown to wysiwyg sa you type:
+        // convert markdown to wysiwyg as you type:
         // # -> h1, ``` -> code block, etc
         createAutoformatPlugin({
           options: {
@@ -315,6 +321,7 @@ export default observer(
           [ELEMENT_H5]: withProps(HeadingElement, { variant: "h5" }),
           [ELEMENT_H6]: withProps(HeadingElement, { variant: "h6" }),
           [ELEMENT_IMAGE]: ImageElement,
+          [ELEMENT_IMAGE_GROUP]: ImageGroupElement,
           [ELEMENT_LINK]: LinkElement,
 
           // NoteLinkDropdown provides the dropdown when typing `@`; NoteLinkElement

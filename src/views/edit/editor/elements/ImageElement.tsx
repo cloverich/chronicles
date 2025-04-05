@@ -21,13 +21,13 @@ export const ImageElement = ({
     url,
   } = useMediaState();
 
-  // When image fails to load, show a placeholder otherwise instead of the image, there's a small blank space
-  // and its not obvious anything is wrong, unless you know there is meant to be an image there.
+  // When image fails to load, show a placeholder
+  // Otherwise, its not obvious an image is missing (blank space)
   const [showPlaceholder, setShowPlaceholder] = React.useState(false);
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     // todo: Unsure how to distinguish a 404 from other errors; there will be an associated
-    // global GET error, but unclear if its tied to _this_ error.
+    // global GET error, but unclear if / how its tied to _this_ error.
     e.preventDefault();
     e.stopPropagation();
     setShowPlaceholder(true);

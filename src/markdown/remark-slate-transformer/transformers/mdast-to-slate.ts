@@ -1,5 +1,5 @@
+import { TElement, TText } from "@udecode/slate";
 import * as mdast from "mdast";
-import * as slate from "slate";
 
 function toUndefined<T>(value: T | undefined | null): T | undefined {
   return value ?? undefined;
@@ -20,7 +20,14 @@ import {
   ELEMENT_UL,
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
-import { toSlateNoteLink } from "../../../views/edit/editor/features/note-linking/toMdast";
+import {
+  createImageGroupElement,
+  SlateImageGroup,
+} from "../../../views/edit/editor/features/image-group";
+import {
+  SlateNoteLink,
+  toSlateNoteLink,
+} from "../../../views/edit/editor/features/note-linking/toMdast";
 
 export type Decoration = {
   [key in (
@@ -31,20 +38,18 @@ export type Decoration = {
   )["type"]]?: true;
 };
 
-export function mdastToSlate(node: mdast.Root): slate.Node[] {
-  return createSlateRoot(node);
+export interface BaseElement extends TElement {}
+
+export function mdastToSlate(node: mdast.Root): SlateNode[] {
+  return convertNodes(node.children, {});
 }
 
-function createSlateRoot(root: mdast.Root): slate.Node[] {
-  return convertNodes(root.children, {});
-}
-
-function convertNodes(nodes: mdast.Content[], deco: Decoration): slate.Node[] {
+function convertNodes(nodes: mdast.Content[], deco: Decoration): SlateNode[] {
   if (nodes.length === 0) {
     return [{ text: "" }];
   }
 
-  return nodes.reduce<slate.Node[]>((acc, node) => {
+  return nodes.reduce<SlateNode[]>((acc, node) => {
     acc.push(...createSlateNode(node, deco));
     return acc;
   }, []);
@@ -70,9 +75,10 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
     case "list":
       return [createList(node, deco)];
     case "listItem":
-      return [createListItem(node, deco)];
+    // todo: See comment on createListItem; unless the _mdast_ type is "lic", I don't think this should be
+    // leaking beyond the slate DOM (i.e. why do the types / code history say its present in mdast?)
     case ELEMENT_LIC as any:
-      return [createListItemChild(node, deco)];
+      return [createListItem(node as any, deco)];
     case "table":
       return [createTable(node, deco)];
     case "tableRow":
@@ -114,6 +120,8 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
       return [createLink(node, deco)];
     case "image":
       return [createImage(node)];
+    case "imageGroupElement":
+      return [createImageGroupElement({ node, convertNodes, deco })];
     case "linkReference":
       return [createLinkReference(node, deco)];
     case "imageReference":
@@ -132,6 +140,7 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
     case "ofmWikilink":
       return [createTextFromWikiLink(node)];
     default:
+      console.warn("mdastToSlate: Unsupported node type:", node.type);
       // const _: never = node;
       break;
   }
@@ -176,9 +185,11 @@ function createTextFromWikiLink(
   return { text };
 }
 
-export type Paragraph = ReturnType<typeof createParagraph>;
+export interface Paragraph extends BaseElement {
+  type: "p";
+}
 
-function createParagraph(node: mdast.Paragraph, deco: Decoration) {
+function createParagraph(node: mdast.Paragraph, deco: Decoration): Paragraph {
   const { type, children } = node;
   return {
     type: "p", // NOTE: plate's DOM expects `p`, not `paragraph`
@@ -186,9 +197,12 @@ function createParagraph(node: mdast.Paragraph, deco: Decoration) {
   };
 }
 
-export type Heading = ReturnType<typeof createHeading>;
+export interface Heading extends BaseElement {
+  type: "h1" | "h2" | "h3";
+  depth: number;
+}
 
-function depthToHeading(depth: number): string {
+function depthToHeading(depth: number): Heading["type"] {
   // stylistic choice: limit depth to h3
   switch (depth) {
     case 1:
@@ -200,7 +214,7 @@ function depthToHeading(depth: number): string {
   }
 }
 
-function createHeading(node: mdast.Heading, deco: Decoration) {
+function createHeading(node: mdast.Heading, deco: Decoration): Heading {
   const { type, children, depth } = node;
 
   return {
@@ -212,27 +226,39 @@ function createHeading(node: mdast.Heading, deco: Decoration) {
   };
 }
 
-export type ThematicBreak = ReturnType<typeof createThematicBreak>;
+export interface ThematicBreak extends BaseElement {
+  type: "thematicBreak";
+}
 
-function createThematicBreak(node: mdast.ThematicBreak) {
+function createThematicBreak(node: mdast.ThematicBreak): ThematicBreak {
   return {
     type: node.type,
     children: [{ text: "" }],
   };
 }
 
-export type Blockquote = ReturnType<typeof createBlockquote>;
+export interface BlockQuote extends BaseElement {
+  type: "blockquote";
+}
 
-function createBlockquote(node: mdast.Blockquote, deco: Decoration) {
+function createBlockquote(
+  node: mdast.Blockquote,
+  deco: Decoration,
+): BlockQuote {
   return {
     type: node.type,
     children: convertNodes(node.children, deco),
   };
 }
 
-export type List = ReturnType<typeof createList>;
+export interface List extends BaseElement {
+  type: "ol" | "ul";
+  ordered?: boolean | null;
+  start?: number | null;
+  spread?: boolean | null;
+}
 
-function createList(node: mdast.List, deco: Decoration) {
+function createList(node: mdast.List, deco: Decoration): List {
   const { type, children, ordered, start, spread } = node;
 
   return {
@@ -245,10 +271,29 @@ function createList(node: mdast.List, deco: Decoration) {
   };
 }
 
-export type ListItem = ReturnType<typeof createListItem>;
+export interface ListItem extends BaseElement {
+  // todo: Plate seems to receieve ELEMENT_LIC....we should not need both...
+  // re-work plate version at some point
+  type: "li" | "lic";
+  checked?: boolean | null;
+  spread?: boolean | null;
+}
 
-function createListItem(node: mdast.ListItem, deco: Decoration) {
+type MdastListItemChild = Omit<mdast.ListItem, "type"> & { type: "lic" };
+
+function createListItem(
+  node: mdast.ListItem | MdastListItemChild,
+  deco: Decoration,
+): ListItem {
   const { type, children, checked, spread } = node;
+
+  if (type === ELEMENT_LIC) {
+    return {
+      type: ELEMENT_LIC,
+      // todo: idk why have to cast here.
+      children: convertNodes(children as mdast.Content[], deco),
+    };
+  }
 
   // NOTE: Added
   // Plate li children must have an lic type unless they are another list,
@@ -265,20 +310,12 @@ function createListItem(node: mdast.ListItem, deco: Decoration) {
   };
 }
 
-// NOTE: Added this custom to create ELEMENT_LIC according to plates custom list item handling...
-function createListItemChild(node: any, deco: Decoration) {
-  // NOTE: shrug see notes in createListItem
-  const { type, children } = node;
-
-  return {
-    type: ELEMENT_LIC,
-    children: convertNodes(children, deco),
-  };
+export interface Table extends BaseElement {
+  type: "table";
+  align?: mdast.AlignType[] | null;
 }
 
-export type Table = ReturnType<typeof createTable>;
-
-function createTable(node: mdast.Table, deco: Decoration) {
+function createTable(node: mdast.Table, deco: Decoration): Table {
   const { type, children, align } = node;
   return {
     type,
@@ -287,9 +324,11 @@ function createTable(node: mdast.Table, deco: Decoration) {
   };
 }
 
-export type TableRow = ReturnType<typeof createTableRow>;
+export interface TableRow extends BaseElement {
+  type: "tableRow";
+}
 
-function createTableRow(node: mdast.TableRow, deco: Decoration) {
+function createTableRow(node: mdast.TableRow, deco: Decoration): TableRow {
   const { type, children } = node;
   return {
     type,
@@ -297,9 +336,11 @@ function createTableRow(node: mdast.TableRow, deco: Decoration) {
   };
 }
 
-export type TableCell = ReturnType<typeof createTableCell>;
+export interface TableCell extends BaseElement {
+  type: "tableCell";
+}
 
-function createTableCell(node: mdast.TableCell, deco: Decoration) {
+function createTableCell(node: mdast.TableCell, deco: Decoration): TableCell {
   const { type, children } = node;
   return {
     type,
@@ -307,9 +348,11 @@ function createTableCell(node: mdast.TableCell, deco: Decoration) {
   };
 }
 
-export type Html = ReturnType<typeof createHtml>;
+export interface Html extends BaseElement {
+  type: "html";
+}
 
-function createHtml(node: mdast.HTML) {
+function createHtml(node: mdast.HTML): Html {
   const { type, value } = node;
   return {
     type,
@@ -317,9 +360,19 @@ function createHtml(node: mdast.HTML) {
   };
 }
 
-export type Code = ReturnType<typeof createCodeBlock>;
+export interface Code extends BaseElement {
+  type: "code_block";
+  lang?: string | null;
+  meta: any; // shrug
+  children: [
+    {
+      type: "code_line";
+      text: string;
+    },
+  ];
+}
 
-function createCodeBlock(node: mdast.Code) {
+function createCodeBlock(node: mdast.Code): Code {
   const { value, lang, meta } = node;
 
   return {
@@ -373,9 +426,15 @@ function createCodeBlock(node: mdast.Code) {
 //   };
 // }
 
-export type Definition = ReturnType<typeof createDefinition>;
+export interface Definition extends BaseElement {
+  type: "definition";
+  identifier: string;
+  label?: string | null;
+  url: string;
+  title?: string | null;
+}
 
-function createDefinition(node: mdast.Definition) {
+function createDefinition(node: mdast.Definition): Definition {
   const { type, identifier, label, url, title } = node;
   return {
     type,
@@ -387,12 +446,16 @@ function createDefinition(node: mdast.Definition) {
   };
 }
 
-export type FootnoteDefinition = ReturnType<typeof createFootnoteDefinition>;
+export interface FootnoteDefinition extends BaseElement {
+  type: "footnoteDefinition";
+  identifier: string;
+  label?: string | null;
+}
 
 function createFootnoteDefinition(
   node: mdast.FootnoteDefinition,
   deco: Decoration,
-) {
+): FootnoteDefinition {
   const { type, children, identifier, label } = node;
   return {
     type,
@@ -402,30 +465,43 @@ function createFootnoteDefinition(
   };
 }
 
-export type Text = ReturnType<typeof createText>;
+// export interface Text extends Decoration {
+//   text: string;
+// }
 
-function createText(text: string, deco: Decoration) {
+function createText(text: string, deco: Decoration): TText {
   return {
     ...deco,
     text,
   };
 }
 
-export type Break = ReturnType<typeof createBreak>;
+export interface Break extends BaseElement {
+  type: "break";
+}
 
-function createBreak(node: mdast.Break) {
+function createBreak(node: mdast.Break): Break {
   return {
     type: node.type,
     children: [{ text: "" }],
   };
 }
 
-export type Link = ReturnType<typeof createLink>;
+export interface Link extends BaseElement {
+  type: "a";
+  url: string;
+  title?: string | null;
+}
 
-function createLink(node: mdast.Link, deco: Decoration) {
+function createLink(node: mdast.Link, deco: Decoration): Link | SlateNoteLink {
   const { children, url, title } = node;
 
-  const res = toSlateNoteLink({ url, children, deco, convertNodes });
+  const res = toSlateNoteLink({
+    url,
+    children,
+    deco,
+    convertNodes,
+  });
 
   if (res) return res;
 
@@ -446,14 +522,14 @@ export type Image = {
   children: [{ text: "" }];
 };
 
-export type Video = {
+export interface Video extends BaseElement {
   type: "video";
   url: string;
   title?: string;
   alt?: string;
   caption?: [{ text: string }];
   children: [{ text: "" }];
-};
+}
 
 /**
  * Handle image AND video nodes
@@ -491,9 +567,17 @@ function createImage(node: mdast.Image): Image | Video {
   };
 }
 
-export type LinkReference = ReturnType<typeof createLinkReference>;
+export interface LinkReference extends BaseElement {
+  type: "linkReference";
+  referenceType: mdast.ReferenceType;
+  identifier: string;
+  label?: string | null;
+}
 
-function createLinkReference(node: mdast.LinkReference, deco: Decoration) {
+function createLinkReference(
+  node: mdast.LinkReference,
+  deco: Decoration,
+): LinkReference {
   const { type, children, referenceType, identifier, label } = node;
   return {
     type,
@@ -504,9 +588,15 @@ function createLinkReference(node: mdast.LinkReference, deco: Decoration) {
   };
 }
 
-export type ImageReference = ReturnType<typeof createImageReference>;
+export interface ImageReference extends BaseElement {
+  type: "imageReference";
+  alt?: string | null;
+  referenceType: mdast.ReferenceType;
+  identifier: string;
+  label?: string | null;
+}
 
-function createImageReference(node: mdast.ImageReference) {
+function createImageReference(node: mdast.ImageReference): ImageReference {
   const { type, alt, referenceType, identifier, label } = node;
   return {
     type,
@@ -528,9 +618,15 @@ function createImageReference(node: mdast.ImageReference) {
 //   };
 // }
 
-export type FootnoteReference = ReturnType<typeof createFootnoteReference>;
+export interface FootnoteReference extends BaseElement {
+  type: "footnoteReference";
+  identifier: string;
+  label?: string | null;
+}
 
-function createFootnoteReference(node: mdast.FootnoteReference) {
+function createFootnoteReference(
+  node: mdast.FootnoteReference,
+): FootnoteReference {
   const { type, identifier, label } = node;
   return {
     type,
@@ -541,33 +637,29 @@ function createFootnoteReference(node: mdast.FootnoteReference) {
 }
 
 export type SlateNode =
+  | BaseElement
   | Paragraph
   | Heading
   | ThematicBreak
-  | Blockquote
+  | BlockQuote
   | List
   | ListItem
   | Table
   | TableRow
   | TableCell
+  | TText
   | Html
   | Code
   // | Yaml
   // | Toml
   | Definition
   | FootnoteDefinition
-  | Text
+  | FootnoteReference
   | Break
   | Link
   | Image
   | Video
   | LinkReference
-  | ImageReference
-
-  // NOTE: I add this because convertNodes claims it wants only SlateNode, but some convertNodes
-  // calls here return slate.Node[]... so I need to unify these types somehow.
-  | slate.Node;
-// | Footnote
-// | FootnoteReference
-// | Math
-// | InlineMath;
+  | SlateImageGroup
+  | SlateNoteLink
+  | ImageReference;

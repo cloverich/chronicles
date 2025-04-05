@@ -213,7 +213,54 @@ describe("Slate processing", function () {
     });
   });
 
-  describe("Image links", function () {
+  describe("Images", function () {
+    // features/image-group
+    describe("image grouping", function () {
+      const doc = {
+        markdown:
+          "![75d97cd0e4b3f42f58aa80cefab00fec\\_res.jpeg](../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg)\n![75d97cd0e4b3f42f58aa80cefab00fec\\_res.jpeg](../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg)",
+        slate: [
+          {
+            type: "imageGroupElement",
+            children: [
+              {
+                type: "img",
+                url: "chronicles://../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
+                title: undefined,
+                alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
+                caption: [
+                  {
+                    text: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
+                  },
+                ],
+                children: [
+                  {
+                    text: "",
+                  },
+                ],
+              },
+              {
+                type: "img",
+                url: "chronicles://../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
+                title: undefined,
+                alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
+                caption: [
+                  {
+                    text: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
+                  },
+                ],
+                children: [
+                  {
+                    text: "",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+    });
+
     describe("stand-alone images", function () {
       const doc = {
         markdown:
@@ -521,7 +568,7 @@ describe("Known issues / limitations", function () {
   // for whatever reason. Removing image unwrap fixes this problem (but introduces others), so I can try and re-wrap them then
   // use this test to verify the fix.
   it("does not collapse newlines when naked images", function () {
-    const markdown = `![alt text](https://example.com)\n\n![alt text](https://example.com)\n\n# Paragraph\n\nSome text\n`;
+    const markdown = `![alt text](https://example1.com)\n\n![alt text](https://example2.com)\n\n# Paragraph\n\nSome text\n`;
     const actual = slateToString(stringToSlate(markdown));
     expect(actual).to.equal(markdown);
   });
