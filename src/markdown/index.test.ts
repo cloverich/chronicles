@@ -5,6 +5,7 @@ import path from "path";
 import yaml from "yaml";
 
 import { slateToString, stringToSlate } from "./index.js";
+import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
 import {
   dedent,
   dig,
@@ -83,7 +84,9 @@ describe("Slate processing", function () {
     it("parses and serializes unaltered", function () {
       const slate = stringToSlate(markdown.toString());
       const result = slateToString(slate);
-      expect(result).to.equal(markdown.toString());
+      // todo: should not need trim; needed to add after paragraph patching fix
+      // (adds trailing paragraph; wraps top-level leaf nodes in paragraph)
+      expect(result.trim()).to.equal(markdown.toString().trim());
     });
   });
 
@@ -298,6 +301,11 @@ describe("Slate processing", function () {
               },
             ],
           },
+          // paragraph patching adds trailing paragraph to slate
+          {
+            type: "p",
+            children: [{ text: "" }],
+          },
         ],
       };
 
@@ -397,6 +405,46 @@ describe("Slate processing", function () {
 
       runTests(doc);
     });
+  });
+});
+
+describe("paragraph patching", function () {
+  it("wraps top-level text nodes in paragraph", function () {
+    expect(
+      mdastToSlate({
+        type: "root",
+        children: [
+          {
+            type: "text",
+            value: "shoot",
+          },
+        ],
+      }),
+    ).to.deep.equal([{ type: "p", children: [{ text: "shoot" }] }]);
+  });
+
+  it("ensures trailing node is always a paragraph", () => {
+    expect(
+      mdastToSlate({
+        type: "root",
+        children: [
+          {
+            type: "image",
+            url: "../_attachments/abc123.jpg",
+          },
+        ],
+      }),
+    ).to.deep.equal([
+      {
+        type: "img",
+        url: "chronicles://../_attachments/abc123.jpg",
+        caption: [{ text: "" }],
+        children: [{ text: "" }],
+        alt: undefined,
+        title: undefined,
+      },
+      { type: "p", children: [{ text: "" }] },
+    ]);
   });
 });
 

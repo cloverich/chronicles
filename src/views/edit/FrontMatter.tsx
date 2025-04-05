@@ -146,6 +146,19 @@ const FrontMatter = observer(
             prefixHash={true}
           />
         </div>
+        <div className="-mt-2 mb-4 flex justify-start pl-0.5 text-sm">
+          <pre className="text-xs">
+            {JSON.stringify(
+              {
+                id: document.id,
+                journal: document.journal,
+                ...document.frontMatter,
+              },
+              null,
+              2,
+            )}
+          </pre>
+        </div>
       </>
     );
   },
