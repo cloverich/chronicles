@@ -1,5 +1,8 @@
 import mdast from "mdast";
-import { Node } from "slate";
+import {
+  BaseElement,
+  SlateNode,
+} from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
 
 /**
@@ -10,7 +13,7 @@ import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
  * (file) link. Note that _how_ they are encoded is tightly coupled to the feature, because
  * we expect to parse them back into NoteLinkElements.
  */
-export function toMdastLinkFactory(convertNodes: (nodes: Node[]) => any) {
+export function toMdastLinkFactory(convertNodes: (nodes: SlateNode[]) => any) {
   return function toMdastLink(node: INoteLinkElement): mdast.Link {
     const { title, noteId, journalName, children } = node;
 
@@ -25,7 +28,7 @@ export function toMdastLinkFactory(convertNodes: (nodes: Node[]) => any) {
       url,
       title,
       children: convertNodes(children), // as any as mdast.Link["children"],
-    } as any;
+    };
   };
 }
 
@@ -49,11 +52,19 @@ export function parseNoteLink(url: string) {
   return { noteId, journalName };
 }
 
-interface ToSlateLink {
+interface ToSlateNoteLink {
   url: string;
   convertNodes: any;
   deco: any;
   children: any;
+}
+
+export interface SlateNoteLink extends BaseElement {
+  type: "noteLinkElement";
+  title: string;
+  url: string;
+  noteId: string;
+  journalName: string;
 }
 
 /**
@@ -64,7 +75,7 @@ export function toSlateNoteLink({
   convertNodes,
   deco,
   children,
-}: ToSlateLink) {
+}: ToSlateNoteLink): SlateNoteLink | undefined {
   const res = parseNoteLink(url);
 
   if (res) {

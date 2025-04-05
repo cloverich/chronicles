@@ -1,6 +1,7 @@
 import * as mdast from "mdast";
 import * as SlateCustom from "./mdast-to-slate";
 
+import { TText } from "@udecode/slate";
 import { Node as SNode } from "slate";
 
 // One of the main reasons this fork exists:
@@ -14,6 +15,11 @@ import {
   ELEMENT_OL,
   ELEMENT_UL,
 } from "@udecode/plate";
+
+import {
+  createImagesFromImageGroup,
+  ELEMENT_IMAGE_GROUP,
+} from "../../../views/edit/editor/features/image-group";
 
 import {
   createLinkFromNoteLinkFactory,
@@ -56,7 +62,7 @@ export function convertNodes(
   nodes: SlateCustom.SlateNode[],
 ): mdast.RootContent[] {
   const mdastNodes: mdast.RootContent[] = [];
-  let textQueue: SlateCustom.Text[] = [];
+  let textQueue: TText[] = [];
   for (let i = 0; i <= nodes.length; i++) {
     const n = nodes[i];
     if (n && isText(n)) {
@@ -166,9 +172,13 @@ export function convertNodes(
       mdastNodes.push(...mergeTexts(mdastTexts));
       textQueue = [];
       if (!n) continue;
-      const node = createMdastNode(n);
-      if (node) {
-        mdastNodes.push(node);
+      const nodes = createMdastNode(n);
+      if (nodes) {
+        if (Array.isArray(nodes)) {
+          mdastNodes.push(...nodes);
+        } else {
+          mdastNodes.push(nodes);
+        }
       }
     }
   }
@@ -178,7 +188,10 @@ export function convertNodes(
 
 function createMdastNode(
   node: any, //Exclude<slateInternal.SlateNode, slateInternal.Text> --> as any because the switch thinks node.type is a string
-): Exclude<mdast.Content, TextOrDecoration> | null {
+):
+  | Exclude<mdast.Content, TextOrDecoration>
+  | Exclude<mdast.Content, TextOrDecoration>[]
+  | null {
   // todo: convert to map and generate this mapping
   // todo: replace all string case statements with plate types
   switch (node.type) {
@@ -213,8 +226,8 @@ function createMdastNode(
       return createTableRow(node);
     case "tableCell":
       return createTableCell(node);
-    case "html":
-      return createHtml(node);
+    // case "html":
+    //   return createHtml(node);
     case "code": // NOTE: don't think this is used by plate
     case ELEMENT_CODE_BLOCK:
       return createCode(node);
@@ -242,15 +255,18 @@ function createMdastNode(
       return createLinkFromNoteLink(node);
     case "imageReference":
       return createImageReference(node);
+    case ELEMENT_IMAGE_GROUP:
+      return createImagesFromImageGroup(node, convertNodes);
     // case "footnote":
     //   return createFootnote(node);
-    // case "footnoteReference":
-    //   return creatFootnoteReference(node);
+    case "footnoteReference":
+      return creatFootnoteReference(node);
     // case "math":
     //   return createMath(node);
     // case "inlineMath":
     //   return createInlineMath(node);
     default:
+      return null;
     // console.warn(
     //   "slateToMdast encountered unknown node type:",
     //   node,
@@ -260,10 +276,11 @@ function createMdastNode(
     // const _: never = node;
     // break;
   }
+
   return null;
 }
 
-function isText(node: SlateCustom.SlateNode): node is SlateCustom.Text {
+function isText(node: SlateCustom.SlateNode): node is TText {
   return "text" in node;
 }
 
@@ -334,7 +351,7 @@ function createThematicBreak(
   };
 }
 
-function createBlockquote(node: SlateCustom.Blockquote): mdast.Blockquote {
+function createBlockquote(node: SlateCustom.BlockQuote): mdast.Blockquote {
   const { type, children } = node;
   return {
     type,
@@ -390,13 +407,13 @@ function createTableCell(node: SlateCustom.TableCell): mdast.TableCell {
   };
 }
 
-function createHtml(node: SlateCustom.Html): mdast.HTML {
-  const { type, children } = node;
-  return {
-    type,
-    value: children[0].text,
-  };
-}
+// function createHtml(node: SlateCustom.Html): mdast.HTML {
+//   const { type, children } = node;
+//   return {
+//     type,
+//     value: children[0].text,
+//   };
+// }
 
 /**
  * Convert a Slate/Plate code block ("code_block") to an MDAST code block ("code").
@@ -517,7 +534,9 @@ function createLinkReference(
     identifier,
     label,
     referenceType,
-    children: convertNodes(children) as any as mdast.LinkReference["children"],
+    // todo: This isn't actually guaranteed, and nothing does / uses this yet, so its not
+    // creating bugs...yet...
+    children: convertNodes(children) as mdast.PhrasingContent[],
   };
 }
 

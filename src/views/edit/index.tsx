@@ -1,5 +1,5 @@
 import { useEditorRef } from "@udecode/plate-common";
-import { ChevronLeftIcon, IconButton, Pane } from "evergreen-ui";
+import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -230,16 +230,16 @@ function EditorInner({
       {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
       <Base.TitlebarSpacer />
       <Base.ScrollContainer>
-        <Pane flexGrow={1} display="flex" flexDirection="column" width="100%">
+        <div className="flex w-full flex-grow flex-col">
           <FrontMatter document={document} journals={journals} />
 
-          <Pane flexGrow={1} paddingTop={24} onClick={focusEditor}>
+          <div className="flex flex-grow pt-6" onClick={focusEditor}>
             {renderEditor(selectedViewMode)}
-          </Pane>
+          </div>
 
           {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}
           <Base.BottomSpacer onClick={focusEditor} />
-        </Pane>
+        </div>
       </Base.ScrollContainer>
     </Base.EditorContainer>
   );

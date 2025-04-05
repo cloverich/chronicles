@@ -1,11 +1,12 @@
 import { cn, withRef } from "@udecode/cn";
-import { PlateElement, TElement, useElement } from "@udecode/plate-common";
+import { PlateElement, useElement } from "@udecode/plate-common";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { BaseElement } from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 
 export const ELEMENT_NOTE_LINK = "noteLinkElement";
 
-export interface INoteLinkElement extends TElement {
+export interface INoteLinkElement extends BaseElement {
   title: string;
   noteId: string;
   journalName: string;
