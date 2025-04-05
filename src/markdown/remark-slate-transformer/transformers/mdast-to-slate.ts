@@ -41,9 +41,45 @@ export type Decoration = {
 export interface BaseElement extends TElement {}
 
 export function mdastToSlate(node: mdast.Root): SlateNode[] {
-  return convertNodes(node.children, {});
+  // Convert nodes, and ensure only block-level nodes are present
+  // at the top level
+  const nodes = convertNodes(node.children, {}).map((node) => {
+    // Wrap any leaf nodes in paragraph; assumes leaf nodes are all
+    // text or marks (emphasis, bold, etc)
+    if (!("children" in node)) {
+      return {
+        type: "p",
+        children: [node],
+      } as Paragraph;
+    } else {
+      return node;
+    }
+  });
+
+  // Ensure always at least one
+  if (nodes.length === 0) {
+    return [
+      {
+        type: "p",
+        children: [{ text: "" }],
+      },
+    ];
+  }
+
+  // Ensure a trailing paragraph is always present; when final node is
+  // non-editable (like image), user will have no (obvious) way to enter
+  // new text lines
+  if (nodes[nodes.length - 1].type !== "p") {
+    nodes.push({
+      type: "p",
+      children: [{ text: "" }],
+    });
+  }
+
+  return nodes;
 }
 
+// recursively convert block-level and leaf nodes
 function convertNodes(nodes: mdast.Content[], deco: Decoration): SlateNode[] {
   if (nodes.length === 0) {
     return [{ text: "" }];
