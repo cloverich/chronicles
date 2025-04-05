@@ -103,11 +103,9 @@ import {
   createVideoPlugin,
 } from "./editor/plugins/createVideoPlugin";
 
-import useClient, { JournalResponse } from "../../hooks/useClient";
+import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { SearchStore } from "../documents/SearchStore";
-import { EditableDocument } from "./EditableDocument";
-import { EditorMode } from "./EditorMode";
 import { createImageGroupPlugin } from "./editor/features/image-group";
 import {
   ELEMENT_IMAGE_GROUP,
@@ -117,15 +115,11 @@ import {
 export interface Props {
   saving: boolean;
   value: SlateCustom.SlateNode[];
-  document: EditableDocument;
-  journals: JournalResponse[];
   setValue: (n: SlateCustom.SlateNode[]) => any;
-  selectedEditorMode: EditorMode;
-  setSelectedEditorMode: (s: EditorMode) => any;
 }
 
 export default observer(
-  ({ children, saving, value, setValue }: React.PropsWithChildren<Props>) => {
+  ({ children, value, setValue }: React.PropsWithChildren<Props>) => {
     const jstore = useJournals();
     const client = useClient();
     const store = new SearchStore(client, jstore!, () => {}, []);

@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { DayPicker } from "react-day-picker";
-import * as D from "../../components/DropdownMenu";
-import * as Popover from "../../components/Popover";
-import TagInput from "../../components/TagInput";
-import { JournalResponse } from "../../hooks/useClient";
-import { TagTokenParser } from "../documents/search/parsers/tag";
-import { EditableDocument } from "./EditableDocument";
+import * as D from "../../../components/DropdownMenu";
+import * as Popover from "../../../components/Popover";
+import TagInput from "../../../components/TagInput";
+import { JournalResponse } from "../../../hooks/useClient";
+import { TagTokenParser } from "../../documents/search/parsers/tag";
+import { EditableDocument } from "../EditableDocument";
 
 const FrontMatter = observer(
   ({
@@ -145,19 +145,6 @@ const FrontMatter = observer(
             ghost={true}
             prefixHash={true}
           />
-        </div>
-        <div className="-mt-2 mb-4 flex justify-start pl-0.5 text-sm">
-          <pre className="text-xs">
-            {JSON.stringify(
-              {
-                id: document.id,
-                journal: document.journal,
-                ...document.frontMatter,
-              },
-              null,
-              2,
-            )}
-          </pre>
         </div>
       </>
     );

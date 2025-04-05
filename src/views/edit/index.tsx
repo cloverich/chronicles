@@ -1,24 +1,17 @@
 import { useEditorRef } from "@udecode/plate-common";
-import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ReactEditor } from "slate-react";
 import { JournalResponse } from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
-import Titlebar from "../../titlebar/macos";
 import { useSearchStore } from "../documents/SearchStore";
-import * as Base from "../layout";
 import { EditableDocument } from "./EditableDocument";
 import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
-import FrontMatter from "./FrontMatter";
-import PlateContainer from "./PlateContainer";
 import Editor from "./editor";
-import { Separator } from "./editor/components/Separator";
-import ReadOnlyTextEditor from "./editor/read-only-editor/ReadOnlyTextEditor";
-import { EditorToolbar } from "./editor/toolbar/EditorToolbar";
 import { EditLoadingComponent } from "./loading";
+import ReadOnlyTextEditor from "./read-only-editor/ReadOnlyTextEditor";
 import { useEditableDocument } from "./useEditableDocument";
 
 /**
@@ -131,35 +124,26 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   }
 
   return (
-    <PlateContainer
-      document={document}
-      journals={journals}
-      saving={document.saving}
-      value={document.slateContent}
-      setValue={document.setSlateContent}
-      selectedEditorMode={selectedViewMode}
-      setSelectedEditorMode={setSelectedViewMode}
+    <EditorErrorBoundary
+      documentId={document.id}
+      journal={document.journal}
+      navigate={navigate}
     >
-      <EditorErrorBoundary
-        documentId={document.id}
-        journal={document.journal}
-        navigate={navigate}
-      >
-        <EditorInner
-          document={document}
-          selectedViewMode={selectedViewMode}
-          setSelectedViewMode={setSelectedViewMode}
-          journals={journals}
-          goBack={goBack}
-        />
-      </EditorErrorBoundary>
-    </PlateContainer>
+      <EditorInner
+        document={document}
+        selectedViewMode={selectedViewMode}
+        setSelectedViewMode={setSelectedViewMode}
+        journals={journals}
+        goBack={goBack}
+      />
+    </EditorErrorBoundary>
   );
 });
 
 // Moved from Container to support using useFocusEditor, which requires
 // component being wrapped in PlateContainer
 function EditorInner({
+  // todo: inject these into a store via context
   document,
   selectedViewMode,
   setSelectedViewMode,
@@ -172,77 +156,45 @@ function EditorInner({
   journals: JournalResponse[];
   goBack: () => void;
 }) {
-  const focusEditor = useFocusEditor();
-
-  function renderEditor(tab: string) {
-    switch (tab) {
-      case EditorMode.Editor:
-        return <Editor />;
-      case EditorMode.SlateDom:
-        return (
-          <ReadOnlyTextEditor
-            selectedEditorMode={selectedViewMode}
-            setSelectedEditorMode={setSelectedViewMode}
-            json={document.slateContent}
-          />
-        );
-      case EditorMode.Markdown:
-        return (
-          <ReadOnlyTextEditor
-            selectedEditorMode={selectedViewMode}
-            setSelectedEditorMode={setSelectedViewMode}
-            markdown={document.content}
-          />
-        );
-      case EditorMode.Mdast:
-        return (
-          <ReadOnlyTextEditor
-            selectedEditorMode={selectedViewMode}
-            setSelectedEditorMode={setSelectedViewMode}
-            json={document.mdastDebug}
-          />
-        );
-    }
-  }
-
-  return (
-    <Base.EditorContainer>
-      <Titlebar>
-        <IconButton
-          backgroundColor="transparent"
-          border="none"
-          icon={ChevronLeftIcon}
-          className="drag-none"
-          onClick={goBack}
-          marginRight={8}
-        >
-          Back to documents
-        </IconButton>
-        <Separator orientation="vertical" />
-
-        <EditorToolbar
+  switch (selectedViewMode) {
+    case EditorMode.Editor:
+      return (
+        <Editor
+          document={document}
+          journals={journals}
+          goBack={goBack}
+          selectedViewMode={selectedViewMode}
+          setSelectedViewMode={setSelectedViewMode}
+        />
+      );
+    case EditorMode.SlateDom:
+      return (
+        <ReadOnlyTextEditor
+          goBack={goBack}
+          json={document.slateContent}
           selectedEditorMode={selectedViewMode}
           setSelectedEditorMode={setSelectedViewMode}
-          document={document}
         />
-      </Titlebar>
-
-      {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
-      <Base.TitlebarSpacer />
-      <Base.ScrollContainer>
-        <div className="flex w-full flex-grow flex-col">
-          <FrontMatter document={document} journals={journals} />
-
-          <div className="flex flex-grow pt-6" onClick={focusEditor}>
-            {renderEditor(selectedViewMode)}
-          </div>
-
-          {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}
-          <Base.BottomSpacer onClick={focusEditor} />
-        </div>
-      </Base.ScrollContainer>
-    </Base.EditorContainer>
-  );
+      );
+    case EditorMode.Markdown:
+      return (
+        <ReadOnlyTextEditor
+          goBack={goBack}
+          selectedEditorMode={selectedViewMode}
+          setSelectedEditorMode={setSelectedViewMode}
+          markdown={document.content}
+        />
+      );
+    case EditorMode.Mdast:
+      return (
+        <ReadOnlyTextEditor
+          goBack={goBack}
+          selectedEditorMode={selectedViewMode}
+          setSelectedEditorMode={setSelectedViewMode}
+          json={document.mdastDebug}
+        />
+      );
+  }
 }
 
 export default DocumentLoadingContainer;

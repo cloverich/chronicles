@@ -1,8 +1,8 @@
 import React from "react";
-import { EditorMode } from "../../EditorMode";
-import { Toolbar, ToolbarGroup } from "../components/Toolbar";
-import { TooltipProvider } from "../components/Tooltip";
-import DebugDropdown from "../toolbar/components/DebugDropdown";
+import { EditorMode } from "../EditorMode";
+import { Toolbar, ToolbarGroup } from "../editor/components/Toolbar";
+import { TooltipProvider } from "../editor/components/Tooltip";
+import DebugDropdown from "../editor/toolbar/components/DebugDropdown";
 
 interface Props {
   selectedEditorMode: EditorMode;
