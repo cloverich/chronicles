@@ -26,7 +26,7 @@ const ContainerWrapper = (props: Props) => {
   return (
     <PlateContainer
       saving={props.document.saving}
-      value={props.document.slateContent}
+      value={props.document.getInitialSlateContent()}
       setValue={props.document.setSlateContent}
     >
       <Editor {...props} />
@@ -81,7 +81,8 @@ const Editor = ({
             <FrontMatter document={document} journals={journals} />
 
             <div className="flex flex-grow pt-6" onClick={focusEditor}>
-              <PlateContent />;
+              {/* w-full ensures when content is empty, it has width, otherwise the cursor will be invisible */}
+              <PlateContent className="w-full" />
             </div>
 
             {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}

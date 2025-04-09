@@ -21,9 +21,8 @@ interface Props {
 /**
  * Really just a placeholder for a debug view, where we can inspect Slate DOM, MDAST, or raw markdown.
  * Could be expanded to be smarter about what and how its rendering.
- *
  */
-const ReadOnlyTextEditor = observer(
+export const ReadOnlyTextEditor = observer(
   ({
     markdown,
     json,
@@ -54,12 +53,10 @@ const ReadOnlyTextEditor = observer(
           </IconButton>
           <Separator orientation="vertical" />
 
-          {/* todo: Debug menu toggle */}
-          {/* <EditorToolbar
-            selectedEditorMode={selectedViewMode}
-            setSelectedEditorMode={setSelectedViewMode}
-            document={document}
-          /> */}
+          <ReadonlyToolbar
+            selectedEditorMode={selectedEditorMode}
+            setSelectedEditorMode={setSelectedEditorMode}
+          />
         </Titlebar>
 
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
@@ -67,13 +64,7 @@ const ReadOnlyTextEditor = observer(
         <Base.ScrollContainer>
           <div className="flex w-full flex-grow flex-col">
             <div className="flex flex-grow pt-6">
-              <div>
-                <ReadonlyToolbar
-                  selectedEditorMode={selectedEditorMode}
-                  setSelectedEditorMode={setSelectedEditorMode}
-                />
-                {content()}
-              </div>
+              <div>{content()}</div>
             </div>
 
             {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}
@@ -84,5 +75,3 @@ const ReadOnlyTextEditor = observer(
     );
   },
 );
-
-export default ReadOnlyTextEditor;

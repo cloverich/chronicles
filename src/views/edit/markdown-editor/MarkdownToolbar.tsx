@@ -1,4 +1,5 @@
 import React from "react";
+import { EditableDocument } from "../EditableDocument";
 import { EditorMode } from "../EditorMode";
 import { Toolbar, ToolbarGroup } from "../editor/components/Toolbar";
 import { TooltipProvider } from "../editor/components/Tooltip";
@@ -7,17 +8,16 @@ import DebugDropdown from "../editor/toolbar/components/DebugDropdown";
 interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
+  document: EditableDocument;
 }
 
 /**
- * For the ReadOnlyTextEditor / Debug view, where we can inspect Slate DOM, MDAST, or raw markdown.
- *
- * Could be expanded to do something smart like when markdown is rendered, it could toggle markdown
- * marks instead of HTML... but probably best to just have a separate markdown editor.
+ * Toolbar for the markdown editor that includes a dropdown to switch between editor modes.
  */
-export function ReadonlyToolbar({
+export function MarkdownToolbar({
   selectedEditorMode,
   setSelectedEditorMode,
+  document,
 }: Props) {
   return (
     <TooltipProvider

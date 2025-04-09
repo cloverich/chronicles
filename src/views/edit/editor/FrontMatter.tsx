@@ -24,14 +24,15 @@ const FrontMatter = observer(
       if (!tag) return;
 
       if (!document.tags.includes(tag)) {
+        // todo: this is probably double saving!
         document.tags.push(tag);
-        document.save();
+        document.save("frontmatter", undefined);
       }
     }
 
     function onRemoveTag(tag: string) {
       document.tags = document.tags.filter((t) => t !== tag);
-      document.save();
+      document.save("frontmatter", undefined);
     }
 
     // Autofocus the heading input

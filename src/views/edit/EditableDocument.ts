@@ -2,9 +2,9 @@ import { debounce } from "lodash";
 import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
 import { toast } from "sonner";
 import { IClient } from "../../hooks/useClient";
+import { slateToMdast, slateToString, stringToSlate } from "../../markdown";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 import { FrontMatter, GetDocumentResponse } from "../../preload/client/types";
-import { SlateTransformer } from "./SlateTransformer";
 
 function isExistingDocument(
   doc: GetDocumentResponse,
@@ -20,9 +20,6 @@ export class EditableDocument {
   @observable saving: boolean = false;
   @observable savingError: Error | null = null;
 
-  // todo: Autorun this, or review how mobx-utils/ViewModel works
-  @observable dirty: boolean = false;
-
   /**
    * The markdown string, i.e. after converting Slate DOM content
    * to a string for saving, its stored here.
@@ -35,8 +32,9 @@ export class EditableDocument {
    * debug view.
    */
   @computed get mdastDebug() {
-    if (this.slateContent) {
-      return SlateTransformer.mdastify(toJS(this.slateContent));
+    const slateContent = this.getInitialSlateContent();
+    if (slateContent) {
+      return slateToMdast(toJS(slateContent));
     } else {
       return "No EditableDocument.slateContent not yet set.";
     }
@@ -52,8 +50,7 @@ export class EditableDocument {
   @observable frontMatter: FrontMatter;
 
   // editor properties
-  slateContent: SlateCustom.SlateNode[];
-  @observable private changeCount = 0;
+  slateContent: SlateCustom.SlateNode[] = [];
 
   // todo: save queue. I'm saving too often, but need to do this until I allow exiting note
   // while save is in progress; track and report saveCount to discover if this is a major issue
@@ -75,9 +72,6 @@ export class EditableDocument {
     this.updatedAt = doc.frontMatter.updatedAt;
     this.tags = doc.frontMatter.tags;
     this.frontMatter = doc.frontMatter;
-    const content = doc.content;
-    const slateNodes = SlateTransformer.nodify(content);
-    this.slateContent = slateNodes;
 
     // Auto-save
     // todo: performance -- investigate putting draft state into storage,
@@ -86,23 +80,33 @@ export class EditableDocument {
       () => {
         return {
           createdAt: this.createdAt,
-          // Watch a counter instead of content, so I don't have to wrap and unwrap
-          // the underlying nodes. See setSlateContent for additional context.
-          changeCount: this.changeCount,
           title: this.title,
           journal: this.journal,
           tags: this.tags.slice(), // must access elements to watch them
         };
       },
       () => {
-        this.dirty = true;
-        this.save();
+        this.save("frontmatter", undefined);
       },
       // I tried delay here, but it works like throttle.
       // So, I put a debounce on save instead
     );
   }
 
+  getInitialContent = () => {
+    return this.content;
+  };
+
+  getInitialSlateContent = () => {
+    const slateNodes = stringToSlate(this.content);
+    this.slateContent = slateNodes;
+    return slateNodes;
+  };
+
+  /**
+   * Updates the Slate DOM content.
+   * This is used by the WYSIWYG editor.
+   */
   setSlateContent = (nodes: SlateCustom.SlateNode[]) => {
     // NOTE: This is called when the cursor moves, but the content appears to be unchanged
     // It seems like the slate nodes always change if any content changes, so this is
@@ -110,27 +114,65 @@ export class EditableDocument {
     // (if not, people's changes would be unsaved in those cases)
     if (nodes !== this.slateContent) {
       this.slateContent = nodes;
-      this.changeCount++;
+      this.save("slate-dom", nodes);
     }
   };
 
-  save = debounce(
-    async () => {
-      if (this.saving || !this.dirty) return;
+  /**
+   * Updates the raw markdown content directly.
+   * This is used by the markdown editor.
+   */
+  setMarkdownContent = (markdown: string) => {
+    if (markdown !== this.content) {
+      this.content = markdown;
+      this.save("markdown", markdown);
+    }
+  };
+
+  /**
+   * Saves the document to the server.
+   * For WYSIWYG editor, it converts the Slate DOM to markdown before saving.
+   * For markdown editor, it saves the raw markdown content directly.
+   */
+  save: {
+    (
+      type: "frontmatter",
+      content: undefined,
+    ): Promise<void | undefined> | undefined;
+    (
+      type: "slate-dom",
+      content: SlateCustom.SlateNode[],
+    ): Promise<void | undefined> | undefined;
+    (type: "markdown", content: string): Promise<void | undefined> | undefined;
+  } = debounce(
+    async (type, content) => {
       this.saving = true;
-
-      // note: Immediately reset dirty so if edits happen while (auto) saving,
-      // it can call save again on completion
-      // Error case is kind of hacky but unlikely an issue in practice
-      this.dirty = false;
-
-      this.content = SlateTransformer.stringify(toJS(this.slateContent));
-      let wasError = false;
 
       try {
         this.updatedAt = this.frontMatter.updatedAt = new Date().toISOString();
         this.frontMatter.title = this.title;
         this.frontMatter.tags = this.tags;
+
+        // todo: if we stay on this route, just make a separate saveFrontMatter method...
+        if (type === "frontmatter") {
+          await this.client.documents.updateDocument(
+            toJS({
+              journal: this.journal,
+              content: this.content,
+              id: this.id,
+              frontMatter: toJS(this.frontMatter),
+            }),
+          );
+          this.saveCount++;
+
+          return;
+        }
+
+        if (type === "slate-dom") {
+          this.content = slateToString(toJS(content));
+        } else {
+          this.content = content;
+        }
 
         // todo: is toJS necessary here, i.e. copying this.journal to journal, loses Proxy or not?
         // todo: use mobx viewmodel over GetDocumentResponse; track frontMatter properties directly rather
@@ -146,22 +188,19 @@ export class EditableDocument {
         this.saveCount++;
       } catch (err) {
         this.saving = false;
-        this.dirty = true;
-        wasError = true;
         console.error("Error saving document", err);
         toast.error(JSON.stringify(err));
       } finally {
         this.saving = false;
-
-        // if edits made after last save attempt, re-run
-        // Check error to avoid infinite save loop
-        if (this.dirty && !wasError) this.save();
       }
     },
     1000,
     { trailing: true },
   );
 
+  /**
+   * Deletes the document from the server.
+   */
   del = async () => {
     // overload saving for deleting
     this.saving = true;

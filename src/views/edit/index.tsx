@@ -11,7 +11,8 @@ import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
 import Editor from "./editor";
 import { EditLoadingComponent } from "./loading";
-import ReadOnlyTextEditor from "./read-only-editor/ReadOnlyTextEditor";
+import MarkdownEditor from "./markdown-editor";
+import ReadOnlyTextEditor from "./read-only-editor";
 import { useEditableDocument } from "./useEditableDocument";
 
 /**
@@ -111,7 +112,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
 
   function goBack() {
     if (
-      !document.dirty ||
+      !document.saving ||
       confirm(
         "Document is unsaved, exiting will discard document. Stop editing anyways?",
       )
@@ -156,6 +157,7 @@ function EditorInner({
   journals: JournalResponse[];
   goBack: () => void;
 }) {
+  console.log("EditorInner.render");
   switch (selectedViewMode) {
     case EditorMode.Editor:
       return (
@@ -167,22 +169,23 @@ function EditorInner({
           setSelectedViewMode={setSelectedViewMode}
         />
       );
+    case EditorMode.Markdown:
+      return (
+        <MarkdownEditor
+          document={document}
+          journals={journals}
+          goBack={goBack}
+          selectedViewMode={selectedViewMode}
+          setSelectedViewMode={setSelectedViewMode}
+        />
+      );
     case EditorMode.SlateDom:
       return (
         <ReadOnlyTextEditor
           goBack={goBack}
-          json={document.slateContent}
+          json={document.getInitialSlateContent()}
           selectedEditorMode={selectedViewMode}
           setSelectedEditorMode={setSelectedViewMode}
-        />
-      );
-    case EditorMode.Markdown:
-      return (
-        <ReadOnlyTextEditor
-          goBack={goBack}
-          selectedEditorMode={selectedViewMode}
-          setSelectedEditorMode={setSelectedViewMode}
-          markdown={document.content}
         />
       );
     case EditorMode.Mdast:
