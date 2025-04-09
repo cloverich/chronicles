@@ -75,6 +75,13 @@ function runTests(doc: TestDoc, parser = parseMarkdown) {
 }
 
 describe("Slate processing", function () {
+  describe("empty document", function () {
+    it("produces default slate nodes when content is empty", function () {
+      const result = stringToSlate("");
+      expect(result).to.deep.equal([{ type: "p", children: [{ text: "" }] }]);
+    });
+  });
+
   describe("full document roundtrip", function () {
     const markdown = fs.readFileSync(
       path.join(__dirname, "test-docs", "misc.md"),
