@@ -2,6 +2,7 @@ import Store from "electron-store";
 
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 import { Files } from "../files";
 const { readFile, writeFile, access, stat } = fs.promises;
 
@@ -60,32 +61,51 @@ export type IFilesClient = FilesClient;
 export class FilesClient {
   constructor(private settings: Store) {}
 
-  // NOTE: This only recieves a data url, not a file object, because
-  // plate's createImagePlugin calls readAsDataUrl on files before passing
-  // result to us; left relevant notes on how to refactor that (basically re-implement)
-  // the plugin
-  upload = async (dataUrl: string): Promise<UploadResponse> => {
-    // todo: add error handling if dir not found...
+  /**
+   * The uploadImage option on plate's createImagesPlugin.
+   * @param dataUrl - It receives a dataurl after users drag and drop an image onto the editor of
+   *  the form: data:image/png;base64,iVBORw0KGg...
+   *
+   * todo: Actual signature is:  string | ArrayBuffer) => string | ArrayBuffer | Promise<string | ArrayBuffer>;
+   * but calling code definitely only sends a string. See implementation notes below, and also the
+   * plate's createImagePlugin implementation
+   */
+  uploadImage = async (dataUrl: string | ArrayBuffer) => {
+    // NOTE: At time of writing, the code that calls this is in plate at
+    // packages/media/src/image/withImageUpload.ts
+    // It receives a FileList, iterates it to get File objects, then does two things
+    // 1. if (mime === 'image')  -- so I don't need to check image type here
+    // 2. It calls reader.readAsDataURL(file); (type should be just string, not string | ArrayBuffer)
+    // todo(perf): Can re-write  withArrayBuffer and avoiding the need to encode to base64 only to immmediately
+    // decode. Or, use the base64 version to display image immediately, while this routine
+    // "uploads" it to the attachments dir. Lastly, could also put an empty placeholder to avoid the base64,
+    // still give upload progress feedback to user, while overall improving performance.
     const chronRoot = (await this.settings.get("NOTES_DIR")) as string;
     const dir = path.join(chronRoot, "_attachments");
+    await this.ensureDir(dir);
 
-    const { buffer, extension } = dataURLToBufferAndExtension(dataUrl);
+    const { buffer, extension } = dataURLToBufferAndExtension(
+      dataUrl as string,
+    );
     const filename = `${createId()}${extension}`;
     const filepath = path.join(dir, filename);
 
-    return new Promise<UploadResponse>((resolve, reject) => {
-      const stream = fs.createWriteStream(filepath);
-
-      stream.write(buffer);
-      stream.end();
-
-      stream.on("finish", () => {
-        resolve({ filename });
-      });
-      stream.on("error", (err) => {
-        reject(err);
-      });
-    });
+    return (
+      sharp(buffer)
+        // handle orientation
+        .rotate()
+        // todo: make configurable via settings, and eventually per journal
+        .resize({ width: 1600, withoutEnlargement: true })
+        .webp({ quality: 90 })
+        .toFile(filepath)
+        .then(() => {
+          return `chronicles://../_attachments/${filename}`;
+        })
+        .catch((err) => {
+          console.error("Error uploading or resizing file...", err);
+          throw err;
+        })
+    );
   };
 
   uploadFile = async (file: File): Promise<UploadResponse> => {
@@ -107,30 +127,6 @@ export class FilesClient {
         .on("close", () => res({ filename: filename }))
         .on("error", (err) => rej(err));
     });
-  };
-
-  /**
-   * The uploadImage option on plate's createImagesPlugin.
-   * @param dataUrl - It receives a dataurl after users drag and drop an image onto the editor of
-   *  the form: data:image/png;base64,iVBORw0KGg...
-   *
-   * todo: Actual signature is:  string | ArrayBuffer) => string | ArrayBuffer | Promise<string | ArrayBuffer>;
-   * but calling code definitely only sends a string. See implementation notes below, and also the
-   * createImagePlugin implementation
-   */
-  uploadImage = (dataUrl: string | ArrayBuffer) => {
-    // NOTE: At time of writing, the code that calls this is in plate at
-    // packages/media/src/image/withImageUpload.ts
-    // It receives a FileList, iterates it to get File objects, then does two things
-    // 1. if (mime === 'image')  -- so I don't need to check image type here
-    // 2. It calls reader.readAsDataURL(file); so IDK why the type signature is string | ArrayBuffer
-    // todo(perf): Eventually, should pull in the function and re-implement it the way I had previously,
-    // reading the data as ArrayBuffer and avoiding the need to encode to base64 only to immmediately
-    // decode...but for now this works, and images aren't copied and pasted into the editor that often
-    return this.upload(dataUrl as string).then((json: any) => {
-      // todo: ImageElement could check if image is local or remote; if local, prefix with chronicles://
-      return `chronicles://../_attachments/${json.filename}`;
-    }, console.error) as Promise<string>; // createImagePlugin doesn't allow Promise<void>
   };
 
   /**
