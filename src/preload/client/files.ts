@@ -214,6 +214,7 @@ export class FilesClient {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT" && propagateErr) throw err;
+      console.error("validFile error", err);
       return false;
     }
 
@@ -223,6 +224,7 @@ export class FilesClient {
       return true;
     } catch (err: any) {
       if (err.code !== "ENOENT" && propagateErr) throw err;
+      console.error("validFile error", err);
       return false;
     }
   };

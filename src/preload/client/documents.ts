@@ -3,7 +3,12 @@ import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
 import yaml from "yaml";
-import { mdastToString, parseMarkdown, selectNoteLinks } from "../../markdown";
+import {
+  mdastToString,
+  parseMarkdown,
+  selectImageLinks,
+  selectNoteLinks,
+} from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
 import { Files } from "../files";
 import { IFilesClient } from "./files";
@@ -203,6 +208,7 @@ export class DocumentsClient {
           journal: args.journal,
           content,
           frontMatter: args.frontMatter,
+          rootDir: await this.preferences.get("NOTES_DIR"),
         }),
         docPath,
       ];
@@ -241,6 +247,7 @@ export class DocumentsClient {
       content,
       journal: args.journal,
       frontMatter: args.frontMatter,
+      rootDir: await this.preferences.get("NOTES_DIR"),
     });
   };
 
@@ -290,6 +297,7 @@ export class DocumentsClient {
     journal,
     content,
     frontMatter,
+    rootDir,
   }: IndexRequest): Promise<string> => {
     if (!id) {
       throw new Error("id required to create document index");
@@ -313,6 +321,8 @@ export class DocumentsClient {
       }
 
       await this.addNoteLinks(trx, id, content);
+
+      await this.addImageLinks(trx, id, content, rootDir, journal);
 
       return id;
     });
@@ -345,6 +355,43 @@ export class DocumentsClient {
       await trx("document_links").where({ documentId: id }).del();
       await this.addNoteLinks(trx, id!, content);
     });
+  };
+
+  // track image links for a document to assist debugging missing images. Unlike note links, which
+  // are live and updated as part of document udpate process, as of now this routine exists purlely
+  // for debugging import / sync issues.
+  private addImageLinks = async (
+    trx: Knex.Transaction,
+    documentId: string,
+    content: string,
+    rootDir: string,
+    journal: string,
+  ) => {
+    const mdast = parseMarkdown(content);
+    const imageLinks = selectImageLinks(mdast).map((image) => image.url);
+
+    // Delete existing image links for this document
+    await trx("image_links").where({ documentId }).del();
+
+    if (imageLinks.length > 0) {
+      // Check each image and insert into the table
+      for (const imagePath of imageLinks) {
+        // Skip non-local files (http, https, etc)
+        if (imagePath.startsWith("http")) {
+          continue;
+        }
+
+        // Resolve relative path against notes directory
+        const resolvedPath = path.resolve(rootDir, journal, imagePath);
+        const resolved = await this.files.validFile(resolvedPath, false);
+        await trx("image_links").insert({
+          documentId,
+          imagePath,
+          resolved,
+          lastChecked: new Date().toISOString(),
+        });
+      }
+    }
   };
 
   private addNoteLinks = async (

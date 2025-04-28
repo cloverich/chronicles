@@ -137,6 +137,7 @@ export interface IndexRequest {
   journal: string;
   content: string;
   frontMatter: FrontMatter;
+  rootDir: string;
 }
 
 // Nobody would put node_modules in their note directory... right?
