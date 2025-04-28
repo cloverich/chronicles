@@ -50,6 +50,15 @@ CREATE TABLE IF NOT EXISTS "document_links" (
     PRIMARY KEY ("documentId", "targetId")
 );
 
+CREATE TABLE IF NOT EXISTS "image_links" (
+    "documentId" TEXT NOT NULL,
+    "imagePath" TEXT NOT NULL,
+    "resolved" BOOLEAN NOT NULL DEFAULT 0,
+    "lastChecked" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("documentId") REFERENCES "documents" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY ("documentId", "imagePath")
+);
+
 CREATE TABLE IF NOT EXISTS "sync" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     "startedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,6 +72,8 @@ CREATE INDEX IF NOT EXISTS "document_links_target_idx" ON "document_links"("targ
 CREATE INDEX IF NOT EXISTS "documents_title_idx" ON "documents"("title");
 CREATE INDEX IF NOT EXISTS "documents_createdat_idx" ON "documents"("createdAt");
 CREATE INDEX IF NOT EXISTS "tags_name_idx" ON "document_tags"("tag");
+CREATE INDEX IF NOT EXISTS "image_links_path_idx" ON "image_links"("imagePath");
+CREATE INDEX IF NOT EXISTS "image_links_resolved_idx" ON "image_links"("resolved");
 
 
 -- DROP TABLE IF EXISTS "imports";
@@ -87,7 +98,6 @@ CREATE TABLE IF NOT EXISTS "import_files" (
     "error" TEXT
 );
 
--- First, Import Items table
 CREATE TABLE IF NOT EXISTS "import_notes" (
     "importerId" TEXT NOT NULL,
     "status" TEXT NOT NULL, -- success, error

@@ -4,6 +4,7 @@ import * as SlateCustom from "./remark-slate-transformer/transformers/mdast-to-s
 import * as mdast from "mdast";
 export { slateToMdast } from "./remark-slate-transformer/transformers/slate-to-mdast.js";
 
+import { Image, Node } from "mdast";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import {
   frontmatterFromMarkdown,
@@ -169,16 +170,36 @@ export const isNoteLink = (mdast: mdast.RootContent): mdast is mdast.Link => {
   return true;
 };
 
-export const selectNoteLinks = (
-  mdast: mdast.Content | mdast.Root,
-): mdast.Link[] => {
-  const links: mdast.Link[] = [];
-  if (mdast.type === "link" && isNoteLink(mdast)) {
-    links.push(mdast);
-  } else if ("children" in mdast) {
-    for (const child of mdast.children as any) {
-      links.push(...selectNoteLinks(child));
+const visit = <T extends Node>(
+  node: T,
+  type: string,
+  visitor: (node: T) => void,
+) => {
+  if (node.type === type) {
+    visitor(node);
+  }
+
+  if ("children" in node) {
+    for (const child of (node as any).children || []) {
+      visit(child, type, visitor);
     }
   }
+};
+
+export const selectNoteLinks = (mdast: mdast.Root): mdast.Link[] => {
+  const links: mdast.Link[] = [];
+  visit<mdast.Link>(mdast as any, "link", (node: mdast.Link) => {
+    if (isNoteLink(node)) {
+      links.push(node);
+    }
+  });
   return links;
+};
+
+export const selectImageLinks = (node: Node): Image[] => {
+  const images: Image[] = [];
+  visit(node as any, "image", (image: Image) => {
+    images.push(image);
+  });
+  return images;
 };

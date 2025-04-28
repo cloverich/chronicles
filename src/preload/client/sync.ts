@@ -76,6 +76,7 @@ export class SyncClient {
     this.db.exec("delete from document_tags");
     this.db.exec("delete from documents");
     this.db.exec("delete from journals");
+    // image and note links delete via cascade
 
     const rootDir = await this.preferences.get("NOTES_DIR");
 
@@ -133,6 +134,7 @@ export class SyncClient {
           journal: dirname, // using name as id
           content: contents,
           frontMatter,
+          rootDir,
         });
         syncedCount++;
       } catch (e) {
