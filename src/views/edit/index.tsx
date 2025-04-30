@@ -157,7 +157,6 @@ function EditorInner({
   journals: JournalResponse[];
   goBack: () => void;
 }) {
-  console.log("EditorInner.render");
   switch (selectedViewMode) {
     case EditorMode.Editor:
       return (

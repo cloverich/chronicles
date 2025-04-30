@@ -321,7 +321,6 @@ export class DocumentsClient {
       }
 
       await this.addNoteLinks(trx, id, content);
-
       await this.addImageLinks(trx, id, content, rootDir, journal);
 
       return id;
@@ -333,6 +332,7 @@ export class DocumentsClient {
     journal,
     content,
     frontMatter,
+    rootDir,
   }: IndexRequest): Promise<void> => {
     return this.knex.transaction(async (trx) => {
       await trx("documents")
@@ -354,6 +354,7 @@ export class DocumentsClient {
 
       await trx("document_links").where({ documentId: id }).del();
       await this.addNoteLinks(trx, id!, content);
+      await this.addImageLinks(trx, id, content, rootDir, journal);
     });
   };
 
