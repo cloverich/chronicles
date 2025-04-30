@@ -111,6 +111,7 @@ import {
   ELEMENT_IMAGE_GROUP,
   ImageGroupElement,
 } from "./editor/features/image-group/ImageGroupElement";
+import { createNormalizeImagesPlugin } from "./editor/plugins/createNormalizeImagesPlugin";
 
 export interface Props {
   saving: boolean;
@@ -154,6 +155,7 @@ export default observer(
             uploadImage: client.files.uploadImage,
           },
         }),
+        createNormalizeImagesPlugin(),
 
         // Plate's media handler turns youtube links, twitter links, etc, into embeds.
         // I'm unsure how to trigger the logic, probably via toolbar or shortcut.
