@@ -50,7 +50,6 @@ export const createFilesPlugin = createPluginFactory({
           }
         }
       } else {
-        // If it's not a file, delegate to the next plugin.
         insertData(dataTransfer);
       }
     };

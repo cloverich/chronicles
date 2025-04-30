@@ -114,7 +114,7 @@ export class FilesClient {
 
     const ext = path.parse(file.name).ext;
     const filename = `${createId()}${ext || ".unknown"}`;
-    const filepath = path.join(dir as string, filename);
+    const filepath = path.join(dir, filename);
     return new Promise<UploadResponse>((res, rej) => {
       const stream = fs.createWriteStream(filepath);
       // the fs write stream is not compatible with the input stream :(

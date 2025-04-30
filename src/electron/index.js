@@ -76,15 +76,22 @@ app.whenReady().then(() => {
  * or missing files resolve to null; in testing, passing null to the protocol handler
  * results in 404's in img and video tags.
  *
- * @param {string} chroniclesUrl The "chronicles://" URL to convert.
+ * @param {string} chroniclesUrl The "chronicles://" URL to convert
  */
 function validateChroniclesUrl(chroniclesUrl) {
-  // strip the leading chronicles://, then convert to absolute url
-  // Also: file references are created with ../, because of the directory
-  // structure used by Chronicles. Strip the leading ../ since we are
-  // already in the root directory
+  // NOTE: chroniclesUrl SHOULD start with chronicles://../_attachments/<filename>
+  // NOTE: UI should also validate this, to tell user how to fix (if it comes up)
+  if (!chroniclesUrl?.startsWith("chronicles://../_attachments")) {
+    console.warn(
+      "chronicles:// file handler blocking access to file outside of _attachments directory",
+    );
+    return null;
+  }
+
+  // strip chronicles:// - so we can treat as a file path
+  // strip ../ - we prepend the root directory (NOTES_DIR) to make absolute path
   const url = decodeURI(chroniclesUrl.slice("chronicles://../".length));
-  const baseDir = settings.get("NOTES_DIR");
+  const baseDir = path.join(settings.get("NOTES_DIR"));
   const absPath = path.join(baseDir, url);
   const normalizedPath = path.normalize(absPath);
 
