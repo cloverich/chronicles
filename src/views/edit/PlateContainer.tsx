@@ -106,11 +106,11 @@ import {
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { SearchStore } from "../documents/SearchStore";
-import { createImageGroupPlugin } from "./editor/features/image-group";
+import { createImageGalleryPlugin } from "./editor/features/images";
 import {
-  ELEMENT_IMAGE_GROUP,
-  ImageGroupElement,
-} from "./editor/features/image-group/ImageGroupElement";
+  ELEMENT_IMAGE_GALLERY,
+  ImageGalleryElement,
+} from "./editor/features/images/ImageGalleryElement";
 import { createNormalizeImagesPlugin } from "./editor/plugins/createNormalizeImagesPlugin";
 
 export interface Props {
@@ -167,13 +167,17 @@ export default observer(
         createFilesPlugin(),
         createNoteLinkDropdownPlugin({ options: { store } } as any),
         createNoteLinkElementPlugin(),
-        createImageGroupPlugin(),
+        createImageGalleryPlugin(),
 
         // Backspacing into an element selects the block before deleting it.
         createSelectOnBackspacePlugin({
           options: {
             query: {
-              allow: [ELEMENT_IMAGE, ELEMENT_MEDIA_EMBED],
+              allow: [
+                ELEMENT_IMAGE,
+                ELEMENT_IMAGE_GALLERY,
+                ELEMENT_MEDIA_EMBED,
+              ],
             },
           },
         }),
@@ -317,7 +321,7 @@ export default observer(
           [ELEMENT_H5]: withProps(HeadingElement, { variant: "h5" }),
           [ELEMENT_H6]: withProps(HeadingElement, { variant: "h6" }),
           [ELEMENT_IMAGE]: ImageElement,
-          [ELEMENT_IMAGE_GROUP]: ImageGroupElement,
+          [ELEMENT_IMAGE_GALLERY]: ImageGalleryElement,
           [ELEMENT_LINK]: LinkElement,
 
           // NoteLinkDropdown provides the dropdown when typing `@`; NoteLinkElement

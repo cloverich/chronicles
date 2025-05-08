@@ -44,7 +44,9 @@ export const EditorContainer: React.FC<ClickableDivProps> = ({ children }) => {
  * Add space equivalent to the fixed position titlebar. See Container for usage.
  */
 export const TitlebarSpacer = () => {
-  return <div className="h-12 min-h-12" />;
+  return (
+    <div className="min-[var(--titlebar-height)] h-[var(--titlebar-height)]" />
+  );
 };
 
 /**

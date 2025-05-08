@@ -1,13 +1,12 @@
 import { TElement, TText } from "@udecode/slate";
 import * as mdast from "mdast";
 
-function toUndefined<T>(value: T | undefined | null): T | undefined {
+export function toUndefined<T>(value: T | undefined | null): T | undefined {
   return value ?? undefined;
 }
 
 // One of the main reasons this fork exists:
 // NOTE: https://github.com/inokawa/remark-slate-transformer/issues/31
-import { prefixUrl, videoExtensions } from "../../../hooks/images";
 
 // NOTE: added, and a good example of what changes I would want to make to this library!
 import {
@@ -21,9 +20,14 @@ import {
 } from "@udecode/plate"; // todo: sub-package which has only elements?
 
 import {
-  createImageGroupElement,
-  SlateImageGroup,
-} from "../../../views/edit/editor/features/image-group";
+  createImageGalleryElement,
+  SlateImageGallery,
+} from "../../../views/edit/editor/features/images";
+import {
+  createImage,
+  Image,
+  Video,
+} from "../../../views/edit/editor/features/images/toMdast";
 import {
   SlateNoteLink,
   toSlateNoteLink,
@@ -156,8 +160,8 @@ function createSlateNode(node: mdast.Content, deco: Decoration): SlateNode[] {
       return [createLink(node, deco)];
     case "image":
       return [createImage(node)];
-    case "imageGroupElement":
-      return [createImageGroupElement({ node, convertNodes, deco })];
+    case "imageGalleryElement":
+      return [createImageGalleryElement({ node, convertNodes, deco })];
     case "linkReference":
       return [createLinkReference(node, deco)];
     case "imageReference":
@@ -549,60 +553,6 @@ function createLink(node: mdast.Link, deco: Decoration): Link | SlateNoteLink {
   };
 }
 
-export type Image = {
-  type: "img";
-  url: string;
-  title?: string;
-  alt?: string;
-  caption?: [{ text: string }];
-  children: [{ text: "" }];
-};
-
-export interface Video extends BaseElement {
-  type: "video";
-  url: string;
-  title?: string;
-  alt?: string;
-  caption?: [{ text: string }];
-  children: [{ text: "" }];
-}
-
-/**
- * Handle image AND video nodes
- */
-function createImage(node: mdast.Image): Image | Video {
-  const { type, url, title, alt } = node;
-
-  // In slate-to-mdast, we encode video nodes as images, and rely on
-  // the file extension here to determine if it's a video or not
-  const extension = (url?.split(".").pop() || "").toLowerCase();
-  if (videoExtensions.includes(extension)) {
-    return {
-      type: "video",
-      url: prefixUrl(url),
-      title: toUndefined(title),
-      alt: toUndefined(alt),
-      // NOTE: Plate uses "caption" for alt (createCaptionPlugin + CaptionElement)
-      caption: [{ text: alt || "" }],
-      children: [{ text: "" }],
-    };
-  }
-
-  return {
-    // NOTE: I changed this from simply type, which forwarded the incoming "image" type,
-    // to "img", which plate expects
-    type: "img",
-    // NOTE: I modify url's here which is a bit silly but i'm in hack-it-in mode so :|
-    url: prefixUrl(url),
-    title: toUndefined(title),
-    alt: toUndefined(alt),
-    // NOTE: Plate uses "caption" for alt (createCaptionPlugin + CaptionElement)
-    caption: [{ text: alt || "" }],
-    // NOTE: All slate nodes need text children
-    children: [{ text: "" }],
-  };
-}
-
 export interface LinkReference extends BaseElement {
   type: "linkReference";
   referenceType: mdast.ReferenceType;
@@ -696,6 +646,6 @@ export type SlateNode =
   | Image
   | Video
   | LinkReference
-  | SlateImageGroup
+  | SlateImageGallery
   | SlateNoteLink
   | ImageReference;

@@ -231,7 +231,7 @@ describe("Slate processing", function () {
           "![75d97cd0e4b3f42f58aa80cefab00fec\\_res.jpeg](../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg)\n![75d97cd0e4b3f42f58aa80cefab00fec\\_res.jpeg](../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg)",
         slate: [
           {
-            type: "imageGroupElement",
+            type: "imageGalleryElement",
             children: [
               {
                 type: "img",
