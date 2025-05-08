@@ -6,7 +6,7 @@ import yaml from "yaml";
 import {
   mdastToString,
   parseMarkdown,
-  selectImageLinks,
+  selectDistinctImageUrls,
   selectNoteLinks,
 } from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
@@ -369,29 +369,28 @@ export class DocumentsClient {
     journal: string,
   ) => {
     const mdast = parseMarkdown(content);
-    const imageLinks = selectImageLinks(mdast).map((image) => image.url);
+    const imageLinks = selectDistinctImageUrls(mdast);
 
     // Delete existing image links for this document
     await trx("image_links").where({ documentId }).del();
+    if (imageLinks.length <= 0) return;
 
-    if (imageLinks.length > 0) {
-      // Check each image and insert into the table
-      for (const imagePath of imageLinks) {
-        // Skip non-local files (http, https, etc)
-        if (imagePath.startsWith("http")) {
-          continue;
-        }
-
-        // Resolve relative path against notes directory
-        const resolvedPath = path.resolve(rootDir, journal, imagePath);
-        const resolved = await this.files.validFile(resolvedPath, false);
-        await trx("image_links").insert({
-          documentId,
-          imagePath,
-          resolved,
-          lastChecked: new Date().toISOString(),
-        });
+    // Check each image and insert into the table
+    for (const imagePath of imageLinks) {
+      // Skip non-local files (http, https, etc)
+      if (imagePath.startsWith("http")) {
+        continue;
       }
+
+      // Resolve relative path against notes directory
+      const resolvedPath = path.resolve(rootDir, journal, imagePath);
+      const resolved = await this.files.validFile(resolvedPath, false);
+      await trx("image_links").insert({
+        documentId,
+        imagePath,
+        resolved,
+        lastChecked: new Date().toISOString(),
+      });
     }
   };
 

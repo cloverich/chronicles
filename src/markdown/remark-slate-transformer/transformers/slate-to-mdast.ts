@@ -17,10 +17,14 @@ import {
 } from "@udecode/plate";
 
 import {
-  createImagesFromImageGroup,
-  ELEMENT_IMAGE_GROUP,
-} from "../../../views/edit/editor/features/image-group";
+  createImagesFromImageGallery,
+  ELEMENT_IMAGE_GALLERY,
+} from "../../../views/edit/editor/features/images";
 
+import {
+  Image,
+  Video,
+} from "../../../views/edit/editor/features/images/toMdast";
 import {
   createLinkFromNoteLinkFactory,
   ELEMENT_NOTE_LINK,
@@ -264,8 +268,8 @@ function createMdastNode(
       return createLinkFromNoteLink(node);
     case "imageReference":
       return createImageReference(node);
-    case ELEMENT_IMAGE_GROUP:
-      return createImagesFromImageGroup(node, convertNodes);
+    case ELEMENT_IMAGE_GALLERY:
+      return createImagesFromImageGallery(node, convertNodes);
     // case "footnote":
     //   return createFootnote(node);
     case "footnoteReference":
@@ -513,7 +517,7 @@ function createLink(node: SlateCustom.Link): mdast.Link {
 
 const createLinkFromNoteLink = createLinkFromNoteLinkFactory(convertNodes);
 
-function createImage(node: SlateCustom.Image | SlateCustom.Video): mdast.Image {
+function createImage(node: Image | Video): mdast.Image {
   const { type, url, title, alt } = node;
   return {
     // 1. Slate image may have type: "img" -- convert to something mdast understands

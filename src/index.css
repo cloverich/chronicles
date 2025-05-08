@@ -40,6 +40,8 @@
     --ring: 215 20.2% 65.1%;
 
     --radius: 0.5rem;
+    /* The MacOS titlebar takes up this space, other components should push below it */
+    --titlebar-height: 3.5rem;
   }
 
   .dark {

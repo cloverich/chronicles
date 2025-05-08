@@ -1,30 +1,7 @@
 import { cn } from "@udecode/cn";
-import { PlateElement, PlateRenderElementProps } from "@udecode/plate-common";
-import { ELEMENT_IMAGE, useMediaState } from "@udecode/plate-media";
 import React from "react";
 
-import { Alert } from "../../../../components/Alert";
-import { MediaPopover } from "./MediaPopover";
-
-// https://platejs.org/docs/components/image-element
-export const ImageElement = ({
-  className,
-  children,
-  nodeProps,
-  ...props
-}: PlateRenderElementProps) => {
-  return (
-    <MediaPopover pluginKey={ELEMENT_IMAGE}>
-      <PlateElement
-        className={cn("flex max-h-96 justify-start py-2.5", className)}
-        {...props}
-      >
-        <ImageElementInner />
-        {children}
-      </PlateElement>
-    </MediaPopover>
-  );
-};
+import { Alert } from "../../../../../components/Alert";
 
 type ImageLoadStatus =
   | "invalid_prefix"
@@ -33,15 +10,27 @@ type ImageLoadStatus =
   | "loading"
   | "not_found";
 
-const ImageElementInner = () => {
-  const {
-    readOnly,
-    focused,
-    selected,
-    align = "center",
-    url,
-  } = useMediaState();
+interface Props {
+  url: string;
+  focused?: boolean;
+  selected?: boolean;
+  readOnly?: boolean;
+  align?: string;
+  className?: string;
+  children?: React.ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
+}
 
+/**
+ * Handles displaying alerts when images are remote / not found etc.
+ */
+export const ImageDisplay = ({
+  url,
+  focused,
+  selected,
+  className,
+  onClick,
+}: Props) => {
   const [validStatus, setValidStatus] = React.useState<ImageLoadStatus>(() => {
     if (!url) return "invalid_prefix";
     if (url?.startsWith("http")) return "remote_image";
@@ -63,10 +52,23 @@ const ImageElementInner = () => {
     setValidStatus("not_found");
   };
 
+  const alertCss = React.useMemo(() => {
+    if (validStatus === "valid") {
+      return "flex h-full w-full items-center justify-center bg-slate-200";
+    } else {
+      return "flex h-full w-full items-center justify-center bg-slate-200";
+    }
+  }, [validStatus]);
+
   switch (validStatus) {
     case "remote_image":
       return (
-        <div className="flex h-full w-full items-center justify-center rounded-sm bg-slate-200">
+        <div
+          className={cn(
+            "flex h-full w-full items-center justify-center bg-slate-200",
+            className,
+          )}
+        >
           <Alert variant="warning" title="Blocked image" className="mt-2">
             <p>
               Unable to load remote image. Remote images are not allowed by
@@ -78,7 +80,12 @@ const ImageElementInner = () => {
       );
     case "not_found":
       return (
-        <div className="flex h-full w-full items-center justify-center rounded-sm bg-slate-200">
+        <div
+          className={cn(
+            "flex h-full w-full items-center justify-center bg-slate-200",
+            className,
+          )}
+        >
           <Alert variant="warning" title="Missing image" className="mt-2">
             <p>
               There was an error loading this image. It may have been deleted or
@@ -90,7 +97,12 @@ const ImageElementInner = () => {
       );
     case "invalid_prefix":
       return (
-        <div className="flex h-full w-full items-center justify-center rounded-sm bg-slate-200">
+        <div
+          className={cn(
+            "flex h-full w-full items-center justify-center bg-slate-200",
+            className,
+          )}
+        >
           <Alert variant="warning" title="Invalid prefix" className="mt-2">
             <p>
               Valid image urls must begin with: chronicles://../_attachments
@@ -106,11 +118,8 @@ const ImageElementInner = () => {
           src={url}
           onLoad={onLoad}
           onError={handleError}
-          className={cn(
-            "max-h-full max-w-full cursor-pointer object-scale-down px-0",
-            "rounded-sm",
-            focused && selected && "ring-2 ring-ring ring-offset-2",
-          )}
+          className={className}
+          onClick={(e) => onClick?.(e)}
           alt=""
         />
       );
