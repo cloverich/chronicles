@@ -62,6 +62,30 @@ export class FilesClient {
   constructor(private settings: Store) {}
 
   /**
+   * Upload a file dropped onto the editor.
+   *
+   * @returns the chronicles prefixed filename
+   */
+  uploadImageBytes = async (arrayBuffer: ArrayBuffer, name = "upload.png") => {
+    const chronRoot = (await this.settings.get("NOTES_DIR")) as string;
+    const dir = path.join(chronRoot, "_attachments");
+    await this.ensureDir(dir);
+
+    const buffer = Buffer.from(arrayBuffer);
+    const ext = path.extname(name) || ".webp";
+    const filename = `${createId()}${ext}`;
+    const filepath = path.join(dir, filename);
+
+    await sharp(buffer)
+      .rotate()
+      .resize({ width: 1600, withoutEnlargement: true })
+      .webp({ quality: 90 })
+      .toFile(filepath);
+
+    return `chronicles://../_attachments/${filename}`;
+  };
+
+  /**
    * The uploadImage option on plate's createImagesPlugin.
    * @param dataUrl - It receives a dataurl after users drag and drop an image onto the editor of
    *  the form: data:image/png;base64,iVBORw0KGg...
@@ -69,6 +93,8 @@ export class FilesClient {
    * todo: Actual signature is:  string | ArrayBuffer) => string | ArrayBuffer | Promise<string | ArrayBuffer>;
    * but calling code definitely only sends a string. See implementation notes below, and also the
    * plate's createImagePlugin implementation
+   *
+   * @deprecated - Prefer uploadImageBytes until we have a use for base64 (preview)
    */
   uploadImage = async (dataUrl: string | ArrayBuffer) => {
     // NOTE: At time of writing, the code that calls this is in plate at

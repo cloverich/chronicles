@@ -11,13 +11,13 @@ import { Editor, Transforms } from "slate";
 export const createNormalizeImagesPlugin = (): PlatePlugin => ({
   key: "top-level-image-normalizer",
   withOverrides: (editor) => {
-    // NOTE: As of now Chronicle sonly supports images as top-level elements, or as part of ImageGroupElements,
-    // not as children of others. I don't yet understand enough Slate / Plate to grasp the idiomatic approach here,
-    // this is my best guess a a solution, after discovering that dropping an image onto a node with a list
-    // would either rash the editor (earlier versions) or delete the image and the list item (as of writing).
     const { normalizeNode } = editor;
 
     editor.normalizeNode = ([node, path]) => {
+      // NOTE: As of now Chronicles only supports images as top-level elements, or as part of ImageGroupElements,
+      // not as children of others. I don't yet understand enough Slate / Plate to grasp the idiomatic approach here,
+      // this is my best guess a a solution, after discovering that dropping an image onto a node with a list
+      // would either rash the editor (earlier versions) or delete the image and the list item (as of writing).
       if (isElement(node) && node.type === ELEMENT_IMAGE && path.length > 1) {
         // Move to root
         Transforms.removeNodes(editor as Editor, { at: path });

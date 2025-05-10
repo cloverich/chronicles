@@ -97,11 +97,7 @@ import { createCodeBlockNormalizationPlugin } from "./editor/plugins/createCodeB
 import { createInlineEscapePlugin } from "./editor/plugins/createInlineEscapePlugin";
 import { createResetNodePlugin } from "./editor/plugins/createResetNodePlugin";
 
-import { createFilesPlugin } from "./editor/plugins/createFilesPlugin";
-import {
-  ELEMENT_VIDEO,
-  createVideoPlugin,
-} from "./editor/plugins/createVideoPlugin";
+import { ELEMENT_VIDEO } from "./editor/plugins/createVideoPlugin";
 
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
@@ -111,6 +107,7 @@ import {
   ELEMENT_IMAGE_GALLERY,
   ImageGalleryElement,
 } from "./editor/features/images/ImageGalleryElement";
+import { createMediaUploadPlugin } from "./editor/plugins/createMediaUploadPlugin";
 import { createNormalizeImagesPlugin } from "./editor/plugins/createNormalizeImagesPlugin";
 
 export interface Props {
@@ -124,6 +121,7 @@ export default observer(
     const jstore = useJournals();
     const client = useClient();
     const store = new SearchStore(client, jstore!, () => {}, []);
+    console.log("PlateContainer.render");
 
     const plugins = createPlugins(
       [
@@ -150,21 +148,20 @@ export default observer(
 
         createListPlugin(),
 
+        // The new createMediaUploadPlugin supercedes this one; leave for
+        // deserialization and embed handling? Or integrate into media plugin...
         createImagePlugin({
           options: {
             uploadImage: client.files.uploadImage,
           },
         }),
         createNormalizeImagesPlugin(),
+        createMediaUploadPlugin(),
 
         // Plate's media handler turns youtube links, twitter links, etc, into embeds.
         // I'm unsure how to trigger the logic, probably via toolbar or shortcut.
         // createMediaEmbedPlugin(),
 
-        // NOTE: These plugins MUST come after createImagePlugin, otherwise createImagePlugin swallows
-        // dropped video files and this won't be called.
-        createVideoPlugin(),
-        createFilesPlugin(),
         createNoteLinkDropdownPlugin({ options: { store } } as any),
         createNoteLinkElementPlugin(),
         createImageGalleryPlugin(),
