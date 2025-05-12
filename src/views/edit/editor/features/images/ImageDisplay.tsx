@@ -1,14 +1,7 @@
 import { cn } from "@udecode/cn";
 import React from "react";
 
-import { Alert } from "../../../../../components/Alert";
-
-type ImageLoadStatus =
-  | "invalid_prefix"
-  | "remote_image"
-  | "valid"
-  | "loading"
-  | "not_found";
+import { MediaWrapper } from "./MediaWrapper";
 
 interface Props {
   url: string;
@@ -18,110 +11,24 @@ interface Props {
   align?: string;
   className?: string;
   children?: React.ReactNode;
+  displayOverlay?: boolean;
   onClick?: (e: React.MouseEvent) => void;
 }
 
-/**
- * Handles displaying alerts when images are remote / not found etc.
- */
-export const ImageDisplay = ({
-  url,
-  focused,
-  selected,
-  className,
-  onClick,
-}: Props) => {
-  const [validStatus, setValidStatus] = React.useState<ImageLoadStatus>(() => {
-    if (!url) return "invalid_prefix";
-    if (url?.startsWith("http")) return "remote_image";
-    if (!url?.startsWith("chronicles://../_attachments"))
-      return "invalid_prefix";
-
-    return "loading";
-  });
-
-  const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    setValidStatus("valid");
-  };
-
-  const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    // todo: Unsure how to distinguish a 404 from other errors; there will be an associated
-    // global GET error, but unclear if / how its tied to _this_ error.
-    e.preventDefault();
-    e.stopPropagation();
-    setValidStatus("not_found");
-  };
-
-  const alertCss = React.useMemo(() => {
-    if (validStatus === "valid") {
-      return "flex h-full w-full items-center justify-center bg-slate-200";
-    } else {
-      return "flex h-full w-full items-center justify-center bg-slate-200";
-    }
-  }, [validStatus]);
-
-  switch (validStatus) {
-    case "remote_image":
-      return (
-        <div
-          className={cn(
-            "flex h-full w-full items-center justify-center bg-slate-200",
-            className,
-          )}
-        >
-          <Alert variant="warning" title="Blocked image" className="mt-2">
-            <p>
-              Unable to load remote image. Remote images are not allowed by
-              Chronicles. Download and copy the image into Chronicles instead.
-            </p>
-            <code className="mt-2 break-all">URL: {url}</code>
-          </Alert>
-        </div>
-      );
-    case "not_found":
-      return (
-        <div
-          className={cn(
-            "flex h-full w-full items-center justify-center bg-slate-200",
-            className,
-          )}
-        >
-          <Alert variant="warning" title="Missing image" className="mt-2">
-            <p>
-              There was an error loading this image. It may have been deleted or
-              moved?
-            </p>
-            <code className="mt-2 break-all">URL: {url}</code>
-          </Alert>
-        </div>
-      );
-    case "invalid_prefix":
-      return (
-        <div
-          className={cn(
-            "flex h-full w-full items-center justify-center bg-slate-200",
-            className,
-          )}
-        >
-          <Alert variant="warning" title="Invalid prefix" className="mt-2">
-            <p>
-              Valid image urls must begin with: chronicles://../_attachments
-            </p>
-            <code className="mt-2 break-all">URL: {url}</code>
-          </Alert>
-        </div>
-      );
-    case "valid":
-    case "loading": // todo: something fancier
-      return (
+export const ImageDisplay = (props: Props) => {
+  return (
+    <MediaWrapper
+      {...props}
+      MediaComponent={({ url, className, onClick, onError, onLoad }) => (
         <img
           src={url}
-          onLoad={onLoad}
-          onError={handleError}
-          className={className}
+          className={cn("border border-black shadow-sm", className)}
           onClick={(e) => onClick?.(e)}
+          onError={onError}
+          onLoad={onLoad}
           alt=""
         />
-      );
-  }
+      )}
+    />
+  );
 };

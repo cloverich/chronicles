@@ -49,6 +49,7 @@ import {
   createBasicElementsPlugin,
   createBasicMarksPlugin,
   createExitBreakPlugin,
+  createFilePlugin,
   createImagePlugin,
   createIndentListPlugin,
   createIndentPlugin,
@@ -63,6 +64,7 @@ import {
   // So document always has a trailing paragraph, ensures you
   // can always type after the last non-paragraph block.
   createTrailingBlockPlugin,
+  createVideoPlugin,
   isCodeBlockEmpty,
   isSelectionAtCodeBlockStart,
   // imported for resetNodePlugin
@@ -107,8 +109,8 @@ import {
   ELEMENT_IMAGE_GALLERY,
   ImageGalleryElement,
 } from "./editor/features/images/ImageGalleryElement";
-import { createMediaUploadPlugin } from "./editor/plugins/createMediaUploadPlugin";
-import { createNormalizeImagesPlugin } from "./editor/plugins/createNormalizeImagesPlugin";
+import { createMediaUploadPlugin } from "./editor/features/images/createMediaUploadPlugin";
+import { createNormalizeImagesPlugin } from "./editor/features/images/createNormalizeImagesPlugin";
 
 export interface Props {
   saving: boolean;
@@ -150,11 +152,16 @@ export default observer(
 
         // The new createMediaUploadPlugin supercedes this one; leave for
         // deserialization and embed handling? Or integrate into media plugin...
+        // NOTE: The image, file, video plugins are needed to tell Plate to use the
+        // corresponding element. The upload / insert behavior is defined in
+        // createMediaUploadPlugin()
         createImagePlugin({
           options: {
             uploadImage: client.files.uploadImage,
           },
         }),
+        createVideoPlugin(),
+        createFilePlugin(),
         createNormalizeImagesPlugin(),
         createMediaUploadPlugin(),
 
