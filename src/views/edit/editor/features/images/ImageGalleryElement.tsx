@@ -1,8 +1,10 @@
-import { cn, withRef } from "@udecode/cn";
+import { withRef } from "@udecode/cn";
 import { PlateElement, TElement, useElement } from "@udecode/plate-common";
 import React from "react";
 
+import { Button } from "../../../../../components/Button";
 import * as Dialog from "../../../../../components/Dialog";
+import { Icons } from "../../../../../components/icons";
 import { ImageDisplay } from "./ImageDisplay";
 
 export const ELEMENT_IMAGE_GALLERY = "imageGalleryElement";
@@ -57,37 +59,62 @@ export const ImageGalleryLightbox = ({
 
   let containerCss = React.useMemo(() => {
     if (images.length > 3) {
-      return "flex flex-wrap justify-center gap-[2px] my-12";
+      return "flex flex-wrap justify-around gap-[2px] my-12 relative";
     } else {
-      return "flex justify-around my-12";
+      return "flex justify-around my-12 relative";
     }
   }, [images.length]);
 
   let itemCss = React.useMemo(() => {
-    if (images.length > 3) {
-      return "h-40 min-w-[200px] max-w-[32%] flex-[1_0_auto] basis-auto object-cover relative cursor-zoom-in overflow-hidden";
-    } else if (images.length === 2) {
-      return "max-h-96 max-w-[48%] object-contain relative cursor-zoom-in overflow-hidden";
+    if (images.length === 2) {
+      return "flex items-start max-h-96 max-w-[48%]  relative overflow-hidden";
     } else {
       // 3 images
-      return "max-h-96 max-w-[31%] object-contain relative cursor-zoom-in overflow-hidden";
+      return "flex items-start max-h-96 max-w-[31%]  relative overflow-hidden";
+    }
+  }, [images.length]);
+
+  let imgCss = React.useMemo(() => {
+    if (images.length > 3) {
+      return "object-cover relative cursor-zoom-in max-w-full max-h-full";
+    } else if (images.length === 2) {
+      return "object-contain relative cursor-zoom-in max-w-full max-h-full";
+    } else {
+      // 3 images
+      return "object-contain relative cursor-zoom-in max-w-full max-h-full";
     }
   }, [images.length]);
 
   return (
     <>
       <div className={containerCss}>
-        {images.map((image, i) => (
-          <ImageDisplay
-            key={i}
-            url={image.url}
+        {images.slice(0, 3).map((image, i) => (
+          <div className={itemCss} key={i}>
+            <ImageDisplay
+              key={i}
+              url={image.url}
+              onClick={() => {
+                setCurrent(i);
+                setOpen(true);
+              }}
+              className={imgCss}
+              displayOverlay={true}
+            />
+          </div>
+        ))}
+        {images.length > 3 && (
+          <Button
+            size="sm"
+            className="absolute bottom-0 right-0 border border-black text-sm shadow-md shadow-indigo-400"
             onClick={() => {
-              setCurrent(i);
+              setCurrent(3);
               setOpen(true);
             }}
-            className={cn(itemCss, "relative cursor-zoom-in overflow-hidden")}
-          />
-        ))}
+          >
+            <Icons.image className="ml-auto size-2" /> {images.length - 3}{" "}
+            more...
+          </Button>
+        )}
       </div>
 
       <Dialog.Dialog open={open} onOpenChange={setOpen}>
@@ -103,7 +130,7 @@ export const ImageGalleryLightbox = ({
             </Dialog.DialogTitle>
             <img
               src={images[current]?.url}
-              className="mb-0 max-h-full max-w-full object-contain"
+              className="mb-0 max-h-full max-w-full border border-black object-contain shadow-sm"
             />
             <Dialog.DialogClose className="absolute right-4 top-4 text-white hover:text-gray-300" />
           </Dialog.DialogContent>

@@ -64,7 +64,6 @@ export class PreferencesClient {
 
     return new Promise<string>((resolve, reject) => {
       ipcRenderer.once("directory-selected", (event, arg) => {
-        console.log("directory-selected", arg);
         if (arg.error) {
           reject(arg.error);
         } else {

@@ -6,10 +6,10 @@ import {
 } from "@udecode/plate-common";
 
 import { ELEMENT_IMAGE, ELEMENT_LINK } from "@udecode/plate";
-import { ELEMENT_VIDEO } from "./createVideoPlugin";
+import { ELEMENT_VIDEO } from "../../plugins/createVideoPlugin";
 // Ideally this is injected
-import { isImageUrl, isVideoUrl } from "../../../../hooks/images";
-import { IClient } from "../../../../hooks/useClient";
+import { isImageUrl, isVideoUrl } from "../../../../../hooks/images";
+import { IClient } from "../../../../../hooks/useClient";
 
 const client: IClient = (window as any).chronicles.createClient();
 
@@ -106,7 +106,7 @@ const handleVideo = async (
   const json = await client.files.uploadFile(file);
   const filepath = `chronicles://../_attachments/${json.filename}`;
 
-  // todo: Find a way to tie this type to the video element
+  // todo: Find a way to tie this type to the video element -- see Plate's insertNode
   insertNode(editor, {
     type: ELEMENT_VIDEO,
     url: filepath,

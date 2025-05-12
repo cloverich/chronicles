@@ -45,7 +45,7 @@ export const EditorContainer: React.FC<ClickableDivProps> = ({ children }) => {
  */
 export const TitlebarSpacer = () => {
   return (
-    <div className="min-[var(--titlebar-height)] h-[var(--titlebar-height)]" />
+    <div className="h-[var(--titlebar-height)] min-h-[var(--titlebar-height)]" />
   );
 };
 
