@@ -1,6 +1,6 @@
-import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import * as React from "react";
+import { IconButton } from "../../../components/IconButton";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
 import { EditorMode } from "../EditorMode";
@@ -42,15 +42,11 @@ export const ReadOnlyTextEditor = observer(
       <Base.EditorContainer>
         <Titlebar>
           <IconButton
-            backgroundColor="transparent"
-            border="none"
-            icon={ChevronLeftIcon}
-            className="drag-none"
+            aria-label="Back to documents"
+            icon="chevron-left"
+            className="mr-4 drag-none"
             onClick={goBack}
-            marginRight={8}
-          >
-            Back to documents
-          </IconButton>
+          />
           <Separator orientation="vertical" />
 
           <ReadonlyToolbar

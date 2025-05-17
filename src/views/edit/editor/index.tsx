@@ -1,8 +1,8 @@
 import { PlateContent } from "@udecode/plate-common";
-import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useFocusEditor } from "..";
+import { IconButton } from "../../../components/IconButton";
 import { JournalResponse } from "../../../hooks/useClient";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
@@ -56,15 +56,11 @@ const Editor = ({
       <Base.EditorContainer>
         <Titlebar>
           <IconButton
-            backgroundColor="transparent"
-            border="none"
-            icon={ChevronLeftIcon}
-            className="drag-none"
+            aria-label="Back to documents"
+            icon="chevron-left"
+            className="mr-4 drag-none"
             onClick={goBack}
-            marginRight={8}
-          >
-            Back to documents
-          </IconButton>
+          />
           <Separator orientation="vertical" />
 
           <EditorToolbar

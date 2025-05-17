@@ -1,12 +1,8 @@
-import {
-  EditIcon,
-  IconButton,
-  PanelStatsIcon,
-  SettingsIcon,
-} from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
+import { IconButton } from "../../components/IconButton";
 import { SheetTrigger } from "../../components/Sidesheet";
 import { useApplicationState } from "../../hooks/useApplicationLoader";
 import { useJournals } from "../../hooks/useJournals";
@@ -38,41 +34,32 @@ export const Layout = observer((props: Props) => {
         >
           <SheetTrigger asChild>
             <IconButton
-              backgroundColor="transparent"
-              border="none"
-              icon={PanelStatsIcon}
-              marginRight={8}
-              className="drag-none"
-            >
-              Select Journals
-            </IconButton>
+              variant="ghost"
+              className="mr-2 drag-none"
+              icon="panel-right"
+              aria-label="Select journals"
+            />
           </SheetTrigger>
         </JournalSelectionSidebar>
 
         <IconButton
-          backgroundColor="transparent"
-          border="none"
-          icon={EditIcon}
-          className="drag-none"
+          variant="ghost"
+          className="mr-2 drag-none"
+          icon="editing"
           disabled={jstore.journals.length === 0}
           onClick={() => navigate("/documents/edit/new")}
-          marginRight={8}
-        >
-          Create new note
-        </IconButton>
+          aria-label="Create new note"
+        />
 
         <SearchInput />
 
         <IconButton
-          backgroundColor="transparent"
-          border="none"
-          icon={SettingsIcon}
-          className="drag-none"
+          variant="ghost"
+          icon="settings"
+          className="ml-2 drag-none"
           onClick={() => preferences.toggle(true)}
-          marginLeft={8}
-        >
-          Preferences
-        </IconButton>
+          aria-label="Open preferences"
+        />
       </Titlebar>
       <Base.TitlebarSpacer />
       <Base.ScrollContainer>{props.children}</Base.ScrollContainer>

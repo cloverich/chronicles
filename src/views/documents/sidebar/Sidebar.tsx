@@ -1,10 +1,9 @@
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import React from "react";
 
-import { IconButton, PlusIcon } from "evergreen-ui";
-
 import { observer } from "mobx-react-lite";
 import { Collapse } from "../../../components/Collapse";
+import { IconButton } from "../../../components/IconButton";
 import {
   Sheet,
   SheetContent,
@@ -67,11 +66,10 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
           <div className="text-md mb-2 flex cursor-pointer items-center font-medium tracking-tight">
             Active Journals
             <IconButton
-              icon={PlusIcon}
-              size="small"
+              icon="add"
+              className="ml-1"
               onClick={store.toggleAdding}
               disabled={store.adding}
-              className="ml-1"
             >
               Add Journal
             </IconButton>

@@ -1,7 +1,7 @@
-import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import React from "react";
 import { NavigateFunction } from "react-router-dom";
 import { Alert } from "../../components";
+import { IconButton } from "../../components/IconButton";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
 import { Separator } from "./editor/components/Separator";
@@ -46,15 +46,11 @@ export default class EditorErrorBoundary extends React.Component<Props, State> {
       <Base.EditorContainer>
         <Titlebar>
           <IconButton
-            backgroundColor="transparent"
-            border="none"
-            icon={ChevronLeftIcon}
-            className="drag-none"
+            icon="chevron-left"
+            className="mr-4 drag-none"
             onClick={() => this.props.navigate("/documents")}
-            marginRight={8}
-          >
-            Back to documents
-          </IconButton>
+            aria-label="Back to documents"
+          />
           <Separator orientation="vertical" />
         </Titlebar>
 

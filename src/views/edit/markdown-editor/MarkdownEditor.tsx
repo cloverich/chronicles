@@ -1,7 +1,7 @@
-import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { IconButton } from "../../../components/IconButton";
 import { JournalResponse } from "../../../hooks/useClient";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
@@ -53,15 +53,11 @@ const MarkdownEditor = observer(
       <Base.EditorContainer>
         <Titlebar>
           <IconButton
-            backgroundColor="transparent"
-            border="none"
-            icon={ChevronLeftIcon}
-            className="drag-none"
+            aria-label="Back to documents"
+            icon="chevron-left"
+            className="mr-4 drag-none"
             onClick={goBack}
-            marginRight={8}
-          >
-            Back to documents
-          </IconButton>
+          />
           <Separator orientation="vertical" />
 
           <MarkdownToolbar

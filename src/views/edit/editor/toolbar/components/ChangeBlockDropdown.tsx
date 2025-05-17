@@ -7,7 +7,9 @@ import {
   ELEMENT_H1,
   ELEMENT_H2,
   ELEMENT_H3,
+  ELEMENT_OL,
   ELEMENT_PARAGRAPH,
+  ELEMENT_UL,
 } from "@udecode/plate";
 import { ELEMENT_BLOCKQUOTE } from "@udecode/plate-block-quote";
 import {
@@ -85,13 +87,13 @@ const items = [
     description: "Bulleted list",
     icon: PropertiesIcon,
     label: "Bulleted list",
-    value: "ul",
+    value: ELEMENT_UL,
   },
   {
     description: "Numbered list",
     icon: NumberedListIcon,
     label: "Numbered list",
-    value: "ol",
+    value: ELEMENT_OL,
   },
 ];
 

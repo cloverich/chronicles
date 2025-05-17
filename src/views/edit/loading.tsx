@@ -1,7 +1,7 @@
-import { ChevronLeftIcon, IconButton } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { IconButton } from "../../components/IconButton";
 import Titlebar from "../../titlebar/macos";
 import { ErrorContent } from "./EditorErrorBoundary";
 import { Separator } from "./editor/components/Separator";
@@ -22,15 +22,11 @@ export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
     <>
       <Titlebar>
         <IconButton
-          backgroundColor="transparent"
-          border="none"
-          icon={ChevronLeftIcon}
-          className="drag-none"
+          icon="chevron-left"
+          className="mr-4 drag-none"
           onClick={() => navigate(-1)}
-          marginRight={8}
-        >
-          Back to documents
-        </IconButton>
+          aria-label="Back to documents"
+        />
         <Separator orientation="vertical" />
       </Titlebar>
       {props.error && (

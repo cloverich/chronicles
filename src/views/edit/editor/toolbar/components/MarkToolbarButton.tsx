@@ -12,7 +12,6 @@ import { ToolbarButton } from "../../components/Toolbar";
  *
  * https://platejs.org/docs/components/mark-toolbar-button
  */
-
 export const MarkToolbarButton = withRef<
   typeof ToolbarButton,
   {
