@@ -1,8 +1,8 @@
-import { Alert } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import "react-day-picker/dist/style.css";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { Alert } from "./components";
 import {
   ApplicationContext,
   ApplicationState,
@@ -49,9 +49,14 @@ export default observer(function Container() {
   if (store.loadingErr) {
     return (
       <LayoutDummy>
-        <Alert intent="danger" title="Journals failed to load">
-          Journals failed to load: ${JSON.stringify(store.loadingErr)}
-        </Alert>
+        <Alert.Alert
+          variant="error"
+          title="Journals failed to load"
+          className="overflow-x-auto"
+        >
+          <p>Journals failed to load: </p>
+          <pre>${JSON.stringify(store.loadingErr, null, 2)}</pre>
+        </Alert.Alert>
       </LayoutDummy>
     );
   }

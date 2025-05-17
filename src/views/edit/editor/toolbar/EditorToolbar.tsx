@@ -14,14 +14,6 @@ import { Toolbar, ToolbarGroup } from "../components/Toolbar";
 import { LinkToolbarButton } from "./components/LinkToolbarButton";
 import { MarkToolbarButton } from "./components/MarkToolbarButton";
 
-// I think this needs to be on the root, wherever Theme would be added (if we had a theme)
-import {
-  BoldIcon,
-  CodeIcon,
-  ItalicIcon,
-  StrikethroughIcon,
-  UnderlineIcon,
-} from "evergreen-ui";
 import { useNavigate } from "react-router-dom";
 import { useIsMounted } from "../../../../hooks/useIsMounted";
 import { useSearchStore } from "../../../documents/SearchStore";
@@ -78,32 +70,34 @@ export function EditorToolbar({
             <Toolbar>
               <ToolbarGroup className="drag-none">
                 <ChangeBlockDropdown />
-                <MarkToolbarButton tooltip="Bold (⌘+B)" nodeType={MARK_BOLD}>
-                  <BoldIcon size={16} />
-                </MarkToolbarButton>
+                <MarkToolbarButton
+                  size="inherit"
+                  tooltip="Bold (⌘+B)"
+                  nodeType={MARK_BOLD}
+                  icon="bold"
+                />
                 <MarkToolbarButton
                   tooltip="Italic (⌘+I)"
                   nodeType={MARK_ITALIC}
-                >
-                  <ItalicIcon size={16} />
-                </MarkToolbarButton>
+                  icon="italic"
+                />
                 <MarkToolbarButton
                   tooltip="Underline (⌘+U)"
                   nodeType={MARK_UNDERLINE}
-                >
-                  <UnderlineIcon size={16} />
-                </MarkToolbarButton>
+                  icon="underline"
+                />
 
                 <>
                   <MarkToolbarButton
                     tooltip="Strikethrough (⌘+⇧+M)"
                     nodeType={MARK_STRIKETHROUGH}
-                  >
-                    <StrikethroughIcon size={16} />
-                  </MarkToolbarButton>
-                  <MarkToolbarButton tooltip="Code (⌘+E)" nodeType={MARK_CODE}>
-                    <CodeIcon size={16} />
-                  </MarkToolbarButton>
+                    icon="strikethrough"
+                  />
+                  <MarkToolbarButton
+                    tooltip="Code (⌘+E)"
+                    nodeType={MARK_CODE}
+                    icon="code"
+                  />
                 </>
                 <LinkToolbarButton />
               </ToolbarGroup>

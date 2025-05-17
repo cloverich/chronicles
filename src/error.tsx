@@ -1,5 +1,5 @@
-import { Alert, Pane } from "evergreen-ui";
 import React from "react";
+import { Alert } from "./components";
 
 interface State {
   hasError: boolean;
@@ -46,13 +46,17 @@ export default class ErrorBoundary extends React.Component<any, State> {
     }
 
     return (
-      <Pane padding={50}>
-        <Alert intent="danger" title="Unhandled Error" overflow="auto">
+      <div className="p-12">
+        <Alert.Alert
+          variant="error"
+          title="Unhandled Error"
+          className="overflow-x-auto"
+        >
           <p>There was an unhandled error that crashed the app</p>
           <pre>{errStr}</pre>
           <pre>{stack}</pre>
-        </Alert>
-      </Pane>
+        </Alert.Alert>
+      </div>
     );
   }
 

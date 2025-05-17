@@ -1,4 +1,3 @@
-import { EditIcon, PanelStatsIcon, SettingsIcon } from "evergreen-ui";
 import React from "react";
 import { Button } from "../../../components/Button";
 import {
@@ -9,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/Dialog";
+import { Icons } from "../../../components/icons";
 
 export default function Welcome({ onComplete }: { onComplete: () => void }) {
   function ackNewUser() {
@@ -29,14 +29,15 @@ export default function Welcome({ onComplete }: { onComplete: () => void }) {
 
               <ul className="my-6 ml-6 list-disc [&>li]:mt-2">
                 <li>
-                  Use <EditIcon className="mx-1 inline" /> to create a new note
+                  Use <Icons.editing className="mx-1 inline" /> to create a new
+                  note
                 </li>
                 <li>
-                  Use the sidebar <PanelStatsIcon className="mx-1 inline" /> to
-                  view and edit journals and #tags
+                  Use the sidebar <Icons.panelRight className="mx-1 inline" />{" "}
+                  to view and edit journals and #tags
                 </li>
                 <li>
-                  Use <SettingsIcon className="mx-1 inline" /> to import your
+                  Use <Icons.settings className="mx-1 inline" /> to import your
                   existing markdown notes, or see where Chronicles stores its
                   data{" "}
                 </li>

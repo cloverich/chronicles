@@ -4,6 +4,7 @@ import {
   useMarkToolbarButtonState,
 } from "@udecode/plate-common";
 import React from "react";
+import { Icons } from "../../../../../components/icons";
 import { ToolbarButton } from "../../components/Toolbar";
 
 /**
@@ -16,11 +17,17 @@ export const MarkToolbarButton = withRef<
   typeof ToolbarButton,
   {
     nodeType: string;
+    icon: keyof typeof Icons;
     clear?: string | string[];
   }
->(({ clear, nodeType, ...rest }, ref) => {
+>(({ icon, clear, nodeType, ...rest }, ref) => {
   const state = useMarkToolbarButtonState({ clear, nodeType });
   const { props } = useMarkToolbarButton(state);
+  const Icon = Icons[icon];
 
-  return <ToolbarButton ref={ref} {...props} {...rest} />;
+  return (
+    <ToolbarButton ref={ref} {...props} {...rest} size="inherit">
+      <Icon size={16} />
+    </ToolbarButton>
+  );
 });
