@@ -3,7 +3,7 @@ import { parseTitleAndFrontMatterForImport } from "./frontmatter";
 
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import { dedent } from "../../../markdown/test-utils";
+import { dedent } from "../../../dedent.js";
 
 export const cases = {
   [SourceType.Notion]: [
