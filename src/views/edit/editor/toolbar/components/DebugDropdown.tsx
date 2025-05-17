@@ -11,11 +11,9 @@ import {
   DropdownMenuTrigger,
   useOpenState,
 } from "../../../../../components/DropdownMenu";
-import { ToolbarButton } from "../../components/Toolbar";
-
-import { MoreIcon, TrashIcon } from "evergreen-ui";
-
+import { Icons } from "../../../../../components/icons";
 import { EditorMode } from "../../../EditorMode";
+import { ToolbarButton } from "../../components/Toolbar";
 
 const options = Object.freeze([
   { key: EditorMode.Editor, label: "Editor" },
@@ -49,7 +47,7 @@ export default function DebugDropdown({
           tooltip="Change editor debug mode"
           size="xs"
         >
-          <MoreIcon className="ml-1 h-4 w-4" />
+          <Icons.more className="ml-1 h-4 w-4" />
         </ToolbarButton>
       </DropdownMenuTrigger>
 
@@ -77,7 +75,7 @@ export default function DebugDropdown({
 
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={deleteDocument}>
-          <TrashIcon size={16} />
+          <Icons.trash className="ml-1 h-4 w-4" />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

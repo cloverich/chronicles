@@ -1,8 +1,8 @@
-import { Heading, Pane, Paragraph } from "evergreen-ui";
 import { observer } from "mobx-react-lite";
 import React from "react";
 
 import { useNavigate } from "react-router-dom";
+import { Alert } from "../../components";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { DocumentItem } from "./DocumentItem";
@@ -50,7 +50,13 @@ function DocumentsContainer() {
   if ((searchStore.loading || onboardingLoading) && !searchStore.docs.length) {
     return (
       <Layout store={searchStore} empty>
-        <Heading>Loading</Heading>
+        <Alert.Alert
+          variant="default"
+          title="Loading documents"
+          className="overflow-x-auto"
+        >
+          <p>...</p>
+        </Alert.Alert>
       </Layout>
     );
   }
@@ -68,8 +74,14 @@ function DocumentsContainer() {
   if (searchStore.error) {
     return (
       <Layout store={searchStore}>
-        <Heading>Error</Heading>
-        <Paragraph>{JSON.stringify(searchStore.error)}</Paragraph>
+        <Alert.Alert
+          variant="error"
+          title="Search failed"
+          className="overflow-x-auto"
+        >
+          <p>Search failed: </p>
+          <pre>{JSON.stringify(searchStore.error, null, 2)}</pre>
+        </Alert.Alert>
       </Layout>
     );
   }
@@ -81,17 +93,27 @@ function DocumentsContainer() {
     if (journalsStore.journals.length) {
       return (
         <Layout store={searchStore}>
-          <Heading>No documents found</Heading>
-          <Paragraph>Broaden your search, or add more notes.</Paragraph>
+          <Alert.Alert
+            variant="default"
+            title="No documents found"
+            className="overflow-x-auto"
+          >
+            <p>Broaden your search, or add more notes.</p>
+          </Alert.Alert>
         </Layout>
       );
     } else {
       return (
         <Layout store={searchStore} empty>
-          <Heading>No journals added</Heading>
-          <Paragraph>
-            Use the preferences link in the navbar to create a new journal.
-          </Paragraph>
+          <Alert.Alert
+            variant="default"
+            title="No journals added"
+            className="overflow-x-auto"
+          >
+            <p>
+              Use the preferences link in the navbar to create a new journal.
+            </p>
+          </Alert.Alert>
         </Layout>
       );
     }
@@ -147,10 +169,10 @@ function Pagination(props: { store: SearchStore }) {
   })();
 
   return (
-    <Pane display="flex" justifyContent="flex-end" marginTop="24px">
+    <div className="flex-end mt-6 flex">
       {prevButton}
       {nextButton}
-    </Pane>
+    </div>
   );
 }
 

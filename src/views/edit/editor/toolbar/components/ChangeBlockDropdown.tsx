@@ -25,17 +25,6 @@ import {
 } from "@udecode/plate-common";
 
 import {
-  CitationIcon,
-  CodeBlockIcon,
-  HeaderOneIcon,
-  HeaderThreeIcon,
-  HeaderTwoIcon,
-  NumberedListIcon,
-  ParagraphIcon,
-  PropertiesIcon,
-} from "evergreen-ui";
-
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
@@ -44,54 +33,55 @@ import {
   DropdownMenuTrigger,
   useOpenState,
 } from "../../../../../components/DropdownMenu";
+import { Icons } from "../../../../../components/icons";
 import { ToolbarButton } from "../../components/Toolbar";
 
 const items = [
   {
     description: "Paragraph",
-    icon: ParagraphIcon,
+    icon: Icons.paragraph,
     label: "Paragraph",
     value: ELEMENT_PARAGRAPH,
   },
   {
     description: "Heading 1",
-    icon: HeaderOneIcon,
+    icon: Icons.h1,
     label: "Heading 1",
     value: ELEMENT_H1,
   },
   {
     description: "Heading 2",
-    icon: HeaderTwoIcon,
+    icon: Icons.h2,
     label: "Heading 2",
     value: ELEMENT_H2,
   },
   {
     description: "Heading 3",
-    icon: HeaderThreeIcon,
+    icon: Icons.h3,
     label: "Heading 3",
     value: ELEMENT_H3,
   },
   {
     description: "Quote (⌘+⇧+.)",
-    icon: CitationIcon,
+    icon: Icons.blockquote,
     label: "Quote",
     value: ELEMENT_BLOCKQUOTE,
   },
   {
     description: "Code (```)",
-    icon: CodeBlockIcon,
+    icon: Icons.codeblock,
     label: "Code",
     value: ELEMENT_CODE_BLOCK,
   },
   {
     description: "Bulleted list",
-    icon: PropertiesIcon,
+    icon: Icons.ul,
     label: "Bulleted list",
     value: ELEMENT_UL,
   },
   {
     description: "Numbered list",
-    icon: NumberedListIcon,
+    icon: Icons.ol,
     label: "Numbered list",
     value: ELEMENT_OL,
   },
@@ -139,7 +129,7 @@ export default function ChangeBlockDropdown(props: DropdownMenuProps) {
           pressed={openState.open}
           tooltip="Change type"
         >
-          <SelectedItemIcon className="size-5 lg:hidden" />
+          <SelectedItemIcon size={16} />
           <span className="max-lg:hidden">{selectedItemLabel}</span>
         </ToolbarButton>
       </DropdownMenuTrigger>
@@ -174,7 +164,7 @@ export default function ChangeBlockDropdown(props: DropdownMenuProps) {
               key={itemValue}
               value={itemValue}
             >
-              <Icon className="mr-2 size-5" />
+              <Icon className="mr-2" size={16} />
               {label}
             </DropdownMenuRadioItem>
           ))}

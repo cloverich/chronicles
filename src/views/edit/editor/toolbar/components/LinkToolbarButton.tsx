@@ -5,7 +5,7 @@ import {
 } from "@udecode/plate";
 import React from "react";
 
-import { LinkIcon } from "evergreen-ui";
+import { Icons } from "../../../../../components/icons";
 import { ToolbarButton } from "../../components/Toolbar";
 
 export const LinkToolbarButton = withRef<typeof ToolbarButton>((rest, ref) => {
@@ -14,7 +14,7 @@ export const LinkToolbarButton = withRef<typeof ToolbarButton>((rest, ref) => {
 
   return (
     <ToolbarButton ref={ref} tooltip="Link" {...props} {...rest}>
-      <LinkIcon size={16} />
+      <Icons.link size={16} />
     </ToolbarButton>
   );
 });

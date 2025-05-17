@@ -1,9 +1,5 @@
-// NOTE: We also have the evergreen-ui Icons, which is what we use in the app
-// These were added to support latest plate versions, which use Lucide
-// icons in all their components. Will either prefer these throughou,
-// or migrate the plate icons to use evergreens
-// https://platejs.org/docs/components/installation/manual
 import { cva } from "class-variance-authority";
+
 import {
   AlignCenter,
   AlignJustify,
@@ -23,7 +19,6 @@ import {
   Combine,
   ExternalLink,
   Eye,
-  FileCode,
   FilePenLineIcon,
   Folder,
   FolderArchive,
@@ -61,6 +56,7 @@ import {
   Search,
   Settings,
   Smile,
+  SquareCode,
   Star,
   Strikethrough,
   Subscript,
@@ -191,6 +187,7 @@ export const Icons = {
   bug: Bug,
   check: Check,
   chevronDown: ChevronDown,
+  chevronLeft: ChevronLeft,
   "chevron-left": ChevronLeft,
   chevronUp: ChevronUp,
   chevronRight: ChevronRight,
@@ -198,7 +195,7 @@ export const Icons = {
   clear: X,
   close: X,
   code: Code2,
-  codeblock: FileCode,
+  codeblock: SquareCode,
   color: Baseline,
   column: RectangleVertical,
   combine: Combine,
@@ -230,6 +227,7 @@ export const Icons = {
   outdent: Outdent,
   paragraph: Pilcrow,
   "panel-right": PanelRight,
+  panelRight: PanelRight,
   refresh: RotateCcw,
   row: RectangleHorizontal,
   search: Search,
