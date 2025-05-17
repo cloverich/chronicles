@@ -4,14 +4,10 @@ import { describe, it } from "mocha";
 import path from "path";
 import yaml from "yaml";
 
+import { dedent } from "../dedent.js";
 import { slateToString, stringToSlate } from "./index.js";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
-import {
-  dedent,
-  dig,
-  parseMarkdown,
-  parseMarkdownForImport,
-} from "./test-utils.js";
+import { dig, parseMarkdown, parseMarkdownForImport } from "./test-utils.js";
 
 // Tests can structure the data this way and use runTests to
 // test the various conversions.
