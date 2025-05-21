@@ -61,7 +61,12 @@ export const theme = {
     },
     fontFamily: {
       sans: ["var(--font-sans)", ...fontFamily.sans],
+      serif: ["var(--font-serif)", ...fontFamily.serif],
+      mono: ["var(--font-mono)", ...fontFamily.mono],
+      code: ["var(--font-code)", ...fontFamily.mono],
       heading: ["var(--font-heading)", ...fontFamily.sans],
+      "heading-2": ["var(--font-heading-2)", ...fontFamily.sans],
+      "heading-3": ["var(--font-heading-3)", ...fontFamily.sans],
     },
     keyframes: {
       "accordion-down": {

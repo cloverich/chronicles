@@ -6,7 +6,13 @@
 @layer base {
   :root {
     --font-sans: sans-serif;
-    --font-heading: sans-serif;
+    --font-serif: "IBM Plex Serif", serif;
+    --font-mono: "IBM Plex Mono", monospace;
+    --font-body: "Mona Sans", var(--font-sans);
+    --font-heading: "Hubot Sans", "IBM Plex Mono", sans-serif;
+    --font-heading-2: var(--font-heading);
+    --font-heading-3: var(--font-heading);
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -79,23 +85,42 @@
   }
 }
 
+/**
+ * todo: The next two classes are because in PlateContainer I do not have
+ * access to the custom elements, but they have these slate-* classes.
+ * Eventually, should in-house them, or update plate and / or pass in
+ * element definitions to its plugins - it likely supports them!
+ */
+.slate-bold {
+  font-weight: 600;
+}
+
+.slate-li {
+  /* See List.tsx for the rest of the styles! */
+  margin-bottom: 0.35em;
+}
+
+.slate-code::before,
+.slate-code::after {
+  content: "`";
+  color: hsl(var(--muted-foreground)); /* or use a token */
+}
+
 @layer base {
   * {
+    /* Applies my --border color as border-color to all elements */
     @apply border-border;
   }
   body {
+    /* Applies --background color via background-color to body (bg-background is expanded by tailwind) */
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
   }
 }
 
 /* Remove focus outline from Plate editor; probably more specific way to do this */
 div {
   outline: none;
-}
-
-.container {
-  width: 42.25rem;
-  margin: auto;
 }
 
 /**
@@ -105,14 +130,4 @@ div {
  */
 .content-section > :first-child {
   margin-top: 0;
-}
-
-article {
-  max-width: 42.25rem;
-  /* for <pre> elements */
-  overflow: hidden;
-}
-
-article img {
-  max-width: 64%;
 }
