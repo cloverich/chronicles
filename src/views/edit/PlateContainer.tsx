@@ -123,7 +123,6 @@ export default observer(
     const jstore = useJournals();
     const client = useClient();
     const store = new SearchStore(client, jstore!, () => {}, []);
-    console.log("PlateContainer.render");
 
     const plugins = createPlugins(
       [
