@@ -104,8 +104,8 @@ export const ImageGalleryLightbox = ({
         ))}
         {images.length > 3 && (
           <Button
-            size="sm"
-            className="absolute bottom-0 right-0 border border-black text-sm shadow-md shadow-indigo-400"
+            variant="ghost"
+            className="absolute bottom-0 right-0"
             onClick={() => {
               setCurrent(3);
               setOpen(true);

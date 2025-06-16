@@ -3,31 +3,32 @@ import React from "react";
 import "react-day-picker/dist/style.css";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Alert } from "./components";
-import {
-  ApplicationContext,
-  ApplicationState,
-  useAppLoader,
-} from "./hooks/useApplicationLoader";
-import Layout, { LayoutDummy } from "./layout";
+import ErrorBoundary from "./error";
+import { ApplicationContext, useAppLoader } from "./hooks/useApplicationLoader";
+import Titlebar from "./titlebar/macos";
+import { ThemeWatcher } from "./views/ThemeWatcher";
 import DocumentCreator from "./views/create";
 import Documents from "./views/documents";
 import { SearchProvider } from "./views/documents/SearchProvider";
 import Editor from "./views/edit";
+import * as Base from "./views/layout";
 import Preferences from "./views/preferences";
 
 export default observer(function Container() {
-  const store = useAppLoader();
+  const { loading, loadingErr, applicationStore } = useAppLoader();
 
   // react-hook-hotkeys is a transitive dependency, but cmd+comma is not obviously
   // supported, and package on its way out. Once patched can use hotkeys here.
   // https://github.com/JohannesKlauss/react-hotkeys-hook/issues/1123
   // https://github.com/JohannesKlauss/react-hotkeys-hook/issues/1213
   React.useEffect(() => {
+    if (!applicationStore) return;
+
     const handleKeydown = (event: any) => {
-      if (store.preferences.isOpen) return;
+      if (applicationStore.isPreferencesOpen) return;
 
       if ((event.metaKey || event.ctrlKey) && event.key === ",") {
-        store.preferences.toggle(true);
+        applicationStore.togglePreferences(true);
       }
     };
 
@@ -35,9 +36,9 @@ export default observer(function Container() {
     return () => {
       window.removeEventListener("keydown", handleKeydown);
     };
-  }, []);
+  }, [applicationStore]);
 
-  if (store.loading) {
+  if (loading) {
     return (
       <LayoutDummy>
         <h1>Loading...</h1>
@@ -46,7 +47,7 @@ export default observer(function Container() {
   }
 
   // todo: This loading error is ugly, and not very helpful.
-  if (store.loadingErr) {
+  if (loadingErr || !applicationStore) {
     return (
       <LayoutDummy>
         <Alert.Alert
@@ -55,7 +56,7 @@ export default observer(function Container() {
           className="overflow-x-auto"
         >
           <p>Journals failed to load: </p>
-          <pre>${JSON.stringify(store.loadingErr, null, 2)}</pre>
+          <pre>${JSON.stringify(loadingErr, null, 2)}</pre>
         </Alert.Alert>
       </LayoutDummy>
     );
@@ -64,11 +65,12 @@ export default observer(function Container() {
   // note: store as ApplicationState assumes everything is loaded, and the rest of the
   // app relies on this being true.
   return (
-    <ApplicationContext.Provider value={store as ApplicationState}>
+    <ApplicationContext.Provider value={applicationStore}>
+      <ThemeWatcher preferences={applicationStore.preferences} />
       <Layout>
         <Preferences
-          isOpen={store.preferences.isOpen}
-          onClose={() => store.preferences.toggle(false)}
+          isOpen={applicationStore.isPreferencesOpen}
+          onClose={() => applicationStore.togglePreferences(false)}
         />
         <Routes>
           <Route path="documents" element={<SearchProvider />}>
@@ -82,3 +84,25 @@ export default observer(function Container() {
     </ApplicationContext.Provider>
   );
 });
+
+function LayoutDummy({ children }: any) {
+  return (
+    <ErrorBoundary>
+      <Base.Container>
+        <Titlebar className="pr-16"></Titlebar>
+        <Base.TitlebarSpacer />
+        <Base.ScrollContainer>{children}</Base.ScrollContainer>
+      </Base.Container>
+    </ErrorBoundary>
+  );
+}
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <div className="flex min-h-screen min-w-[480px] flex-col bg-background text-foreground">
+        {children}
+      </div>
+    </ErrorBoundary>
+  );
+}

@@ -2,6 +2,7 @@ import React from "react";
 
 import { ClickableTag as Tag } from "../../../components/TagInput";
 import { useTags } from "../../../hooks/useTags";
+import { Card } from "./Card";
 
 /**
  * List of tags to search by.
@@ -19,7 +20,7 @@ export function TagsList(props: { search: (tag: string) => boolean }) {
   }
 
   return (
-    <div className="mb-4 p-4 shadow-md">
+    <Card>
       <div className="text-md mb-2 flex cursor-pointer items-center font-medium tracking-tight">
         Tags
       </div>
@@ -32,6 +33,6 @@ export function TagsList(props: { search: (tag: string) => boolean }) {
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -23,16 +23,18 @@ export const NoteLinkElement = withRef<typeof PlateElement>(
     }
 
     return (
-      <PlateElement
-        ref={ref}
-        asChild
-        className={cn(
-          "cursor-pointer text-indigo-800 underline decoration-1 underline-offset-1",
-          className,
-        )}
-        {...props}
-      >
-        <a onClick={edit}>{children}</a>
+      <PlateElement ref={ref} asChild {...props}>
+        <>
+          <a
+            onClick={edit}
+            className={cn(
+              "cursor-pointer text-link underline decoration-1 underline-offset-1 hover:text-link-hover",
+              className,
+            )}
+          >
+            {children}
+          </a>
+        </>
       </PlateElement>
     );
   },

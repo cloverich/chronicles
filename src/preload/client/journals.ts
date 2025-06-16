@@ -17,7 +17,7 @@ export class JournalsClient {
   list = async (): Promise<JournalResponse[]> => {
     const journals = await this.knex("journals").select("*").orderBy("name");
 
-    const archived = await this.preferences.get("ARCHIVED_JOURNALS");
+    const archived = await this.preferences.get("archivedJournals");
     for (const j of journals) {
       if (!(j.name in archived)) {
         console.warn(
@@ -45,7 +45,7 @@ export class JournalsClient {
     // index called on initial create, and when syncing (re-building the index)
     // so we need to sync prior archived state, if present.
     // todo: journal.archived state management is shit. Improve it.
-    const archived = await this.preferences.get(`ARCHIVED_JOURNALS`);
+    const archived = await this.preferences.get(`archivedJournals`);
     const existing = journalName in archived;
     let isArchived: boolean;
 

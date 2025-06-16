@@ -66,7 +66,7 @@ export class DocumentsClient {
     }
 
     const filepath = path.join(
-      await this.preferences.get("NOTES_DIR"),
+      await this.preferences.get("notesDir"),
       document.journal,
       `${id}.md`,
     );
@@ -208,7 +208,7 @@ export class DocumentsClient {
           journal: args.journal,
           content,
           frontMatter: args.frontMatter,
-          rootDir: await this.preferences.get("NOTES_DIR"),
+          rootDir: await this.preferences.get("notesDir"),
         }),
         docPath,
       ];
@@ -247,7 +247,7 @@ export class DocumentsClient {
       content,
       journal: args.journal,
       frontMatter: args.frontMatter,
-      rootDir: await this.preferences.get("NOTES_DIR"),
+      rootDir: await this.preferences.get("notesDir"),
     });
   };
 

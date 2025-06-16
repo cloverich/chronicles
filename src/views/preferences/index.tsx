@@ -1,7 +1,6 @@
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { PropsWithChildren, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { PropsWithChildren } from "react";
 import { toast } from "sonner";
 import { Label, Select } from "../../components";
 import { Button } from "../../components/Button";
@@ -14,8 +13,8 @@ import {
 } from "../../components/Dialog";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { usePreferences } from "../../hooks/usePreferences";
 import { SourceType } from "../../preload/client/importer/SourceType";
-import { Preferences } from "../../preload/client/preferences";
 import {
   SKIPPABLE_FILES,
   SKIPPABLE_PREFIXES,
@@ -26,39 +25,16 @@ interface Props {
   onClose: () => void;
 }
 
-function Separator() {
-  return <hr className="my-8 h-px border-0 bg-gray-200 dark:bg-gray-700" />;
-}
-
-function SectionTitle({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div className="mb-4">
-      <h3 className="mb-0 text-lg font-medium">{title}</h3>
-      {sub && <p className="text-sm text-muted-foreground">{sub}</p>}
-    </div>
-  );
-}
-
-function Section(props: PropsWithChildren<any>) {
-  return (
-    <div className="mb-10 mt-4 border-b border-gray-200 pb-4 dark:border-gray-700">
-      {props.children}
-    </div>
-  );
-}
-
-const Preferences = observer((props: Props) => {
+const PreferencesPane = observer((props: Props) => {
   const jstore = useJournals();
+  const client = useClient();
   const [store, _] = React.useState(() =>
     observable({
-      preferences: {} as Preferences,
-      loading: true,
+      loading: false,
       sourceType: SourceType.Other,
     }),
   );
-
-  const client = useClient();
-  const navigate = useNavigate();
+  const prerferences2 = usePreferences();
 
   async function selectNotesRoot() {
     store.loading = true;
@@ -69,8 +45,7 @@ const Preferences = observer((props: Props) => {
         return;
       }
 
-      store.preferences = await client.preferences.all();
-      store.loading = false;
+      // NOTE: Preferences store should auto-magically receive the updated preferences...
       sync();
     } catch (e) {
       store.loading = false;
@@ -122,21 +97,6 @@ const Preferences = observer((props: Props) => {
     toast.success("Cache synced");
   }
 
-  useEffect(() => {
-    async function load() {
-      store.preferences = await client.preferences.all();
-      store.loading = false;
-    }
-
-    load();
-
-    return () => {
-      // todo: Re-implement a single general listener for preferences-updated,
-      // test that the prefernces store can correctly call a cb when preferences are updated
-      // ipcRenderer.removeListener("preferences-updated", load);
-    };
-  }, []);
-
   return (
     <Dialog open={props.isOpen} onOpenChange={props.onClose}>
       <DialogContent>
@@ -147,33 +107,81 @@ const Preferences = observer((props: Props) => {
             <div>
               <Section>
                 <SectionTitle
-                  title="General"
+                  title="Appearance"
+                  sub="Customize the look and feel of Chronicles"
+                />
+
+                <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-sm">
+                  <dt className="text-foreground-strong font-medium">Theme</dt>
+                  <dd className="mb-2 text-xs text-muted-foreground">
+                    <code>Default</code>
+                  </dd>
+                  <dt className="text-foreground-strong font-medium">
+                    <Label.Base htmlFor=":r2g:-form-item">
+                      Appearance
+                    </Label.Base>
+                  </dt>
+                  <dd className="mb-2 text-xs text-muted-foreground">
+                    <Select.Base
+                      value={prerferences2.darkMode}
+                      onValueChange={(selected) =>
+                        (prerferences2.darkMode = selected as
+                          | "light"
+                          | "dark"
+                          | "system")
+                      }
+                    >
+                      <Select.Trigger className="max-w-[150px]">
+                        <Select.Value placeholder="Light / Dark" />
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Item value="light">Light</Select.Item>
+                        <Select.Item value="dark">Dark</Select.Item>
+                        <Select.Item value="system">System</Select.Item>
+                      </Select.Content>
+                    </Select.Base>
+                  </dd>
+                </dl>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="Configuration files"
                   sub="Configuration and database files, and base notes directory"
                 />
-                <dl>
-                  <dt>Settings file</dt>
-                  <dd className="text-xs">
-                    {client.preferences.settingsPath()}
+                <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-sm">
+                  <dt className="text-foreground-strong font-medium">
+                    Settings file
+                  </dt>
+                  <dd className="mb-2 text-xs text-muted-foreground">
+                    <code>{client.preferences.settingsPath()}</code>
                   </dd>
 
-                  <dt>Database file</dt>
-                  <dd className="text-xs">
-                    <code>{store.preferences.DATABASE_URL}</code>
+                  <dt className="text-foreground-strong font-medium">
+                    Database file
+                  </dt>
+                  <dd className="mb-2 text-xs text-muted-foreground">
+                    <code>{prerferences2.databaseUrl}</code>
                   </dd>
-                  <dt>Notes directory</dt>
-                  <dd className="text-xs">
-                    <code>{store.preferences.NOTES_DIR}</code>
+
+                  <dt className="text-foreground-strong font-medium">
+                    Notes directory
+                  </dt>
+                  <dd className="mb-2 text-xs text-muted-foreground">
+                    <code>{prerferences2.notesDir}</code>
                   </dd>
                 </dl>
                 {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
-                <Button
-                  loading={store.loading}
-                  disabled={store.loading}
-                  onClick={selectNotesRoot}
-                  size="sm"
-                >
-                  Select new directory
-                </Button>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={selectNotesRoot}
+                    disabled={store.loading}
+                    loading={store.loading}
+                  >
+                    Change directory
+                  </Button>
+                </div>
               </Section>
               <Section>
                 <SectionTitle
@@ -227,16 +235,18 @@ const Preferences = observer((props: Props) => {
                     </Select.Content>
                   </Select.Base>
                 </div>
-
-                {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
-                <Button
-                  loading={store.loading}
-                  disabled={store.loading}
-                  onClick={importDirectory}
-                  size="sm"
-                >
-                  Import directory
-                </Button>
+                <div className="mt-4 flex justify-end">
+                  {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
+                  <Button
+                    variant="ghost"
+                    loading={store.loading}
+                    disabled={store.loading}
+                    onClick={importDirectory}
+                    size="sm"
+                  >
+                    Import directory
+                  </Button>
+                </div>
               </Section>
               <Section>
                 <SectionTitle
@@ -244,75 +254,83 @@ const Preferences = observer((props: Props) => {
                   sub="Clearing import tables and syncing cache"
                 />
                 <p className="mb-2">
-                  ADVANCED: Re-running import from same location will skip
-                  previously imported files. To fully re-run the import, you can
-                  clear the import tables by clicking below, but this will
-                  result in duplicate files unless the prior imported files are
-                  removed (manually, by you) from root directory. Note ids are
-                  generated and tracked in the import table prior to creating
-                  the files, so these can be used to (manually) link imported
-                  files to their location in Chronicles.
+                  <strong>(Advanced)</strong> Re-running import from same
+                  location will skip previously imported files. To fully re-run
+                  the import, you can clear the import tables by clicking below,
+                  but this will result in duplicate files unless the prior
+                  imported files are removed (<strong>manually, by you</strong>)
+                  from root directory.
                 </p>
-                <Button
-                  variant="destructive"
-                  className="py-4"
-                  size="sm"
-                  onClick={clearImportTable}
-                  disabled={store.loading}
-                >
-                  Clear import table
-                </Button>
+                <p className="mb-2">
+                  Note that ids are generated and tracked in the import table
+                  prior to creating the files, so these can be used to
+                  (manually) link imported files to their location in
+                  Chronicles.
+                </p>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="destructive"
+                    onClick={clearImportTable}
+                    disabled={store.loading}
+                  >
+                    Clear import table
+                  </Button>
+                </div>
               </Section>
               <Section>
                 <SectionTitle
                   title="Sync (Rebuild cache)"
                   sub="Rebuild the cache from the filesystem"
                 />
-                <p>
+                <p className="mb-2">
                   Chronicles builds an index of all documents and journals
-                  (folders) in NOTES_DIR to power its search and general
-                  operation. When the cache is out of sync with the filesystem,
-                  this can cause issues such as missing documents, tags, or
-                  journals.
+                  (folders) in <code>NOTES_DIR</code> to power its search and
+                  general operation. When the cache is out of sync with the
+                  filesystem, this can cause issues such as missing documents,
+                  tags, or journals.
                 </p>
-                <p>
+                <p className="mb-2">
                   "Syncing" the cache will rebuild the index from the
                   filesystem, ensuring that all documents, journals, and tags
                   are correctly indexed. This should be done anytime you make
                   changes to the filesystem outside of the app, including from
-                  another device (if the NOTES_DIR is synced via a cloud
-                  service).
+                  another device (if the <code>NOTES_DIR</code> is synced via a
+                  cloud service).
                 </p>
-                <p>
+                <p className="mb-2">
                   The current Chronicles cache is located at{" "}
-                  {store.preferences.DATABASE_URL}
+                  <code>{prerferences2.databaseUrl}</code>
                 </p>
-                <Button
-                  loading={store.loading}
-                  disabled={store.loading}
-                  onClick={sync}
-                  size="sm"
-                >
-                  Sync folder
-                </Button>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    loading={store.loading}
+                    disabled={store.loading}
+                    onClick={sync}
+                  >
+                    Sync folder
+                  </Button>
+                </div>
               </Section>
               <Section>
                 <SectionTitle title="Development" />
-                <p>
+                <p className="mb-2">
                   Run some tests, mostly around the frontmatter parsing and
                   importing. See output in console.
                 </p>
-                <Button
-                  loading={store.loading}
-                  disabled={store.loading}
-                  size="sm"
-                  onClick={() => {
-                    console.log("Running tests");
-                    client.tests.runTests();
-                  }}
-                >
-                  Run Tests
-                </Button>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    loading={store.loading}
+                    disabled={store.loading}
+                    onClick={() => {
+                      console.log("Running tests");
+                      client.tests.runTests();
+                    }}
+                  >
+                    Run Tests
+                  </Button>
+                </div>
               </Section>
             </div>
           </DialogDescription>
@@ -322,4 +340,25 @@ const Preferences = observer((props: Props) => {
   );
 });
 
-export default Preferences;
+function Separator() {
+  return <hr className="my-8 h-px border-0 bg-gray-200 dark:bg-gray-700" />;
+}
+
+function SectionTitle({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div className="mb-4">
+      <h3 className="mb-0 text-lg font-medium">{title}</h3>
+      {sub && <p className="text-sm text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}
+
+function Section(props: PropsWithChildren<any>) {
+  return (
+    <div className="mb-10 mt-4 border-b border-gray-200 pb-8 dark:border-gray-700">
+      {props.children}
+    </div>
+  );
+}
+
+export default PreferencesPane;

@@ -37,7 +37,7 @@ export class JournalsStore {
 
   // todo: refactor so preferences and this store are always in sync
   private async assertNotDefault(journal: string) {
-    const defaultJournal = await this.client.preferences.get("DEFAULT_JOURNAL");
+    const defaultJournal = await this.client.preferences.get("defaultJournal");
 
     if (journal === defaultJournal) {
       throw new Error(
@@ -50,8 +50,7 @@ export class JournalsStore {
     this.loading = true;
     try {
       this.journals = await this.client.journals.list();
-      this.defaultJournal =
-        await this.client.preferences.get("DEFAULT_JOURNAL");
+      this.defaultJournal = await this.client.preferences.get("defaultJournal");
     } catch (err: any) {
       console.error("Error refreshing journals:", err);
       throw err;

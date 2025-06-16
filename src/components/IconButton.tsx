@@ -15,16 +15,17 @@ const variants = cva(
   {
     variants: {
       variant: {
-        ghost:
-          "hover:border hover:border-slate-300 hover:bg-slate-50 active:bg-slate-50 active:text-indigo-500 active:border-slate-300 border border-transparent",
+        ghost: "hover:bg-accent active:text-muted border border-transparent",
+        // hover:border hover:border-accent-foreground
       },
       size: {
         md: "h-9 px-2 py-1",
+        sm: "h-7 px-2",
       },
     },
     defaultVariants: {
       variant: "ghost",
-      size: "md",
+      size: "sm",
     },
   },
 );

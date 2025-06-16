@@ -516,7 +516,7 @@ export class ImporterClient {
   };
 
   private ensureRoot = async () => {
-    const chroniclesRoot = await this.preferences.get("NOTES_DIR");
+    const chroniclesRoot = await this.preferences.get("notesDir");
 
     // Sanity check this is set first, because I'm hacking a lot of stuff together
     // in tiny increments, many things bound to get mixed up

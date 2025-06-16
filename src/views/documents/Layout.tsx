@@ -19,8 +19,9 @@ interface Props {
 }
 
 export const Layout = observer((props: Props) => {
+  // todo: move journals sidebar open to application state...
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-  const { preferences } = useApplicationState();
+  const appState = useApplicationState();
   const navigate = useNavigate();
   const jstore = useJournals();
 
@@ -57,7 +58,7 @@ export const Layout = observer((props: Props) => {
           variant="ghost"
           icon="settings"
           className="ml-2 drag-none"
-          onClick={() => preferences.toggle(true)}
+          onClick={() => appState.togglePreferences(true)}
           aria-label="Open preferences"
         />
       </Titlebar>
