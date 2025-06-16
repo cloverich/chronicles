@@ -11,12 +11,15 @@ import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
 import Store from "electron-store";
-const settings = new Store({
+import { IPreferences } from "../../hooks/stores/preferences";
+
+// todo: json schema
+const settings = new Store<IPreferences>({
   name: "settings",
 });
 
 // todo: validation, put this somewhere proper
-const db = DB(settings.get("DATABASE_URL") as string);
+const db = DB(settings.get("databaseUrl") as string);
 
 // Added knex for search which required lots of query mix and
 // matching
@@ -25,7 +28,7 @@ const db = DB(settings.get("DATABASE_URL") as string);
 const knex = Knex({
   client: "better-sqlite3", // or 'better-sqlite3'
   connection: {
-    filename: settings.get("DATABASE_URL") as string,
+    filename: settings.get("databaseUrl") as string,
   },
   // https://knexjs.org/guide/query-builder.html#insert
   // don't replace undefined with "DEFAULT" in insert statements; replace

@@ -186,6 +186,8 @@ const width = app.isPackaged ? 800 : 1400;
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
+    backgroundColor: "#121212", // todo: match theme
+    show: false, // hide until ready to avoid flash of white screen
     width,
     height: 600,
 
@@ -202,6 +204,9 @@ function createWindow() {
   });
 
   mainWindow.loadFile("index.html");
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
 
   if (!app.isPackaged) {
     mainWindow.webContents.openDevTools();

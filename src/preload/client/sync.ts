@@ -78,7 +78,7 @@ export class SyncClient {
     this.db.exec("delete from journals");
     // image and note links delete via cascade
 
-    const rootDir = await this.preferences.get("NOTES_DIR");
+    const rootDir = await this.preferences.get("notesDir");
 
     if (!rootDir || typeof rootDir !== "string") {
       throw new Error("No chronicles root directory set");
@@ -154,7 +154,7 @@ export class SyncClient {
     // Ensure default journal exists; attempt to declare one. Otherwise,
     // new documents will default to a journal that does not exist, and fail
     // to create.
-    const defaultJournal = await this.preferences.get("DEFAULT_JOURNAL");
+    const defaultJournal = await this.preferences.get("defaultJournal");
 
     if (!defaultJournal || !(defaultJournal in journals)) {
       console.log("updating default journal", defaultJournal, journals);
@@ -168,7 +168,7 @@ export class SyncClient {
     }
 
     // remove any invalid archived journals
-    const archivedJournals = await this.preferences.get("ARCHIVED_JOURNALS");
+    const archivedJournals = await this.preferences.get("archivedJournals");
     for (const journal of Object.keys(archivedJournals)) {
       if (!(journal in journals)) {
         delete archivedJournals[journal];
@@ -182,7 +182,7 @@ export class SyncClient {
       }
     }
 
-    await this.preferences.set("ARCHIVED_JOURNALS", archivedJournals);
+    await this.preferences.set("archivedJournals", archivedJournals);
 
     const end = performance.now();
     const durationMs = (end - start).toFixed(2);

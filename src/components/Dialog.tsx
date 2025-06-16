@@ -24,6 +24,8 @@ const DialogOverlay = React.forwardRef<
 ));
 
 const defaultStyles = [
+  // base
+  "bg-background text-foreground",
   // positioning
   "fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]",
   // border

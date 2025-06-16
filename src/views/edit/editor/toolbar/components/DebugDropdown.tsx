@@ -45,7 +45,6 @@ export default function DebugDropdown({
           isDropdown
           pressed={openState.open}
           tooltip="Change editor debug mode"
-          size="xs"
         >
           <Icons.more className="ml-1 h-4 w-4" />
         </ToolbarButton>

@@ -20,6 +20,8 @@ export const theme = {
       ring: "hsl(var(--ring))",
       background: "hsl(var(--background))",
       foreground: "hsl(var(--foreground))",
+      link: "hsl(var(--link))",
+      "link-hover": "hsl(var(--link-hover))",
       primary: {
         DEFAULT: "hsl(var(--primary))",
         foreground: "hsl(var(--primary-foreground))",
@@ -36,9 +38,21 @@ export const theme = {
         DEFAULT: "hsl(var(--muted))",
         foreground: "hsl(var(--muted-foreground))",
       },
+      "accent-muted": "hsl(var(--accent-muted))",
       accent: {
         DEFAULT: "hsl(var(--accent))",
         foreground: "hsl(var(--accent-foreground))",
+        secondary: "hsl(var(--accent-secondary))",
+        "secondary-foreground": "hsl(var(--accent-secondary-foreground))",
+        tertiary: "hsl(var(--accent-tertiary))",
+        "tertiary-foreground": "hsl(var(--accent-tertiary-foreground))",
+      },
+      tagg: {
+        // Tailwind or a plugin is clobbering "tag", so use "tagg" until I figure that out...
+        DEFAULT: "hsl(var(--tag))",
+        foreground: "hsl(var(--tag-foreground))",
+        muted: "hsl(var(--tag-muted))",
+        "muted-foreground": "hsl(var(--tag-muted-foreground))",
       },
       popover: {
         DEFAULT: "hsl(var(--popover))",

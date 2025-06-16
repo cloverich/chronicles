@@ -46,7 +46,7 @@ export default function Welcome({ onComplete }: { onComplete: () => void }) {
               <p>
                 The application is still in development, you can{" "}
                 <a
-                  className="font-medium text-primary underline underline-offset-4"
+                  className="font-medium underline underline-offset-4"
                   href="https://github.com/cloverich/chronicles/releases"
                 >
                   follow releases
@@ -54,7 +54,7 @@ export default function Welcome({ onComplete }: { onComplete: () => void }) {
                 &nbsp; for updates. If you have feedback, feel free to open an
                 issue on the Github repository - but check&nbsp;
                 <a
-                  className="font-medium text-primary underline underline-offset-4"
+                  className="font-medium underline underline-offset-4"
                   href="https://github.com/cloverich/chronicles/issues/160"
                 >
                   the roadmap

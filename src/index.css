@@ -14,36 +14,74 @@
     --font-heading-3: var(--font-heading);
 
     --background: 0 0% 100%;
+    --background-hint: hsl(0 0% 100%);
     --foreground: 222.2 84% 4.9%;
+    --foreground-hint: hsl(222.2 84% 4.9%);
 
     --muted: 210 40% 96.1%;
+    --muted-hint: hsl(210 40% 96.1%);
     --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground-hint: hsl(215.4 16.3% 46.9%);
 
     --tooltip: 222.2 84% 4.9%;
+    --tooltip-hint: hsl(222.2 84% 4.9%);
     --tooltip-foreground: 0 0% 100%;
+    --tooltip-foreground-hint: hsl(0 0% 100%);
 
     --popover: 0 0% 100%;
+    --popover-hint: hsl(0 0% 100%);
     --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground-hint: hsl(222.2 84% 4.9%);
 
     --card: 0 0% 100%;
+    --card-hint: hsl(0 0% 100%);
     --card-foreground: 222.2 84% 4.9%;
+    --card-foreground-hint: hsl(222.2 84% 4.9%);
 
     --border: 214.3 31.8% 91.4%;
+    --border-hint: hsl(214.3 31.8% 91.4%);
     --input: 214.3 31.8% 91.4%;
+    --input-hint: hsl(214.3 31.8% 91.4%);
 
     --primary: 222.2 47.4% 11.2%;
+    --primary-hint: hsl(222.2 47.4% 11.2%);
     --primary-foreground: 210 40% 98%;
+    --primary-foreground-hint: hsl(210 40% 98%);
 
     --secondary: 210 40% 96.1%;
+    --secondary-hint: hsl(210 40% 96.1%);
     --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-foreground-hint: hsl(222.2 47.4% 11.2%);
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 173, 80%, 40%;
+    --accent-hint: hsl(173, 80%, 40%);
+    --accent-foreground: 180, 1%, 19%;
+    --accent-foreground-hint: hsl(180, 1%, 19%);
+    --accent-secondary: 173, 80%, 40%;
+    --accent-secondary-hint: hsl(173, 80%, 40%);
+    --accent-secondary-foreground: 168, 83%, 89%;
+    --accent-secondary-foreground-hint: hsl(168, 83%, 89%);
+    --accent-tertiary: 173, 80%, 40%;
+    --accent-tertiary-hint: hsl(173, 80%, 40%);
+    --accent-tertiary-foreground: 168, 83%, 89%;
+    --accent-tertiary-foreground-hint: hsl(168, 83%, 89%);
 
     --destructive: 0 72.22% 50.59%;
+    --destructive-hint: hsl(0 72.22% 50.59%);
     --destructive-foreground: 210 40% 98%;
+    --destructive-foreground-hint: hsl(210 40% 98%);
+
+    --tag: 257, 8%, 83%;
+    --tag-hint: hsl(257, 8%, 83%);
+    --tag-foreground: 210, 3%, 15%;
+    --tag-foreground-hint: hsl(210, 3%, 15%);
+    --tag-secondary: 217.2 32.6% 17.5%;
+    --tag-secondary-hint: hsl(217.2 32.6% 17.5%);
+    --tag-secondary-foreground: 210 40% 98%;
+    --tag-secondary-foreground-hint: hsl(210 40% 98%);
 
     --ring: 215 20.2% 65.1%;
+    --ring-hint: hsl(215 20.2% 65.1%);
 
     --radius: 0.5rem;
     /* The MacOS titlebar takes up this space, other components should push below it */
@@ -52,37 +90,91 @@
 
   .dark {
     --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background-hint: hsl(222.2 84% 4.9%);
+    --foreground: 254 35% 78%;
+    --foreground-hint: hsl(254, 35%, 78%);
 
-    --muted: 217.2 32.6% 17.5%;
+    /* Decrease hue, increase saturation, reduce lightness */
+    /* Increasing lightness works too, but I think this looks better */
+    --foreground-strong: 224 100% 72%;
+    --foreground-strong-hint: hsl(224 100% 72%);
+
+    /* Similar to strong, but lighter */
+    --link: 224 100% 78%;
+    --link-hint: hsl(224, 100%, 78%);
+    --link-hover: 224 100% 72%;
+    --link-hover-hint: hsl(224 100% 72%);
+
+    --muted: 217.2 32.6% 20%;
+    --muted-hint: hsl(217.2 32.6% 20%);
     --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground-hint: hsl(215 20.2% 65.1%);
+    --accent-muted: 224 40% 40%; /* lower saturation + lightness */
+    --accent-muted-hint: hsl(224 40% 40%);
 
     --tooltip: 222.2 84% 4.9%;
+    --tooltip-hint: hsl(222.2 84% 4.9%);
     --tooltip-foreground: 210 40% 98%;
+    --tooltip-foreground-hint: hsl(210 40% 98%);
 
     --popover: 222.2 84% 4.9%;
+    --popover-hint: hsl(222.2 84% 4.9%);
     --popover-foreground: 210 40% 98%;
+    --popover-foreground-hint: hsl(210 40% 98%);
 
     --card: 222.2 84% 4.9%;
+    --card-hint: hsl(222.2 84% 4.9%);
     --card-foreground: 210 40% 98%;
+    --card-foreground-hint: hsl(210 40% 98%);
 
     --border: 217.2 32.6% 17.5%;
+    --border-hint: hsl(217.2 32.6% 17.5%);
     --input: 217.2 32.6% 17.5%;
+    --input-hint: hsl(217.2 32.6% 17.5%);
 
     --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-hint: hsl(210 40% 98%);
+    --primary-foreground: 254, 35%, 78%;
+    --primary-foreground-hint: hsl(254, 35%, 78%);
 
     --secondary: 217.2 32.6% 17.5%;
+    --secondary-hint: hsl(217.2 32.6% 17.5%);
     --secondary-foreground: 210 40% 98%;
+    --secondary-foreground-hint: hsl(210 40% 98%);
+    --accent: 173, 80%, 40%;
+    --accent-hint: hsl(173, 80%, 40%);
+    --accent-foreground: 168, 83%, 89%;
+    --accent-foreground-hint: hsl(168, 83%, 89%);
+    --accent-secondary: 173, 80%, 40%;
+    --accent-secondary-hint: hsl(173, 80%, 40%);
+    --accent-secondary-foreground: 168, 83%, 89%;
+    --accent-secondary-foreground-hint: hsl(168, 83%, 89%);
+    --accent-tertiary: 173, 80%, 40%;
+    --accent-tertiary-hint: hsl(173, 80%, 40%);
+    --accent-tertiary-foreground: 168, 83%, 89%;
+    --accent-tertiary-foreground-hint: hsl(168, 83%, 89%);
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --destructive: 350 70% 45%; /* deep crimson / blood red */
+    --destructive-hint: hsl(0 62.8% 30.6%);
+    --destructive-foreground: 0 80% 90%; /* soft warm light red-pink */
+    --destructive-foreground-hint: hsl(0 85.7% 97.3%);
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
+    --tag: 234, 35%, 44%;
+    --tag-hint: hsl(234, 35%, 44%);
+    --tag-foreground: 210 40% 98%;
+    --tag-foreground-hint: hsl(210 40% 98%);
+    --tag-secondary: 217.2 32.6% 17.5%;
+    --tag-secondary-hint: hsl(217.2 32.6% 17.5%);
+    --tag-secondary-foreground: 210 40% 98%;
+    --tag-secondary-foreground-hint: hsl(210 40% 98%);
 
     --ring: 217.2 32.6% 17.5%;
   }
+}
+
+::selection {
+  background-color: hsl(var(--accent-secondary));
+  color: hsl(var(--accent-foreground));
 }
 
 /**
@@ -91,8 +183,10 @@
  * Eventually, should in-house them, or update plate and / or pass in
  * element definitions to its plugins - it likely supports them!
  */
-.slate-bold {
+.slate-bold,
+strong {
   font-weight: 600;
+  color: hsl(var(--foreground-strong));
 }
 
 .slate-li {
@@ -100,10 +194,38 @@
   margin-bottom: 0.35em;
 }
 
+.slate-code,
+code {
+  color: hsl(var(--foreground-strong));
+}
+
 .slate-code::before,
 .slate-code::after {
   content: "`";
   color: hsl(var(--muted-foreground)); /* or use a token */
+}
+
+.slate-noteLinkElement::after {
+  content: "⤷"; /* or ∴, ⤷, ▸, ✎, ↗, ⋯ */
+  font-size: 1em;
+  vertical-align: 0.05em;
+}
+
+/* Applies in WebKit-based browsers (Safari, Chrome) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 40%);
+  border-radius: 4px;
+  border: 2px solid transparent; /* Creates inner padding */
+  background-clip: content-box;
 }
 
 @layer base {

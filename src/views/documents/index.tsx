@@ -3,51 +3,28 @@ import React from "react";
 
 import { useNavigate } from "react-router-dom";
 import { Alert } from "../../components";
-import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { usePreferences } from "../../hooks/usePreferences";
 import { DocumentItem } from "./DocumentItem";
 import { Layout } from "./Layout";
 import { SearchStore, useSearchStore } from "./SearchStore";
 import Welcome from "./welcome";
 
-function useOnboarding() {
-  const client = useClient();
-  const [onboarding, setOnboarding] = React.useState<"new" | "complete">("new");
-  const [loading, setLoading] = React.useState(true);
-
-  async function fetchOnboarding() {
-    setOnboarding(await client.preferences.get("ONBOARDING"));
-    setLoading(false);
-  }
-
-  function completeOnboarding() {
-    client.preferences.set("ONBOARDING", "complete");
-    setOnboarding("complete");
-  }
-
-  React.useEffect(() => {
-    fetchOnboarding();
-  }, []);
-
-  return { onboarding, loading, completeOnboarding };
-}
-
 function DocumentsContainer() {
   const journalsStore = useJournals();
   const searchStore = useSearchStore()!;
   const navigate = useNavigate();
-  const {
-    onboarding,
-    loading: onboardingLoading,
-    completeOnboarding,
-  } = useOnboarding();
+  const preferences = usePreferences();
 
   function edit(docId: string) {
     navigate(`/documents/edit/${docId}`);
   }
 
   // loading states
-  if ((searchStore.loading || onboardingLoading) && !searchStore.docs.length) {
+  if (
+    (searchStore.loading || preferences.onboarding === "new") &&
+    !searchStore.docs.length
+  ) {
     return (
       <Layout store={searchStore} empty>
         <Alert.Alert
@@ -61,10 +38,10 @@ function DocumentsContainer() {
     );
   }
 
-  if (onboarding === "new") {
+  if (preferences.onboarding === "new") {
     return (
       <Layout store={searchStore}>
-        <Welcome onComplete={completeOnboarding} />
+        <Welcome onComplete={() => (preferences.onboarding = "complete")} />
       </Layout>
     );
   }

@@ -67,7 +67,7 @@ const TagInput = observer((props: TagInputProps) => {
         ))}
         <input
           ref={inputRef}
-          className="w-0 min-w-8 flex-shrink flex-grow outline-none"
+          className="text-tag-foreground w-0 min-w-8 flex-shrink flex-grow bg-background outline-none"
           type="text"
           placeholder={props.tokens.length ? "" : props.placeholder}
           onKeyDown={(e) => {
@@ -102,18 +102,24 @@ const TagInput = observer((props: TagInputProps) => {
       </div>
       <div className="relative">
         {props.dropdownEnabled && dropdown.open && (
-          <div className="absolute left-0 top-1 z-10 mt-2 w-full border bg-white shadow-md">
+          <div
+            className={cn(
+              "absolute left-0 top-1 z-10 mt-2 w-full",
+              "bg-secondary/80 shadow-md backdrop-blur-sm",
+              "border-b border-l border-r border-accent",
+            )}
+          >
             {availableTags.slice(0, 5).map((tag, idx) => (
               <div
                 key={idx}
-                className="flex cursor-pointer justify-between p-2 hover:bg-gray-200"
+                className="flex cursor-pointer justify-between p-2 hover:bg-accent hover:text-accent-foreground"
                 onMouseDown={(e) => {
                   e.preventDefault(); // Prevent blur
                   inputRef.current!.value = tag; // Set input to tag
                 }}
               >
                 <span>{tag}</span>
-                <span className="text-gray-400">
+                <span className="text-foreground">
                   {tag === "in:" && "Filter to specific journal"}
                   {tag === "tag:" && "Filter to specific tag"}
                   {tag === "title:" && "Filter by title"}
@@ -134,25 +140,25 @@ export default TagInput;
 
 const tagVariants = cva(
   cn(
-    "mr-2 flex flex-shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border border-slate-800 bg-violet-200 px-1 py-0.5 text-xs text-slate-600",
+    "mr-2 flex flex-shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border px-1 py-0.5 text-xs ",
   ),
   {
     variants: {
       variant: {
-        default: "",
+        default: "bg-tagg text-tagg-foreground",
         // todo: bg-accent just happens to be muted rn; in the future
         // likely need a bg-accent-muted or similar
-        muted: "border-default bg-accent",
+        muted: "border-default bg-muted text-muted-foreground",
       },
       size: {
-        default: "h-10 px-4 py-2",
+        default: "", //"h-10 px-4 py-2",
         xs: "py-0 px-0.5 text-xs",
         sm: "h-7 px-2",
       },
-      defaultVariants: {
-        variant: "default",
-        size: "default",
-      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
     },
   },
 );
@@ -205,7 +211,7 @@ const CloseableTag = ({ remove, children, ...rest }: PClosableTag) => {
       <span className="flex-shrink overflow-hidden text-ellipsis">
         {children}
       </span>
-      <button className="text-grey-400 ml-1 flex-shrink-0" onClick={remove}>
+      <button className="ml-1 flex-shrink-0" onClick={remove}>
         ×
       </button>
     </Tag>

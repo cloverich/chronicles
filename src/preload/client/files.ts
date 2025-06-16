@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { Files } from "../files";
 const { readFile, writeFile, access, stat } = fs.promises;
 
+import { IPreferences } from "../../hooks/stores/preferences";
 import { createId } from "./util";
 
 interface UploadResponse {
@@ -59,7 +60,7 @@ const dataURLToBufferAndExtension = (dataUrl: string) => {
 export type IFilesClient = FilesClient;
 
 export class FilesClient {
-  constructor(private settings: Store) {}
+  constructor(private settings: Store<IPreferences>) {}
 
   /**
    * Upload a file dropped onto the editor.
@@ -67,7 +68,7 @@ export class FilesClient {
    * @returns the chronicles prefixed filename
    */
   uploadImageBytes = async (arrayBuffer: ArrayBuffer, name = "upload.png") => {
-    const chronRoot = (await this.settings.get("NOTES_DIR")) as string;
+    const chronRoot = (await this.settings.get("notesDir")) as string;
     const dir = path.join(chronRoot, "_attachments");
     await this.ensureDir(dir);
 
@@ -106,7 +107,7 @@ export class FilesClient {
     // decode. Or, use the base64 version to display image immediately, while this routine
     // "uploads" it to the attachments dir. Lastly, could also put an empty placeholder to avoid the base64,
     // still give upload progress feedback to user, while overall improving performance.
-    const chronRoot = (await this.settings.get("NOTES_DIR")) as string;
+    const chronRoot = (await this.settings.get("notesDir")) as string;
     const dir = path.join(chronRoot, "_attachments");
     await this.ensureDir(dir);
 
@@ -135,7 +136,7 @@ export class FilesClient {
   };
 
   uploadFile = async (file: File): Promise<UploadResponse> => {
-    const chronRoot = (await this.settings.get("NOTES_DIR")) as string;
+    const chronRoot = (await this.settings.get("notesDir")) as string;
     const dir = path.join(chronRoot, "_attachments");
 
     const ext = path.parse(file.name).ext;
@@ -185,7 +186,7 @@ export class FilesClient {
   };
 
   renameFolder = async (oldName: string, newName: string) => {
-    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const baseDir = this.settings.get("notesDir") as string;
     const oldPath = path.join(baseDir, oldName);
     const newPath = path.join(baseDir, newName);
 
@@ -193,20 +194,20 @@ export class FilesClient {
   };
 
   createFolder = async (name: string) => {
-    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const baseDir = this.settings.get("notesDir") as string;
     const newPath = path.join(baseDir, name);
     await Files.mkdirp(newPath);
   };
 
   removeFolder = async (name: string) => {
-    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const baseDir = this.settings.get("notesDir") as string;
     const newPath = path.join(baseDir, name);
 
     return fs.promises.rmdir(newPath, { recursive: true });
   };
 
   private getSafeDocumentPath = (journal: string, documentId: string) => {
-    const baseDir = this.settings.get("NOTES_DIR") as string;
+    const baseDir = this.settings.get("notesDir") as string;
 
     const journalPath = path.join(baseDir, journal);
     const docPath = path.join(journalPath, `${documentId}.md`);

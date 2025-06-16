@@ -73,7 +73,7 @@ const FrontMatter = observer(
       return (
         <D.DropdownMenu modal={false} {...journalSelectorOpenState}>
           <D.DropdownMenuTrigger asChild>
-            <span className="cursor-pointer border-b border-slate-500">
+            <span className="cursor-pointer border-b border-accent">
               {getName(document.journal)}
             </span>
           </D.DropdownMenuTrigger>
@@ -96,7 +96,7 @@ const FrontMatter = observer(
       return (
         <Popover.Popover {...datePickerOpenState}>
           <Popover.PopoverTrigger>
-            <span className="cursor-pointer border-b border-slate-500">
+            <span className="cursor-pointer border-b border-accent">
               {document.createdAt.slice(0, 10)}
             </span>
           </Popover.PopoverTrigger>
@@ -122,15 +122,15 @@ const FrontMatter = observer(
             type="text"
             name="title"
             ref={onInputRendered}
-            className="w-full border-none font-heading text-2xl font-medium focus:outline-none"
+            className="w-full border-none bg-background font-heading text-2xl font-medium text-foreground focus:outline-none"
             onChange={(e: any) => (document.title = e.target.value)}
-            value={document.title || ""} // OR '' prevents react complaining about uncontrolled component
+            value={document.title || ""}
             placeholder="Untitled document"
           />
         </div>
 
         {/* Date / Journal dropdown */}
-        <div className="mb-4 flex justify-start pl-0.5 text-xs">
+        <div className="mb-4 flex justify-start pl-0.5 font-mono text-xs">
           {datePicker()}
           &nbsp;in&nbsp;
           {journalPicker()}

@@ -19,7 +19,9 @@ import React from "react";
  */
 export const Container: React.FC<ClickableDivProps> = ({ children }) => {
   return (
-    <div className="flex h-screen flex-col overflow-hidden">{children}</div>
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      {children}
+    </div>
   );
 };
 

@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "../../../components/Sidesheet";
 import { SearchStore } from "../SearchStore";
+import { Card } from "./Card";
 import { JournalCreateForm, JournalItem } from "./JournalItem";
 import { TagsList } from "./TagsList";
 import { SidebarStore, useSidebarStore } from "./store";
@@ -60,10 +61,10 @@ export default observer(function JournalSelectionSidebar(props: SidebarProps) {
 
 const InnerContent = observer(({ store }: { store: SidebarStore }) => {
   return (
-    <div className="mt-6">
-      <div className="mb-4 border p-4 shadow-md">
+    <div className="mt-6 text-secondary-foreground">
+      <Card>
         <div>
-          <div className="text-md mb-2 flex cursor-pointer items-center font-medium tracking-tight">
+          <div className="mb-2 flex cursor-pointer items-center font-heading tracking-tight">
             Active Journals
             <IconButton
               icon="add"
@@ -96,9 +97,9 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
             );
           })}
         </ul>
-      </div>
+      </Card>
 
-      <div className="mb-4 p-4 shadow-md">
+      <Card>
         <Collapse heading="Archived Journals">
           <ul className="ml-0 text-sm">
             {store.journalStore.archived.map((j) => {
@@ -116,7 +117,7 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
             })}
           </ul>
         </Collapse>
-      </div>
+      </Card>
       <TagsList search={store.searchTag} />
     </div>
   );

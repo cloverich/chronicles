@@ -41,7 +41,7 @@ const toolbarButtonVariants = cva(
         default:
           "hover:bg-slate-50 hover:border-slate-400 hover:border hover:text-accent-foreground aria-checked:text-accent-foreground ", //border-1  border-transparent bg-transparent
         outline:
-          "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
+          "bg-transparent hover:bg-accent hover:text-accent-foreground hover:aria-checked:text-accent-foreground aria-checked:text-accent",
       },
       size: {
         default: "h-7 p-1.5",
@@ -52,7 +52,7 @@ const toolbarButtonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "outline",
       size: "sm",
     },
   },

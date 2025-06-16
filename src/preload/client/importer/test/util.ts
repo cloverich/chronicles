@@ -6,6 +6,7 @@ import KnexConstructor, { Knex } from "knex";
 import { tmpdir } from "os";
 import path from "path";
 import util from "util";
+import { IPreferences } from "../../../../hooks/stores/preferences";
 import { Files } from "../../../files";
 import { DocumentsClient } from "../../documents";
 import { FilesClient } from "../../files";
@@ -119,7 +120,7 @@ export const generateBinaryFileStub = async ({
 // create a client with a temp database, settings, and notes directory
 // for integration testing
 export async function setup(): Promise<ISetupResponse> {
-  const store = new Store({
+  const store = new Store<IPreferences>({
     name: "test",
   });
   store.clear();
@@ -133,7 +134,7 @@ export async function setup(): Promise<ISetupResponse> {
   // Ensure the notes notesDirdirectory exists
   Files.mkdirp(notesDir);
 
-  store.set("NOTES_DIR", notesDir);
+  store.set("notesDir", notesDir);
 
   const { success, error } = await ipcRenderer.invoke("setup-database", dbUrl);
 

@@ -63,7 +63,7 @@ export async function runTests() {
 // rudiemntary tests for importing from an exported Notion directory
 async function testNotion(client: Client, testdir: string, knex: Knex) {
   await test("preferences is reset to defaults before starting", async () => {
-    const archivedStates = await client.preferences.get("ARCHIVED_JOURNALS");
+    const archivedStates = await client.preferences.get("archivedJournals");
     assert.deepEqual(archivedStates, {});
   });
 
@@ -98,7 +98,7 @@ async function testNotion(client: Client, testdir: string, knex: Knex) {
   });
 
   await test("it creates archived entries for each journal", async () => {
-    const archivedStates = await client.preferences.get("ARCHIVED_JOURNALS");
+    const archivedStates = await client.preferences.get("archivedJournals");
     assert.deepEqual(archivedStates, {
       Documents: false,
       notion: false,

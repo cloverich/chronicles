@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useSearchParams } from "react-router-dom";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
-import { LayoutDummy } from "../../layout";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 
 // Sets up document search and its context
@@ -35,11 +34,7 @@ export function SearchProvider() {
   }, [setParams]);
 
   if (!searchStore) {
-    return (
-      <React.Fragment>
-        <LayoutDummy />;
-      </React.Fragment>
-    );
+    return <React.Fragment></React.Fragment>;
   }
 
   return (
