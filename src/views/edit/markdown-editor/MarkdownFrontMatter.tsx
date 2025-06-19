@@ -22,7 +22,7 @@ export const MarkdownFrontMatter = observer(
     }
 
     return (
-      <div className="mb-6 rounded-sm border border-gray-200 bg-gray-50 p-4">
+      <div className="mb-6 rounded-sm border border-border bg-muted p-4">
         <h2 className="mb-2 font-medium">Document Metadata</h2>
         <div className="grid grid-cols-2 gap-2">
           <div>
