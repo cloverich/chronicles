@@ -75,7 +75,7 @@ const MarkdownEditor = observer(
 
             <textarea
               placeholder="Write your markdown here..."
-              className="flex w-full flex-grow bg-white font-mono text-sm focus:outline-none"
+              className="flex w-full flex-grow bg-background font-mono text-sm focus:outline-none"
               value={markdownContent}
               onChange={handleMarkdownChange}
               spellCheck="true"
