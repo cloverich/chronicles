@@ -97,7 +97,6 @@ export class DocumentsClient {
   // load a document + parse frontmatter from a file
   loadDoc = async (path: string) => {
     // todo: validate path is in notes dir
-    // const rootDir = await this.preferences.get("NOTES_DIR");
     // todo: sha comparison
     const contents = await Files.read(path);
     const stats = await fs.promises.stat(path);

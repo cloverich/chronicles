@@ -83,21 +83,29 @@ function validateChroniclesUrl(chroniclesUrl) {
   // NOTE: UI should also validate this, to tell user how to fix (if it comes up)
   if (!chroniclesUrl?.startsWith("chronicles://../_attachments")) {
     console.warn(
-      "chronicles:// file handler blocking access to file outside of _attachments directory",
+      "[validateChroniclesUrl]: chronicles:// file handler blocking access to file outside of _attachments directory",
     );
     return null;
   }
 
   // strip chronicles:// - so we can treat as a file path
-  // strip ../ - we prepend the root directory (NOTES_DIR) to make absolute path
+  // strip ../ - we prepend the root directory (notesDir) to make absolute path
   const url = decodeURI(chroniclesUrl.slice("chronicles://../".length));
-  const baseDir = path.join(settings.get("NOTES_DIR"));
+  const notesDir = settings.get("notesDir");
+  if (!notesDir) {
+    console.error(
+      "[validateChroniclesUrl]: notesDir is not set - unable to load image",
+    );
+    return null;
+  }
+
+  const baseDir = path.join(notesDir);
   const absPath = path.join(baseDir, url);
   const normalizedPath = path.normalize(absPath);
 
   if (!isPathWithinDirectory(normalizedPath, baseDir)) {
     console.warn(
-      "chronicles:// file handler blocked access to file outside of user files directory:",
+      "[validateChroniclesUrl]: chronicles:// file handler blocked access to file outside of user files directory:",
       normalizedPath,
     );
 
@@ -106,9 +114,9 @@ function validateChroniclesUrl(chroniclesUrl) {
 
   if (!fs.existsSync(normalizedPath)) {
     console.warn(
-      "chronicles:// file handler could not find file:",
+      "[validateChroniclesUrl]: chronicles:// file handler could not find file:",
       normalizedPath,
-      "Maybe you need to set the USER_FILES or update broken file links?",
+      "[validateChroniclesUrl]: Maybe you need to set the notesDir or update broken file links?",
     );
 
     return null;
@@ -269,7 +277,7 @@ app.on("activate", () => {
 });
 
 // When the database was the source of truth, this was used to ease testing and make it
-// configurable for users. Now that the database is a cache over the source of truth (NOTES_DIR),
+// configurable for users. Now that the database is a cache over the source of truth (notesDir),
 // this is not needed for testing. But eventually we likely allow configuring where this cache is stored
 // so leaving for now. See preferences in UI.
 // ipcMain.on("select-database-file", async (event, arg) => {
@@ -340,12 +348,12 @@ ipcMain.on("select-directory", async (event, arg) => {
     ensureDir(filepath);
   } catch (err) {
     console.error(
-      `Error accessing directory ${filepath}; canceling update to NOTES_DIR`,
+      `Error accessing directory ${filepath}; canceling update to notesDir`,
       err,
     );
     event.reply("directory-selected", {
       value: null,
-      error: `Error accessing directory ${filepath}; canceling update to NOTES_DIR`,
+      error: `Error accessing directory ${filepath}; canceling update to notesDir`,
     });
     return;
   }

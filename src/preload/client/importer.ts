@@ -263,7 +263,7 @@ export class ImporterClient {
       const stagedNote: StagedNote = {
         importerId,
         chroniclesId: chroniclesId,
-        // hmm... what am I going to do with this? Should it be absolute to NOTES_DIR?
+        // hmm... what am I going to do with this? Should it be absolute to notesDir?
         chroniclesPath: `${path.join(journalName, chroniclesId)}.md`,
         sourcePath: file.path,
         content: body,
