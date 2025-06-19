@@ -114,8 +114,8 @@ export const MediaWrapper = ({
           </Alert>
         </div>
       );
-    case "valid":
     case "loading": // todo: something fancier
+    case "valid":
       return (
         <MediaComponent
           url={url}

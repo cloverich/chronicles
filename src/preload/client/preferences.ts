@@ -125,7 +125,7 @@ export class PreferencesClient {
           } else if (!arg.value) {
             resolve({ value: undefined });
           } else {
-            this.set("NOTES_DIR", arg.value);
+            this.set("notesDir", arg.value);
             resolve(arg.value);
           }
         });

@@ -284,7 +284,7 @@ const PreferencesPane = observer((props: Props) => {
                 />
                 <p className="mb-2">
                   Chronicles builds an index of all documents and journals
-                  (folders) in <code>NOTES_DIR</code> to power its search and
+                  (folders) in <code>notesDir</code> to power its search and
                   general operation. When the cache is out of sync with the
                   filesystem, this can cause issues such as missing documents,
                   tags, or journals.
@@ -294,7 +294,7 @@ const PreferencesPane = observer((props: Props) => {
                   filesystem, ensuring that all documents, journals, and tags
                   are correctly indexed. This should be done anytime you make
                   changes to the filesystem outside of the app, including from
-                  another device (if the <code>NOTES_DIR</code> is synced via a
+                  another device (if the <code>notesDir</code> is synced via a
                   cloud service).
                 </p>
                 <p className="mb-2">
