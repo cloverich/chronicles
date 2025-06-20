@@ -155,9 +155,9 @@ const PreferencesPane = observer((props: Props) => {
                     <div className="space-y-4">
                       <FontSelector
                         label="Heading"
-                        description="Hubot Sans - Main headings and titles"
+                        description="Hubot Sans (bundled) - Main headings and titles"
                         value={
-                          preferences.fonts?.heading || "Hubot Sans, sans-serif"
+                          preferences.fonts?.heading || "Hubot Sans (bundled)"
                         }
                         onChange={(font) => {
                           preferences.fonts.heading = font;
@@ -165,19 +165,17 @@ const PreferencesPane = observer((props: Props) => {
                       />
                       <FontSelector
                         label="Body"
-                        description="Mona Sans - Interface and content text"
-                        value={
-                          preferences.fonts?.body || "Mona Sans, sans-serif"
-                        }
+                        description="Mona Sans (bundled) - Interface and content text"
+                        value={preferences.fonts?.body || "Mona Sans (bundled)"}
                         onChange={(font) => {
                           preferences.fonts.body = font;
                         }}
                       />
                       <FontSelector
                         label="Mono"
-                        description="IBM Plex Mono - Code blocks and dates"
+                        description="IBM Plex Mono (bundled) - Code blocks and dates"
                         value={
-                          preferences.fonts?.mono || "IBM Plex Mono, monospace"
+                          preferences.fonts?.mono || "IBM Plex Mono (bundled)"
                         }
                         onChange={(font) => {
                           preferences.fonts.mono = font;
@@ -185,10 +183,9 @@ const PreferencesPane = observer((props: Props) => {
                       />
                       <FontSelector
                         label="System Body"
-                        description="Mona Sans - Interface elements, sidebar, preferences"
+                        description="Mona Sans (bundled) - Interface elements, sidebar, preferences"
                         value={
-                          preferences.fonts?.systemBody ||
-                          "Mona Sans, sans-serif"
+                          preferences.fonts?.systemBody || "Mona Sans (bundled)"
                         }
                         onChange={(font) => {
                           preferences.fonts.systemBody = font;
@@ -196,10 +193,10 @@ const PreferencesPane = observer((props: Props) => {
                       />
                       <FontSelector
                         label="System Heading"
-                        description="Hubot Sans - Interface section titles and headers"
+                        description="Hubot Sans (bundled) - Interface section titles and headers"
                         value={
                           preferences.fonts?.systemHeading ||
-                          "Hubot Sans, sans-serif"
+                          "Hubot Sans (bundled)"
                         }
                         onChange={(font) => {
                           preferences.fonts.systemHeading = font;
@@ -460,6 +457,12 @@ function Section(props: PropsWithChildren<any>) {
 }
 
 const BASE_FONT_OPTIONS = [
+  "sans-serif",
+  "serif",
+  "monospace",
+  "Hubot Sans (bundled)",
+  "Mona Sans (bundled)",
+  "IBM Plex Mono (bundled)",
   "Arial, sans-serif",
   "Helvetica, sans-serif",
   "Times New Roman, serif",
@@ -478,12 +481,24 @@ const BASE_FONT_OPTIONS = [
   "Menlo, monospace",
   "Fira Code, monospace",
   "Source Code Pro, monospace",
-  "Hubot Sans, sans-serif",
-  "Mona Sans, sans-serif",
-  "IBM Plex Mono, monospace",
 ];
 
 const SPECIFIC_FONT_OPTIONS = ["Default (Heading)", ...BASE_FONT_OPTIONS];
+
+// Map display names to actual font stacks
+const FONT_STACK_MAP: Record<string, string> = {
+  "sans-serif":
+    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  serif: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+  monospace:
+    'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
+  "Hubot Sans (bundled)":
+    '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  "Mona Sans (bundled)":
+    '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  "IBM Plex Mono (bundled)":
+    '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
+};
 
 function FontSelector({
   label,
@@ -500,13 +515,25 @@ function FontSelector({
 }) {
   const options = isSpecific ? SPECIFIC_FONT_OPTIONS : BASE_FONT_OPTIONS;
 
+  // Convert actual font stack back to display name for the UI
+  const displayValue =
+    Object.entries(FONT_STACK_MAP).find(([_, stack]) => stack === value)?.[0] ||
+    value;
+
+  const handleChange = (selectedDisplayName: string) => {
+    // Convert display name to actual font stack
+    const actualFontStack =
+      FONT_STACK_MAP[selectedDisplayName] || selectedDisplayName;
+    onChange(actualFontStack);
+  };
+
   return (
     <div>
       <div className="mb-2">
         <Label.Base className="text-sm font-medium">{label}</Label.Base>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <Select.Base value={value} onValueChange={onChange}>
+      <Select.Base value={displayValue} onValueChange={handleChange}>
         <Select.Trigger className="max-w-[250px]">
           <Select.Value />
         </Select.Trigger>
@@ -516,7 +543,9 @@ function FontSelector({
               key={font}
               value={font}
               style={{
-                fontFamily: font.startsWith("Default") ? "inherit" : font,
+                fontFamily: font.startsWith("Default")
+                  ? "inherit"
+                  : FONT_STACK_MAP[font] || font,
               }}
             >
               {font}
