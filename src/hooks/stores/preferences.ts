@@ -9,6 +9,15 @@ export interface IPreferences {
   settingsDir: string;
   onboarding: "new" | "complete";
   darkMode: "light" | "dark" | "system";
+  fonts?: {
+    heading1?: string;
+    heading2?: string;
+    heading3?: string;
+    systemBody?: string;
+    systemHeading?: string;
+    contentBody?: string;
+    code?: string;
+  };
 }
 
 export class Preferences implements IPreferences {
@@ -31,6 +40,16 @@ export class Preferences implements IPreferences {
   onboarding!: "new" | "complete";
   @observable
   darkMode!: "light" | "dark" | "system";
+  @observable
+  fonts?: {
+    heading1?: string;
+    heading2?: string;
+    heading3?: string;
+    systemBody?: string;
+    systemHeading?: string;
+    contentBody?: string;
+    code?: string;
+  };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {
     Object.assign(this, prefs);
@@ -46,6 +65,7 @@ export class Preferences implements IPreferences {
         settingsDir: this.settingsDir,
         onboarding: this.onboarding,
         darkMode: this.darkMode,
+        fonts: this.fonts,
       }),
       (prefs: IPreferences) => {
         let toWrite: Partial<IPreferences> = {};

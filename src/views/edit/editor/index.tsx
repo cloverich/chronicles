@@ -78,7 +78,7 @@ const Editor = ({
 
             <div className="flex flex-grow pt-6" onClick={focusEditor}>
               {/* w-full ensures when content is empty, it has width, otherwise the cursor will be invisible */}
-              <PlateContent className="w-full" />
+              <PlateContent className="w-full font-content-body" />
             </div>
 
             {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}

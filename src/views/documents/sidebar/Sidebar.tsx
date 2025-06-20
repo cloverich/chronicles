@@ -64,7 +64,7 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
     <div className="mt-6 text-secondary-foreground">
       <Card>
         <div>
-          <div className="mb-2 flex cursor-pointer items-center font-heading tracking-tight">
+          <div className="mb-2 flex cursor-pointer items-center font-system-heading tracking-tight">
             Active Journals
             <IconButton
               icon="add"

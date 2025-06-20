@@ -81,6 +81,14 @@ export const theme = {
       heading: ["var(--font-heading)", ...fontFamily.sans],
       "heading-2": ["var(--font-heading-2)", ...fontFamily.sans],
       "heading-3": ["var(--font-heading-3)", ...fontFamily.sans],
+
+      // New customizable font classes
+      "heading-1-custom": ["var(--font-heading-1)", ...fontFamily.sans],
+      "heading-2-custom": ["var(--font-heading-2-custom)", ...fontFamily.sans],
+      "heading-3-custom": ["var(--font-heading-3-custom)", ...fontFamily.sans],
+      "system-body": ["var(--font-system-body)", ...fontFamily.sans],
+      "system-heading": ["var(--font-system-heading)", ...fontFamily.sans],
+      "content-body": ["var(--font-content-body)", ...fontFamily.sans],
     },
     keyframes: {
       "accordion-down": {

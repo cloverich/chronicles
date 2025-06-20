@@ -145,6 +145,85 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
+                  title="Fonts"
+                  sub="Customize fonts for different parts of the application"
+                />
+
+                <div className="space-y-4">
+                  <FontSelector
+                    label="Heading 1"
+                    description="Large document titles and main headings"
+                    value={prerferences2.fonts?.heading1 || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.heading1 =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                  <FontSelector
+                    label="Heading 2"
+                    description="Section headings"
+                    value={prerferences2.fonts?.heading2 || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.heading2 =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                  <FontSelector
+                    label="Heading 3"
+                    description="Subsection headings"
+                    value={prerferences2.fonts?.heading3 || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.heading3 =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                  <FontSelector
+                    label="System Body"
+                    description="Interface elements, sidebar, preferences"
+                    value={prerferences2.fonts?.systemBody || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.systemBody =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                  <FontSelector
+                    label="System Headings"
+                    description="Interface section titles and headers"
+                    value={prerferences2.fonts?.systemHeading || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.systemHeading =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                  <FontSelector
+                    label="Body"
+                    description="Document content and editor text"
+                    value={prerferences2.fonts?.contentBody || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.contentBody =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                  <FontSelector
+                    label="Code"
+                    description="Code blocks, monospace text, and dates"
+                    value={prerferences2.fonts?.code || "Default"}
+                    onChange={(font) => {
+                      if (!prerferences2.fonts) prerferences2.fonts = {};
+                      prerferences2.fonts.code =
+                        font === "Default" ? undefined : font;
+                    }}
+                  />
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
                   title="Configuration files"
                   sub="Configuration and database files, and base notes directory"
                 />
@@ -357,6 +436,61 @@ function Section(props: PropsWithChildren<any>) {
   return (
     <div className="mb-10 mt-4 border-b border-gray-200 pb-8 dark:border-gray-700">
       {props.children}
+    </div>
+  );
+}
+
+const FONT_OPTIONS = [
+  "Default",
+  "Arial, sans-serif",
+  "Helvetica, sans-serif",
+  "Times New Roman, serif",
+  "Georgia, serif",
+  "Verdana, sans-serif",
+  "Tahoma, sans-serif",
+  "Trebuchet MS, sans-serif",
+  "Impact, sans-serif",
+  "Palatino, serif",
+  "Garamond, serif",
+  "Monaco, monospace",
+  "Consolas, monospace",
+  "Courier New, monospace",
+  "Lucida Console, monospace",
+  "SF Mono, monospace",
+  "Menlo, monospace",
+  "Fira Code, monospace",
+  "Source Code Pro, monospace",
+];
+
+function FontSelector({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  onChange: (font: string) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2">
+        <Label.Base className="text-sm font-medium">{label}</Label.Base>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Select.Base value={value} onValueChange={onChange}>
+        <Select.Trigger className="max-w-[200px]">
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Content className="max-h-[300px]">
+          {FONT_OPTIONS.map((font) => (
+            <Select.Item key={font} value={font} style={{ fontFamily: font }}>
+              {font}
+            </Select.Item>
+          ))}
+        </Select.Content>
+      </Select.Base>
     </div>
   );
 }
