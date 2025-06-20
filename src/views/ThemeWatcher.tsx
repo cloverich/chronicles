@@ -2,15 +2,12 @@ import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { Preferences } from "../hooks/stores/preferences";
-import useClient from "../hooks/useClient";
 
 interface Props {
   preferences: Preferences;
 }
 
 export const ThemeWatcher: React.FC<Props> = observer(({ preferences }) => {
-  const client = useClient();
-
   React.useEffect(() => {
     return reaction(
       () => preferences.darkMode,

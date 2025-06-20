@@ -1,4 +1,4 @@
-import { reaction } from "mobx";
+import { reaction, toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { Preferences } from "../hooks/stores/preferences";
@@ -10,7 +10,7 @@ interface Props {
 export const FontWatcher: React.FC<Props> = observer(({ preferences }) => {
   React.useEffect(() => {
     return reaction(
-      () => preferences.fonts,
+      () => toJS(preferences.fonts),
       (fonts) => {
         const root = document.documentElement;
 
