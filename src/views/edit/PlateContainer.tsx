@@ -306,6 +306,9 @@ export default observer(
           options: {
             rules: autoformatRules,
             enableUndoOnDelete: true,
+            query: {
+              deny: [ELEMENT_CODE_BLOCK, ELEMENT_CODE_LINE],
+            },
           },
         }),
       ],
