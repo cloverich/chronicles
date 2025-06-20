@@ -1,8 +1,8 @@
-import { ReloadIcon } from "@radix-ui/react-icons";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@udecode/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { Icons } from "./icons";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -62,7 +62,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={loading || disabled}
         {...props}
       >
-        {loading && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+        {loading && <Icons.refresh className="mr-2 h-4 w-4 animate-spin" />}
         {children}
       </Comp>
     );
