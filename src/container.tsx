@@ -6,6 +6,7 @@ import { Alert } from "./components";
 import ErrorBoundary from "./error";
 import { ApplicationContext, useAppLoader } from "./hooks/useApplicationLoader";
 import Titlebar from "./titlebar/macos";
+import { FontWatcher } from "./views/FontWatcher";
 import { ThemeWatcher } from "./views/ThemeWatcher";
 import DocumentCreator from "./views/create";
 import Documents from "./views/documents";
@@ -67,6 +68,7 @@ export default observer(function Container() {
   return (
     <ApplicationContext.Provider value={applicationStore}>
       <ThemeWatcher preferences={applicationStore.preferences} />
+      <FontWatcher preferences={applicationStore.preferences} />
       <Layout>
         <Preferences
           isOpen={applicationStore.isPreferencesOpen}

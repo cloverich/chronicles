@@ -24,6 +24,13 @@ esbuild.build({
   bundle: true,
   platform: "browser",
   plugins: [afterBuild("renderer")],
+  loader: {
+    ".woff2": "file",
+    ".woff": "file",
+    ".ttf": "file",
+    ".otf": "file",
+  },
+  assetNames: "assets/fonts/[name]-[hash]",
 });
 
 // build preload bundle

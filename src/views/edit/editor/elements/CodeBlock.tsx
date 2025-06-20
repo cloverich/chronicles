@@ -74,7 +74,7 @@ export const CodeBlockElement = withRef<typeof PlateElement>(
         ref={ref}
         {...props}
       >
-        <pre className="overflow-x-auto rounded-md px-6 pb-4 pt-10 font-code text-sm leading-[normal] [tab-size:2]">
+        <pre className="font-code overflow-x-auto rounded-md px-6 pb-4 pt-10 text-sm leading-[normal] [tab-size:2]">
           <code>{children}</code>
         </pre>
         <div

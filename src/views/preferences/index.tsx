@@ -34,7 +34,7 @@ const PreferencesPane = observer((props: Props) => {
       sourceType: SourceType.Other,
     }),
   );
-  const prerferences2 = usePreferences();
+  const preferences = usePreferences();
 
   async function selectNotesRoot() {
     store.loading = true;
@@ -123,9 +123,9 @@ const PreferencesPane = observer((props: Props) => {
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
                     <Select.Base
-                      value={prerferences2.darkMode}
+                      value={preferences.darkMode}
                       onValueChange={(selected) =>
-                        (prerferences2.darkMode = selected as
+                        (preferences.darkMode = selected as
                           | "light"
                           | "dark"
                           | "system")
@@ -145,6 +145,101 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
+                  title="Fonts"
+                  sub="Customize fonts for different parts of the application"
+                />
+
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="mb-3 text-base font-medium">Base Fonts</h4>
+                    <div className="space-y-4">
+                      <FontSelector
+                        label="Heading"
+                        description="Hubot Sans (bundled) - Main headings and titles"
+                        value={
+                          preferences.fonts?.heading || "Hubot Sans (bundled)"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.heading = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="Body"
+                        description="Mona Sans (bundled) - Interface and content text"
+                        value={preferences.fonts?.body || "Mona Sans (bundled)"}
+                        onChange={(font) => {
+                          preferences.fonts.body = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="Mono"
+                        description="IBM Plex Mono (bundled) - Code blocks and dates"
+                        value={
+                          preferences.fonts?.mono || "IBM Plex Mono (bundled)"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.mono = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="System Body"
+                        description="Mona Sans (bundled) - Interface elements, sidebar, preferences"
+                        value={
+                          preferences.fonts?.systemBody || "Mona Sans (bundled)"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.systemBody = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="System Heading"
+                        description="Hubot Sans (bundled) - Interface section titles and headers"
+                        value={
+                          preferences.fonts?.systemHeading ||
+                          "Hubot Sans (bundled)"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.systemHeading = font;
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-3 text-base font-medium">
+                      Specific Elements
+                    </h4>
+                    <div className="space-y-4">
+                      <FontSelector
+                        label="Heading 2"
+                        description="Defaults to: Heading"
+                        value={
+                          preferences.fonts?.heading2 || "Default (Heading)"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.heading2 =
+                            font === "Default (Heading)" ? undefined : font;
+                        }}
+                        isSpecific={true}
+                      />
+                      <FontSelector
+                        label="Heading 3"
+                        description="Defaults to: Heading"
+                        value={
+                          preferences.fonts?.heading3 || "Default (Heading)"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.heading3 =
+                            font === "Default (Heading)" ? undefined : font;
+                        }}
+                        isSpecific={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
                   title="Configuration files"
                   sub="Configuration and database files, and base notes directory"
                 />
@@ -160,14 +255,14 @@ const PreferencesPane = observer((props: Props) => {
                     Database file
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
-                    <code>{prerferences2.databaseUrl}</code>
+                    <code>{preferences.databaseUrl}</code>
                   </dd>
 
                   <dt className="text-foreground-strong font-medium">
                     Notes directory
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
-                    <code>{prerferences2.notesDir}</code>
+                    <code>{preferences.notesDir}</code>
                   </dd>
                 </dl>
                 {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
@@ -299,7 +394,7 @@ const PreferencesPane = observer((props: Props) => {
                 </p>
                 <p className="mb-2">
                   The current Chronicles cache is located at{" "}
-                  <code>{prerferences2.databaseUrl}</code>
+                  <code>{preferences.databaseUrl}</code>
                 </p>
                 <div className="mt-4 flex justify-end">
                   <Button
@@ -357,6 +452,107 @@ function Section(props: PropsWithChildren<any>) {
   return (
     <div className="mb-10 mt-4 border-b border-gray-200 pb-8 dark:border-gray-700">
       {props.children}
+    </div>
+  );
+}
+
+const BASE_FONT_OPTIONS = [
+  "sans-serif",
+  "serif",
+  "monospace",
+  "Hubot Sans (bundled)",
+  "Mona Sans (bundled)",
+  "IBM Plex Mono (bundled)",
+  "Arial, sans-serif",
+  "Helvetica, sans-serif",
+  "Times New Roman, serif",
+  "Georgia, serif",
+  "Verdana, sans-serif",
+  "Tahoma, sans-serif",
+  "Trebuchet MS, sans-serif",
+  "Impact, sans-serif",
+  "Palatino, serif",
+  "Garamond, serif",
+  "Monaco, monospace",
+  "Consolas, monospace",
+  "Courier New, monospace",
+  "Lucida Console, monospace",
+  "SF Mono, monospace",
+  "Menlo, monospace",
+  "Fira Code, monospace",
+  "Source Code Pro, monospace",
+];
+
+const SPECIFIC_FONT_OPTIONS = ["Default (Heading)", ...BASE_FONT_OPTIONS];
+
+// Map display names to actual font stacks
+const FONT_STACK_MAP: Record<string, string> = {
+  "sans-serif":
+    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  serif: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+  monospace:
+    'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
+  "Hubot Sans (bundled)":
+    '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  "Mona Sans (bundled)":
+    '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  "IBM Plex Mono (bundled)":
+    '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
+};
+
+function FontSelector({
+  label,
+  description,
+  value,
+  onChange,
+  isSpecific = false,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  onChange: (font: string) => void;
+  isSpecific?: boolean;
+}) {
+  const options = isSpecific ? SPECIFIC_FONT_OPTIONS : BASE_FONT_OPTIONS;
+
+  // Convert actual font stack back to display name for the UI
+  const displayValue =
+    Object.entries(FONT_STACK_MAP).find(([_, stack]) => stack === value)?.[0] ||
+    value;
+
+  const handleChange = (selectedDisplayName: string) => {
+    // Convert display name to actual font stack
+    const actualFontStack =
+      FONT_STACK_MAP[selectedDisplayName] || selectedDisplayName;
+    onChange(actualFontStack);
+  };
+
+  return (
+    <div>
+      <div className="mb-2">
+        <Label.Base className="text-sm font-medium">{label}</Label.Base>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Select.Base value={displayValue} onValueChange={handleChange}>
+        <Select.Trigger className="max-w-[250px]">
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Content className="max-h-[300px]">
+          {options.map((font) => (
+            <Select.Item
+              key={font}
+              value={font}
+              style={{
+                fontFamily: font.startsWith("Default")
+                  ? "inherit"
+                  : FONT_STACK_MAP[font] || font,
+              }}
+            >
+              {font}
+            </Select.Item>
+          ))}
+        </Select.Content>
+      </Select.Base>
     </div>
   );
 }

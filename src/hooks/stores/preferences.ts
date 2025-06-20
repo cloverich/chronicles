@@ -1,4 +1,4 @@
-import { observable, reaction } from "mobx";
+import { observable, reaction, toJS } from "mobx";
 import { IClient } from "../../preload/client/types";
 
 export interface IPreferences {
@@ -9,6 +9,15 @@ export interface IPreferences {
   settingsDir: string;
   onboarding: "new" | "complete";
   darkMode: "light" | "dark" | "system";
+  fonts: {
+    heading?: string;
+    heading2?: string;
+    heading3?: string;
+    body?: string;
+    mono?: string;
+    systemBody?: string;
+    systemHeading?: string;
+  };
 }
 
 export class Preferences implements IPreferences {
@@ -31,6 +40,16 @@ export class Preferences implements IPreferences {
   onboarding!: "new" | "complete";
   @observable
   darkMode!: "light" | "dark" | "system";
+  @observable
+  fonts!: {
+    heading?: string;
+    heading2?: string;
+    heading3?: string;
+    body?: string;
+    mono?: string;
+    systemBody?: string;
+    systemHeading?: string;
+  };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {
     Object.assign(this, prefs);
@@ -41,11 +60,14 @@ export class Preferences implements IPreferences {
       () => ({
         databaseUrl: this.databaseUrl,
         defaultJournal: this.defaultJournal,
-        archivedJournals: this.archivedJournals,
+        // todo: add test for archived journals syncing with settings store
+        archivedJournals: toJS(this.archivedJournals),
         notesDir: this.notesDir,
         settingsDir: this.settingsDir,
         onboarding: this.onboarding,
         darkMode: this.darkMode,
+        // todo: add test for fonts syncing with settings store
+        fonts: toJS(this.fonts),
       }),
       (prefs: IPreferences) => {
         let toWrite: Partial<IPreferences> = {};

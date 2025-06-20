@@ -97,6 +97,13 @@ async function watchRenderer() {
     platform: "browser",
     plugins: [startElectronPlugin("renderer")],
     sourcemap: true,
+    loader: {
+      ".woff2": "file",
+      ".woff": "file",
+      ".ttf": "file",
+      ".otf": "file",
+    },
+    assetNames: "assets/fonts/[name]-[hash]",
   });
 
   await ctxRenderer.watch();
