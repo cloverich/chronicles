@@ -32,7 +32,7 @@
 .slate-code_block pre[class*="language-"] {
   background: hsl(230, 1%, 98%);
   color: hsl(230, 8%, 24%);
-  font-family: var(--font-code);
+  font-family: var(--font-mono);
   direction: ltr;
   text-align: left;
   white-space: pre;

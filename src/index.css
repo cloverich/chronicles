@@ -13,15 +13,6 @@
     --font-heading-2: var(--font-heading);
     --font-heading-3: var(--font-heading);
 
-    /* Customizable font categories - default to existing fonts for backward compatibility */
-    --font-heading-1: var(--font-heading);
-    --font-heading-2-custom: var(--font-heading);
-    --font-heading-3-custom: var(--font-heading);
-    --font-system-body: var(--font-body);
-    --font-system-heading: var(--font-heading);
-    --font-content-body: var(--font-body);
-    --font-code: var(--font-mono);
-
     --background: 0 0% 100%;
     --background-hint: hsl(0 0% 100%);
     --foreground: 222.2 84% 4.9%;
@@ -245,7 +236,7 @@ code {
   body {
     /* Applies --background color via background-color to body (bg-background is expanded by tailwind) */
     @apply bg-background text-foreground;
-    font-family: var(--font-system-body);
+    font-family: var(--font-body);
   }
 }
 

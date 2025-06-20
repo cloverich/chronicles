@@ -34,7 +34,7 @@ const PreferencesPane = observer((props: Props) => {
       sourceType: SourceType.Other,
     }),
   );
-  const prerferences2 = usePreferences();
+  const preferences = usePreferences();
 
   async function selectNotesRoot() {
     store.loading = true;
@@ -123,9 +123,9 @@ const PreferencesPane = observer((props: Props) => {
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
                     <Select.Base
-                      value={prerferences2.darkMode}
+                      value={preferences.darkMode}
                       onValueChange={(selected) =>
-                        (prerferences2.darkMode = selected as
+                        (preferences.darkMode = selected as
                           | "light"
                           | "dark"
                           | "system")
@@ -149,77 +149,79 @@ const PreferencesPane = observer((props: Props) => {
                   sub="Customize fonts for different parts of the application"
                 />
 
-                <div className="space-y-4">
-                  <FontSelector
-                    label="Heading 1"
-                    description="Large document titles and main headings"
-                    value={prerferences2.fonts?.heading1 || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.heading1 =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
-                  <FontSelector
-                    label="Heading 2"
-                    description="Section headings"
-                    value={prerferences2.fonts?.heading2 || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.heading2 =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
-                  <FontSelector
-                    label="Heading 3"
-                    description="Subsection headings"
-                    value={prerferences2.fonts?.heading3 || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.heading3 =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
-                  <FontSelector
-                    label="System Body"
-                    description="Interface elements, sidebar, preferences"
-                    value={prerferences2.fonts?.systemBody || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.systemBody =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
-                  <FontSelector
-                    label="System Headings"
-                    description="Interface section titles and headers"
-                    value={prerferences2.fonts?.systemHeading || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.systemHeading =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
-                  <FontSelector
-                    label="Body"
-                    description="Document content and editor text"
-                    value={prerferences2.fonts?.contentBody || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.contentBody =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
-                  <FontSelector
-                    label="Code"
-                    description="Code blocks, monospace text, and dates"
-                    value={prerferences2.fonts?.code || "Default"}
-                    onChange={(font) => {
-                      if (!prerferences2.fonts) prerferences2.fonts = {};
-                      prerferences2.fonts.code =
-                        font === "Default" ? undefined : font;
-                    }}
-                  />
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="mb-3 text-base font-medium">Base Fonts</h4>
+                    <div className="space-y-4">
+                      <FontSelector
+                        label="Heading"
+                        description="Hubot Sans - Main headings and titles"
+                        value={
+                          preferences.fonts?.heading || "Hubot Sans, sans-serif"
+                        }
+                        onChange={(font) => {
+                          if (!preferences.fonts) preferences.fonts = {};
+                          preferences.fonts.heading = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="Body"
+                        description="Mona Sans - Interface and content text"
+                        value={
+                          preferences.fonts?.body || "Mona Sans, sans-serif"
+                        }
+                        onChange={(font) => {
+                          if (!preferences.fonts) preferences.fonts = {};
+                          preferences.fonts.body = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="Mono"
+                        description="IBM Plex Mono - Code blocks and dates"
+                        value={
+                          preferences.fonts?.mono || "IBM Plex Mono, monospace"
+                        }
+                        onChange={(font) => {
+                          if (!preferences.fonts) preferences.fonts = {};
+                          preferences.fonts.mono = font;
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-3 text-base font-medium">
+                      Specific Elements
+                    </h4>
+                    <div className="space-y-4">
+                      <FontSelector
+                        label="Heading 2"
+                        description="Defaults to: Heading"
+                        value={
+                          preferences.fonts?.heading2 || "Default (Heading)"
+                        }
+                        onChange={(font) => {
+                          if (!preferences.fonts) preferences.fonts = {};
+                          preferences.fonts.heading2 =
+                            font === "Default (Heading)" ? undefined : font;
+                        }}
+                        isSpecific={true}
+                      />
+                      <FontSelector
+                        label="Heading 3"
+                        description="Defaults to: Heading"
+                        value={
+                          preferences.fonts?.heading3 || "Default (Heading)"
+                        }
+                        onChange={(font) => {
+                          if (!preferences.fonts) preferences.fonts = {};
+                          preferences.fonts.heading3 =
+                            font === "Default (Heading)" ? undefined : font;
+                        }}
+                        isSpecific={true}
+                      />
+                    </div>
+                  </div>
                 </div>
               </Section>
               <Section>
@@ -239,14 +241,14 @@ const PreferencesPane = observer((props: Props) => {
                     Database file
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
-                    <code>{prerferences2.databaseUrl}</code>
+                    <code>{preferences.databaseUrl}</code>
                   </dd>
 
                   <dt className="text-foreground-strong font-medium">
                     Notes directory
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
-                    <code>{prerferences2.notesDir}</code>
+                    <code>{preferences.notesDir}</code>
                   </dd>
                 </dl>
                 {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
@@ -378,7 +380,7 @@ const PreferencesPane = observer((props: Props) => {
                 </p>
                 <p className="mb-2">
                   The current Chronicles cache is located at{" "}
-                  <code>{prerferences2.databaseUrl}</code>
+                  <code>{preferences.databaseUrl}</code>
                 </p>
                 <div className="mt-4 flex justify-end">
                   <Button
@@ -440,8 +442,7 @@ function Section(props: PropsWithChildren<any>) {
   );
 }
 
-const FONT_OPTIONS = [
-  "Default",
+const BASE_FONT_OPTIONS = [
   "Arial, sans-serif",
   "Helvetica, sans-serif",
   "Times New Roman, serif",
@@ -460,19 +461,28 @@ const FONT_OPTIONS = [
   "Menlo, monospace",
   "Fira Code, monospace",
   "Source Code Pro, monospace",
+  "Hubot Sans, sans-serif",
+  "Mona Sans, sans-serif",
+  "IBM Plex Mono, monospace",
 ];
+
+const SPECIFIC_FONT_OPTIONS = ["Default (Heading)", ...BASE_FONT_OPTIONS];
 
 function FontSelector({
   label,
   description,
   value,
   onChange,
+  isSpecific = false,
 }: {
   label: string;
   description: string;
   value: string;
   onChange: (font: string) => void;
+  isSpecific?: boolean;
 }) {
+  const options = isSpecific ? SPECIFIC_FONT_OPTIONS : BASE_FONT_OPTIONS;
+
   return (
     <div>
       <div className="mb-2">
@@ -480,12 +490,18 @@ function FontSelector({
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
       <Select.Base value={value} onValueChange={onChange}>
-        <Select.Trigger className="max-w-[200px]">
+        <Select.Trigger className="max-w-[250px]">
           <Select.Value />
         </Select.Trigger>
         <Select.Content className="max-h-[300px]">
-          {FONT_OPTIONS.map((font) => (
-            <Select.Item key={font} value={font} style={{ fontFamily: font }}>
+          {options.map((font) => (
+            <Select.Item
+              key={font}
+              value={font}
+              style={{
+                fontFamily: font.startsWith("Default") ? "inherit" : font,
+              }}
+            >
               {font}
             </Select.Item>
           ))}

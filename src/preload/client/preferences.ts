@@ -20,6 +20,13 @@ const defaults = (): IPreferences => ({
   settingsDir: "",
   onboarding: "new",
   darkMode: "system",
+  fonts: {
+    heading: '"Hubot Sans", "IBM Plex Mono", sans-serif',
+    heading2: undefined, // defaults to heading
+    heading3: undefined, // defaults to heading
+    body: '"Mona Sans", sans-serif',
+    mono: '"IBM Plex Mono", monospace',
+  },
 });
 
 export type IPreferencesClient = PreferencesClient;

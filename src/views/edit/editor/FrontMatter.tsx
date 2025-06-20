@@ -122,7 +122,7 @@ const FrontMatter = observer(
             type="text"
             name="title"
             ref={onInputRendered}
-            className="w-full border-none bg-background font-heading-1-custom text-2xl font-medium text-foreground focus:outline-none"
+            className="w-full border-none bg-background font-heading text-2xl font-medium text-foreground focus:outline-none"
             onChange={(e: any) => (document.title = e.target.value)}
             value={document.title || ""}
             placeholder="Untitled document"

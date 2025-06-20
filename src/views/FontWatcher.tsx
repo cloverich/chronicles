@@ -21,55 +21,34 @@ export const FontWatcher: React.FC<Props> = observer(({ preferences }) => {
         const root = document.documentElement;
 
         // Apply font preferences to CSS variables
-        if (fonts?.heading1) {
-          root.style.setProperty("--font-heading-1", fonts.heading1);
+        if (fonts?.heading) {
+          root.style.setProperty("--font-heading", fonts.heading);
         } else {
-          root.style.setProperty("--font-heading-1", `var(--font-heading)`);
+          root.style.setProperty("--font-heading", DEFAULT_FONTS.heading);
         }
 
         if (fonts?.heading2) {
-          root.style.setProperty("--font-heading-2-custom", fonts.heading2);
+          root.style.setProperty("--font-heading-2", fonts.heading2);
         } else {
-          root.style.setProperty(
-            "--font-heading-2-custom",
-            `var(--font-heading)`,
-          );
+          root.style.setProperty("--font-heading-2", `var(--font-heading)`);
         }
 
         if (fonts?.heading3) {
-          root.style.setProperty("--font-heading-3-custom", fonts.heading3);
+          root.style.setProperty("--font-heading-3", fonts.heading3);
         } else {
-          root.style.setProperty(
-            "--font-heading-3-custom",
-            `var(--font-heading)`,
-          );
+          root.style.setProperty("--font-heading-3", `var(--font-heading)`);
         }
 
-        if (fonts?.systemBody) {
-          root.style.setProperty("--font-system-body", fonts.systemBody);
+        if (fonts?.body) {
+          root.style.setProperty("--font-body", fonts.body);
         } else {
-          root.style.setProperty("--font-system-body", `var(--font-body)`);
+          root.style.setProperty("--font-body", DEFAULT_FONTS.body);
         }
 
-        if (fonts?.systemHeading) {
-          root.style.setProperty("--font-system-heading", fonts.systemHeading);
+        if (fonts?.mono) {
+          root.style.setProperty("--font-mono", fonts.mono);
         } else {
-          root.style.setProperty(
-            "--font-system-heading",
-            `var(--font-heading)`,
-          );
-        }
-
-        if (fonts?.contentBody) {
-          root.style.setProperty("--font-content-body", fonts.contentBody);
-        } else {
-          root.style.setProperty("--font-content-body", `var(--font-body)`);
-        }
-
-        if (fonts?.code) {
-          root.style.setProperty("--font-code", fonts.code);
-        } else {
-          root.style.setProperty("--font-code", `var(--font-mono)`);
+          root.style.setProperty("--font-mono", DEFAULT_FONTS.mono);
         }
       },
       {

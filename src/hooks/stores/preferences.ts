@@ -10,13 +10,11 @@ export interface IPreferences {
   onboarding: "new" | "complete";
   darkMode: "light" | "dark" | "system";
   fonts?: {
-    heading1?: string;
+    heading?: string;
     heading2?: string;
     heading3?: string;
-    systemBody?: string;
-    systemHeading?: string;
-    contentBody?: string;
-    code?: string;
+    body?: string;
+    mono?: string;
   };
 }
 
@@ -42,13 +40,11 @@ export class Preferences implements IPreferences {
   darkMode!: "light" | "dark" | "system";
   @observable
   fonts?: {
-    heading1?: string;
+    heading?: string;
     heading2?: string;
     heading3?: string;
-    systemBody?: string;
-    systemHeading?: string;
-    contentBody?: string;
-    code?: string;
+    body?: string;
+    mono?: string;
   };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {

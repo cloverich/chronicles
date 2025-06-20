@@ -6,12 +6,12 @@ import React from "react";
 const headingVariants = cva("", {
   variants: {
     variant: {
-      h1: "mb-[0.5em] mt-[1.6em] font-heading-1-custom text-2xl font-medium tracking-tight",
-      h2: "mb-[0.5em] mt-[1.4em] font-heading-2-custom text-xl font-medium tracking-tight",
-      h3: "mb-[0.5em] mt-[1em] font-heading-3-custom text-lg font-medium tracking-tight",
-      h4: "mt-[0.75em] font-heading-3-custom text-lg font-medium tracking-tight",
-      h5: "mt-[0.75em] text-lg font-heading-3-custom font-medium tracking-tight",
-      h6: "mt-[0.75em] text-base font-heading-3-custom font-medium tracking-tight",
+      h1: "mb-[0.5em] mt-[1.6em] font-heading text-2xl font-medium tracking-tight",
+      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 text-xl font-medium tracking-tight",
+      h3: "mb-[0.5em] mt-[1em] font-heading-3 text-lg font-medium tracking-tight",
+      h4: "mt-[0.75em] font-heading-3 text-lg font-medium tracking-tight",
+      h5: "mt-[0.75em] text-lg font-heading-3 font-medium tracking-tight",
+      h6: "mt-[0.75em] text-base font-heading-3 font-medium tracking-tight",
     },
     isFirstBlock: {
       true: "mt-0",
