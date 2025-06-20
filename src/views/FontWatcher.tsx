@@ -7,12 +7,6 @@ interface Props {
   preferences: Preferences;
 }
 
-const DEFAULT_FONTS = {
-  heading: '"Hubot Sans", "IBM Plex Mono", sans-serif',
-  body: '"Mona Sans", sans-serif',
-  mono: '"IBM Plex Mono", monospace',
-};
-
 export const FontWatcher: React.FC<Props> = observer(({ preferences }) => {
   React.useEffect(() => {
     return reaction(
@@ -21,34 +15,32 @@ export const FontWatcher: React.FC<Props> = observer(({ preferences }) => {
         const root = document.documentElement;
 
         // Apply font preferences to CSS variables
-        if (fonts?.heading) {
+        if (fonts.heading) {
           root.style.setProperty("--font-heading", fonts.heading);
-        } else {
-          root.style.setProperty("--font-heading", DEFAULT_FONTS.heading);
         }
 
-        if (fonts?.heading2) {
+        if (fonts.heading2) {
           root.style.setProperty("--font-heading-2", fonts.heading2);
-        } else {
-          root.style.setProperty("--font-heading-2", `var(--font-heading)`);
         }
 
-        if (fonts?.heading3) {
+        if (fonts.heading3) {
           root.style.setProperty("--font-heading-3", fonts.heading3);
-        } else {
-          root.style.setProperty("--font-heading-3", `var(--font-heading)`);
         }
 
-        if (fonts?.body) {
+        if (fonts.body) {
           root.style.setProperty("--font-body", fonts.body);
-        } else {
-          root.style.setProperty("--font-body", DEFAULT_FONTS.body);
         }
 
-        if (fonts?.mono) {
+        if (fonts.mono) {
           root.style.setProperty("--font-mono", fonts.mono);
-        } else {
-          root.style.setProperty("--font-mono", DEFAULT_FONTS.mono);
+        }
+
+        if (fonts.systemBody) {
+          root.style.setProperty("--font-system-body", fonts.systemBody);
+        }
+
+        if (fonts.systemHeading) {
+          root.style.setProperty("--font-system-heading", fonts.systemHeading);
         }
       },
       {

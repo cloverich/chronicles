@@ -26,6 +26,8 @@ const defaults = (): IPreferences => ({
     heading3: undefined, // defaults to heading
     body: '"Mona Sans", sans-serif',
     mono: '"IBM Plex Mono", monospace',
+    systemBody: '"Mona Sans", sans-serif',
+    systemHeading: '"Hubot Sans", "IBM Plex Mono", sans-serif',
   },
 });
 

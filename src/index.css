@@ -12,6 +12,8 @@
     --font-heading: "Hubot Sans", "IBM Plex Mono", sans-serif;
     --font-heading-2: var(--font-heading);
     --font-heading-3: var(--font-heading);
+    --font-system-body: var(--font-body);
+    --font-system-heading: var(--font-heading);
 
     --background: 0 0% 100%;
     --background-hint: hsl(0 0% 100%);
@@ -236,7 +238,7 @@ code {
   body {
     /* Applies --background color via background-color to body (bg-background is expanded by tailwind) */
     @apply bg-background text-foreground;
-    font-family: var(--font-body);
+    font-family: var(--font-system-body);
   }
 }
 

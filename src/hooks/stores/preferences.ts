@@ -9,12 +9,14 @@ export interface IPreferences {
   settingsDir: string;
   onboarding: "new" | "complete";
   darkMode: "light" | "dark" | "system";
-  fonts?: {
+  fonts: {
     heading?: string;
     heading2?: string;
     heading3?: string;
     body?: string;
     mono?: string;
+    systemBody?: string;
+    systemHeading?: string;
   };
 }
 
@@ -39,12 +41,14 @@ export class Preferences implements IPreferences {
   @observable
   darkMode!: "light" | "dark" | "system";
   @observable
-  fonts?: {
+  fonts!: {
     heading?: string;
     heading2?: string;
     heading3?: string;
     body?: string;
     mono?: string;
+    systemBody?: string;
+    systemHeading?: string;
   };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {

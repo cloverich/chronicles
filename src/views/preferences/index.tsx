@@ -160,7 +160,6 @@ const PreferencesPane = observer((props: Props) => {
                           preferences.fonts?.heading || "Hubot Sans, sans-serif"
                         }
                         onChange={(font) => {
-                          if (!preferences.fonts) preferences.fonts = {};
                           preferences.fonts.heading = font;
                         }}
                       />
@@ -171,7 +170,6 @@ const PreferencesPane = observer((props: Props) => {
                           preferences.fonts?.body || "Mona Sans, sans-serif"
                         }
                         onChange={(font) => {
-                          if (!preferences.fonts) preferences.fonts = {};
                           preferences.fonts.body = font;
                         }}
                       />
@@ -182,8 +180,29 @@ const PreferencesPane = observer((props: Props) => {
                           preferences.fonts?.mono || "IBM Plex Mono, monospace"
                         }
                         onChange={(font) => {
-                          if (!preferences.fonts) preferences.fonts = {};
                           preferences.fonts.mono = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="System Body"
+                        description="Mona Sans - Interface elements, sidebar, preferences"
+                        value={
+                          preferences.fonts?.systemBody ||
+                          "Mona Sans, sans-serif"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.systemBody = font;
+                        }}
+                      />
+                      <FontSelector
+                        label="System Heading"
+                        description="Hubot Sans - Interface section titles and headers"
+                        value={
+                          preferences.fonts?.systemHeading ||
+                          "Hubot Sans, sans-serif"
+                        }
+                        onChange={(font) => {
+                          preferences.fonts.systemHeading = font;
                         }}
                       />
                     </div>
@@ -201,7 +220,6 @@ const PreferencesPane = observer((props: Props) => {
                           preferences.fonts?.heading2 || "Default (Heading)"
                         }
                         onChange={(font) => {
-                          if (!preferences.fonts) preferences.fonts = {};
                           preferences.fonts.heading2 =
                             font === "Default (Heading)" ? undefined : font;
                         }}
@@ -214,7 +232,6 @@ const PreferencesPane = observer((props: Props) => {
                           preferences.fonts?.heading3 || "Default (Heading)"
                         }
                         onChange={(font) => {
-                          if (!preferences.fonts) preferences.fonts = {};
                           preferences.fonts.heading3 =
                             font === "Default (Heading)" ? undefined : font;
                         }}

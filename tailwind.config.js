@@ -81,6 +81,8 @@ export const theme = {
       heading: ["var(--font-heading)", ...fontFamily.sans],
       "heading-2": ["var(--font-heading-2)", ...fontFamily.sans],
       "heading-3": ["var(--font-heading-3)", ...fontFamily.sans],
+      "system-body": ["var(--font-system-body)", ...fontFamily.sans],
+      "system-heading": ["var(--font-system-heading)", ...fontFamily.sans],
     },
     keyframes: {
       "accordion-down": {
