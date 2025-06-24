@@ -18,6 +18,10 @@ export interface IPreferences {
     systemBody?: string;
     systemHeading?: string;
   };
+  mcp: {
+    enabled: boolean;
+    socketPath: string;
+  };
 }
 
 export class Preferences implements IPreferences {
@@ -50,6 +54,11 @@ export class Preferences implements IPreferences {
     systemBody?: string;
     systemHeading?: string;
   };
+  @observable
+  mcp!: {
+    enabled: boolean;
+    socketPath: string;
+  };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {
     Object.assign(this, prefs);
@@ -68,6 +77,7 @@ export class Preferences implements IPreferences {
         darkMode: this.darkMode,
         // todo: add test for fonts syncing with settings store
         fonts: toJS(this.fonts),
+        mcp: toJS(this.mcp),
       }),
       (prefs: IPreferences) => {
         let toWrite: Partial<IPreferences> = {};
