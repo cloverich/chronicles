@@ -32,6 +32,10 @@ const defaults = (): IPreferences => ({
     systemHeading:
       '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   },
+  mcp: {
+    enabled: false,
+    socketPath: "~/.chronicles/mcp.sock",
+  },
 });
 
 export type IPreferencesClient = PreferencesClient;

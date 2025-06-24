@@ -15,6 +15,7 @@ const { initUserFilesDir } = require("./userFilesInit");
 const settings = require("./settings");
 const migrate = require("./migrations");
 const { ensureDir } = require("./ensureDir");
+const { MCPServer, createDefaultMCPConfig } = require("./mcp/server");
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
@@ -47,6 +48,57 @@ try {
     "Error migrating the database. This is required for initial app setup",
   );
 }
+
+// Initialize MCP server
+let mcpServer = null;
+
+function initializeMCPServer() {
+  try {
+    // Get MCP configuration from settings
+    const mcpConfig = settings.get("mcp");
+
+    if (mcpConfig?.enabled) {
+      const config = {
+        ...createDefaultMCPConfig(),
+        ...mcpConfig,
+      };
+
+      mcpServer = new MCPServer(config);
+      mcpServer
+        .start()
+        .then(() => {
+          console.log("MCP server started successfully");
+        })
+        .catch((err) => {
+          console.error("Failed to start MCP server:", err);
+        });
+    }
+  } catch (err) {
+    console.error("Error initializing MCP server:", err);
+  }
+}
+
+// Watch for MCP preference changes
+settings.onDidChange("mcp", (newValue) => {
+  if (newValue?.enabled && !mcpServer?.running) {
+    // Start MCP server
+    initializeMCPServer();
+  } else if (!newValue?.enabled && mcpServer?.running) {
+    // Stop MCP server
+    mcpServer
+      .stop()
+      .then(() => {
+        console.log("MCP server stopped");
+        mcpServer = null;
+      })
+      .catch((err) => {
+        console.error("Error stopping MCP server:", err);
+      });
+  }
+});
+
+// Initialize MCP server on startup
+initializeMCPServer();
 
 ipcMain.handle("setup-database", async (event, dbUrl) => {
   try {
@@ -265,6 +317,18 @@ app.whenReady().then(createWindow);
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
+  }
+});
+
+// Clean up MCP server on app quit
+app.on("before-quit", async () => {
+  if (mcpServer?.running) {
+    try {
+      await mcpServer.stop();
+      console.log("MCP server stopped on app quit");
+    } catch (err) {
+      console.error("Error stopping MCP server on quit:", err);
+    }
   }
 });
 

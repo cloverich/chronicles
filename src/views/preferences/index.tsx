@@ -408,6 +408,73 @@ const PreferencesPane = observer((props: Props) => {
                 </div>
               </Section>
               <Section>
+                <SectionTitle
+                  title="AI Integration (MCP Server)"
+                  sub="Enable AI tools like Claude Code to read and write notes"
+                />
+                <p className="mb-4">
+                  Chronicles can expose a local MCP (Model Context Protocol)
+                  server that allows AI tools to programmatically access your
+                  notes. When enabled, AI assistants can search, read, and
+                  create notes on your behalf.
+                </p>
+
+                <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-sm">
+                  <dt className="text-foreground-strong font-medium">Status</dt>
+                  <dd className="mb-2 text-xs">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        preferences.mcp?.enabled
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                      }`}
+                    >
+                      {preferences.mcp?.enabled ? "Enabled" : "Disabled"}
+                    </span>
+                  </dd>
+
+                  <dt className="text-foreground-strong font-medium">
+                    Socket Path
+                  </dt>
+                  <dd className="mb-2 text-xs text-muted-foreground">
+                    <code>
+                      {preferences.mcp?.socketPath || "~/.chronicles/mcp.sock"}
+                    </code>
+                  </dd>
+                </dl>
+
+                <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <strong>Security Note:</strong> The MCP server only accepts
+                    local connections and provides full access to your notes.
+                    Only enable this if you trust the AI tools you're using.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <Button
+                    variant={
+                      preferences.mcp?.enabled ? "destructive" : "default"
+                    }
+                    size="sm"
+                    onClick={() => {
+                      if (!preferences.mcp) {
+                        preferences.mcp = {
+                          enabled: true,
+                          socketPath: "~/.chronicles/mcp.sock",
+                        };
+                      } else {
+                        preferences.mcp.enabled = !preferences.mcp.enabled;
+                      }
+                    }}
+                  >
+                    {preferences.mcp?.enabled
+                      ? "Disable MCP Server"
+                      : "Enable MCP Server"}
+                  </Button>
+                </div>
+              </Section>
+              <Section>
                 <SectionTitle title="Development" />
                 <p className="mb-2">
                   Run some tests, mostly around the frontmatter parsing and
