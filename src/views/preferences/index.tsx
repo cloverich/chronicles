@@ -1,6 +1,6 @@
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { PropsWithChildren } from "react";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Label, Select } from "../../components";
 import { Button } from "../../components/Button";
@@ -35,6 +35,11 @@ const PreferencesPane = observer((props: Props) => {
     }),
   );
   const preferences = usePreferences();
+  const [settingsPath, setSettingsPath] = useState<string>("");
+
+  useEffect(() => {
+    client.preferences.settingsPath().then(setSettingsPath);
+  }, [client]);
 
   async function selectNotesRoot() {
     store.loading = true;
@@ -248,7 +253,7 @@ const PreferencesPane = observer((props: Props) => {
                     Settings file
                   </dt>
                   <dd className="mb-2 text-xs text-muted-foreground">
-                    <code>{client.preferences.settingsPath()}</code>
+                    <code>{settingsPath}</code>
                   </dd>
 
                   <dt className="text-foreground-strong font-medium">

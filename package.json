@@ -20,7 +20,7 @@
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^9.2.2",
-    "electron-store": "^8.0.1",
+    "electron-store": "^10.1.0",
     "knex": "^2.5.0",
     "sharp": "^0.33.5",
     "uuid25": "^0.1.5",

@@ -12,21 +12,17 @@ const path = require("path");
 const fs = require("fs");
 const url = require("url");
 const { initUserFilesDir } = require("./userFilesInit");
-const settings = require("./settings");
+const { getStore } = require("./settings");
 const migrate = require("./migrations");
 const { ensureDir } = require("./ensureDir");
-
-// when packaged, it should be in Library/Application Support/Chronicles/settings.json
-// when in dev, Library/Application Support/Chronicles/settings.json
-initUserFilesDir(app.getPath("userData"));
-console.log("application settings at startup:", settings.store);
 
 const DATABASE_URL = "DATABASE_URL";
 
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow;
 
-function setupDefaultDatabaseUrl() {
+async function setupDefaultDatabaseUrl() {
+  const settings = await getStore();
   let dbUrl = settings.get(DATABASE_URL);
   if (!dbUrl) {
     dbUrl = path.join(app.getPath("userData"), "chronicles.db");
@@ -36,17 +32,35 @@ function setupDefaultDatabaseUrl() {
   return dbUrl;
 }
 
-// when not available, dbfile is undefined
-const dbUrl = setupDefaultDatabaseUrl();
+// Initialize async
+let dbUrl;
+async function initializeApp() {
+  // when packaged, it should be in Library/Application Support/Chronicles/settings.json
+  // when in dev, Library/Application Support/Chronicles/settings.json
+  await initUserFilesDir(app.getPath("userData"));
+  const settings = await getStore();
+  console.log("application settings at startup:", settings.store);
 
-try {
-  migrate(dbUrl);
-} catch (err) {
-  console.error("Error migrating the database:", err);
-  throw new Error(
-    "Error migrating the database. This is required for initial app setup",
-  );
+  // when not available, dbfile is undefined
+  dbUrl = await setupDefaultDatabaseUrl();
 }
+
+// Initialize the app asynchronously
+initializeApp()
+  .then(() => {
+    try {
+      migrate(dbUrl);
+    } catch (err) {
+      console.error("Error migrating the database:", err);
+      throw new Error(
+        "Error migrating the database. This is required for initial app setup",
+      );
+    }
+  })
+  .catch((err) => {
+    console.error("Error initializing app:", err);
+    throw err;
+  });
 
 ipcMain.handle("setup-database", async (event, dbUrl) => {
   try {
@@ -58,13 +72,45 @@ ipcMain.handle("setup-database", async (event, dbUrl) => {
   }
 });
 
+// Settings IPC handlers
+ipcMain.handle("settings-get", async (event, key) => {
+  const settings = await getStore();
+  return settings.get(key);
+});
+
+ipcMain.handle("settings-set", async (event, key, value) => {
+  const settings = await getStore();
+  settings.set(key, value);
+});
+
+ipcMain.handle("settings-delete", async (event, key) => {
+  const settings = await getStore();
+  settings.delete(key);
+});
+
+ipcMain.handle("settings-clear", async (event) => {
+  const settings = await getStore();
+  settings.clear();
+});
+
+ipcMain.handle("settings-get-store", async (event) => {
+  const settings = await getStore();
+  return settings.store;
+});
+
+ipcMain.handle("settings-get-path", async (event) => {
+  const settings = await getStore();
+  return settings.path;
+});
+
 // Allow files in <img> and <video> tags to load using the "chronicles://" protocol
 // https://www.electronjs.org/docs/api/protocol
 app.whenReady().then(() => {
   // todo: registerFileProtocol is deprecated; using the new protocol method works,
   // but videos don't seek properly.
-  protocol.registerFileProtocol("chronicles", (request, callback) => {
-    callback({ path: validateChroniclesUrl(request.url) });
+  protocol.registerFileProtocol("chronicles", async (request, callback) => {
+    const path = await validateChroniclesUrl(request.url);
+    callback({ path });
   });
 });
 
@@ -78,7 +124,7 @@ app.whenReady().then(() => {
  *
  * @param {string} chroniclesUrl The "chronicles://" URL to convert
  */
-function validateChroniclesUrl(chroniclesUrl) {
+async function validateChroniclesUrl(chroniclesUrl) {
   // NOTE: chroniclesUrl SHOULD start with chronicles://../_attachments/<filename>
   // NOTE: UI should also validate this, to tell user how to fix (if it comes up)
   if (!chroniclesUrl?.startsWith("chronicles://../_attachments")) {
@@ -91,6 +137,7 @@ function validateChroniclesUrl(chroniclesUrl) {
   // strip chronicles:// - so we can treat as a file path
   // strip ../ - we prepend the root directory (notesDir) to make absolute path
   const url = decodeURI(chroniclesUrl.slice("chronicles://../".length));
+  const settings = await getStore();
   const notesDir = settings.get("notesDir");
   if (!notesDir) {
     console.error(
@@ -156,9 +203,9 @@ function isSafeForExternalOpen(urlString) {
  * Handle opening web and file links in system default applications.
  * @param {string} url
  */
-function handleLinkClick(url) {
+async function handleLinkClick(url) {
   if (url.startsWith("chronicles://")) {
-    const sanitized = validateChroniclesUrl(url);
+    const sanitized = await validateChroniclesUrl(url);
     if (sanitized) {
       shell.showItemInFolder(sanitized);
     } else {

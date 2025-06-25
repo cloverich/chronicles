@@ -8,6 +8,7 @@ import path from "path";
 import util from "util";
 import { IPreferences } from "../../../../hooks/stores/preferences";
 import { Files } from "../../../files";
+import { SettingsStore } from "../../../settings";
 import { DocumentsClient } from "../../documents";
 import { FilesClient } from "../../files";
 import { ImporterClient } from "../../importer";
@@ -16,6 +17,42 @@ import { PreferencesClient } from "../../preferences";
 import { SyncClient } from "../../sync";
 import { TagsClient } from "../../tags";
 import { IClient } from "../../types";
+
+// Test implementation of SettingsStore that uses electron-store directly
+class TestSettingsStore extends SettingsStore {
+  constructor(private store: Store<IPreferences>) {
+    super();
+  }
+
+  async get<K extends keyof IPreferences>(
+    key: K,
+  ): Promise<IPreferences[K] | undefined> {
+    return this.store.get(key);
+  }
+
+  async set<K extends keyof IPreferences>(
+    key: K,
+    value: IPreferences[K],
+  ): Promise<void> {
+    this.store.set(key, value);
+  }
+
+  async delete<K extends keyof IPreferences>(key: K): Promise<void> {
+    this.store.delete(key);
+  }
+
+  async clear(): Promise<void> {
+    this.store.clear();
+  }
+
+  async getStore(): Promise<IPreferences> {
+    return this.store.store as IPreferences;
+  }
+
+  async getPath(): Promise<string> {
+    return this.store.path;
+  }
+}
 
 export interface GenerateFileOptions {
   filePath: string;
@@ -125,6 +162,8 @@ export async function setup(): Promise<ISetupResponse> {
   });
   store.clear();
 
+  const settings = new TestSettingsStore(store);
+
   const tempDir = fs.mkdtempSync(path.join(tmpdir(), "chronicles-test-"));
 
   // Setup the test database URL and notes directory
@@ -134,7 +173,7 @@ export async function setup(): Promise<ISetupResponse> {
   // Ensure the notes notesDirdirectory exists
   Files.mkdirp(notesDir);
 
-  store.set("notesDir", notesDir);
+  await settings.set("notesDir", notesDir);
 
   const { success, error } = await ipcRenderer.invoke("setup-database", dbUrl);
 
@@ -155,8 +194,8 @@ export async function setup(): Promise<ISetupResponse> {
     useNullAsDefault: true,
   });
 
-  const preferences = new PreferencesClient(store);
-  const files = new FilesClient(store);
+  const preferences = new PreferencesClient(settings);
+  const files = new FilesClient(settings);
   const journals = new JournalsClient(knex, files, preferences);
   const documents = new DocumentsClient(db, knex, files, preferences);
   const sync = new SyncClient(

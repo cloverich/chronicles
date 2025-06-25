@@ -1,6 +1,6 @@
 import { ipcRenderer } from "electron";
-import Store from "electron-store";
 import { IPreferences } from "../../hooks/stores/preferences";
+import { SettingsStore } from "../settings";
 
 export interface PreferencesLegacy {
   DATABASE_URL: string;
@@ -37,13 +37,13 @@ const defaults = (): IPreferences => ({
 export type IPreferencesClient = PreferencesClient;
 
 export class PreferencesClient {
-  constructor(private settings: Store<IPreferences>) {
+  constructor(private settings: SettingsStore) {
     this.settings = settings;
     this.migrateV1V2();
   }
 
   migrateV1V2 = async () => {
-    [
+    const migrations = [
       ["ARCHIVED_JOURNALS", "archivedJournals"],
       ["DEFAULT_JOURNAL", "defaultJournal"],
       ["DATABASE_URL", "databaseUrl"],
@@ -51,22 +51,25 @@ export class PreferencesClient {
       ["SETTINGS_DIR", "settingsDir"],
       ["ONBOARDING", "onboarding"],
       ["DARK_MODE", "darkMode"],
-    ].forEach(([oldKey, newKey]) => {
-      if (this.settings.get(oldKey as any) !== undefined) {
-        this.settings.set(newKey, this.settings.get(oldKey as any));
-        this.settings.delete(oldKey as any);
+    ];
+
+    for (const [oldKey, newKey] of migrations) {
+      const oldValue = await this.settings.get(oldKey as any);
+      if (oldValue !== undefined) {
+        await this.settings.set(newKey as any, oldValue);
+        await this.settings.delete(oldKey as any);
       }
-    });
+    }
   };
 
-  settingsPath = () => this.settings.path;
+  settingsPath = async () => await this.settings.getPath();
 
   all = async (key?: keyof IPreferences): Promise<IPreferences> => {
-    return this.settings.store as unknown as IPreferences;
+    return await this.settings.getStore();
   };
 
   get = async (key: keyof IPreferences): Promise<any> => {
-    const setting = this.settings.get(key);
+    const setting = await this.settings.get(key);
     return setting !== undefined
       ? setting
       : defaults()[key as keyof IPreferences];
@@ -78,16 +81,20 @@ export class PreferencesClient {
   delete = async <T extends keyof IPreferences>(
     key: T | string,
   ): Promise<void> => {
-    this.settings.delete(key as T);
+    await this.settings.delete(key as T);
   };
 
   replace = async (prefs: IPreferences) => {
     // NOTE: meant ot be called only by the mobx UI store...
-    this.settings.set(prefs);
+    for (const [key, value] of Object.entries(prefs)) {
+      await this.settings.set(key as keyof IPreferences, value);
+    }
   };
 
   setMultiple = async (prefs: Partial<IPreferences>): Promise<void> => {
-    this.settings.set(prefs);
+    for (const [key, value] of Object.entries(prefs)) {
+      await this.settings.set(key as keyof IPreferences, value);
+    }
     document.documentElement.dispatchEvent(new Event("settingsUpdated"));
   };
 
@@ -95,7 +102,7 @@ export class PreferencesClient {
     key: T | string,
     value: any,
   ): Promise<void> => {
-    this.settings.set(key, value);
+    await this.settings.set(key as keyof IPreferences, value);
 
     // todo: wire Preferences mobx store through settings.onDidAnyChange,
     // maybe we can ditch this store entirely and just use interface and

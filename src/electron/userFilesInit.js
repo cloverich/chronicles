@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const settings = require("./settings");
+const { getStore } = require("./settings");
 const { ensureDir } = require("./ensureDir");
 
 /**
@@ -11,9 +11,9 @@ const { ensureDir } = require("./ensureDir");
  *  on MacOS: ~/Library/Application Support/Chronicles
  * @returns void
  */
-exports.initUserFilesDir = (userDataDir) => {
-  initDir("notesDir", path.join(userDataDir, "/notes"));
-  initDir("settingsDir", userDataDir);
+exports.initUserFilesDir = async (userDataDir) => {
+  await initDir("notesDir", path.join(userDataDir, "/notes"));
+  await initDir("settingsDir", userDataDir);
 };
 
 /**
@@ -24,7 +24,8 @@ exports.initUserFilesDir = (userDataDir) => {
  * @param {string} fallbackPath - Path (relative to root) to use as default for path at settingsKey
  *  if it does not exist; will be set in settings afterwards
  */
-function initDir(settingsKey, fallbackPath) {
+async function initDir(settingsKey, fallbackPath) {
+  const settings = await getStore();
   let assetsPath = settings.get(settingsKey);
 
   try {

@@ -1,12 +1,10 @@
-import Store from "electron-store";
-
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import { Files } from "../files";
 const { readFile, writeFile, access, stat } = fs.promises;
 
-import { IPreferences } from "../../hooks/stores/preferences";
+import { SettingsStore } from "../settings";
 import { createId } from "./util";
 
 interface UploadResponse {
@@ -60,7 +58,7 @@ const dataURLToBufferAndExtension = (dataUrl: string) => {
 export type IFilesClient = FilesClient;
 
 export class FilesClient {
-  constructor(private settings: Store<IPreferences>) {}
+  constructor(private settings: SettingsStore) {}
 
   /**
    * Upload a file dropped onto the editor.
@@ -169,7 +167,7 @@ export class FilesClient {
     document: { id: string; content: string },
     journal: string,
   ) => {
-    const { docPath, journalPath } = this.getSafeDocumentPath(
+    const { docPath, journalPath } = await this.getSafeDocumentPath(
       journal,
       document.id,
     );
@@ -180,13 +178,13 @@ export class FilesClient {
   };
 
   deleteDocument = async (documentId: string, journal: string) => {
-    const { docPath } = this.getSafeDocumentPath(journal, documentId);
+    const { docPath } = await this.getSafeDocumentPath(journal, documentId);
 
     await fs.promises.unlink(docPath);
   };
 
   renameFolder = async (oldName: string, newName: string) => {
-    const baseDir = this.settings.get("notesDir") as string;
+    const baseDir = (await this.settings.get("notesDir")) as string;
     const oldPath = path.join(baseDir, oldName);
     const newPath = path.join(baseDir, newName);
 
@@ -194,20 +192,20 @@ export class FilesClient {
   };
 
   createFolder = async (name: string) => {
-    const baseDir = this.settings.get("notesDir") as string;
+    const baseDir = (await this.settings.get("notesDir")) as string;
     const newPath = path.join(baseDir, name);
     await Files.mkdirp(newPath);
   };
 
   removeFolder = async (name: string) => {
-    const baseDir = this.settings.get("notesDir") as string;
+    const baseDir = (await this.settings.get("notesDir")) as string;
     const newPath = path.join(baseDir, name);
 
     return fs.promises.rmdir(newPath, { recursive: true });
   };
 
-  private getSafeDocumentPath = (journal: string, documentId: string) => {
-    const baseDir = this.settings.get("notesDir") as string;
+  private getSafeDocumentPath = async (journal: string, documentId: string) => {
+    const baseDir = (await this.settings.get("notesDir")) as string;
 
     const journalPath = path.join(baseDir, journal);
     const docPath = path.join(journalPath, `${documentId}.md`);

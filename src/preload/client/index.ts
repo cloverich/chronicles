@@ -1,5 +1,6 @@
 import DB from "better-sqlite3";
 import Knex from "knex";
+import { settings } from "../settings";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
 import { ImporterClient } from "./importer";
@@ -10,31 +11,32 @@ import { SyncClient } from "./sync";
 import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
-import Store from "electron-store";
-import { IPreferences } from "../../hooks/stores/preferences";
+// Global variables to store initialized clients
+let db: DB.Database;
+let knex: Knex;
 
-// todo: json schema
-const settings = new Store<IPreferences>({
-  name: "settings",
-});
+// Initialize database connections asynchronously
+async function initializeDatabase() {
+  if (!db) {
+    const databaseUrl = await settings.get("databaseUrl");
+    if (!databaseUrl) {
+      throw new Error("Database URL not set in settings");
+    }
 
-// todo: validation, put this somewhere proper
-const db = DB(settings.get("databaseUrl") as string);
+    db = DB(databaseUrl);
 
-// Added knex for search which required lots of query mix and
-// matching
-// todo: migrate codebase to prefer knex to directly using
-// the better-sqlite3 client
-const knex = Knex({
-  client: "better-sqlite3", // or 'better-sqlite3'
-  connection: {
-    filename: settings.get("databaseUrl") as string,
-  },
-  // https://knexjs.org/guide/query-builder.html#insert
-  // don't replace undefined with "DEFAULT" in insert statements; replace
-  // it with NULL instead (SQLite raises otherwise)
-  useNullAsDefault: true,
-});
+    knex = Knex({
+      client: "better-sqlite3",
+      connection: {
+        filename: databaseUrl,
+      },
+      // https://knexjs.org/guide/query-builder.html#insert
+      // don't replace undefined with "DEFAULT" in insert statements; replace
+      // it with NULL instead (SQLite raises otherwise)
+      useNullAsDefault: true,
+    });
+  }
+}
 
 export { GetDocumentResponse } from "./types";
 
@@ -49,8 +51,10 @@ class TestsClient {
   };
 }
 
-export function create(): IClient {
+export async function create(): Promise<IClient> {
   if (!client) {
+    await initializeDatabase();
+
     const preferences = new PreferencesClient(settings);
     const files = new FilesClient(settings);
     const journals = new JournalsClient(knex, files, preferences);
