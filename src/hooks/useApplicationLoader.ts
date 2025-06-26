@@ -1,4 +1,4 @@
-import { observable } from "mobx";
+import { makeObservable, observable } from "mobx";
 import React from "react";
 import { toast } from "sonner";
 import { JournalsStore } from "./stores/journals";
@@ -22,13 +22,16 @@ class ApplicationState {
   preferences: Preferences;
   journals: JournalsStore;
 
-  @observable
   isPreferencesOpen: boolean;
 
   constructor(preferences: Preferences, journals: JournalsStore) {
     this.preferences = preferences;
     this.journals = journals;
     this.isPreferencesOpen = false;
+
+    makeObservable(this, {
+      isPreferencesOpen: observable,
+    });
   }
 
   togglePreferences = (state: boolean) => {

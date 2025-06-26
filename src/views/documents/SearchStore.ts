@@ -1,4 +1,10 @@
-import { IObservableArray, action, computed, observable } from "mobx";
+import {
+  IObservableArray,
+  action,
+  computed,
+  makeObservable,
+  observable,
+} from "mobx";
 import { createContext, useContext } from "react";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { IClient } from "../../hooks/useClient";
@@ -53,16 +59,16 @@ export function useSearchStore() {
 }
 
 export class SearchStore {
-  @observable docs: SearchItem[] = [];
-  @observable loading = true;
-  @observable error: string | null = null;
+  docs: SearchItem[] = [];
+  loading = true;
+  error: string | null = null;
   private journals: JournalsStore;
   private parser: SearchParser;
   // NOTE: Public so it can be updated by render calls, since useSearchParmas changes on
   // each render. Not ideal.
   setTokensUrl: any; // todo: This is react-router-dom's setUrl; type it
 
-  @observable private _tokens: IObservableArray<SearchToken> = observable([]);
+  private _tokens: IObservableArray<SearchToken> = observable([]);
 
   constructor(
     private client: IClient,
@@ -74,6 +80,27 @@ export class SearchStore {
     this.parser = new SearchParser();
     this.setTokensUrl = setTokensUrl;
     this.initTokens(tokens);
+
+    makeObservable<SearchStore, "_tokens">(this, {
+      docs: observable,
+      loading: observable,
+      error: observable,
+      _tokens: observable,
+      setTokens: action,
+      tokens: computed,
+      addToken: action,
+      removeToken: action,
+      setSearch: action,
+      selectedJournals: computed,
+      selectedTags: computed,
+      searchTokens: computed,
+      nextId: observable,
+      lastIds: observable,
+      hasNext: computed,
+      hasPrev: computed,
+      next: action,
+      prev: action,
+    });
   }
 
   private initTokens = (searchStr: string[]) => {
@@ -94,7 +121,6 @@ export class SearchStore {
   /**
    * NOTE: This should be private, or refactored to trigger a search
    */
-  @action
   setTokens = (tokens: SearchToken[]) => {
     // Filter out invalid in: journal tokens
     // Additional validation can go here as well
@@ -107,7 +133,7 @@ export class SearchStore {
     this.tokens.replace(tokens);
   };
 
-  @computed get tokens(): IObservableArray<SearchToken> {
+  get tokens(): IObservableArray<SearchToken> {
     return this._tokens;
   }
 
@@ -213,7 +239,6 @@ export class SearchStore {
     this.loading = false;
   };
 
-  @action
   addToken = (searchStr: string, resetPagination = true) => {
     const token = this.parser.parseToken(searchStr);
 
@@ -225,7 +250,6 @@ export class SearchStore {
     }
   };
 
-  @action
   removeToken = (token: string, resetPagination = true) => {
     this.setTokens(this.parser.removeToken(this.tokens.slice(), token)); // slice() from prior implementation
     this.setTokensUrl({ search: this.searchTokens }, { replace: true });
@@ -235,7 +259,6 @@ export class SearchStore {
   /**
    * Replace the current search with a new one.
    */
-  @action
   setSearch = (searchStr: string[]) => {
     const lastSearch = this.searchTokens.sort().join(" ");
     const tokens = this.parser.parseTokens(searchStr);
@@ -251,7 +274,7 @@ export class SearchStore {
   /**
    * Return the selected journals from the search tokens, if any
    */
-  @computed get selectedJournals(): string[] {
+  get selectedJournals(): string[] {
     return (
       this._tokens
         .filter((t) => t.type === "in")
@@ -263,13 +286,12 @@ export class SearchStore {
   /**
    * Return the selected tags from the search tokens, if any
    */
-  @computed get selectedTags(): string[] {
+  get selectedTags(): string[] {
     return this._tokens
       .filter((t) => t.type === "tag")
       .map((t) => t.value) as string[];
   }
 
-  @computed
   get searchTokens(): string[] {
     return this.tokens.map((token) => {
       return this.parser.serializeToken(token);
@@ -283,16 +305,15 @@ export class SearchStore {
   // When back to prior page, next and last id are correct
   // When back to first page, there is no last Id
   // New searches clear pagination data
-  @observable nextId: string | null = null;
-  @observable lastIds: (string | undefined)[] = [];
-  @computed get hasNext() {
+  nextId: string | null = null;
+  lastIds: (string | undefined)[] = [];
+  get hasNext() {
     return !!this.nextId;
   }
-  @computed get hasPrev() {
+  get hasPrev() {
     return !!this.lastIds.length;
   }
 
-  @action
   next = () => {
     if (!this.nextId) return;
 
@@ -305,7 +326,6 @@ export class SearchStore {
     this.addToken(`before:${this.nextId}`, false);
   };
 
-  @action
   prev = () => {
     if (!this.hasPrev) return;
 

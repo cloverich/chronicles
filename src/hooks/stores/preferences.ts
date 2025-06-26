@@ -1,4 +1,4 @@
-import { observable, reaction, toJS } from "mobx";
+import { makeObservable, observable, reaction, toJS } from "mobx";
 import { IClient } from "../../preload/client/types";
 
 export interface IPreferences {
@@ -26,21 +26,13 @@ export class Preferences implements IPreferences {
     [K in keyof IPreferences]?: IPreferences[K] | null;
   };
 
-  @observable
   databaseUrl!: string;
-  @observable
   defaultJournal!: string | null;
-  @observable
   archivedJournals!: Record<string, boolean>;
-  @observable
   notesDir!: string;
-  @observable
   settingsDir!: string;
-  @observable
   onboarding!: "new" | "complete";
-  @observable
   darkMode!: "light" | "dark" | "system";
-  @observable
   fonts!: {
     heading?: string;
     heading2?: string;
@@ -53,6 +45,17 @@ export class Preferences implements IPreferences {
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {
     Object.assign(this, prefs);
+    makeObservable(this, {
+      databaseUrl: observable,
+      defaultJournal: observable,
+      archivedJournals: observable,
+      notesDir: observable,
+      settingsDir: observable,
+      onboarding: observable,
+      darkMode: observable,
+      fonts: observable,
+    });
+
     this._lastSynced = { ...prefs };
     this.client = client;
 
