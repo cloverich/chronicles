@@ -54,8 +54,9 @@ export function useEditableDocument(documentId?: string) {
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        console.error("useEditableDocument.err", message);
 
-        if (message.match(/not found/)) {
+        if (message.startsWith("[DOCUMENT_NOT_FOUND]")) {
           navigate("/documents");
           toast.warning(`Document ${documentId} not found`);
         } else {

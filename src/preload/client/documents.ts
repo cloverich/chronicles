@@ -60,9 +60,13 @@ export class DocumentsClient {
       .where({ id })
       .first();
 
-    // todo: test 404 behavior
+    // todo: add test 404 behavior
     if (!document) {
-      throw new Error(`Document ${id} not found`);
+      // note: Prefix is used as a code. Since custom errors and .code proeprties
+      // do not cross the preload boundary, a prefix code [<CODE>] can be used by
+      // FE to identify the error. This came up after mistaking a mobx not found
+      // error for a document not found error.
+      throw new Error(`[DOCUMENT_NOT_FOUND] Document ${id} not found`);
     }
 
     const filepath = path.join(

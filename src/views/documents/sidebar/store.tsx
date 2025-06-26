@@ -1,4 +1,4 @@
-import { computed, observable } from "mobx";
+import { computed, makeObservable, observable } from "mobx";
 import React from "react";
 import { toast } from "sonner";
 import { JournalsStore } from "../../../hooks/stores/journals";
@@ -24,11 +24,11 @@ export function useSidebarStore(
  * Sidebar store for managing the sidebar state.
  */
 export class SidebarStore {
-  @observable saving: boolean;
-  @observable adding: boolean;
-  @observable editing: string | undefined;
+  saving: boolean;
+  adding: boolean;
+  editing: string | undefined;
 
-  @computed get shouldEscapeClose() {
+  get shouldEscapeClose() {
     return !this.adding && !this.editing;
   }
 
@@ -48,6 +48,13 @@ export class SidebarStore {
     this.journalStore = journalStore;
     this.searchStore = searchStore;
     this.setIsShown = setIsShown;
+
+    makeObservable(this, {
+      saving: observable,
+      adding: observable,
+      editing: observable,
+      shouldEscapeClose: computed,
+    });
   }
 
   onOpenChanged = (isOpen: boolean) => {

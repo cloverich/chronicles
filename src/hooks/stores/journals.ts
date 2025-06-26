@@ -1,21 +1,21 @@
-import { computed, observable } from "mobx";
+import { computed, makeObservable, observable } from "mobx";
 import { IClient, JournalResponse } from "../useClient";
 
 export class JournalsStore {
-  @observable loading: boolean = true;
-  @observable saving: boolean = false;
-  @observable error: Error | null = null;
-  @observable journals: JournalResponse[];
+  loading: boolean = true;
+  saving: boolean = false;
+  error: Error | null = null;
+  journals: JournalResponse[];
 
-  @computed get active() {
+  get active() {
     return this.journals.filter((j) => !j.archived);
   }
 
-  @computed get archived() {
+  get archived() {
     return this.journals.filter((j) => !!j.archived);
   }
 
-  @observable defaultJournal: string;
+  defaultJournal: string;
 
   constructor(
     private client: IClient,
@@ -25,6 +25,16 @@ export class JournalsStore {
     this.client = client;
     this.journals = journals;
     this.defaultJournal = defaultJournal;
+
+    makeObservable(this, {
+      loading: observable,
+      saving: observable,
+      error: observable,
+      journals: observable,
+      active: computed,
+      archived: computed,
+      defaultJournal: observable,
+    });
   }
 
   // todo: Move to a proper start-up routine; fuse with sync routine

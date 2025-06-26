@@ -1,5 +1,12 @@
 import { debounce } from "lodash";
-import { IReactionDisposer, computed, observable, reaction, toJS } from "mobx";
+import {
+  IReactionDisposer,
+  computed,
+  makeObservable,
+  observable,
+  reaction,
+  toJS,
+} from "mobx";
 import { toast } from "sonner";
 import { IClient } from "../../hooks/useClient";
 import { slateToMdast, slateToString, stringToSlate } from "../../markdown";
@@ -17,21 +24,21 @@ function isExistingDocument(
  */
 export class EditableDocument {
   // active model properties:
-  @observable saving: boolean = false;
-  @observable savingError: Error | null = null;
+  saving: boolean = false;
+  savingError: Error | null = null;
 
   /**
    * The markdown string, i.e. after converting Slate DOM content
    * to a string for saving, its stored here.
    */
-  @observable content: string = "";
+  content: string = "";
 
   /**
    * For debugging how slate DOM is converted to MDAST. See save.
    * NOTE: This is computed so its only computed when called by the
    * debug view.
    */
-  @computed get mdastDebug() {
+  get mdastDebug() {
     const slateContent = this.getInitialSlateContent();
     if (slateContent) {
       return slateToMdast(toJS(slateContent));
@@ -41,13 +48,13 @@ export class EditableDocument {
   }
 
   // The underlying document properties:
-  @observable title?: string;
-  @observable journal: string;
-  @observable id: string;
-  @observable createdAt: string;
-  @observable updatedAt: string; // read-only outside this class
-  @observable tags: string[];
-  @observable frontMatter: FrontMatter;
+  title?: string;
+  journal: string;
+  id: string;
+  createdAt: string;
+  updatedAt: string; // read-only outside this class
+  tags: string[];
+  frontMatter: FrontMatter;
 
   // editor properties
   slateContent: SlateCustom.SlateNode[] = [];
@@ -72,6 +79,20 @@ export class EditableDocument {
     this.updatedAt = doc.frontMatter.updatedAt;
     this.tags = doc.frontMatter.tags;
     this.frontMatter = doc.frontMatter;
+
+    makeObservable(this, {
+      saving: observable,
+      savingError: observable,
+      content: observable,
+      mdastDebug: computed,
+      title: observable,
+      journal: observable,
+      id: observable,
+      createdAt: observable,
+      updatedAt: observable,
+      tags: observable,
+      frontMatter: observable,
+    });
 
     // Auto-save
     // todo: performance -- investigate putting draft state into storage,
