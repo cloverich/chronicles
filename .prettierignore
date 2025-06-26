@@ -7,3 +7,4 @@ packaged
 # Some of the changes prettier makes to md files differs from what
 # mdast-util-to-string does, making it unusable as a snapshot. 
 src/markdown/test-docs/*
+.claude/

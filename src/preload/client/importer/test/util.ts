@@ -8,7 +8,6 @@ import path from "path";
 import util from "util";
 import { IPreferences } from "../../../../hooks/stores/preferences";
 import { Files } from "../../../files";
-import { SettingsStore } from "../../../settings";
 import { DocumentsClient } from "../../documents";
 import { FilesClient } from "../../files";
 import { ImporterClient } from "../../importer";
@@ -18,39 +17,46 @@ import { SyncClient } from "../../sync";
 import { TagsClient } from "../../tags";
 import { IClient } from "../../types";
 
-// Test implementation of SettingsStore that uses electron-store directly
-class TestSettingsStore extends SettingsStore {
-  constructor(private store: Store<IPreferences>) {
-    super();
-  }
+// Test implementation that mimics SettingsStore interface
+class TestSettingsStore {
+  constructor(private electronStore: any) {}
 
   async get<K extends keyof IPreferences>(
     key: K,
   ): Promise<IPreferences[K] | undefined> {
-    return this.store.get(key);
+    return this.electronStore.get(key);
   }
 
   async set<K extends keyof IPreferences>(
     key: K,
     value: IPreferences[K],
   ): Promise<void> {
-    this.store.set(key, value);
+    this.electronStore.set(key, value);
   }
 
   async delete<K extends keyof IPreferences>(key: K): Promise<void> {
-    this.store.delete(key);
+    this.electronStore.delete(key);
   }
 
   async clear(): Promise<void> {
-    this.store.clear();
+    this.electronStore.clear();
   }
 
   async getStore(): Promise<IPreferences> {
-    return this.store.store as IPreferences;
+    return this.electronStore.store as IPreferences;
   }
 
   async getPath(): Promise<string> {
-    return this.store.path;
+    return this.electronStore.path;
+  }
+
+  // For compatibility with SettingsStore interface
+  get store(): Promise<IPreferences> {
+    return this.getStore();
+  }
+
+  get path(): Promise<string> {
+    return this.getPath();
   }
 }
 
@@ -157,12 +163,12 @@ export const generateBinaryFileStub = async ({
 // create a client with a temp database, settings, and notes directory
 // for integration testing
 export async function setup(): Promise<ISetupResponse> {
-  const store = new Store<IPreferences>({
+  const electronStore = new Store<IPreferences>({
     name: "test",
-  });
-  store.clear();
+  }) as any;
+  electronStore.clear();
 
-  const settings = new TestSettingsStore(store);
+  const settings = new TestSettingsStore(electronStore);
 
   const tempDir = fs.mkdtempSync(path.join(tmpdir(), "chronicles-test-"));
 

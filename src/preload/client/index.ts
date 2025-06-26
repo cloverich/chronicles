@@ -1,5 +1,5 @@
 import DB from "better-sqlite3";
-import Knex from "knex";
+import Knex, { Knex as KnexType } from "knex";
 import { settings } from "../settings";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
@@ -13,7 +13,7 @@ import { IClient } from "./types";
 
 // Global variables to store initialized clients
 let db: DB.Database;
-let knex: Knex;
+let knex: KnexType;
 
 // Initialize database connections asynchronously
 async function initializeDatabase() {
