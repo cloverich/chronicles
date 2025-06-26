@@ -36,9 +36,10 @@ esbuild.build({
 // build preload bundle
 esbuild.build({
   entryPoints: ["src/preload/index.ts"],
-  outfile: "src/preload.bundle.js",
+  outfile: "src/preload.bundle.mjs",
   bundle: true,
   platform: "node",
+  format: "esm",
   external: ["knex", "electron", "electron-store", "better-sqlite3"],
   plugins: [afterBuild("preload")],
 });

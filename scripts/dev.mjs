@@ -92,9 +92,10 @@ const checkTypes = lodash.debounce(function checkTypes() {
 async function watchRenderer() {
   const ctxRenderer = await esbuild.context({
     entryPoints: ["src/index.tsx"],
-    outfile: "src/renderer.bundle.js",
+    outfile: "src/renderer.bundle.mjs",
     bundle: true,
     platform: "browser",
+    format: "esm",
     plugins: [startElectronPlugin("renderer")],
     sourcemap: true,
     loader: {
@@ -112,10 +113,11 @@ async function watchRenderer() {
 async function watchPreload() {
   const ctxPreload = await esbuild.context({
     entryPoints: ["src/preload/index.ts"],
-    outfile: "src/preload.bundle.js",
+    outfile: "src/preload.bundle.mjs",
     bundle: true,
     platform: "node",
-    external: ["knex", "electron", "electron-store", "better-sqlite3"],
+    format: "esm",
+    external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
     plugins: [startElectronPlugin("preload")],
     sourcemap: true,
   });

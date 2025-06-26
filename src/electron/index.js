@@ -207,7 +207,7 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.bundle.js"),
+      preload: path.join(__dirname, "preload.bundle.mjs"),
     },
   });
 
@@ -217,6 +217,12 @@ function createWindow() {
   });
 
   if (!app.isPackaged) {
+    // NOTE: These capture console.log messages from the renderer process, which
+    // agents like Claude can use to debug.
+    mainWindow.webContents.on("console-message", (event) => {
+      console.log(`[RENDERER ${event.level}]:`, event.message);
+    });
+
     mainWindow.webContents.openDevTools();
     setupInspectElement(mainWindow);
   }
