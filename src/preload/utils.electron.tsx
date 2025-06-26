@@ -1,5 +1,5 @@
 // In renderer process (web page).
-const { ipcRenderer } = require("electron");
+import { ipcRenderer } from "electron";
 
 // Map middle click to "inspect element" for debugging
 window.onauxclick = (e) => {
