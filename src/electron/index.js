@@ -213,7 +213,9 @@ function createWindow() {
 
   mainWindow.loadFile("index.html");
   mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
+    if (!process.env.HEADLESS) {
+      mainWindow.show();
+    }
   });
 
   if (!app.isPackaged) {

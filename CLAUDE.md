@@ -1,59 +1,47 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Chronicles is a local-first, markdown based Journaling application written in Typescript/React and using Electron.
+
+## Development process
+
+- Generate plan / evaluate provided Github issue (`gh` command)
+- Write code
+- Run app (with HEADLESS=true to see renderer logs in main process)
+- Validate further (yarn lint, yarn test, etc)
+- Commit
 
 ## Development Commands
 
-**Start Development**
+To install:
 
 ```bash
 # Install dependencies (if needed)
 yarn
 
-# Start development server with hot reload
-yarn start
-
 # Manually rebuild native dependencies if needed
 yarn run electron-rebuild --force
+
+# nuclear - rarely needed
+rm -rf node_modules
 ```
 
-**Build and Package**
+To run and validate:
 
 ```bash
-# Full production build (creates packaged app)
-yarn build
+# Headless to avoid UI, browser logs will show up in main process
+# prefixed with [RENDERER]
+HEADLESS=true yarn start
 
-# Just run the build script (without packaging)
-./build.sh
-```
-
-**Testing and Quality**
-
-```bash
-# Run all tests
-yarn test
-
-# Run linting (prettier + typescript)
+# Check eslint or typescript
 yarn lint
 
-# Check types without emitting output
-yarn run lint:types:check
-
-# Fix prettier formatting
+# Fix prettier formatting (yarn lint only :checks)
 yarn run lint:prettier:write
-```
 
-**Individual Commands**
+# Run the sparse tests - we need to add more!
+yarn test
 
-```bash
-# Compile CSS
-tailwindcss -i ./src/index.css -o ./src/index-compiled.css
-
-# Type check
-tsc --noEmit --skipLibCheck
-
-# Run single test file
-mocha 'src/**/*.test.bundle.js'
+# See package.json for additional scripts
 ```
 
 ## Architecture Overview
@@ -81,27 +69,30 @@ mocha 'src/**/*.test.bundle.js'
 The build uses esbuild to create three bundles:
 
 1. **Main Process** (`src/electron/index.js` → `src/main.bundle.js`)
-2. **Preload Script** (`src/preload/index.ts` → `src/preload.bundle.js`)
-3. **Renderer Process** (`src/index.tsx` → `src/renderer.bundle.js`)
+2. **Preload Script** (`src/preload/index.ts` → `src/preload.bundle.mjs`)
+3. **Renderer Process** (`src/index.tsx` → `src/renderer.bundle.mjs`)
 
 Development mode (`yarn start`) watches all three bundles and restarts Electron on changes.
 
+Production mode uses `electron-packager` and command `yarn build`
+
 ## Custom Markdown System
 
-Chronicles implements **Obsidian Flavored Markdown (OFM)** with custom extensions:
+Chronicles storage format uses standard markdown with a few extensions, displayed to users through Slate
 
-**Supported Syntax**
+### Supported Syntax
 
 - **Tags**: `#tag`, `#tag/subtag` - Hashtag-style tagging
 - **Wikilinks**: `[[note]]`, `[[note#section|alias]]` - Wiki-style note linking
 - **Standard GFM**: Tables, task lists, code blocks, etc.
+- **Obsidian Flavored Markdown (OFM)** when importing / processing
 - **YAML Frontmatter**: Metadata including title, tags, timestamps
 
 **Processing Pipeline**
 
 1. **Parsing**: micromark with custom OFM extensions
 2. **AST**: MDAST (Markdown AST) with custom node types
-3. **Editor**: Slate.js with custom elements for rich editing
+3. **Editor**: Slate.js / Plate with custom elements for rich editing
 4. **Storage**: Roundtrip markdown conversion preserving formatting
 
 **Special Features**
@@ -134,7 +125,7 @@ Communication between main and renderer processes via `src/preload/`:
 
 - Main process handles file system, database, and native OS integration
 - Renderer process is the React application (sandboxed)
-- Preload script bridges the two with contextIsolation enabled
+- Preload script bridges the two with contextIsolation enabled for security (node / filesystem apis)
 
 **Editor Implementation**
 
@@ -151,7 +142,7 @@ Communication between main and renderer processes via `src/preload/`:
 
 **Testing**
 
-- Unit tests use Mocha with esbuild compilation
+- Unit tests use Mocha with esbuild compilation - goal to use node's test runner or vitest long term
 - Tests files: `*.test.ts` compiled to `*.test.bundle.js`
 - Test database setup in `src/preload/client/importer/test/`
 
