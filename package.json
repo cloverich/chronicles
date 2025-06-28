@@ -5,6 +5,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "type": "module",
   "scripts": {
     "build": "./build.sh",
     "lint": "yarn run lint:prettier:check && yarn run lint:types:check",
@@ -23,7 +24,7 @@
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^12.1.1",
-    "electron-store": "^8.0.1",
+    "electron-store": "^10.1.0",
     "knex": "^2.5.0",
     "sharp": "^0.33.5",
     "uuid25": "^0.1.5",

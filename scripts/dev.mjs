@@ -46,7 +46,7 @@ let eprocess;
 function startElectron() {
   console.log("starting electron");
   checkTypes();
-  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.js"], {
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
     stdio: "inherit",
   });
 
@@ -68,7 +68,7 @@ const restartElectron = lodash.debounce(function startElectron() {
   // is incremental or something, rather than a fresh sub-process)
   checkTypes();
   console.log("restarting electron");
-  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.js"], {
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
     stdio: "inherit",
   });
 
@@ -127,10 +127,11 @@ async function watchPreload() {
 
 async function watchMain() {
   const ctxMain = await esbuild.context({
-    entryPoints: ["src/electron/index.js"],
-    outfile: "src/main.bundle.js",
+    entryPoints: ["src/electron/index.ts"],
+    outfile: "src/main.bundle.mjs",
     bundle: true,
     platform: "node",
+    format: "esm",
     external: ["electron", "electron-store", "better-sqlite3"],
     plugins: [startElectronPlugin("main")],
   });

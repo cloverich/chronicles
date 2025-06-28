@@ -1,12 +1,16 @@
-const fs = require("fs");
-const path = require("path");
-const DB = require("better-sqlite3");
+import DB from "better-sqlite3";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // A hacky "migration" script after bailing on Prisma and realizing
 // better-sqlite3 is not compatible with knex yet :|
 // https://github.com/knex/knex/issues/4511
 // todo: real migrations, backup database while migrating
-module.exports = function (dbUrl) {
+export default function (dbUrl: string) {
   const db = DB(dbUrl);
 
   try {
@@ -23,4 +27,4 @@ module.exports = function (dbUrl) {
     console.error("Error running migrations!", err);
     throw err;
   }
-};
+}
