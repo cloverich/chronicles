@@ -1,36 +1,37 @@
-const {
-  app,
+import {
   BrowserWindow,
-  ipcMain,
-  shell,
-  dialog,
-  protocol,
   Menu,
-  MenuItemConstructorOptions,
-} = require("electron");
-const path = require("path");
-const fs = require("fs");
-const url = require("url");
-const { initUserFilesDir } = require("./userFilesInit");
-const settings = require("./settings");
-const migrate = require("./migrations");
-const { ensureDir } = require("./ensureDir");
+  MenuItem,
+  app,
+  dialog,
+  ipcMain,
+  protocol,
+  shell,
+} from "electron";
+import fs from "fs";
+import path from "path";
+import url, { fileURLToPath } from "url";
+import { ensureDir } from "./ensureDir.js";
+import migrate from "./migrations/index.js";
+import settings from "./settings.js";
+import { initUserFilesDir } from "./userFilesInit.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // when packaged, it should be in Library/Application Support/Chronicles/settings.json
 // when in dev, Library/Application Support/Chronicles/settings.json
 initUserFilesDir(app.getPath("userData"));
 console.log("application settings at startup:", settings.store);
 
-const DATABASE_URL = "DATABASE_URL";
-
 // Used by createWindow, but needed in database routine because of the filepicker call
-let mainWindow;
+let mainWindow: BrowserWindow | null = null;
 
 function setupDefaultDatabaseUrl() {
-  let dbUrl = settings.get(DATABASE_URL);
+  let dbUrl = settings.get("databaseUrl");
   if (!dbUrl) {
     dbUrl = path.join(app.getPath("userData"), "chronicles.db");
-    settings.set(DATABASE_URL, dbUrl);
+    settings.set("databaseUrl", dbUrl);
   }
 
   return dbUrl;
@@ -54,7 +55,10 @@ ipcMain.handle("setup-database", async (event, dbUrl) => {
     return { success: true };
   } catch (err) {
     console.error(`Error migrating the database using url: ${dbUrl}:`, err);
-    return { success: false, error: err.message };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
   }
 });
 
@@ -64,7 +68,12 @@ app.whenReady().then(() => {
   // todo: registerFileProtocol is deprecated; using the new protocol method works,
   // but videos don't seek properly.
   protocol.registerFileProtocol("chronicles", (request, callback) => {
-    callback({ path: validateChroniclesUrl(request.url) });
+    const path = validateChroniclesUrl(request.url);
+    if (path) {
+      callback({ path });
+    } else {
+      callback({ path: undefined });
+    }
   });
 });
 
@@ -78,7 +87,7 @@ app.whenReady().then(() => {
  *
  * @param {string} chroniclesUrl The "chronicles://" URL to convert
  */
-function validateChroniclesUrl(chroniclesUrl) {
+function validateChroniclesUrl(chroniclesUrl: string) {
   // NOTE: chroniclesUrl SHOULD start with chronicles://../_attachments/<filename>
   // NOTE: UI should also validate this, to tell user how to fix (if it comes up)
   if (!chroniclesUrl?.startsWith("chronicles://../_attachments")) {
@@ -126,7 +135,7 @@ function validateChroniclesUrl(chroniclesUrl) {
 }
 
 // Checks if the resolved path is within the specified directory
-function isPathWithinDirectory(resolvedPath, directory) {
+function isPathWithinDirectory(resolvedPath: string, directory: string) {
   const relative = path.relative(directory, resolvedPath);
   return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
@@ -136,7 +145,7 @@ function isPathWithinDirectory(resolvedPath, directory) {
  * @param {string} urlString The URL to check.
  * @returns {boolean} True if the URL is considered safe, false otherwise.
  */
-function isSafeForExternalOpen(urlString) {
+function isSafeForExternalOpen(urlString: string) {
   try {
     const parsedUrl = new url.URL(urlString);
 
@@ -156,7 +165,7 @@ function isSafeForExternalOpen(urlString) {
  * Handle opening web and file links in system default applications.
  * @param {string} url
  */
-function handleLinkClick(url) {
+function handleLinkClick(url: string) {
   if (url.startsWith("chronicles://")) {
     const sanitized = validateChroniclesUrl(url);
     if (sanitized) {
@@ -214,7 +223,7 @@ function createWindow() {
   mainWindow.loadFile("index.html");
   mainWindow.once("ready-to-show", () => {
     if (!process.env.HEADLESS) {
-      mainWindow.show();
+      mainWindow?.show();
     }
   });
 
@@ -236,18 +245,20 @@ function createWindow() {
  * DevTools.
  * @param {Electron.Main.BrowserWindow} mainWindow
  */
-function setupInspectElement(mainWindow) {
+function setupInspectElement(mainWindow: BrowserWindow) {
   // type is MenuItemConstructorOptions[]
-  let rightClickPosition;
-  const contextMenuTemplate = [
+  let rightClickPosition: { x: number; y: number } | null = null;
+  const contextMenuTemplate: any[] = [
+    // todo: MenuItemConstructorOptions[]
     {
       label: "Inspect Element",
-      click: (item, focusedWindow) => {
-        if (focusedWindow)
+      click: (item: MenuItem, focusedWindow?: BrowserWindow) => {
+        if (focusedWindow && rightClickPosition) {
           focusedWindow.webContents.inspectElement(
             rightClickPosition.x,
             rightClickPosition.y,
           );
+        }
       },
     },
   ];

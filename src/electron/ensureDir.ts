@@ -1,10 +1,10 @@
-const fs = require("fs");
+import fs from "fs";
 
 /**
  * Borrowed from api files, since its typescript and this is not
  * Reconcile that later
  */
-exports.ensureDir = function ensureDir(directory, create = true) {
+export function ensureDir(directory: string, create = true) {
   if (!directory) {
     throw new Error("ensureDir called with no directory path");
   }
@@ -17,11 +17,13 @@ exports.ensureDir = function ensureDir(directory, create = true) {
       );
     }
   } catch (err) {
-    if (err.code !== "ENOENT") throw err;
+    if (err instanceof Error && "code" in err && err.code !== "ENOENT")
+      throw err;
     try {
       fs.mkdirSync(directory, { recursive: true });
     } catch (err) {
-      if (err.code !== "EEXIST") throw err;
+      if (err instanceof Error && "code" in err && err.code !== "EEXIST")
+        throw err;
     }
   }
 
@@ -29,4 +31,4 @@ exports.ensureDir = function ensureDir(directory, create = true) {
   // when actually writing. Better to move this logic to the actual file
   // upload handlers.
   fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
-};
+}

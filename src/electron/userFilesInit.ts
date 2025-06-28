@@ -1,7 +1,6 @@
-const path = require("path");
-const fs = require("fs");
-const settings = require("./settings");
-const { ensureDir } = require("./ensureDir");
+import path from "path";
+import { ensureDir } from "./ensureDir.js";
+import settings from "./settings.js";
 
 /**
  * Validate user file directories, creating them if they do not exist
@@ -11,10 +10,10 @@ const { ensureDir } = require("./ensureDir");
  *  on MacOS: ~/Library/Application Support/Chronicles
  * @returns void
  */
-exports.initUserFilesDir = (userDataDir) => {
+export function initUserFilesDir(userDataDir: string) {
   initDir("notesDir", path.join(userDataDir, "/notes"));
   initDir("settingsDir", userDataDir);
-};
+}
 
 /**
  * Initialize files / root directories with fallbacks, and ensure they can be read from / written
@@ -24,7 +23,10 @@ exports.initUserFilesDir = (userDataDir) => {
  * @param {string} fallbackPath - Path (relative to root) to use as default for path at settingsKey
  *  if it does not exist; will be set in settings afterwards
  */
-function initDir(settingsKey, fallbackPath) {
+function initDir(
+  settingsKey: "notesDir" | "settingsDir",
+  fallbackPath: string,
+) {
   let assetsPath = settings.get(settingsKey);
 
   try {
