@@ -1,9 +1,9 @@
 import { assert } from "chai";
-import { suite, test } from "mocha";
+import { describe, test } from "node:test";
 import { SearchParser } from "../SearchParser";
 import { SearchToken } from "./tokens";
 
-suite("SearchParser", function () {
+describe("SearchParser", function () {
   test("parseToken", function () {
     const parser = new SearchParser();
     const token = parser.parseToken("in:chronicles");
@@ -83,7 +83,7 @@ suite("SearchParser", function () {
     ]);
   });
 
-  suite("Parsers", function () {
+  describe("Parsers", function () {
     test("in:", function () {
       assert.equal(true, true);
       const pasrer = new SearchParser();
