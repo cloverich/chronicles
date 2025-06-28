@@ -2,40 +2,12 @@ import { ipcRenderer } from "electron";
 import Store from "electron-store";
 import { IPreferences } from "../../hooks/stores/preferences";
 
-export interface PreferencesLegacy {
-  DATABASE_URL: string;
-  DEFAULT_JOURNAL: string | null;
-  ARCHIVED_JOURNALS: Record<string, boolean>;
-  NOTES_DIR: string;
-  SETTINGS_DIR: string;
-  ONBOARDING: "new" | "complete";
-  DARK_MODE: "light" | "dark" | "system";
-}
-
 export type IPreferencesClient = PreferencesClient;
 
 export class PreferencesClient {
   constructor(private settings: Store<IPreferences>) {
     this.settings = settings;
-    this.migrateV1V2();
   }
-
-  migrateV1V2 = async () => {
-    [
-      ["ARCHIVED_JOURNALS", "archivedJournals"],
-      ["DEFAULT_JOURNAL", "defaultJournal"],
-      ["DATABASE_URL", "databaseUrl"],
-      ["NOTES_DIR", "notesDir"],
-      ["SETTINGS_DIR", "settingsDir"],
-      ["ONBOARDING", "onboarding"],
-      ["DARK_MODE", "darkMode"],
-    ].forEach(([oldKey, newKey]) => {
-      if (this.settings.get(oldKey as any) !== undefined) {
-        this.settings.set(newKey, this.settings.get(oldKey as any));
-        this.settings.delete(oldKey as any);
-      }
-    });
-  };
 
   settingsPath = () => this.settings.path;
 
