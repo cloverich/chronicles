@@ -1,8 +1,8 @@
-const sharp = require("sharp");
+import sharp from "sharp";
 // https://github.com/akabekobeko/npm-icon-gen
-const iconGen = require("icon-gen");
-const path = require("path");
-const fs = require("fs");
+import fs from "fs";
+import iconGen from "icon-gen";
+import path from "path";
 
 /**
  * This file is used to generate icons for the app based off of an input asset. Not much

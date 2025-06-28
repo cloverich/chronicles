@@ -1,4 +1,4 @@
-const esbuild = require("esbuild");
+import esbuild from "esbuild";
 
 // After successful build, log results
 function afterBuild(name) {
@@ -20,8 +20,9 @@ function afterBuild(name) {
 // build renderer bundle
 esbuild.build({
   entryPoints: ["src/index.tsx"],
-  outfile: "src/renderer.bundle.js",
+  outfile: "src/renderer.bundle.mjs",
   bundle: true,
+  format: "esm",
   platform: "browser",
   plugins: [afterBuild("renderer")],
   loader: {
@@ -40,15 +41,16 @@ esbuild.build({
   bundle: true,
   platform: "node",
   format: "esm",
-  external: ["knex", "electron", "electron-store", "better-sqlite3"],
+  external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
   plugins: [afterBuild("preload")],
 });
 
 // build electron main bundle
 esbuild.build({
-  entryPoints: ["src/electron/index.js"],
-  outfile: "src/main.bundle.js",
+  entryPoints: ["src/electron/index.ts"],
+  outfile: "src/main.bundle.mjs",
   bundle: true,
+  format: "esm",
   platform: "node",
   external: ["electron", "electron-store", "better-sqlite3"],
   plugins: [afterBuild("main")],

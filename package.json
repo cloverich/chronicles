@@ -1,7 +1,7 @@
 {
   "name": "Chronicles",
   "version": "1.0.0",
-  "main": "main.bundle.js",
+  "main": "main.bundle.mjs",
   "engines": {
     "node": ">=22.0.0"
   },

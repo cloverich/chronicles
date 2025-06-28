@@ -15,9 +15,9 @@
  *
  * This is also true for any additional architecture beyond whatever macos supports.
  */
-const { packager } = require("@electron/packager");
-const { rebuild } = require("@electron/rebuild");
-const path = require("path");
+import { packager } from "@electron/packager";
+import { rebuild } from "@electron/rebuild";
+import path from "path";
 
 // These arguments are provided by build.sh
 const srcDir = process.argv[2];
