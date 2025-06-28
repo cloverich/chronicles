@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import fs from "fs";
-import { describe, it } from "mocha";
+import { describe, it } from "node:test";
 import path from "path";
 import { fileURLToPath } from "url";
 import yaml from "yaml";
@@ -115,13 +115,12 @@ describe("Slate processing", function () {
     runTests(doc);
   });
 
-  it("basic marks", function () {
-    // NOTE: converts italic from _italic_ to *italic*
+  describe("basic marks", function () {
     // NOTE: Parse or stringify introduces newlines, likely because of the paragraph
     // this can be visualized with JSON.stringify(result)
     const doc = {
       markdown:
-        "This is *italic text* and **bold text** and ~~struck through text~~ and `code text`",
+        "This is _italic text_ and **bold text** and ~~struck through text~~ and `code text`",
       mdast: {
         type: "root",
         children: [
@@ -613,9 +612,15 @@ describe("mdast-util-ofm-tag", async () => {
 // cases as I discover issues, making it easier to fix in the future when I have less
 // context.
 describe("Known issues / limitations", function () {
-  it("should not convert _italic_ to *italic*", function () {
+  describe("should not convert _italic_ to *italic*", function () {
     const doc = { markdown: "This is _italic text_" };
     runTests(doc);
+  });
+
+  // controlled by: emphasis: "_" config for toMarkdown
+  it("converts *italic* to _italic_", function () {
+    const result = slateToString(stringToSlate("This is *italic text*"));
+    expect(result).to.equal("This is _italic text_\n");
   });
 
   // In this test, I found that if the document has images with no other content, since I unwrap images from paragraphs
@@ -628,7 +633,7 @@ describe("Known issues / limitations", function () {
     expect(actual).to.equal(markdown);
   });
 
-  it("should not escape underscore in image title", function () {
+  describe("should not escape underscore in image title", function () {
     const doc = {
       markdown:
         // todo: When within a paragraph, the mdast->string conversion is adding an escape to underscores in titles
@@ -666,7 +671,8 @@ describe("Known issues / limitations", function () {
             {
               type: "img",
               url: "chronicles://../_attachments/01931c56fdb076a292f80193b27f02bb.jpeg",
-              title: null,
+              // note: real dumb, had to change from null to undefined when i migrated to node:test... why?
+              title: undefined,
               alt: "75d97cd0e4b3f42f58aa80cefab00fec_res.jpeg",
               caption: [
                 {

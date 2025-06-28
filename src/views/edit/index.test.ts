@@ -1,4 +1,4 @@
-import { test } from "mocha";
+import { test } from "node:test";
 
 test("loads");
 test("has loading state");

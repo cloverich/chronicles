@@ -17,7 +17,7 @@
     "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
     "pretest": "node ./scripts/test.mjs",
-    "test": "mocha 'src/**/*.test.bundle.mjs'"
+    "test": "node --test 'src/**/*.test.bundle.mjs'"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.8",
@@ -49,7 +49,7 @@
     "@types/chai": "^4.3.11",
     "@types/luxon": "^2.4.0",
     "@types/mkdirp": "^1.0.1",
-    "@types/mocha": "^7.0.2",
+    "@types/node": "^22.0.0",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@udecode/cn": "^29.0.1",
@@ -71,7 +71,6 @@
     "micromark-extension-gfm": "^3.0.0",
     "mobx": "^6",
     "mobx-react-lite": "^3",
-    "mocha": "^10.2.0",
     "prettier": "3.2.4",
     "prettier-plugin-organize-imports": "^4.0.0",
     "prettier-plugin-tailwindcss": "^0.6.6",
