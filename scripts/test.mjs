@@ -21,8 +21,9 @@ testFiles.forEach(async (file) => {
     entryPoints: [file],
     // NOTE: If changing filename, also update findTestFiles glob above to avoid
     // bundled test files being used as source!
-    outfile: file.replace(".test.ts", ".test.bundle.js"),
+    outfile: file.replace(".test.ts", ".test.bundle.mjs"),
     bundle: true,
+    format: "esm",
     platform: "node",
     external: ["mocha"],
     plugins: [],

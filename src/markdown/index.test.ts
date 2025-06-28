@@ -2,12 +2,16 @@ import { expect } from "chai";
 import fs from "fs";
 import { describe, it } from "mocha";
 import path from "path";
+import { fileURLToPath } from "url";
 import yaml from "yaml";
 
 import { dedent } from "../dedent.js";
 import { slateToString, stringToSlate } from "./index.js";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
 import { dig, parseMarkdown, parseMarkdownForImport } from "./test-utils.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Tests can structure the data this way and use runTests to
 // test the various conversions.
