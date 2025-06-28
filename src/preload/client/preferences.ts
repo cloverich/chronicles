@@ -12,28 +12,6 @@ export interface PreferencesLegacy {
   DARK_MODE: "light" | "dark" | "system";
 }
 
-const defaults = (): IPreferences => ({
-  databaseUrl: "",
-  defaultJournal: null,
-  archivedJournals: {},
-  notesDir: "",
-  settingsDir: "",
-  onboarding: "new",
-  darkMode: "system",
-  fonts: {
-    heading:
-      '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    heading2: undefined, // defaults to heading
-    heading3: undefined, // defaults to heading
-    body: '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    mono: '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
-    systemBody:
-      '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    systemHeading:
-      '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-  },
-});
-
 export type IPreferencesClient = PreferencesClient;
 
 export class PreferencesClient {
@@ -66,10 +44,7 @@ export class PreferencesClient {
   };
 
   get = async (key: keyof IPreferences): Promise<any> => {
-    const setting = this.settings.get(key);
-    return setting !== undefined
-      ? setting
-      : defaults()[key as keyof IPreferences];
+    return this.settings.get(key);
   };
 
   /**
