@@ -1,8 +1,8 @@
 import { assert } from "chai";
-import { suite, test } from "mocha";
+import { describe, test } from "node:test";
 import { createId } from "./util";
 
-suite("id generation", () => {
+describe("id generation", () => {
   test("it generates ids in order", () => {
     const ids = [createId(), createId(), createId()];
 

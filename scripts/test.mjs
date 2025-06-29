@@ -25,7 +25,7 @@ testFiles.forEach(async (file) => {
     bundle: true,
     format: "esm",
     platform: "node",
-    external: ["mocha"],
+    external: [],
     plugins: [],
   });
 });
