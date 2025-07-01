@@ -17,7 +17,9 @@
     "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
     "pretest": "node ./scripts/test.mjs",
-    "test": "node --test 'src/**/*.test.bundle.mjs'"
+    "test": "node --test 'src/**/*.test.bundle.mjs'",
+    "pretest:electron": "node ./scripts/test.mjs",
+    "test:electron": "electron ./scripts/electron-test.mjs"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.8",

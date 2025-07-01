@@ -25,7 +25,8 @@ testFiles.forEach(async (file) => {
     bundle: true,
     format: "esm",
     platform: "node",
-    external: [],
+    external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
     plugins: [],
+    sourcemap: true,
   });
 });
