@@ -3,6 +3,7 @@ build
 dist
 node_modules
 packaged
+*.bundle.*
 
 # Some of the changes prettier makes to md files differs from what
 # mdast-util-to-string does, making it unusable as a snapshot. 

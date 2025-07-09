@@ -1,7 +1,9 @@
 import { contextBridge } from "electron";
 import { create } from "./client";
 import "./utils.electron";
+import { openDialogSelectDir } from "./utils.electron";
 
 contextBridge.exposeInMainWorld("chronicles", {
   createClient: create,
+  openDialogSelectDir: openDialogSelectDir,
 });

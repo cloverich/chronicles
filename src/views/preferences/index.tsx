@@ -39,13 +39,13 @@ const PreferencesPane = observer((props: Props) => {
   async function selectNotesRoot() {
     store.loading = true;
     try {
-      const result = await client.preferences.openDialogNotesDir();
-      if (!result?.value) {
+      const result = await (window as any).chronicles.openDialogSelectDir();
+      if (!result.value) {
         store.loading = false;
         return;
       }
 
-      // NOTE: Preferences store should auto-magically receive the updated preferences...
+      preferences.notesDir = result.value;
       sync();
     } catch (e) {
       store.loading = false;
@@ -56,13 +56,13 @@ const PreferencesPane = observer((props: Props) => {
   async function importDirectory() {
     store.loading = true;
     try {
-      const result = await client.preferences.openDialogImportDir();
-      if (!result) {
+      const result = await (window as any).chronicles.openDialogSelectDir();
+      if (!result?.value) {
         store.loading = false;
         return;
       }
 
-      await client.importer.import(result, store.sourceType);
+      await client.importer.import(result.value, store.sourceType);
       store.loading = false;
     } catch (e) {
       console.error("Error importing directory", e);
