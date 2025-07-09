@@ -1,4 +1,4 @@
-import { describe, it } from "mocha";
+import { describe, it } from "node:test";
 
 describe("Preferences", function () {
   it("creates a default settings file in the user data directory");

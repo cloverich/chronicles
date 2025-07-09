@@ -1,19 +1,13 @@
 import DB from "better-sqlite3";
+import Store from "electron-store";
 import Knex from "knex";
-import { DocumentsClient } from "./documents";
-import { FilesClient } from "./files";
-import { ImporterClient } from "./importer";
+import { IPreferences } from "../../hooks/stores/preferences";
+import { createClient } from "./factory";
 import { runTests } from "./importer/test";
-import { JournalsClient } from "./journals";
-import { PreferencesClient } from "./preferences";
-import { SyncClient } from "./sync";
-import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
-import Store from "electron-store";
-import { IPreferences } from "../../hooks/stores/preferences";
-
-// todo: json schema
+// todo: The main process does this same load, BEFORE this is called... and has
+// clearInvalidConfig, and defaults. So here we ASSUME things are good... stupid.
 const settings = new Store<IPreferences>({
   name: "settings",
 });
@@ -51,37 +45,12 @@ class TestsClient {
 
 export function create(): IClient {
   if (!client) {
-    const preferences = new PreferencesClient(settings);
-    const files = new FilesClient(settings);
-    const journals = new JournalsClient(knex, files, preferences);
-    const documents = new DocumentsClient(db, knex, files, preferences);
-    const sync = new SyncClient(
+    client = createClient({
       db,
       knex,
-      journals,
-      documents,
-      files,
-      preferences,
-    );
-
-    const importer = new ImporterClient(
-      knex,
-      documents,
-      files,
-      preferences,
-      sync,
-    );
-
-    client = {
-      journals: journals,
-      documents: documents,
-      tags: new TagsClient(knex),
-      preferences: preferences,
-      files: files,
-      sync,
-      importer,
-      tests: new TestsClient(),
-    };
+      store: settings,
+      testsClient: new TestsClient(),
+    }) as IClient;
   }
 
   return client;

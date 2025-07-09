@@ -2,7 +2,7 @@ import { SourceType } from "./SourceType";
 import { parseTitleAndFrontMatterForImport } from "./frontmatter";
 
 import { expect } from "chai";
-import { describe, it } from "mocha";
+import { describe, it } from "node:test";
 import { dedent } from "../../../dedent.js";
 
 export const cases = {

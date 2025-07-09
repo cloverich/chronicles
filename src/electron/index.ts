@@ -49,6 +49,10 @@ try {
   );
 }
 
+// Used by importer/test/util.ts - can delete once we don't need it aka
+// have a way to conditionally setup a database at various urls
+// todo: Do we need a routine like it (_just_ like it) to allow selecting
+// a different database url?
 ipcMain.handle("setup-database", async (event, dbUrl) => {
   try {
     await migrate(dbUrl);
@@ -225,6 +229,22 @@ function createWindow() {
     if (!process.env.HEADLESS) {
       mainWindow?.show();
     }
+
+    new Promise((resolve) => {
+      const result = mainWindow?.webContents.executeJavaScript(
+        `window.api.client.documents.search("in:foo4")`,
+      );
+
+      result
+        ?.then((result) => {
+          console.log("TEST RESULT", result);
+          resolve(result);
+        })
+        .catch((err) => {
+          console.error("TEST ERROR", err);
+          resolve(null);
+        });
+    });
   });
 
   if (!app.isPackaged) {
