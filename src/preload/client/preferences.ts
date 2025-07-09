@@ -1,4 +1,3 @@
-import { ipcRenderer } from "electron";
 import Store from "electron-store";
 import { IPreferences } from "../../hooks/stores/preferences";
 
@@ -59,36 +58,36 @@ export class PreferencesClient {
   //   ipcRenderer.send("select-user-files-dir");
   // };
 
-  openDialogImportDir = async () => {
-    ipcRenderer.send("select-directory");
+  // openDialogImportDir = async () => {
+  //   ipcRenderer.send("select-directory");
 
-    return new Promise<string>((resolve, reject) => {
-      ipcRenderer.once("directory-selected", (event, arg) => {
-        if (arg.error) {
-          reject(arg.error);
-        } else {
-          resolve(arg.value);
-        }
-      });
-    });
-  };
+  //   return new Promise<string>((resolve, reject) => {
+  //     ipcRenderer.once("directory-selected", (event, arg) => {
+  //       if (arg.error) {
+  //         reject(arg.error);
+  //       } else {
+  //         resolve(arg.value);
+  //       }
+  //     });
+  //   });
+  // };
 
-  openDialogNotesDir = async () => {
-    ipcRenderer.send("select-directory");
+  // openDialogNotesDir = async () => {
+  //   ipcRenderer.send("select-directory");
 
-    return new Promise<{ error?: string; value?: string }>(
-      (resolve, reject) => {
-        ipcRenderer.once("directory-selected", (event, arg) => {
-          if (arg.error) {
-            reject(arg.error);
-          } else if (!arg.value) {
-            resolve({ value: undefined });
-          } else {
-            this.set("notesDir", arg.value);
-            resolve(arg.value);
-          }
-        });
-      },
-    );
-  };
+  //   return new Promise<{ error?: string; value?: string }>(
+  //     (resolve, reject) => {
+  //       ipcRenderer.once("directory-selected", (event, arg) => {
+  //         if (arg.error) {
+  //           reject(arg.error);
+  //         } else if (!arg.value) {
+  //           resolve({ value: undefined });
+  //         } else {
+  //           this.set("notesDir", arg.value);
+  //           resolve(arg.value);
+  //         }
+  //       });
+  //     },
+  //   );
+  // };
 }
