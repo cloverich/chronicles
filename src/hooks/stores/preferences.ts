@@ -1,24 +1,6 @@
 import { makeObservable, observable, reaction, toJS } from "mobx";
+import { IPreferences } from "../../electron/settings";
 import { IClient } from "../../preload/client/types";
-
-export interface IPreferences {
-  databaseUrl: string;
-  defaultJournal: string | null;
-  archivedJournals: Record<string, boolean>;
-  notesDir: string;
-  settingsDir: string;
-  onboarding: "new" | "complete";
-  darkMode: "light" | "dark" | "system";
-  fonts: {
-    heading?: string;
-    heading2?: string;
-    heading3?: string;
-    body?: string;
-    mono?: string;
-    systemBody?: string;
-    systemHeading?: string;
-  };
-}
 
 export class Preferences implements IPreferences {
   client: IClient["preferences"];

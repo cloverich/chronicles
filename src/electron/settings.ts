@@ -41,11 +41,20 @@ const defaults: IPreferences = {
   },
 };
 
-// https://github.com/sindresorhus/electron-store/issues/15
-// docs are good: https://github.com/sindresorhus/electron-store
-// todo: JSON Schema
-export default new Store<IPreferences>({
-  name: "settings",
-  defaults,
-  clearInvalidConfig: true,
-});
+// NOTE: Factory supports tests; application code should use the default export
+export const createSettings = (settingsDir?: string) => {
+  return new Store<IPreferences>({
+    name: "settings",
+    defaults,
+    clearInvalidConfig: true,
+    ...(settingsDir ? { cwd: settingsDir } : {}),
+  });
+};
+
+// If CHRONICLES_SETTINGS_DIR is set, use it as the cwd for electron-store.
+// This allows tests and scripts to isolate settings per run.
+const store = createSettings(process.env.CHRONICLES_SETTINGS_DIR);
+
+export type Settings = Store<IPreferences>;
+
+export default store;

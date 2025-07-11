@@ -1,8 +1,7 @@
 import fs from "fs";
 
 /**
- * Borrowed from api files, since its typescript and this is not
- * Reconcile that later
+ * todo: Use src/preload/files.ts
  */
 export function ensureDir(directory: string, create = true) {
   if (!directory) {

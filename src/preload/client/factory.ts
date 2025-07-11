@@ -1,7 +1,5 @@
-import { Database } from "better-sqlite3";
-import Store from "electron-store";
-import { Knex } from "knex";
-import { IPreferences } from "../../hooks/stores/preferences";
+import Knex from "knex";
+import { Settings } from "../../electron/settings";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
 import { ImporterClient } from "./importer";
@@ -11,35 +9,27 @@ import { SyncClient } from "./sync";
 import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
-interface TestsClient {
-  runTests: () => Promise<void>;
-}
-
 interface ClientFactoryParams {
-  db: Database;
-  knex: Knex;
-  store: Store<IPreferences>;
-  testsClient?: TestsClient;
+  store: Settings;
 }
 
-export function createClient({
-  db,
-  knex,
-  store,
-  testsClient,
-}: ClientFactoryParams): Omit<IClient, "tests"> | IClient {
+export function createClient({ store }: ClientFactoryParams): IClient {
+  const knex = Knex({
+    client: "better-sqlite3", // or 'better-sqlite3'
+    connection: {
+      filename: store.get("databaseUrl"),
+    },
+    // https://knexjs.org/guide/query-builder.html#insert
+    // don't replace undefined with "DEFAULT" in insert statements; replace
+    // it with NULL instead (SQLite raises otherwise)
+    useNullAsDefault: true,
+  });
+
   const preferences = new PreferencesClient(store);
   const files = new FilesClient(store);
   const journals = new JournalsClient(knex, files, preferences);
-  const documents = new DocumentsClient(db, knex, files, preferences);
-  const sync = new SyncClient(
-    db,
-    knex,
-    journals,
-    documents,
-    files,
-    preferences,
-  );
+  const documents = new DocumentsClient(knex, files, preferences);
+  const sync = new SyncClient(knex, journals, documents, files, preferences);
 
   const importer = new ImporterClient(
     knex,
@@ -50,6 +40,7 @@ export function createClient({
   );
 
   const baseClient = {
+    knex,
     journals: journals,
     documents: documents,
     tags: new TagsClient(knex),
@@ -58,13 +49,6 @@ export function createClient({
     sync,
     importer,
   };
-
-  if (testsClient) {
-    return {
-      ...baseClient,
-      tests: testsClient,
-    } as IClient;
-  }
 
   return baseClient;
 }

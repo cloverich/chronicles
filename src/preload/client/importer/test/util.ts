@@ -1,12 +1,9 @@
-import DB from "better-sqlite3";
 import { ipcRenderer } from "electron";
-import Store from "electron-store";
 import fs from "fs";
-import KnexConstructor, { Knex } from "knex";
 import { tmpdir } from "os";
 import path from "path";
 import util from "util";
-import { IPreferences } from "../../../../hooks/stores/preferences";
+import store from "../../../../electron/settings";
 import { Files } from "../../../files";
 import { createClient } from "../../factory";
 import { IClient } from "../../types";
@@ -21,8 +18,6 @@ const filetypes = ["mov", "jpg", "png", "pdf", "csv", "webp"];
 export type Client = Omit<IClient, "tests">;
 
 export interface ISetupResponse {
-  // initialized knex client, for asserting import tables, etc
-  knex: Knex;
   // client with a temp database, settings, and notes directory
   client: Client;
   // import test directory
@@ -114,9 +109,6 @@ export const generateBinaryFileStub = async ({
 // create a client with a temp database, settings, and notes directory
 // for integration testing
 export async function setup(): Promise<ISetupResponse> {
-  const store = new Store<IPreferences>({
-    name: "test",
-  });
   store.clear();
 
   const tempDir = fs.mkdtempSync(path.join(tmpdir(), "chronicles-test-"));
@@ -137,25 +129,11 @@ export async function setup(): Promise<ISetupResponse> {
     throw new Error("Database migration failed.");
   }
 
-  const db = DB(dbUrl);
-  const knex = KnexConstructor({
-    client: "better-sqlite3", // or 'better-sqlite3'
-    connection: {
-      filename: dbUrl,
-    },
-    // https://knexjs.org/guide/query-builder.html#insert
-    // don't replace undefined with "DEFAULT" in insert statements; replace
-    // it with NULL instead (SQLite raises otherwise)
-    useNullAsDefault: true,
-  });
-
   const client = createClient({
-    db,
-    knex,
     store,
   }) as Client;
 
-  return { testdir: testDir(), client, knex };
+  return { testdir: testDir(), client };
 }
 
 // mocha setup + electron + esbuild -> fail. This is a workaround.

@@ -6,7 +6,7 @@ import sharp from "sharp";
 import { Files } from "../files";
 const { readFile, writeFile, access, stat } = fs.promises;
 
-import { IPreferences } from "../../hooks/stores/preferences";
+import { IPreferences } from "../../electron/settings";
 import { createId } from "./util";
 
 interface UploadResponse {
