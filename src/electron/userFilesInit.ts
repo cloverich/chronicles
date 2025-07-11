@@ -1,6 +1,6 @@
 import path from "path";
 import { ensureDir } from "./ensureDir.js";
-import settings from "./settings.js";
+import { Settings } from "./settings.js";
 
 /**
  * Validate user file directories, creating them if they do not exist
@@ -10,9 +10,9 @@ import settings from "./settings.js";
  *  on MacOS: ~/Library/Application Support/Chronicles
  * @returns void
  */
-export function initUserFilesDir(userDataDir: string) {
-  initDir("notesDir", path.join(userDataDir, "/notes"));
-  initDir("settingsDir", userDataDir);
+export function initUserFilesDir(settings: Settings, fallbackDir: string) {
+  initDir(settings, "notesDir", path.join(fallbackDir, "/notes"));
+  initDir(settings, "settingsDir", fallbackDir);
 }
 
 /**
@@ -24,6 +24,7 @@ export function initUserFilesDir(userDataDir: string) {
  *  if it does not exist; will be set in settings afterwards
  */
 function initDir(
+  settings: Settings,
   settingsKey: "notesDir" | "settingsDir",
   fallbackPath: string,
 ) {

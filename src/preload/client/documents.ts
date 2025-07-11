@@ -1,4 +1,3 @@
-import { Database } from "better-sqlite3";
 import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
@@ -49,7 +48,6 @@ export type IDocumentsClient = DocumentsClient;
 
 export class DocumentsClient {
   constructor(
-    private db: Database,
     private knex: Knex,
     private files: IFilesClient,
     private preferences: IPreferencesClient,

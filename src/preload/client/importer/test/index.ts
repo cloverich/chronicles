@@ -52,9 +52,9 @@ const binaryFileStubs: GenerateFileOptions[] = [
 export async function runTests() {
   await cleanup();
   try {
-    const { client, testdir, knex } = await setup();
+    const { client, testdir } = await setup();
     await generateFileStubs(binaryFileStubs);
-    await testNotion(client, testdir, knex);
+    await testNotion(client, testdir, client.knex);
   } finally {
     await cleanup();
   }

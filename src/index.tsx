@@ -1,5 +1,4 @@
 import { configure } from "mobx";
-import "mobx-react-lite/batchingForReactDom";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";

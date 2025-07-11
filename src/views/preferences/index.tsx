@@ -407,26 +407,6 @@ const PreferencesPane = observer((props: Props) => {
                   </Button>
                 </div>
               </Section>
-              <Section>
-                <SectionTitle title="Development" />
-                <p className="mb-2">
-                  Run some tests, mostly around the frontmatter parsing and
-                  importing. See output in console.
-                </p>
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    variant="ghost"
-                    loading={store.loading}
-                    disabled={store.loading}
-                    onClick={() => {
-                      console.log("Running tests");
-                      client.tests.runTests();
-                    }}
-                  >
-                    Run Tests
-                  </Button>
-                </div>
-              </Section>
             </div>
           </DialogDescription>
         </DialogHeader>

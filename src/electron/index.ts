@@ -12,59 +12,39 @@ import fs from "fs";
 import path from "path";
 import url, { fileURLToPath } from "url";
 import { ensureDir } from "./ensureDir.js";
-import migrate from "./migrations/index.js";
+import { initAppEnvironment } from "./initAppEnvironment.js";
 import settings from "./settings.js";
-import { initUserFilesDir } from "./userFilesInit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// when packaged, it should be in Library/Application Support/Chronicles/settings.json
-// when in dev, Library/Application Support/Chronicles/settings.json
-initUserFilesDir(app.getPath("userData"));
+// Consolidated user files and database setup
+const { databaseUrl: dbUrl, notesDir } = initAppEnvironment(
+  settings,
+  app.getPath("userData"),
+);
 console.log("application settings at startup:", settings.store);
 
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow: BrowserWindow | null = null;
 
-function setupDefaultDatabaseUrl() {
-  let dbUrl = settings.get("databaseUrl");
-  if (!dbUrl) {
-    dbUrl = path.join(app.getPath("userData"), "chronicles.db");
-    settings.set("databaseUrl", dbUrl);
-  }
-
-  return dbUrl;
-}
-
-// when not available, dbfile is undefined
-const dbUrl = setupDefaultDatabaseUrl();
-
-try {
-  migrate(dbUrl);
-} catch (err) {
-  console.error("Error migrating the database:", err);
-  throw new Error(
-    "Error migrating the database. This is required for initial app setup",
-  );
-}
-
+// NOTE: IGNORE THIS COMMENTED OUT SECTION FOR NOW
 // Used by importer/test/util.ts - can delete once we don't need it aka
 // have a way to conditionally setup a database at various urls
 // todo: Do we need a routine like it (_just_ like it) to allow selecting
 // a different database url?
-ipcMain.handle("setup-database", async (event, dbUrl) => {
-  try {
-    await migrate(dbUrl);
-    return { success: true };
-  } catch (err) {
-    console.error(`Error migrating the database using url: ${dbUrl}:`, err);
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Unknown error",
-    };
-  }
-});
+// ipcMain.handle("setup-database", async (event, dbUrl) => {
+//   try {
+//     await migrate(dbUrl);
+//     return { success: true };
+//   } catch (err) {
+//     console.error(`Error migrating the database using url: ${dbUrl}:`, err);
+//     return {
+//       success: false,
+//       error: err instanceof Error ? err.message : "Unknown error",
+//     };
+//   }
+// });
 
 // Allow files in <img> and <video> tags to load using the "chronicles://" protocol
 // https://www.electronjs.org/docs/api/protocol
@@ -229,22 +209,6 @@ function createWindow() {
     if (!process.env.HEADLESS) {
       mainWindow?.show();
     }
-
-    new Promise((resolve) => {
-      const result = mainWindow?.webContents.executeJavaScript(
-        `window.api.client.documents.search("in:foo4")`,
-      );
-
-      result
-        ?.then((result) => {
-          console.log("TEST RESULT", result);
-          resolve(result);
-        })
-        .catch((err) => {
-          console.error("TEST ERROR", err);
-          resolve(null);
-        });
-    });
   });
 
   if (!app.isPackaged) {

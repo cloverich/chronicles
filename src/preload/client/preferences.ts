@@ -1,5 +1,5 @@
 import Store from "electron-store";
-import { IPreferences } from "../../hooks/stores/preferences";
+import { IPreferences } from "../../electron/settings";
 
 export type IPreferencesClient = PreferencesClient;
 

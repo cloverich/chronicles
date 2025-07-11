@@ -1,4 +1,3 @@
-import { Database } from "better-sqlite3";
 import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
@@ -32,7 +31,6 @@ const shouldIndex = (dirent: fs.Dirent) => {
 
 export class SyncClient {
   constructor(
-    private db: Database,
     private knex: Knex,
     private journals: IJournalsClient,
     private documents: IDocumentsClient,
@@ -73,9 +71,9 @@ export class SyncClient {
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
 
-    this.db.exec("delete from document_tags");
-    this.db.exec("delete from documents");
-    this.db.exec("delete from journals");
+    await this.knex("document_tags").delete();
+    await this.knex("documents").delete();
+    await this.knex("journals").delete();
     // image and note links delete via cascade
 
     const rootDir = await this.preferences.get("notesDir");
