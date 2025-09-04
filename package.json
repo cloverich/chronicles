@@ -57,7 +57,7 @@
     "chai": "^5.0.3",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.3.1",
-    "electron": "^37.1.0",
+    "electron": "^37.3.1",
     "esbuild": "^0.20.0",
     "icon-gen": "^5.0.0",
     "lodash": "^4.17.21",
