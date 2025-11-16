@@ -1,12 +1,12 @@
-import { ipcRenderer } from "electron";
 import fs from "fs";
 import { tmpdir } from "os";
 import path from "path";
-import util from "util";
-import store from "../../../../electron/settings";
-import { Files } from "../../../files";
-import { createClient } from "../../factory";
-import { IClient } from "../../types";
+
+import migrate from "../../../../electron/migrations/index.js";
+import store from "../../../../electron/settings.js";
+import { Files } from "../../../files.js";
+import { createClient } from "../../factory.js";
+import { IClient } from "../../types.js";
 
 export interface GenerateFileOptions {
   filePath: string;
@@ -22,6 +22,8 @@ export interface ISetupResponse {
   client: Client;
   // import test directory
   testdir: string;
+  // knex instance for direct database queries in tests
+  knex: ReturnType<typeof createClient>["knex"];
 }
 
 function testDir() {
@@ -121,11 +123,13 @@ export async function setup(): Promise<ISetupResponse> {
   Files.mkdirp(notesDir);
 
   store.set("notesDir", notesDir);
+  store.set("databaseUrl", dbUrl);
 
-  const { success, error } = await ipcRenderer.invoke("setup-database", dbUrl);
-
-  if (!success) {
-    console.error("Database setup failed:", dbUrl, error);
+  // Run database migrations directly
+  try {
+    migrate(dbUrl);
+  } catch (err) {
+    console.error("Database setup failed:", dbUrl, err);
     throw new Error("Database migration failed.");
   }
 
@@ -133,37 +137,5 @@ export async function setup(): Promise<ISetupResponse> {
     store,
   }) as Client;
 
-  return { testdir: testDir(), client };
-}
-
-// mocha setup + electron + esbuild -> fail. This is a workaround.
-export const test = async (name: string, fn: () => void | Promise<void>) => {
-  try {
-    await fn();
-    console.log(`✅ ${name}`);
-  } catch (err) {
-    console.error(`❌ ${name}`);
-    console.error(util.inspect(err, { depth: 5 }));
-  }
-};
-
-// find one by title, and raise helpfully if not found
-export async function findByTitle(client: Client, title: string) {
-  const docs = await client.documents.search({
-    journals: [],
-    titles: [title],
-  });
-
-  if (docs.data.length === 0) {
-    throw new Error(`Document not found by title: ${title}`);
-  }
-
-  const doc = await client.documents.findById({ id: docs.data[0].id });
-  if (!doc) {
-    throw new Error(
-      `Document not found by id: ${docs.data[0].id} (title: ${title})`,
-    );
-  }
-
-  return doc;
+  return { testdir: testDir(), client, knex: client.knex };
 }

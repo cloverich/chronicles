@@ -39,10 +39,11 @@ See scripts/dev.js for specifics on how the source files are compiled and re-loa
 
 ## Testing
 
-- Use `yarn test` to run unit tests
-- No end to end testing, yet
+- Use `yarn test` to run unit tests (67 tests via node:test)
+- Use `yarn test:electron` for preload/backend tests (local validation, no CI support)
+- No end to end testing yet - would require [custom test driver](https://www.electronjs.org/docs/latest/tutorial/automated-testing#using-a-custom-test-driver), subprocess-per-test, or [mocked Electron APIs](https://github.com/cloverich/chronicles/issues/374)
 
-Unit tests rely on esbuild to bundle test files, after conflicts getting esm, ts-node, and mocha to play nice.
+Tests use esbuild for bundling. Electron tests (`.electron-test.ts`) run via custom harness loading tests as preload scripts.
 
 ## Build and release (MacOS)
 

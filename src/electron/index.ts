@@ -28,24 +28,6 @@ console.log("application settings at startup:", settings.store);
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow: BrowserWindow | null = null;
 
-// NOTE: IGNORE THIS COMMENTED OUT SECTION FOR NOW
-// Used by importer/test/util.ts - can delete once we don't need it aka
-// have a way to conditionally setup a database at various urls
-// todo: Do we need a routine like it (_just_ like it) to allow selecting
-// a different database url?
-// ipcMain.handle("setup-database", async (event, dbUrl) => {
-//   try {
-//     await migrate(dbUrl);
-//     return { success: true };
-//   } catch (err) {
-//     console.error(`Error migrating the database using url: ${dbUrl}:`, err);
-//     return {
-//       success: false,
-//       error: err instanceof Error ? err.message : "Unknown error",
-//     };
-//   }
-// });
-
 // Allow files in <img> and <video> tags to load using the "chronicles://" protocol
 // https://www.electronjs.org/docs/api/protocol
 app.whenReady().then(() => {
@@ -278,49 +260,6 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-// When the database was the source of truth, this was used to ease testing and make it
-// configurable for users. Now that the database is a cache over the source of truth (notesDir),
-// this is not needed for testing. But eventually we likely allow configuring where this cache is stored
-// so leaving for now. See preferences in UI.
-// ipcMain.on("select-database-file", async (event, arg) => {
-//   if (!mainWindow) {
-//     console.error(
-//       "received request to open file picker but mainWindow is undefined",
-//     );
-//     return;
-//   }
-
-//   const result = await dialog.showOpenDialog(mainWindow, {
-//     properties: ["openDirectory", "createDirectory", "openFile"],
-//   });
-
-//   const filepath = result.filePaths[0];
-
-//   // user selected cancel
-//   if (!filepath) return;
-
-//   // todo: feedback to user if error
-//   // https://github.com/cloverich/chronicles/issues/52
-//   try {
-//     if (fs.lstatSync(filepath).isDirectory()) {
-//       // todo: What was I thinking here? This doesn't even make sense...
-//       // its just creating a new database
-//       setDatabaseUrl(path.join(filepath, "chronicles.db"));
-//     } else {
-//       // use user provided database
-//       // todo: validation :grimace
-//       setDatabaseUrl(filepath);
-//     }
-//   } catch (err) {
-//     console.error(
-//       `Error checking for file ${filepath} -- maybe it doesn't exist?`,
-//     );
-//     console.error(err);
-//   }
-
-//   event.reply("preferences-updated");
-// });
 
 // Preferences in UI allows user to specify chronicles root
 // and imports directories

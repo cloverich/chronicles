@@ -7,9 +7,10 @@ export {
   SearchResponse,
 } from "../preload/client/types";
 
-export const ClientContext = React.createContext<any>(
-  (window as any).chronicles.createClient(),
+export const ClientContext = React.createContext<IClient>(
+  window.chronicles.getClient(),
 );
+
 ClientContext.displayName = "ClientContext";
 
 /**
@@ -17,6 +18,6 @@ ClientContext.displayName = "ClientContext";
  *
  * Note that this is the only safe place for UI code to access the client.
  */
-export default function useClient(): IClient {
+export default function useClient() {
   return useContext(ClientContext);
 }

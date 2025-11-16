@@ -18,10 +18,32 @@ export default function (dbUrl: string) {
     // https://esbuild.github.io/content-types/#external-file
     // note: migration file(s) is co-located in this folder, but the entire main process is bundled and run from a different
     // location (project root), so this needs to reconstruct __this__ directory :confusing:
-    const migration1 = fs.readFileSync(
+
+    // NOTE: This is a vibe hack to support running migrations within various tests. Undo
+    // this at some point...
+    const possiblePaths = [
+      // When bundled for main process (from project root)
       path.join(__dirname, "electron/migrations/20211005142122.sql"),
-      "utf8",
-    );
+      // When bundled into test file
+      path.join(process.cwd(), "src/electron/migrations/20211005142122.sql"),
+      // When running unbundled (development)
+      path.join(__dirname, "20211005142122.sql"),
+    ];
+
+    let migration1;
+    for (const migrationPath of possiblePaths) {
+      if (fs.existsSync(migrationPath)) {
+        migration1 = fs.readFileSync(migrationPath, "utf8");
+        break;
+      }
+    }
+
+    if (!migration1) {
+      throw new Error(
+        `Could not find migration file. Tried: ${possiblePaths.join(", ")}`,
+      );
+    }
+
     db.exec(migration1);
   } catch (err) {
     console.error("Error running migrations!", err);

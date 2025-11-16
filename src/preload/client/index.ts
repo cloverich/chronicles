@@ -6,7 +6,11 @@ export { GetDocumentResponse } from "./types";
 
 let client: IClient;
 
-export function create(): IClient {
+/**
+ * Singleton to conditionally instantiate the preload client, supplying
+ * settings
+ */
+export function getClient(): IClient {
   if (!client) {
     client = createClient({
       store: settings,

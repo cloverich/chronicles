@@ -103,7 +103,7 @@ export class Preferences implements IPreferences {
     // load remote preferences
     const preferences = await pref.all();
 
-    // todo: watch them?
+    // note: Watchers are setup in usePreferences
     return new Preferences(preferences, pref);
   };
 }

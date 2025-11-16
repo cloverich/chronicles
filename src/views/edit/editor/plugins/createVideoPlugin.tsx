@@ -1,8 +1,4 @@
 import { createPluginFactory } from "@udecode/plate-common";
-// Ideally this is injected
-import { IClient } from "../../../../hooks/useClient";
-
-const client: IClient = (window as any).chronicles.createClient();
 
 export const ELEMENT_VIDEO = "video";
 

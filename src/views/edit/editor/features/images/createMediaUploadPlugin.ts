@@ -6,12 +6,11 @@ import {
 } from "@udecode/plate-common";
 
 import { ELEMENT_IMAGE, ELEMENT_LINK } from "@udecode/plate";
-import { ELEMENT_VIDEO } from "../../plugins/createVideoPlugin";
-// Ideally this is injected
 import { isImageUrl, isVideoUrl } from "../../../../../hooks/images";
-import { IClient } from "../../../../../hooks/useClient";
+import { ELEMENT_VIDEO } from "../../plugins/createVideoPlugin";
 
-const client: IClient = (window as any).chronicles.createClient();
+// Ideally this is injected
+const client = window.chronicles.getClient();
 
 /**
  * createMediaUploadPlugin handles uploading video, images, and files, before
