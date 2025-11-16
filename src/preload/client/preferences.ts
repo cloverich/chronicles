@@ -48,46 +48,4 @@ export class PreferencesClient {
     // ....
     document.documentElement.dispatchEvent(new Event("settingsUpdated"));
   };
-
-  // todo: Likely these can be removed; leaving for now
-  // openDialog = () => {
-  //   ipcRenderer.send("select-database-file");
-  // };
-
-  // openDialogUserFiles = () => {
-  //   ipcRenderer.send("select-user-files-dir");
-  // };
-
-  // openDialogImportDir = async () => {
-  //   ipcRenderer.send("select-directory");
-
-  //   return new Promise<string>((resolve, reject) => {
-  //     ipcRenderer.once("directory-selected", (event, arg) => {
-  //       if (arg.error) {
-  //         reject(arg.error);
-  //       } else {
-  //         resolve(arg.value);
-  //       }
-  //     });
-  //   });
-  // };
-
-  // openDialogNotesDir = async () => {
-  //   ipcRenderer.send("select-directory");
-
-  //   return new Promise<{ error?: string; value?: string }>(
-  //     (resolve, reject) => {
-  //       ipcRenderer.once("directory-selected", (event, arg) => {
-  //         if (arg.error) {
-  //           reject(arg.error);
-  //         } else if (!arg.value) {
-  //           resolve({ value: undefined });
-  //         } else {
-  //           this.set("notesDir", arg.value);
-  //           resolve(arg.value);
-  //         }
-  //       });
-  //     },
-  //   );
-  // };
 }

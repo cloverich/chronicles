@@ -13,9 +13,12 @@ interface ClientFactoryParams {
   store: Settings;
 }
 
+/**
+ * Creates the preload client, accepting `store` to support testing.
+ */
 export function createClient({ store }: ClientFactoryParams): IClient {
   const knex = Knex({
-    client: "better-sqlite3", // or 'better-sqlite3'
+    client: "better-sqlite3",
     connection: {
       filename: store.get("databaseUrl"),
     },

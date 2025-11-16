@@ -39,7 +39,7 @@ const PreferencesPane = observer((props: Props) => {
   async function selectNotesRoot() {
     store.loading = true;
     try {
-      const result = await (window as any).chronicles.openDialogSelectDir();
+      const result = await window.chronicles.openDialogSelectDir();
       if (!result.value) {
         store.loading = false;
         return;
@@ -56,7 +56,7 @@ const PreferencesPane = observer((props: Props) => {
   async function importDirectory() {
     store.loading = true;
     try {
-      const result = await (window as any).chronicles.openDialogSelectDir();
+      const result = await window.chronicles.openDialogSelectDir();
       if (!result?.value) {
         store.loading = false;
         return;

@@ -60,7 +60,7 @@ export class DocumentsClient {
 
     // todo: add test 404 behavior
     if (!document) {
-      // note: Prefix is used as a code. Since custom errors and .code proeprties
+      // note: Prefix is used as a code. Since custom errors and .code properties
       // do not cross the preload boundary, a prefix code [<CODE>] can be used by
       // FE to identify the error. This came up after mistaking a mobx not found
       // error for a document not found error.
@@ -94,6 +94,27 @@ export class DocumentsClient {
       frontMatter,
       content: contents,
     };
+  };
+
+  // note: only used by tests when created
+  findByTitle = async (title: string) => {
+    const docs = await this.search({
+      journals: [],
+      titles: [title],
+    });
+
+    if (docs.data.length === 0) {
+      throw new Error(`Document not found by title: ${title}`);
+    }
+
+    const doc = await this.findById({ id: docs.data[0].id });
+    if (!doc) {
+      throw new Error(
+        `Document not found by id: ${docs.data[0].id} (title: ${title})`,
+      );
+    }
+
+    return doc;
   };
 
   // load a document + parse frontmatter from a file
@@ -161,7 +182,7 @@ export class DocumentsClient {
       const results = await query;
       return { data: results as unknown as SearchItem[] };
     } catch (err) {
-      console.error("error in clinet.documents.search", err);
+      console.error("error in client.documents.search", (err as Error).message);
     }
 
     return { data: [] };
