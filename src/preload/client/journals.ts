@@ -26,7 +26,7 @@ export class JournalsClient {
           "not found in archived when listing journals. Patching, but this is likely a bug.",
         );
         j.archived = false;
-        await this.preferences.set("ARCHIVED_JOURNALS." + j.name, false);
+        await this.preferences.set("archivedJournals." + j.name, false);
       } else {
         j.archived = archived[j.name] || false;
       }
@@ -50,7 +50,7 @@ export class JournalsClient {
     let isArchived: boolean;
 
     if (!existing) {
-      await this.preferences.set(`ARCHIVED_JOURNALS.${journalName}`, false);
+      await this.preferences.set(`archivedJournals.${journalName}`, false);
       isArchived = false;
     } else {
       isArchived = archived[journalName];
@@ -88,7 +88,7 @@ export class JournalsClient {
       .update({ journal: newName })
       .where("journal", journal.name);
 
-    await this.preferences.delete(`ARCHIVED_JOURNALS.${journal.name}`);
+    await this.preferences.delete(`archivedJournals.${journal.name}`);
 
     if (journal.archived == null) {
       console.warn(
@@ -97,10 +97,7 @@ export class JournalsClient {
       journal.archived = false;
     }
 
-    await this.preferences.set(
-      `ARCHIVED_JOURNALS.${newName}`,
-      journal.archived,
-    );
+    await this.preferences.set(`archivedJournals.${newName}`, journal.archived);
 
     return await this.knex("journals").where("name", newName).first();
   };
@@ -114,7 +111,7 @@ export class JournalsClient {
     }
 
     await this.files.removeFolder(journal);
-    await this.preferences.delete(`ARCHIVED_JOURNALS.${journal}`);
+    await this.preferences.delete(`archivedJournals.${journal}`);
 
     await this.knex("journals").where("name", journal).delete();
     return this.list();
@@ -126,12 +123,12 @@ export class JournalsClient {
         "Cannot archive the last journal. Create a new journal first.",
       );
     }
-    await this.preferences.set(`ARCHIVED_JOURNALS.${journal}`, true);
+    await this.preferences.set(`archivedJournals.${journal}`, true);
     return this.list();
   };
 
   unarchive = async (journal: string): Promise<JournalResponse[]> => {
-    await this.preferences.set(`ARCHIVED_JOURNALS.${journal}`, false);
+    await this.preferences.set(`archivedJournals.${journal}`, false);
     return this.list();
   };
 }
