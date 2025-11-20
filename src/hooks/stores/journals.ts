@@ -148,6 +148,16 @@ export class JournalsStore {
     try {
       await this.assertNotDefault(journal.name);
 
+      // Don't allow archiving last journal. Note since last journal should automatically
+      // be default, should not happen.
+      if (
+        !journal.archived &&
+        (await this.client.journals.list()).filter((j) => !j.archived).length <=
+          1
+      ) {
+        throw new Error("Cannot archive last journal");
+      }
+
       if (journal.archived) {
         this.journals = await this.client.journals.unarchive(journal.name);
       } else {
@@ -173,7 +183,7 @@ export class JournalsStore {
 
     this.saving = true;
     try {
-      await this.client.preferences.set("DEFAULT_JOURNAL", journal);
+      await this.client.preferences.set("defaultJournal", journal);
       this.defaultJournal = journal;
     } catch (err: any) {
       this.error = err;

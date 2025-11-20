@@ -158,10 +158,10 @@ export class SyncClient {
       console.log("updating default journal", defaultJournal, journals);
 
       if (Object.keys(journals).length) {
-        await this.preferences.set("DEFAULT_JOURNAL", Object.keys(journals)[0]);
+        await this.preferences.set("defaultJournal", Object.keys(journals)[0]);
       } else {
         await this.journals.create({ name: "default_journal" });
-        await this.preferences.set("DEFAULT_JOURNAL", "default_journal");
+        await this.preferences.set("defaultJournal", "default_journal");
       }
     }
 

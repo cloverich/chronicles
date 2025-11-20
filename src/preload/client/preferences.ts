@@ -38,6 +38,8 @@ export class PreferencesClient {
   };
 
   set = async <T extends keyof IPreferences>(
+    // NOTE: | string to support nested set, e.g. .set("archivedJournals.foo", true);
+    // todo: It breaks types, is that really worth it?
     key: T | string,
     value: any,
   ): Promise<void> => {
