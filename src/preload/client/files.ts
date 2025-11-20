@@ -3,10 +3,11 @@ import Store from "electron-store";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
-import { Files } from "../files";
+import { mkdirp } from "../utils/fs-utils";
 const { readFile, writeFile, access, stat } = fs.promises;
 
 import { IPreferences } from "../../electron/settings";
+import { NotFoundError } from "../errors";
 import { createId } from "./util";
 
 interface UploadResponse {
@@ -157,6 +158,23 @@ export class FilesClient {
   };
 
   /**
+   * Read a document from disk with proper error handling
+   *
+   * @param filepath - Path to the document
+   * @returns - The document contents as a string
+   */
+  readDocument = async (filepath: string): Promise<string> => {
+    try {
+      return await fs.promises.readFile(filepath, "utf8");
+    } catch (err: any) {
+      if (err.code === "ENOENT") {
+        throw new NotFoundError(`Document at ${filepath} does not exist.`);
+      }
+      throw err;
+    }
+  };
+
+  /**
    * Writes a document to the correct file / disk location based
    * on baseDir and journalName
    *
@@ -174,7 +192,7 @@ export class FilesClient {
       document.id,
     );
 
-    await Files.mkdirp(journalPath);
+    await mkdirp(journalPath);
     await fs.promises.writeFile(docPath, document.content);
     return docPath;
   };
@@ -196,7 +214,7 @@ export class FilesClient {
   createFolder = async (name: string) => {
     const baseDir = this.settings.get("notesDir") as string;
     const newPath = path.join(baseDir, name);
-    await Files.mkdirp(newPath);
+    await mkdirp(newPath);
   };
 
   removeFolder = async (name: string) => {
@@ -273,7 +291,7 @@ export class FilesClient {
       }
     } catch (err: any) {
       if (err.code !== "ENOENT") throw err;
-      if (create) await Files.mkdirp(directory);
+      if (create) await mkdirp(directory);
     }
 
     // NOTE: Documentation suggests Windows may report ok here, but then choke

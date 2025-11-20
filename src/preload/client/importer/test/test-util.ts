@@ -4,7 +4,7 @@ import path from "path";
 
 import migrate from "../../../../electron/migrations/index.js";
 import store from "../../../../electron/settings.js";
-import { Files } from "../../../files.js";
+import { mkdirp, walk } from "../../../utils/fs-utils.js";
 import { createClient } from "../../factory.js";
 import { IClient } from "../../types.js";
 
@@ -33,7 +33,7 @@ function testDir() {
 // clean image files from the test directory
 export async function cleanup() {
   let count = 0;
-  for await (const file of Files.walk(testDir(), 4, () => true)) {
+  for await (const file of walk(testDir(), 4, () => true)) {
     if (filetypes.includes(path.extname(file.path).slice(1))) {
       count++;
       await fs.promises.unlink(file.path);
@@ -69,7 +69,7 @@ export const generateBinaryFileStub = async ({
   const dir = path.dirname(filePath);
 
   // todo: only necessary if directory structure not pre setup.
-  await Files.mkdirp(dir);
+  await mkdirp(dir);
 
   const ext = path.extname(filePath);
   if (ext !== `.${fileType}`) {
@@ -120,7 +120,7 @@ export async function setup(): Promise<ISetupResponse> {
   const notesDir = path.join(tempDir, "notes");
 
   // Ensure the notes notesDirdirectory exists
-  Files.mkdirp(notesDir);
+  mkdirp(notesDir);
 
   store.set("notesDir", notesDir);
   store.set("databaseUrl", dbUrl);
