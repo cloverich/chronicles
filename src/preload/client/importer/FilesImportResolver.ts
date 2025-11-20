@@ -3,7 +3,7 @@ import { Knex } from "knex";
 import mdast from "mdast";
 import path from "path";
 import { isNoteLink } from "../../../markdown";
-import { Files, PathStatsFile } from "../../files";
+import { mkdirp, PathStatsFile } from "../../utils/fs-utils";
 import { IFilesClient } from "../files";
 import { createId } from "../util";
 
@@ -229,7 +229,7 @@ export class FilesImportResolver {
     });
 
     const attachmentsDir = path.join(chroniclesRoot, ATTACHMENTS_DIR);
-    await Files.mkdirp(attachmentsDir);
+    await mkdirp(attachmentsDir);
 
     for await (const file of files) {
       const { sourcePathResolved, extension, chroniclesId } = file;

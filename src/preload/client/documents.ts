@@ -9,7 +9,6 @@ import {
   selectNoteLinks,
 } from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
-import { Files } from "../files";
 import { IFilesClient } from "./files";
 import { parseChroniclesFrontMatter } from "./importer/frontmatter";
 import { IPreferencesClient } from "./preferences";
@@ -121,7 +120,7 @@ export class DocumentsClient {
   loadDoc = async (path: string) => {
     // todo: validate path is in notes dir
     // todo: sha comparison
-    const contents = await Files.read(path);
+    const contents = await this.files.readDocument(path);
     const stats = await fs.promises.stat(path);
     const { frontMatter, body } = parseChroniclesFrontMatter(contents, stats);
 

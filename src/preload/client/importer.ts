@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 import path from "path";
-import { Files, PathStatsFile } from "../files";
+import { PathStatsFile, walk } from "../utils/fs-utils";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import {
@@ -174,7 +174,7 @@ export class ImporterClient {
     // for processNote; maps the original folder path to the fixed name
     const journalsMapping: Record<string, string> = {};
 
-    for await (const file of Files.walk(
+    for await (const file of walk(
       importDir,
       10, // random guess at reasoable max depth
 
@@ -217,7 +217,7 @@ export class ImporterClient {
     const { name, dir } = path.parse(file.path);
 
     // todo: sha comparison
-    const contents = await Files.read(file.path);
+    const contents = await this.files.readDocument(file.path);
 
     try {
       // todo: fallback title to filename - uuid

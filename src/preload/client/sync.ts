@@ -1,7 +1,7 @@
 import fs from "fs";
 import { Knex } from "knex";
 import path from "path";
-import { Files } from "../files";
+import { walk } from "../utils/fs-utils";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IJournalsClient } from "./journals";
@@ -94,7 +94,7 @@ export class SyncClient {
 
     let syncedCount = 0;
 
-    for await (const file of Files.walk(rootDir, 1, shouldIndex)) {
+    for await (const file of walk(rootDir, 1, shouldIndex)) {
       const { name, dir } = path.parse(file.path);
       // filename is id; ensure it is formatted correctly
       const documentId = name;
