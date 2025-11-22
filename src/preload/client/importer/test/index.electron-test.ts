@@ -1,15 +1,17 @@
+import { ipcRenderer } from "electron";
 import { Knex } from "knex";
 import assert from "node:assert";
 import { after, before, test } from "node:test";
 import path from "path";
-import { SourceType } from "../SourceType";
+
 import {
   Client,
   GenerateFileOptions,
   cleanup,
   generateFileStubs,
   setup,
-} from "./test-util";
+} from "../../../test-util";
+import { SourceType } from "../SourceType";
 
 // files referenced by markdown notes in the test directory
 const binaryFileStubs: GenerateFileOptions[] = [
@@ -60,6 +62,8 @@ before(async () => {
 
 after(async (c) => {
   await cleanup();
+  console.log("All tests complete, signaling completion to electron runner");
+  ipcRenderer.send("test-complete", 0);
 });
 
 test("preferences is reset to defaults before starting", async () => {

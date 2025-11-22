@@ -2,11 +2,11 @@ import fs from "fs";
 import { tmpdir } from "os";
 import path from "path";
 
-import migrate from "../../../../electron/migrations/index.js";
-import store from "../../../../electron/settings.js";
-import { mkdirp, walk } from "../../../utils/fs-utils.js";
-import { createClient } from "../../factory.js";
-import { IClient } from "../../types.js";
+import migrate from "../electron/migrations/index.js";
+import store from "../electron/settings.js";
+import { createClient } from "./client/factory.js";
+import { IClient } from "./client/types.js";
+import { mkdirp, walk } from "./utils/fs-utils.js";
 
 export interface GenerateFileOptions {
   filePath: string;
