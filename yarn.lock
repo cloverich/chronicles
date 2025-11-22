@@ -737,6 +737,26 @@
   dependencies:
     cross-spawn "^7.0.1"
 
+"@moritzrs/mdast-util-ofm-tag@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@moritzrs/mdast-util-ofm-tag/-/mdast-util-ofm-tag-0.0.1.tgz#ff592510ba3d018b2225775fa67c190ce69fd9c9"
+  integrity sha512-y8uQOYw3WQgdPwQWRPfXI1kZr1VERCITfD0xcL1RNBjH2AjwYF2EL238AFcHmeqFIIEubjaqDdv44T2Ch2oVoQ==
+
+"@moritzrs/mdast-util-ofm-wikilink@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@moritzrs/mdast-util-ofm-wikilink/-/mdast-util-ofm-wikilink-0.0.1.tgz#5d5677dad27d595844636036b098c43e62deaf4f"
+  integrity sha512-Mk47DCX6PfEJaOQrdRyIqiORRnbsZZrRjrfVigAu3i6zjD0Dgc0jydfB8KYVpRiT7BniuNUata0rkoMciOaRDw==
+
+"@moritzrs/micromark-extension-ofm-tag@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@moritzrs/micromark-extension-ofm-tag/-/micromark-extension-ofm-tag-0.0.1.tgz#3a7c699a7c0d5939c8dc65c07687d15e30ebebec"
+  integrity sha512-sPGHE8csGOiMNtziGFH1O7Of/LbDlJ/HPdLMQBwxWWNkdOEA7cAWemDRxWjqoXLvV1ioA1wEK79FPGLL6C1/rQ==
+
+"@moritzrs/micromark-extension-ofm-wikilink@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@moritzrs/micromark-extension-ofm-wikilink/-/micromark-extension-ofm-wikilink-0.0.1.tgz#a2de4cdd4a2b154192d0283a981a63bbcb4a5125"
+  integrity sha512-lA4hg1eWi0Ey9F7RH/2j3sp71LBemHo/4MqjnJ7J3pu4/Z0B39xFZ/m81HPVfHPv0ZZSzYk7XnHJaPv4VFk9ig==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"

@@ -1,9 +1,14 @@
-import { slateToMdast } from "./remark-slate-transformer/index.js";
-import * as SlateCustom from "./remark-slate-transformer/transformers/mdast-to-slate";
-
+import {
+  ofmTagFromMarkdown,
+  ofmTagToMarkdown,
+} from "@moritzrs/mdast-util-ofm-tag";
+import {
+  ofmWikilinkFromMarkdown,
+  ofmWikilinkToMarkdown,
+} from "@moritzrs/mdast-util-ofm-wikilink";
+import { ofmTag } from "@moritzrs/micromark-extension-ofm-tag";
+import { ofmWikilink } from "@moritzrs/micromark-extension-ofm-wikilink";
 import * as mdast from "mdast";
-export { slateToMdast } from "./remark-slate-transformer/transformers/slate-to-mdast.js";
-
 import { fromMarkdown } from "mdast-util-from-markdown";
 import {
   frontmatterFromMarkdown,
@@ -13,18 +18,15 @@ import { gfmFromMarkdown, gfmToMarkdown } from "mdast-util-gfm";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
+
 import {
   unwrapAndGroupImagesSlate,
   wrapImagesForMdast,
 } from "../views/edit/editor/features/images/toMdast.js";
-import { ofmTagFromMarkdown, ofmTagToMarkdown } from "./mdast-util-ofm-tag";
-import {
-  ofmWikilinkFromMarkdown,
-  ofmWikilinkToMarkdown,
-} from "./mdast-util-ofm-wikilink";
-import { ofmTag } from "./micromark-extension-ofm-tag";
-import { ofmWikilink } from "./micromark-extension-ofm-wikilink";
+import { slateToMdast } from "./remark-slate-transformer/index.js";
+import * as SlateCustom from "./remark-slate-transformer/transformers/mdast-to-slate";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
+export { slateToMdast } from "./remark-slate-transformer/transformers/slate-to-mdast.js";
 
 // During import (processing) parse #tag and [[WikiLink]]; importer converts them
 // to Chronicles tags and markdown links. Future versions may support these properly.
