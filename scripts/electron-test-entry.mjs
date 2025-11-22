@@ -34,15 +34,14 @@ app.whenReady().then(async () => {
     let testExitCode = null;
 
     // Listen for test completion via IPC
-    // NOTE: Unfortunately, this won't work. Instead, we need to standup this file and
-    // its parent electron process from within a node:test
-    // win.webContents.on("ipc-message", (_event, channel, ...args) => {
-    //   if (channel === "test-complete") {
-    //     testExitCode = args[0] || 0;
-    //     console.log(`Tests completed with exit code: ${testExitCode}`);
-    //     app.exit(testExitCode);
-    //   }
-    // });
+    // NOTE: https://github.com/cloverich/chronicles/issues/374
+    win.webContents.on("ipc-message", (_event, channel, ...args) => {
+      if (channel === "test-complete") {
+        testExitCode = args[0] || 0;
+        console.log(`Tests completed with exit code: ${testExitCode}`);
+        app.exit(testExitCode);
+      }
+    });
 
     // Create a minimal HTML page that will trigger preload execution
     const htmlContent = `
