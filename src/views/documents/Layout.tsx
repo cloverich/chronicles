@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 
 import { IconButton } from "../../components/IconButton";
@@ -24,6 +25,19 @@ export const Layout = observer((props: Props) => {
   const appState = useApplicationState();
   const navigate = useNavigate();
   const jstore = useJournals();
+
+  // Keyboard shortcut: mod+n to create new note
+  useHotkeys(
+    "mod+n",
+    (e) => {
+      if (jstore.journals.length > 0) {
+        e.preventDefault();
+        navigate("/documents/edit/new");
+      }
+    },
+    { enableOnFormTags: true },
+    [navigate, jstore.journals.length],
+  );
 
   return (
     <Base.Container>

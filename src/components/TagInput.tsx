@@ -2,7 +2,8 @@ import { cn } from "@udecode/cn";
 import { cva } from "class-variance-authority";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
-import * as React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 
 // todo(chris): Refactor this to accept a list of options / details dynanmically
 const availableTags = ["in:", "tag:", "title:", "text:", "before:"];
@@ -19,19 +20,34 @@ interface TagInputProps {
   ghost?: boolean;
   /** A lazy hack to make the editors tags always start with a hash */
   prefixHash?: boolean;
+  /** Optional keyboard shortcut to focus this input (e.g., "mod+f") */
+  hotkey?: string;
 }
 
 /**
  * A multi-select input where values appear as tags
  */
 const TagInput = observer((props: TagInputProps) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [dropdown, _] = React.useState(observable({ open: false }));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdown, _] = useState(observable({ open: false }));
   const hash = props.prefixHash ? "#" : null;
 
+  // Optional keyboard shortcut to focus the input
+  useHotkeys(
+    props.hotkey || "",
+    (e) => {
+      e.preventDefault();
+      inputRef.current?.focus();
+    },
+    {
+      enabled: !!props.hotkey,
+      enableOnFormTags: true,
+    },
+  );
+
   // Close the typeahead menu when clicking outside of the dropdown
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
         containerRef.current &&
@@ -115,7 +131,9 @@ const TagInput = observer((props: TagInputProps) => {
                 className="flex cursor-pointer justify-between p-2 hover:bg-accent hover:text-accent-foreground"
                 onMouseDown={(e) => {
                   e.preventDefault(); // Prevent blur
-                  inputRef.current!.value = tag; // Set input to tag
+                  if (inputRef.current) {
+                    inputRef.current.value = tag; // Set input to tag
+                  }
                 }}
               >
                 <span>{tag}</span>
@@ -135,6 +153,8 @@ const TagInput = observer((props: TagInputProps) => {
     </div>
   );
 });
+
+TagInput.displayName = "TagInput";
 
 export default TagInput;
 

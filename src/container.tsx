@@ -1,7 +1,9 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import "react-day-picker/dist/style.css";
+import { useHotkeys } from "react-hotkeys-hook";
 import { Navigate, Route, Routes } from "react-router-dom";
+
 import { Alert } from "./components";
 import ErrorBoundary from "./error";
 import { ApplicationContext, useAppLoader } from "./hooks/useApplicationLoader";
@@ -18,26 +20,21 @@ import Preferences from "./views/preferences";
 export default observer(function Container() {
   const { loading, loadingErr, applicationStore } = useAppLoader();
 
-  // react-hook-hotkeys is a transitive dependency, but cmd+comma is not obviously
-  // supported, and package on its way out. Once patched can use hotkeys here.
-  // https://github.com/JohannesKlauss/react-hotkeys-hook/issues/1123
-  // https://github.com/JohannesKlauss/react-hotkeys-hook/issues/1213
-  React.useEffect(() => {
-    if (!applicationStore) return;
-
-    const handleKeydown = (event: any) => {
-      if (applicationStore.isPreferencesOpen) return;
-
-      if ((event.metaKey || event.ctrlKey) && event.key === ",") {
+  // Note: splitKey is needed because react-hotkeys-hook uses comma as default separator
+  useHotkeys(
+    "mod+,",
+    () => {
+      if (applicationStore && !applicationStore.isPreferencesOpen) {
         applicationStore.togglePreferences(true);
       }
-    };
-
-    window.addEventListener("keydown", handleKeydown);
-    return () => {
-      window.removeEventListener("keydown", handleKeydown);
-    };
-  }, [applicationStore]);
+    },
+    {
+      splitKey: "!",
+      enabled: !!applicationStore,
+      enableOnFormTags: true,
+    },
+    [applicationStore],
+  );
 
   if (loading) {
     return (
