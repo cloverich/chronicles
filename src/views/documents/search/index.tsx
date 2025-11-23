@@ -8,6 +8,7 @@ export const SearchInput = observer(() => {
 
   return (
     <TagInput
+      hotkey="mod+f"
       tokens={searchStore.searchTokens}
       onAdd={(token) => searchStore.addToken(token)}
       onRemove={(token) => searchStore.removeToken(token)}
