@@ -102,7 +102,7 @@ const TagInput = observer((props: TagInputProps) => {
               // Unfocus and close the dropdown; after entering a tag, the user
               // likely wants to view the search results
               // e.currentTarget.blur();
-              // dropdown.open = false;
+              dropdown.open = false;
             }
 
             // I'm angry, get me out of here! (close dropdown)
@@ -112,7 +112,12 @@ const TagInput = observer((props: TagInputProps) => {
               dropdown.open = false;
             }
           }}
-          onFocus={() => (dropdown.open = true)}
+          onFocus={() => {
+            // Only auto-open on initial focus (when no tokens exist yet)
+            if (props.tokens.length === 0) {
+              dropdown.open = true;
+            }
+          }}
           onInput={() => (dropdown.open = true)} // open menu anytime user types
         />
       </div>
