@@ -121,7 +121,7 @@ export const MediaWrapper = ({
           url={url}
           focused={focused}
           selected={selected}
-          className={cn("mx-auto block max-h-80 max-w-[80%]", className)}
+          className={cn("block max-h-80 max-w-[80%]", className)}
           onClick={(e) => onClick?.(e)}
           onError={handleError}
           onLoad={onLoad}

@@ -6,7 +6,7 @@ import { cva } from "class-variance-authority";
 
 const listVariants = cva(
   cn(
-    "m-0 ps-6 mb-6",
+    "m-0 ps-6 mb-6 max-w-prose min-w-prose",
     // Second and Third level lists structure like:
     // <ul><li> Stuff.... <ul><li> Level 2 stuff...</li></ul></li></ul>
     // So remove mb from nested (parent li already has), and

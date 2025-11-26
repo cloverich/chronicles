@@ -36,6 +36,7 @@ const dialogVariants = cva(defaultStyles, {
   variants: {
     variant: {
       default: "max-h-[90vh] w-full max-w-lg grid gap-4 overflow-y-auto p-6",
+      fullish: "max-h-[90vh] w-[90%] grid gap-4 overflow-y-auto p-6 rounded-sm",
       max: "h-[calc(90vh-var(--titlebar-height))] w-full p-6 flex items-center justify-center",
     },
     animate: {

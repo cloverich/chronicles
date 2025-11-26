@@ -7,14 +7,18 @@ interface Props {
   preferences: Preferences;
 }
 
-export const FontWatcher: React.FC<Props> = observer(({ preferences }) => {
+/**
+ * Watches preference changes and updates CSS custom properties on the document root.
+ * Handles fonts and max-width styling preferences.
+ */
+export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
   React.useEffect(() => {
-    return reaction(
+    // Watch font preferences
+    const fontDisposer = reaction(
       () => toJS(preferences.fonts),
       (fonts) => {
         const root = document.documentElement;
 
-        // Apply font preferences to CSS variables
         if (fonts.heading) {
           root.style.setProperty("--font-heading", fonts.heading);
         }
@@ -44,9 +48,36 @@ export const FontWatcher: React.FC<Props> = observer(({ preferences }) => {
         }
       },
       {
-        fireImmediately: true, // Fire immediately to set the initial state
+        fireImmediately: true,
       },
     );
+
+    // Watch max-width preferences
+    const maxWidthDisposer = reaction(
+      () => toJS(preferences.maxWidth),
+      (maxWidth) => {
+        const root = document.documentElement;
+
+        if (maxWidth.prose) {
+          root.style.setProperty("--max-w-prose", maxWidth.prose);
+        }
+
+        if (maxWidth.code) {
+          root.style.setProperty("--max-w-code", maxWidth.code);
+        } else {
+          root.style.setProperty("--max-w-code", "var(--max-w-prose)");
+        }
+      },
+      {
+        fireImmediately: true,
+      },
+    );
+
+    // Cleanup both reactions
+    return () => {
+      fontDisposer();
+      maxWidthDisposer();
+    };
   }, []);
 
   return null;
