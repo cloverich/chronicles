@@ -9,7 +9,7 @@ export const BlockquoteElement = withRef<typeof PlateElement>(
         ref={ref}
         asChild
         className={cn(
-          "my-6 border-l-4 pl-6 italic text-muted-foreground",
+          "my-6 max-w-prose border-l-4 pl-6 italic text-muted-foreground",
           className,
         )}
         {...props}

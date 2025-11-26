@@ -17,6 +17,10 @@ export interface IPreferences {
     systemBody?: string;
     systemHeading?: string;
   };
+  maxWidth: {
+    prose?: string;
+    code?: string;
+  };
 }
 
 const defaults: IPreferences = {
@@ -38,6 +42,10 @@ const defaults: IPreferences = {
       '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     systemHeading:
       '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  },
+  maxWidth: {
+    prose: "768px",
+    code: undefined,
   },
 };
 

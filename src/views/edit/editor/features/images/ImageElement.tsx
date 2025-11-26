@@ -17,7 +17,7 @@ export const ImageElement = ({
 
   return (
     <MediaPopover pluginKey={ELEMENT_IMAGE}>
-      <PlateElement className={cn("flex justify-center", className)} {...props}>
+      <PlateElement className={cn("flex justify-start", className)} {...props}>
         <ImageDisplay
           {...media}
           className="my-8 max-h-96 max-w-full cursor-pointer object-scale-down"

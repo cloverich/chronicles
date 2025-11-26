@@ -24,6 +24,10 @@ export class Preferences implements IPreferences {
     systemBody?: string;
     systemHeading?: string;
   };
+  maxWidth!: {
+    prose?: string;
+    code?: string;
+  };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {
     Object.assign(this, prefs);
@@ -36,6 +40,7 @@ export class Preferences implements IPreferences {
       onboarding: observable,
       darkMode: observable,
       fonts: observable,
+      maxWidth: observable,
     });
 
     this._lastSynced = { ...prefs };
@@ -53,6 +58,7 @@ export class Preferences implements IPreferences {
         darkMode: this.darkMode,
         // todo: add test for fonts syncing with settings store
         fonts: toJS(this.fonts),
+        maxWidth: toJS(this.maxWidth),
       }),
       (prefs: IPreferences) => {
         let toWrite: Partial<IPreferences> = {};

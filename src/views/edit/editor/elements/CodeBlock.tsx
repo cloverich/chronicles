@@ -70,7 +70,11 @@ export const CodeBlockElement = withRef<typeof PlateElement>(
 
     return (
       <PlateElement
-        className={cn("relative my-8 bg-muted", state.className, className)}
+        className={cn(
+          "max-w-code relative my-8 bg-muted",
+          state.className,
+          className,
+        )}
         ref={ref}
         {...props}
       >
