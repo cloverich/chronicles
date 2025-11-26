@@ -4,6 +4,7 @@ import { DayPicker } from "react-day-picker";
 import * as D from "../../../components/DropdownMenu";
 import * as Popover from "../../../components/Popover";
 import TagInput from "../../../components/TagInput";
+import { useAutosizeTextarea } from "../../../hooks/useAutosizeTextarea";
 import { JournalResponse } from "../../../hooks/useClient";
 import { TagTokenParser } from "../../documents/search/parsers/tag";
 import { EditableDocument } from "../EditableDocument";
@@ -35,18 +36,19 @@ const FrontMatter = observer(
       document.save("frontmatter", undefined);
     }
 
-    // Autofocus the heading input
-    const onInputRendered = React.useCallback(
-      (inputElement: HTMLInputElement) => {
-        if (inputElement) {
-          // After experimenting, unsure why the delay is helpful.
-          // https://blog.maisie.ink/react-ref-autofocus/
-          setTimeout(() => inputElement.focus(), 200);
-          inputElement.focus();
-        }
-      },
-      [],
-    );
+    // Auto-resize textarea to fit content
+    const titleRef = useAutosizeTextarea(document.title || "");
+
+    // Autofocus on mount
+    React.useEffect(() => {
+      const textarea = titleRef.current;
+      if (textarea) {
+        // After experimenting, unsure why the delay is helpful.
+        // https://blog.maisie.ink/react-ref-autofocus/
+        setTimeout(() => textarea.focus(), 200);
+        textarea.focus();
+      }
+    }, [titleRef]);
 
     // todo: this is no longer needed (since re-wroking journal id to its name)
     function getName(journalName?: string) {
@@ -118,14 +120,17 @@ const FrontMatter = observer(
       <>
         {/* Document title */}
         <div>
-          <input
-            type="text"
+          <textarea
             name="title"
-            ref={onInputRendered}
-            className="w-full border-none bg-background font-heading text-2xl font-medium text-foreground focus:outline-none"
-            onChange={(e: any) => (document.title = e.target.value)}
+            ref={titleRef}
+            className="min-h-[1.5rem] w-full resize-none overflow-hidden border-none bg-background font-heading text-2xl font-medium text-foreground focus:outline-none"
+            onChange={(e: any) => {
+              document.title = e.target.value;
+            }}
             value={document.title || ""}
             placeholder="Untitled document"
+            rows={1}
+            maxLength={200}
           />
         </div>
 
