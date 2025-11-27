@@ -8,6 +8,7 @@ import { usePreferences } from "../../hooks/usePreferences";
 import { DocumentItem } from "./DocumentItem";
 import { Layout } from "./Layout";
 import { SearchStore, useSearchStore } from "./SearchStore";
+import { groupDocumentsByDate } from "./search/groupDocumentsByDate";
 import Welcome from "./welcome";
 
 function DocumentsContainer() {
@@ -96,13 +97,22 @@ function DocumentsContainer() {
     }
   }
 
-  const docs = searchStore.docs.map((doc) => {
-    return <DocumentItem key={doc.id} doc={doc} edit={edit} />;
-  });
+  const groupedDocs = groupDocumentsByDate(searchStore.docs);
 
   return (
     <Layout store={searchStore}>
-      {docs}
+      {groupedDocs.map((group) => (
+        <div key={group.key} className="mb-8">
+          <h2 className="mb-3 font-heading text-xl font-semibold text-accent-foreground">
+            {group.label}
+          </h2>
+          <div className="space-y-1">
+            {group.docs.map((doc) => (
+              <DocumentItem key={doc.id} doc={doc} edit={edit} />
+            ))}
+          </div>
+        </div>
+      ))}
       <Pagination store={searchStore} />
     </Layout>
   );
