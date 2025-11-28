@@ -172,6 +172,7 @@ export class EditableDocument {
       try {
         this.updatedAt = this.frontMatter.updatedAt = new Date().toISOString();
         this.frontMatter.title = this.title;
+        this.frontMatter.createdAt = this.createdAt;
         this.frontMatter.tags = this.tags;
 
         // todo: if we stay on this route, just make a separate saveFrontMatter method...
