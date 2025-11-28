@@ -97,7 +97,9 @@ function DocumentsContainer() {
     }
   }
 
-  const groupedDocs = groupDocumentsByDate(searchStore.docs);
+  // groupDocumentsByDate mutates array; slice it.
+  // todo: Perf, maybe move logic to searchStore?
+  const groupedDocs = groupDocumentsByDate(searchStore.docs.slice());
 
   return (
     <Layout store={searchStore}>
