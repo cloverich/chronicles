@@ -3,6 +3,7 @@ import React from "react";
 import { toast } from "sonner";
 import { JournalsStore } from "./stores/journals";
 import { Preferences } from "./stores/preferences";
+import { SyncStore } from "./stores/sync";
 import useClient from "./useClient";
 import { usePreferencesSetup } from "./usePreferences";
 
@@ -21,12 +22,18 @@ let wasAlreadyCalled = false;
 class ApplicationState {
   preferences: Preferences;
   journals: JournalsStore;
+  sync: SyncStore;
 
   isPreferencesOpen: boolean;
 
-  constructor(preferences: Preferences, journals: JournalsStore) {
+  constructor(
+    preferences: Preferences,
+    journals: JournalsStore,
+    sync: SyncStore,
+  ) {
     this.preferences = preferences;
     this.journals = journals;
+    this.sync = sync;
     this.isPreferencesOpen = false;
 
     makeObservable(this, {
@@ -55,10 +62,11 @@ interface IApplicationState {
  */
 export function useAppLoader(): IApplicationState {
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
+  const [syncStore, setSyncStore] = React.useState<SyncStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
   const client = useClient();
-  const { preferences, loading: prefsLoading } = usePreferencesSetup();
+  const { preferences } = usePreferencesSetup();
   const [applicationStore, setApplicationStore] =
     React.useState<ApplicationState | null>(null);
 
@@ -101,7 +109,9 @@ export function useAppLoader(): IApplicationState {
 
         if (!isEffectMounted) return;
 
+        const syncStoreInstance = new SyncStore(client, journalStore);
         setJournalsStore(journalStore);
+        setSyncStore(syncStoreInstance);
         setLoading(false);
       } catch (err: any) {
         if (!isEffectMounted) return;
@@ -118,11 +128,14 @@ export function useAppLoader(): IApplicationState {
   }, []);
 
   React.useEffect(() => {
-    if (loading || loadingErr || !journalsStore || !preferences) return;
+    if (loading || loadingErr || !journalsStore || !syncStore || !preferences)
+      return;
     if (applicationStore) return;
 
-    setApplicationStore(new ApplicationState(preferences, journalsStore));
-  }, [loading, loadingErr, journalsStore, preferences]);
+    setApplicationStore(
+      new ApplicationState(preferences, journalsStore, syncStore),
+    );
+  }, [loading, loadingErr, journalsStore, syncStore, preferences]);
 
   return {
     loading: loading,

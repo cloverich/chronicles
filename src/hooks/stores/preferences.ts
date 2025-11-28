@@ -101,6 +101,23 @@ export class Preferences implements IPreferences {
     await this.client.replace(JSON.parse(JSON.stringify(this)));
   };
 
+  /**
+   * Immediately save specific preferences, bypassing the debounce.
+   * Use for critical settings that need to be persisted before other operations.
+   *
+   * @param prefs - Partial preferences object to save
+   */
+  saveImmediate = async (prefs: Partial<IPreferences>): Promise<void> => {
+    // Update MobX observables
+    Object.assign(this, prefs);
+
+    // Update last synced to prevent debounced reaction from re-saving
+    Object.assign(this._lastSynced, prefs);
+
+    // Save to disk immediately (bypassing debounce)
+    await this.client.setMultiple(prefs);
+  };
+
   refresh = async () => {
     Object.assign(this, await this.client.all());
   };
