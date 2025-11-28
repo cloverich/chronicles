@@ -13,8 +13,8 @@ import {
   DialogTitle,
 } from "../../components/Dialog";
 import useClient from "../../hooks/useClient";
-import { useJournals } from "../../hooks/useJournals";
 import { usePreferences } from "../../hooks/usePreferences";
+import { useSyncStore } from "../../hooks/useSyncStore";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
   SKIPPABLE_FILES,
@@ -28,7 +28,7 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
-  const jstore = useJournals();
+  const syncStore = useSyncStore();
   const client = useClient();
   const [store, _] = React.useState(() =>
     observable({
@@ -47,11 +47,14 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
-      preferences.notesDir = result.value;
-      sync();
+      // Save preference immediately before sync (bypasses 1-second debounce)
+      await preferences.saveImmediate({ notesDir: result.value });
+      syncStore.sync(true);
     } catch (e) {
       store.loading = false;
       toast.error("Failed to set new directory");
+    } finally {
+      store.loading = false;
     }
   }
 
@@ -64,8 +67,17 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
+      toast.info("Importing directory...this may take a few minutes");
       await client.importer.import(result.value, store.sourceType);
+
+      // Import calls sync internally, so just refresh the journals store
+      // and show success notification
+      // await jstore.refresh();
+      toast.success("Import completed");
       store.loading = false;
+
+      // Navigate to main view to show newly imported documents
+      // window.location.hash = "#/";
     } catch (e) {
       console.error("Error importing directory", e);
       store.loading = false;
@@ -84,19 +96,6 @@ const PreferencesPane = observer((props: Props) => {
       store.loading = false;
       toast.error("Failed to clear import table");
     }
-  }
-
-  async function sync() {
-    if (store.loading) return;
-
-    toast.info("Syncing cache...may take a few minutes");
-    store.loading = true;
-
-    // force sync when called manually
-    await client.sync.sync(true);
-    await jstore.refresh();
-    store.loading = false;
-    toast.success("Cache synced");
   }
 
   return (
@@ -413,9 +412,9 @@ const PreferencesPane = observer((props: Props) => {
                 <div className="mt-4 flex">
                   <Button
                     variant="ghost"
-                    loading={store.loading}
-                    disabled={store.loading}
-                    onClick={sync}
+                    loading={syncStore.isSyncing}
+                    disabled={syncStore.isSyncing}
+                    onClick={() => syncStore.sync(true)}
                   >
                     Sync folder
                   </Button>

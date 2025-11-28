@@ -4,9 +4,12 @@ import {
   computed,
   makeObservable,
   observable,
+  reaction,
 } from "mobx";
 import { createContext, useContext } from "react";
+
 import { JournalsStore } from "../../hooks/stores/journals";
+import { SyncStore } from "../../hooks/stores/sync";
 import { IClient } from "../../hooks/useClient";
 import { SearchParser } from "./SearchParser";
 import { SearchToken } from "./search/tokens";
@@ -26,6 +29,9 @@ interface DocumentBase {
     title?: string;
   };
 }
+
+// SearchStore watches the lastSyncTime on syncStore, so on re-syncs it can refresh its results.
+type SyncStoreProps = Pick<SyncStore, "lastSyncTime">;
 
 // Accepts any document satisfying the SearchItem interface, and copies properties
 // into an actual SearchItem; i.e. I dont want to stuff an EditableDocument or other smart
@@ -75,6 +81,7 @@ export class SearchStore {
     journals: JournalsStore,
     setTokensUrl: any,
     tokens: string[],
+    syncStore: SyncStoreProps,
   ) {
     this.journals = journals;
     this.parser = new SearchParser();
@@ -101,6 +108,13 @@ export class SearchStore {
       next: action,
       prev: action,
     });
+
+    reaction(
+      () => syncStore.lastSyncTime,
+      () => {
+        this.search();
+      },
+    );
   }
 
   private initTokens = (searchStr: string[]) => {

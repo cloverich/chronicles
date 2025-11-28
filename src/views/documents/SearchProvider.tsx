@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useSearchParams } from "react-router-dom";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { useSyncStore } from "../../hooks/useSyncStore";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 
 // Sets up document search and its context
@@ -10,6 +11,7 @@ export function SearchProvider() {
   const client = useClient();
   const [params, setParams] = useSearchParams();
   const [searchStore, setSearchStore] = useState<null | SearchStore>(null);
+  const syncStore = useSyncStore();
 
   // This is more like an effect. This smells. Maybe just roll this all up into
   // a hook.
@@ -19,6 +21,7 @@ export function SearchProvider() {
       jstore,
       setParams,
       params.getAll("search"),
+      syncStore,
     );
     store.search();
     setSearchStore(store);

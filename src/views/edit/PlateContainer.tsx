@@ -103,6 +103,7 @@ import { ELEMENT_VIDEO } from "./editor/plugins/createVideoPlugin";
 
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { useSyncStore } from "../../hooks/useSyncStore";
 import { SearchStore } from "../documents/SearchStore";
 import { createImageGalleryPlugin } from "./editor/features/images";
 import {
@@ -122,7 +123,8 @@ export default observer(
   ({ children, value, setValue }: React.PropsWithChildren<Props>) => {
     const jstore = useJournals();
     const client = useClient();
-    const store = new SearchStore(client, jstore!, () => {}, []);
+    const syncStore = useSyncStore();
+    const store = new SearchStore(client, jstore!, () => {}, [], syncStore);
 
     const plugins = createPlugins(
       [
