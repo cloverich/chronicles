@@ -1,6 +1,6 @@
 import React from "react";
 
-import { ClickableTag as Tag } from "../../../components/TagInput";
+import { ClickableTag as Tag } from "../../../components/tag-input/TagInput";
 import { useTags } from "../../../hooks/useTags";
 import { Card } from "./Card";
 
