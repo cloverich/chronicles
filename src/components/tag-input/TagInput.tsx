@@ -1,19 +1,19 @@
 import { cn } from "@udecode/cn";
 import { cva } from "class-variance-authority";
-import { observable } from "mobx";
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-
-// todo(chris): Refactor this to accept a list of options / details dynanmically
-const availableTags = ["in:", "tag:", "title:", "text:", "before:"];
+import { TagStore } from "./TagStore";
 
 interface TagInputProps {
   tokens: string[];
   onAdd: (token: string) => void;
   onRemove: (token: string) => void;
-  /** Whether to show the dropdown on focus */
-  dropdownEnabled?: boolean;
+  /** Whether to show the dropdown on focus, when empty */
+  openOnEmptyFocus?: boolean;
+  /** Whether to infer selection is fill+search */
+  searchOnSelect?: boolean;
   /** placeholder text */
   placeholder?: string;
   /** When true, hide the borders / disable padding */
@@ -22,16 +22,41 @@ interface TagInputProps {
   prefixHash?: boolean;
   /** Optional keyboard shortcut to focus this input (e.g., "mod+f") */
   hotkey?: string;
+  /** List of suggestions for autocomplete */
+  suggestions: Option[];
+}
+
+interface Option {
+  value: string;
+  label?: string;
 }
 
 /**
  * A multi-select input where values appear as tags
+ *
+ * todo: consolidate with Plate editor inline combobox
  */
 const TagInput = observer((props: TagInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dropdown, _] = useState(observable({ open: false }));
   const hash = props.prefixHash ? "#" : null;
+  const store = useMemo(
+    () => new TagStore(props.suggestions, props.openOnEmptyFocus, props.tokens),
+    [],
+  );
+
+  // tags come in async
+  useEffect(() => {
+    runInAction(() => {
+      store.options = props.suggestions!;
+    });
+  }, [props.suggestions]);
+
+  useEffect(() => {
+    runInAction(() => {
+      store.tokens = props.tokens;
+    });
+  }, [props.tokens]);
 
   // Optional keyboard shortcut to focus the input
   useHotkeys(
@@ -53,12 +78,55 @@ const TagInput = observer((props: TagInputProps) => {
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        dropdown.open = false;
+        store.isOpen = false;
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleClickItem = (tag: Option) => {
+    // Clicking implies selecting and resetting the input
+    if (props.searchOnSelect !== false) {
+      props.onAdd(tag.value);
+      runInAction(() => {
+        store.query = "";
+      });
+    } else {
+      runInAction(() => {
+        store.query = tag.value;
+      });
+    }
+
+    inputRef.current?.focus(); // Keep focus
+  };
+
+  const handleEnter = () => {
+    // If a dropdown selection is focused, infer Enter as selecting it
+    if (store.isDropdownOpen && store.focusedOption) {
+      if (props.searchOnSelect !== false) {
+        // On Edit page, clicking option == clicking tag, execute search and empty input
+        props.onAdd(store.focusedOption.value);
+        runInAction(() => {
+          store.query = "";
+          store.isOpen = false;
+        });
+      } else {
+        // Documents search page, options aren't final values, just prefixes, so add
+        // to input to let user finish filling out search
+        runInAction(() => {
+          store.query = store.focusedOption!.value;
+        });
+      }
+    } else {
+      // Otherwise, infer as creating a new tag / search
+      props.onAdd(store.query);
+      runInAction(() => {
+        store.query = "";
+        store.isOpen = false;
+      });
+    }
+  };
 
   return (
     <div
@@ -86,70 +154,93 @@ const TagInput = observer((props: TagInputProps) => {
           className="text-tag-foreground w-0 min-w-8 flex-shrink flex-grow bg-background outline-none"
           type="text"
           placeholder={props.tokens.length ? "" : props.placeholder}
+          value={store.query}
+          onChange={(e) => {
+            runInAction(() => {
+              store.query = e.target.value;
+              store.isOpen = true;
+            });
+          }}
+          onBlur={() =>
+            runInAction(() => {
+              store.isOpen = false;
+            })
+          }
           onKeyDown={(e) => {
             if (e.key === "Backspace" && e.currentTarget.value === "") {
-              // remove the last search token, if any
+              // When typeable input is empty, interpret additional backspaces
+              // as "clear the last tag" (the one closest to cursor)
               if (props.tokens.length) {
                 props.onRemove(props.tokens[props.tokens.length - 1]);
-                setTimeout(() => inputRef.current?.focus(), 0); // Refocus the input
+                // setTimeout(() => inputRef.current?.focus(), 0); // Refocus the input
               }
             }
 
-            if (e.key === "Enter" && e.currentTarget.value.trim() !== "") {
-              props.onAdd(e.currentTarget.value.trim()); // Add the token
-              e.currentTarget.value = ""; // Clear input
+            if (store.isDropdownOpen) {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                store.handleArrowDown();
 
-              // Unfocus and close the dropdown; after entering a tag, the user
-              // likely wants to view the search results
-              // e.currentTarget.blur();
-              dropdown.open = false;
+                return;
+              }
+
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                store.handleArrowUp();
+
+                return;
+              }
+            }
+
+            // Enter always implies to fire selection
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleEnter();
             }
 
             // I'm angry, get me out of here! (close dropdown)
             if (e.key === "Escape") {
-              e.currentTarget.value = "";
-              e.currentTarget.blur();
-              dropdown.open = false;
+              runInAction(() => {
+                store.isOpen = false;
+              });
             }
           }}
           onFocus={() => {
-            // Only auto-open on initial focus (when no tokens exist yet)
-            if (props.tokens.length === 0) {
-              dropdown.open = true;
-            }
+            store.isOpen = true;
           }}
-          onInput={() => (dropdown.open = true)} // open menu anytime user types
         />
       </div>
       <div className="relative">
-        {props.dropdownEnabled && dropdown.open && (
+        {store.isDropdownOpen && (
           <div
             className={cn(
-              "absolute left-0 top-1 z-10 mt-2 w-full",
+              "absolute left-0 top-1 z-10 mt-2 max-h-60 w-full overflow-y-auto",
               "bg-secondary/80 shadow-md backdrop-blur-sm",
               "border-b border-l border-r border-accent",
             )}
           >
-            {availableTags.slice(0, 5).map((tag, idx) => (
+            {store.filteredOptions.slice(0, 10).map((tag, idx) => (
               <div
                 key={idx}
-                className="flex cursor-pointer justify-between p-2 hover:bg-accent hover:text-accent-foreground"
+                className={cn(
+                  "flex cursor-pointer justify-between p-2 hover:bg-accent hover:text-accent-foreground",
+                  idx === store.focusedIdx &&
+                    "bg-accent text-accent-foreground",
+                )}
                 onMouseDown={(e) => {
                   e.preventDefault(); // Prevent blur
-                  if (inputRef.current) {
-                    inputRef.current.value = tag; // Set input to tag
-                  }
+                  handleClickItem(tag);
                 }}
+                onMouseEnter={() =>
+                  runInAction(() => {
+                    store.focusedIdx = idx;
+                  })
+                }
               >
-                <span>{tag}</span>
-                <span className="text-foreground">
-                  {tag === "in:" && "Filter to specific journal"}
-                  {tag === "tag:" && "Filter to specific tag"}
-                  {tag === "title:" && "Filter by title"}
-                  {tag === "text:" && "Search body text"}
-                  {tag === "before:" &&
-                    "Filter to notes before date (YYYY-MM-DD)"}
-                </span>
+                <span>{tag.value}</span>
+                {tag.label && (
+                  <span className="text-foreground">{tag.label}</span>
+                )}
               </div>
             ))}
           </div>

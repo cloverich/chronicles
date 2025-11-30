@@ -1,11 +1,12 @@
 import { observer } from "mobx-react-lite";
-import React from "react";
+import React, { useMemo } from "react";
 import { DayPicker } from "react-day-picker";
 import * as D from "../../../components/DropdownMenu";
 import * as Popover from "../../../components/Popover";
-import TagInput from "../../../components/TagInput";
+import TagInput from "../../../components/tag-input/TagInput";
 import { useAutosizeTextarea } from "../../../hooks/useAutosizeTextarea";
 import { JournalResponse } from "../../../hooks/useClient";
+import { useTags } from "../../../hooks/useTags";
 import { TagTokenParser } from "../../documents/search/parsers/tag";
 import { EditableDocument } from "../EditableDocument";
 
@@ -19,6 +20,14 @@ const FrontMatter = observer(
   }) => {
     const journalSelectorOpenState = D.useOpenState();
     const datePickerOpenState = D.useOpenState();
+    const { tags: allTagsRaw } = useTags();
+
+    // todo: cleanup
+    const allTags = useMemo(() => {
+      return allTagsRaw.map((t) => ({
+        value: t,
+      }));
+    }, [allTagsRaw]);
 
     function onAddTag(token: string) {
       let tag = new TagTokenParser().parse(token)?.value;
@@ -150,6 +159,8 @@ const FrontMatter = observer(
             placeholder="Add tags"
             ghost={true}
             prefixHash={true}
+            suggestions={allTags}
+            openOnEmptyFocus={false}
           />
         </div>
       </>
