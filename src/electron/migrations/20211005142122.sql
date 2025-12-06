@@ -111,3 +111,31 @@ CREATE TABLE IF NOT EXISTS "import_notes" (
     "frontMatter" TEXT,
     "content" TEXT
 );
+
+-- Bulk operations support
+CREATE TABLE IF NOT EXISTS "bulk_operations" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "type" TEXT NOT NULL, -- 'add_tag', 'remove_tag', 'change_journal'
+    "search" TEXT NOT NULL, -- Search request used to find notes to operate on
+    "params" TEXT NOT NULL, -- JSON: { tag: "mytag" } or { journal: "new-journal" }
+    "status" TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'running', 'completed', 'failed'
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "startedAt" TEXT,
+    "completedAt" TEXT,
+    "totalItems" INTEGER NOT NULL,
+    "successCount" INTEGER DEFAULT 0,
+    "errorCount" INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS "bulk_operation_items" (
+    "operationId" TEXT NOT NULL,
+    "documentId" TEXT NOT NULL, -- Not a foreign key - allows tracking operations on invalid/deleted documents
+    "status" TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'success', 'error'
+    "error" TEXT,
+    "processedAt" TEXT,
+    FOREIGN KEY ("operationId") REFERENCES "bulk_operations" ("id") ON DELETE CASCADE,
+    PRIMARY KEY ("operationId", "documentId")
+);
+
+CREATE INDEX IF NOT EXISTS "bulk_operation_items_status_idx" ON "bulk_operation_items"("status");
+CREATE INDEX IF NOT EXISTS "bulk_operations_status_idx" ON "bulk_operations"("status");

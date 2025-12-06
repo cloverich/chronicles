@@ -1,4 +1,5 @@
 import { Knex } from "knex";
+import { IBulkOperationsClient } from "./bulk-operations";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IImporterClient } from "./importer";
@@ -20,6 +21,7 @@ export interface IClient {
   files: IFilesClient;
   sync: ISyncClient;
   importer: IImporterClient;
+  bulkOperations: IBulkOperationsClient;
 }
 
 export type JournalResponse = {
@@ -40,12 +42,13 @@ export interface GetDocumentResponse {
  * Structure for searching journal content.
  */
 export interface SearchRequest {
+  ids?: string[];
   /**
    * Filter by journal (array of Ids).
    * The empty array is treated as "all journals",
    * rather than None.
    */
-  journals: string[];
+  journals?: string[];
 
   /**
    * Filter to documents matching one of these titles

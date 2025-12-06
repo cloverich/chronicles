@@ -135,6 +135,10 @@ export class DocumentsClient {
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
     let query = this.knex<DocumentDb>("documents");
 
+    if (q?.ids) {
+      query = query.whereIn("id", q.ids);
+    }
+
     // filter by journal
     if (q?.journals?.length) {
       query = query.whereIn("journal", q.journals);
@@ -176,6 +180,8 @@ export class DocumentsClient {
     }
 
     query.orderBy("createdAt", "desc");
+
+    if (q?.ids) return { data: await query.select("id") };
 
     try {
       const results = await query;
@@ -455,7 +461,7 @@ export class DocumentsClient {
   };
 
   /**
-   * For a given before: token, determine if the value is a date, an ID, or
+   * For a given search like `before: token`, determine if the value is a date, an ID, or
    * unknown. This allows paginating / ordering off of before using either
    * createdAt or ID.
    *

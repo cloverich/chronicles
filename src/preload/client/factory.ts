@@ -1,5 +1,6 @@
 import Knex from "knex";
 import { Settings } from "../../electron/settings";
+import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
 import { ImporterClient } from "./importer";
@@ -42,6 +43,8 @@ export function createClient({ store }: ClientFactoryParams): IClient {
     sync,
   );
 
+  const bulkOperations = new BulkOperationsClient(knex, documents);
+
   const baseClient = {
     knex,
     journals: journals,
@@ -51,6 +54,7 @@ export function createClient({ store }: ClientFactoryParams): IClient {
     files: files,
     sync,
     importer,
+    bulkOperations,
   };
 
   return baseClient;
