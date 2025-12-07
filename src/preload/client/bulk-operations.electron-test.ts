@@ -251,28 +251,6 @@ test("raises error if search returns no documents", async () => {
       params: { tag: "test-tag" },
     }),
   );
-
-  // await client.bulkOperations.process(operationId);
-
-  // const completedOp = await client.bulkOperations.get(operationId);
-  // assert.strictEqual(completedOp.operation.status, "completed");
-  // assert.strictEqual(completedOp.operation.successCount, 0);
-  // assert.strictEqual(completedOp.operation.errorCount, 1);
-
-  // try {
-  //   // Verify error was recorded
-  //   const failedItem = completedOp.items.find(
-  //     (item) => item.status === "error",
-  //   );
-  // } catch (err) {
-  //   console.log("???", JSON.stringify(err, null, 2));
-  // }
-  // assert.ok(failedItem, "Found failed item");
-  // assert.ok(failedItem.error, "Error message was recorded");
-  // assert.ok(
-  //   failedItem.error.includes("DOCUMENT_NOT_FOUND"),
-  //   "Error is document not found",
-  // );
 });
 
 test("validation - missing tag parameter", async () => {
@@ -303,21 +281,6 @@ test("validation - missing journal parameter", async () => {
     },
     {
       message: "Operation change_journal requires 'journal' parameter",
-    },
-  );
-});
-
-test("validation - empty document list", async () => {
-  await assert.rejects(
-    async () => {
-      await client.bulkOperations.create({
-        type: "add_tag",
-        search: { ids: [] },
-        params: { tag: "test" },
-      });
-    },
-    {
-      message: "No documents provided for bulk operation",
     },
   );
 });

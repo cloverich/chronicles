@@ -35,7 +35,6 @@ export interface BulkOperationItem {
 export interface CreateBulkOperationRequest {
   type: BulkOperationType;
   search: SearchRequest;
-  // documentIds: string[];
   params: BulkOperationParams;
 }
 
@@ -59,12 +58,6 @@ export class BulkOperationsClient {
    */
   create = async (request: CreateBulkOperationRequest): Promise<string> => {
     const { type, search, params } = request;
-    // console.log(
-    //   "request",
-    //   type,
-    //   JSON.stringify(search, null, 2),
-    //   JSON.stringify(params, null, 2),
-    // );
 
     // TODO: Only get the ids from the search request to speed this up.
     const documents = await this.documents.search(search);
@@ -91,14 +84,18 @@ export class BulkOperationsClient {
         errorCount: 0,
       });
 
-      // Insert items
+      // Insert items in batches to avoid SQLite's compound SELECT limit
       const items = documents.data.map((doc) => ({
         operationId,
         documentId: doc.id,
         status: "pending",
       }));
 
-      await trx("bulk_operation_items").insert(items);
+      const BATCH_SIZE = 100;
+      for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        const batch = items.slice(i, i + BATCH_SIZE);
+        await trx("bulk_operation_items").insert(batch);
+      }
     });
 
     return operationId;

@@ -1,5 +1,5 @@
 import React from "react";
-import { ApplicationContext } from "./useApplicationLoader";
+import { ApplicationContext } from "./useApplicationStore";
 
 /**
  * Simple helper for accessing the sync store

@@ -43,9 +43,9 @@ app.whenReady().then(async () => {
       }
     });
 
-    win.webContents.on("console-message", (event) => {
-      console.log(`[RENDERER ${event.level}]:`, event.message);
-    });
+    // win.webContents.on("console-message", (event) => {
+    //   console.log(`[RENDERER ${event.level}]:`, event.message);
+    // });
 
     // Create a minimal HTML page that will trigger preload execution
     const htmlContent = `

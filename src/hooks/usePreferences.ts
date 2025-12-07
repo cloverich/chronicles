@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Preferences } from "./stores/preferences";
-import { useApplicationState } from "./useApplicationLoader";
+import { useApplicationStore } from "./useApplicationStore";
 import useClient from "./useClient";
 
 export interface PreferencesSetupState {
@@ -58,6 +58,6 @@ export const usePreferencesSetup = () => {
 };
 
 export const usePreferences = (): Preferences => {
-  const appState = useApplicationState();
+  const appState = useApplicationStore();
   return appState.preferences;
 };

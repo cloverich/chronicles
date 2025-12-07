@@ -9,8 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // todo: clean-up; feels overly verbose for a default button style
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+          "border-transparent border  hover:bg-primary/90 hover:border-accent-muted hover:text-foreground-strong bg-primary text-primary-foreground shadow",
         ghost:
           "hover:border-accent-muted hover:text-foreground-strong border border-muted text-muted-foreground",
         destructive:

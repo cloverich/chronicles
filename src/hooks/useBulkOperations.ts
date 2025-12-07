@@ -1,10 +1,7 @@
 import React from "react";
 import { ApplicationContext } from "./useApplicationStore";
 
-/**
- * Simple hepler for accessing the journals store
- */
-export function useJournals() {
+export function useBulkOperationsStore() {
   const applicationStore = React.useContext(ApplicationContext)!;
-  return applicationStore.journals;
+  return applicationStore.bulkOperations;
 }

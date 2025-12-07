@@ -32,8 +32,6 @@ console.log(`Found ${testFiles.length} electron test file(s)`);
 // Run tests sequentially
 async function runTests() {
   for (const testFile of testFiles) {
-    // if (!testFile.includes("bulk-operations")) continue;
-
     const relativeTestFile = path.relative(projectRoot, testFile);
     console.log(`\nRunning: ${relativeTestFile}`);
 

@@ -8,8 +8,9 @@ import { usePreferences } from "../../hooks/usePreferences";
 import { DocumentItem } from "./DocumentItem";
 import { Layout } from "./Layout";
 import { SearchStore, useSearchStore } from "./SearchStore";
+import { BulkOperations } from "./modals/BulkOperations";
+import Welcome from "./modals/welcome";
 import { groupDocumentsByDate } from "./search/groupDocumentsByDate";
-import Welcome from "./welcome";
 
 function DocumentsContainer() {
   const journalsStore = useJournals();
@@ -116,6 +117,7 @@ function DocumentsContainer() {
         </div>
       ))}
       <Pagination store={searchStore} />
+      <BulkOperations searchStore={searchStore} hotkey="mod+k" />
     </Layout>
   );
 }
