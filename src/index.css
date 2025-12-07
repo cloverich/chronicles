@@ -141,10 +141,10 @@
     --input: 217.2 32.6% 17.5%;
     --input-hint: hsl(217.2 32.6% 17.5%);
 
-    --primary: 210 40% 98%;
-    --primary-hint: hsl(210 40% 98%);
-    --primary-foreground: 254, 35%, 78%;
-    --primary-foreground-hint: hsl(254, 35%, 78%);
+    --primary: 254, 35%, 78%;
+    --primary-hint: hsl(254, 35%, 78%);
+    --primary-foreground: 217.2 32.6% 17.5%;
+    --primary-foreground-hint: hsl(217.2 32.6% 17.5%);
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-hint: hsl(217.2 32.6% 17.5%);

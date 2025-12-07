@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "../../../components/Button";
+import { Button } from "../../../../components/Button";
 import {
   Dialog,
   DialogClose,
@@ -7,8 +7,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../../../components/Dialog";
-import { Icons } from "../../../components/icons";
+} from "../../../../components/Dialog";
+import { Icons } from "../../../../components/icons";
 
 export default function Welcome({ onComplete }: { onComplete: () => void }) {
   function ackNewUser() {
@@ -63,7 +63,14 @@ export default function Welcome({ onComplete }: { onComplete: () => void }) {
               </p>
 
               <DialogClose asChild>
-                <Button type="button">Got it</Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-4"
+                >
+                  Got it
+                </Button>
               </DialogClose>
             </div>
           </DialogDescription>

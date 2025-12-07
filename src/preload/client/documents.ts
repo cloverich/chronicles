@@ -181,6 +181,7 @@ export class DocumentsClient {
 
     query.orderBy("createdAt", "desc");
 
+    // todo: update type to indicate when ids passed, only ids are returned
     if (q?.ids) return { data: await query.select("id") };
 
     try {

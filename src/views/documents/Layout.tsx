@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import { IconButton } from "../../components/IconButton";
 import { SheetTrigger } from "../../components/Sidesheet";
-import { useApplicationState } from "../../hooks/useApplicationLoader";
+import { useApplicationStore } from "../../hooks/useApplicationStore";
 import { useJournals } from "../../hooks/useJournals";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
@@ -22,7 +22,7 @@ interface Props {
 export const Layout = observer((props: Props) => {
   // todo: move journals sidebar open to application state...
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-  const appState = useApplicationState();
+  const appState = useApplicationStore();
   const navigate = useNavigate();
   const jstore = useJournals();
 

@@ -91,6 +91,7 @@ const TagInput = observer((props: TagInputProps) => {
       props.onAdd(tag.value);
       runInAction(() => {
         store.query = "";
+        store.isOpen = false;
       });
     } else {
       runInAction(() => {
@@ -131,7 +132,7 @@ const TagInput = observer((props: TagInputProps) => {
   return (
     <div
       className={cn(
-        "flex w-0 max-w-full flex-grow flex-col rounded-sm border bg-background text-xs drag-none",
+        "flex max-w-full flex-grow flex-col rounded-sm border bg-background text-xs drag-none",
         props.ghost && "border-none",
       )}
       ref={containerRef}

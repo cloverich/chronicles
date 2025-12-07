@@ -1,60 +1,13 @@
-import { makeObservable, observable } from "mobx";
 import React from "react";
 import { toast } from "sonner";
+import { BulkOperationsStore } from "./stores/BulkOperationsStore";
+import { ApplicationStore, IApplicationState } from "./stores/application";
 import { JournalsStore } from "./stores/journals";
-import { Preferences } from "./stores/preferences";
 import { SyncStore } from "./stores/sync";
 import useClient from "./useClient";
 import { usePreferencesSetup } from "./usePreferences";
 
-export const ApplicationContext = React.createContext<ApplicationState | null>(
-  null,
-);
-
-// todo: Allow selecting part of state
-export function useApplicationState() {
-  const applicationStore = React.useContext(ApplicationContext)!;
-  return applicationStore;
-}
-
 let wasAlreadyCalled = false;
-
-class ApplicationState {
-  preferences: Preferences;
-  journals: JournalsStore;
-  sync: SyncStore;
-
-  isPreferencesOpen: boolean;
-
-  constructor(
-    preferences: Preferences,
-    journals: JournalsStore,
-    sync: SyncStore,
-  ) {
-    this.preferences = preferences;
-    this.journals = journals;
-    this.sync = sync;
-    this.isPreferencesOpen = false;
-
-    makeObservable(this, {
-      isPreferencesOpen: observable,
-    });
-  }
-
-  togglePreferences = (state: boolean) => {
-    if (state) {
-      this.isPreferencesOpen = state;
-    } else {
-      this.isPreferencesOpen = !this.isPreferencesOpen;
-    }
-  };
-}
-
-interface IApplicationState {
-  loading: boolean;
-  loadingErr: Error | null;
-  applicationStore: null | ApplicationState;
-}
 
 /**
  * Runs sync and loads the journal store. After loading it should be passed down in context.
@@ -62,13 +15,15 @@ interface IApplicationState {
  */
 export function useAppLoader(): IApplicationState {
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
+  const [bulkOperationsStore, setBulkOperationsStore] =
+    React.useState<BulkOperationsStore>();
   const [syncStore, setSyncStore] = React.useState<SyncStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
   const client = useClient();
   const { preferences } = usePreferencesSetup();
   const [applicationStore, setApplicationStore] =
-    React.useState<ApplicationState | null>(null);
+    React.useState<ApplicationStore | null>(null);
 
   React.useEffect(() => {
     if (wasAlreadyCalled) {
@@ -112,6 +67,7 @@ export function useAppLoader(): IApplicationState {
         const syncStoreInstance = new SyncStore(client, journalStore);
         setJournalsStore(journalStore);
         setSyncStore(syncStoreInstance);
+        setBulkOperationsStore(new BulkOperationsStore(client.bulkOperations));
         setLoading(false);
       } catch (err: any) {
         if (!isEffectMounted) return;
@@ -128,12 +84,24 @@ export function useAppLoader(): IApplicationState {
   }, []);
 
   React.useEffect(() => {
-    if (loading || loadingErr || !journalsStore || !syncStore || !preferences)
+    if (
+      loading ||
+      loadingErr ||
+      !journalsStore ||
+      !syncStore ||
+      !preferences ||
+      !bulkOperationsStore
+    )
       return;
     if (applicationStore) return;
 
     setApplicationStore(
-      new ApplicationState(preferences, journalsStore, syncStore),
+      new ApplicationStore(
+        preferences,
+        journalsStore,
+        syncStore,
+        bulkOperationsStore,
+      ),
     );
   }, [loading, loadingErr, journalsStore, syncStore, preferences]);
 

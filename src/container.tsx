@@ -6,7 +6,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Alert } from "./components";
 import ErrorBoundary from "./error";
-import { ApplicationContext, useAppLoader } from "./hooks/useApplicationLoader";
+import { useAppLoader } from "./hooks/useApplicationLoader";
+import { ApplicationContext } from "./hooks/useApplicationStore";
 import Titlebar from "./titlebar/macos";
 import { StyleWatcher } from "./views/StyleWatcher";
 import { ThemeWatcher } from "./views/ThemeWatcher";
