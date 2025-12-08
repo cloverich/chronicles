@@ -132,7 +132,8 @@ const FrontMatter = observer(
           <textarea
             name="title"
             ref={titleRef}
-            className="min-h-[1.5rem] w-full resize-none overflow-hidden border-none bg-background font-heading text-2xl font-medium text-foreground focus:outline-none"
+            className="min-h-[1.5rem] w-full resize-none overflow-hidden border-none bg-background font-heading font-medium text-foreground focus:outline-none"
+            style={{ fontSize: "var(--font-size-note-title)" }}
             onChange={(e: any) => {
               document.title = e.target.value;
             }}

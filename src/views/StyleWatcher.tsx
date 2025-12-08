@@ -73,10 +73,30 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       },
     );
 
-    // Cleanup both reactions
+    // Watch font-size preferences
+    const fontSizeDisposer = reaction(
+      () => toJS(preferences.fontSize),
+      (fontSize) => {
+        const root = document.documentElement;
+
+        if (fontSize.noteTitle) {
+          root.style.setProperty("--font-size-note-title", fontSize.noteTitle);
+        }
+
+        if (fontSize.noteBody) {
+          root.style.setProperty("--font-size-note-body", fontSize.noteBody);
+        }
+      },
+      {
+        fireImmediately: true,
+      },
+    );
+
+    // Cleanup all reactions
     return () => {
       fontDisposer();
       maxWidthDisposer();
+      fontSizeDisposer();
     };
   }, []);
 

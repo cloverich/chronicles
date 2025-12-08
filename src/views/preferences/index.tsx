@@ -253,6 +253,37 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
+                  title="Font Size"
+                  sub="Customize font sizes for editor content"
+                />
+
+                <div className="space-y-6">
+                  <div>
+                    <div className="space-y-4">
+                      <FontSizeSelector
+                        label="Note Title"
+                        description="Font size for document titles in the editor"
+                        value={preferences.fontSize?.noteTitle || ""}
+                        placeholder="1.5rem (default)"
+                        onChange={(e) => {
+                          preferences.fontSize.noteTitle = e.target.value;
+                        }}
+                      />
+                      <FontSizeSelector
+                        label="Note Body"
+                        description="Font size for body text and paragraphs"
+                        value={preferences.fontSize?.noteBody || ""}
+                        placeholder="1rem (default)"
+                        onChange={(e) => {
+                          preferences.fontSize.noteBody = e.target.value;
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
                   title="Configuration files"
                   sub="Configuration and database files, and base notes directory"
                 />
@@ -551,6 +582,25 @@ function FontSelector({
 }
 
 function WidthSelector({
+  label,
+  description,
+  ...rest
+}: {
+  label: string;
+  description: string;
+} & InputProps) {
+  return (
+    <div className="flex items-start justify-between">
+      <div className="mb-2">
+        <Label.Base className="text-sm font-medium">{label}</Label.Base>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Input className="max-w-[250px]" {...rest} />
+    </div>
+  );
+}
+
+function FontSizeSelector({
   label,
   description,
   ...rest
