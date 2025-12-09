@@ -79,7 +79,7 @@ export const CodeBlockElement = withRef<typeof PlateElement>(
         {...props}
       >
         <pre className="font-code overflow-x-auto rounded-md px-6 pb-4 pt-10 text-sm leading-[normal] [tab-size:2]">
-          <code>{children}</code>
+          <code spellCheck={false}>{children}</code>
         </pre>
         <div
           className="absolute right-2 top-2 z-10 select-none"

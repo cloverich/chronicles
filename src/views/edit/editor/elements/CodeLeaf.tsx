@@ -4,7 +4,7 @@ import React from "react";
 export function CodeLeaf({ className, children, ...props }: PlateLeafProps) {
   return (
     <PlateLeaf asChild className={className} {...props}>
-      <code>{children}</code>
+      <code spellCheck={false}>{children}</code>
     </PlateLeaf>
   );
 }

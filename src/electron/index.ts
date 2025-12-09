@@ -1,13 +1,5 @@
-import {
-  BrowserWindow,
-  Menu,
-  MenuItem,
-  app,
-  dialog,
-  ipcMain,
-  protocol,
-  shell,
-} from "electron";
+import { BrowserWindow, app, dialog, ipcMain, protocol, shell } from "electron";
+import contextMenu from "electron-context-menu";
 import fs from "fs";
 import path from "path";
 import url, { fileURLToPath } from "url";
@@ -201,41 +193,15 @@ function createWindow() {
     });
 
     mainWindow.webContents.openDevTools();
-    setupInspectElement(mainWindow);
   }
-}
 
-/**
- * Sets up the "Inspect Element" context menu item for the main window.
- * This allows right-clicking on elements and inspect them using the
- * DevTools.
- * @param {Electron.Main.BrowserWindow} mainWindow
- */
-function setupInspectElement(mainWindow: BrowserWindow) {
-  // type is MenuItemConstructorOptions[]
-  let rightClickPosition: { x: number; y: number } | null = null;
-  const contextMenuTemplate: any[] = [
-    // todo: MenuItemConstructorOptions[]
-    {
-      label: "Inspect Element",
-      click: (item: MenuItem, focusedWindow?: BrowserWindow) => {
-        if (focusedWindow && rightClickPosition) {
-          focusedWindow.webContents.inspectElement(
-            rightClickPosition.x,
-            rightClickPosition.y,
-          );
-        }
-      },
-    },
-  ];
-
-  const contextMenu = Menu.buildFromTemplate(contextMenuTemplate);
-
-  mainWindow.webContents.on("context-menu", (event, params) => {
-    rightClickPosition = { x: params.x, y: params.y };
-    contextMenu.popup({
-      window: mainWindow,
-    });
+  // Setup context menu with spell checking support
+  contextMenu({
+    window: mainWindow,
+    showLearnSpelling: true,
+    showLookUpSelection: true,
+    showSearchWithGoogle: true,
+    showInspectElement: !app.isPackaged,
   });
 }
 
