@@ -8,12 +8,12 @@ const headingVariants = cva(
   {
     variants: {
       variant: {
-        h1: "mb-[0.5em] mt-[1.6em] font-heading text-2xl",
-        h2: "mb-[0.5em] mt-[1.4em] font-heading-2 text-xl",
-        h3: "mb-[0.5em] mt-[1em] font-heading-3 text-lg",
-        h4: "mt-[0.75em] font-heading-3 text-lg",
-        h5: "mt-[0.75em] text-lg font-heading-3",
-        h6: "mt-[0.75em] text-base font-heading-3",
+        h1: "mb-[0.5em] mt-[1.6em] font-heading text-note-h1",
+        h2: "mb-[0.5em] mt-[1.4em] font-heading-2 text-note-h2",
+        h3: "mb-[0.5em] mt-[1em] font-heading-3 text-note-h3",
+        h4: "mt-[0.75em] font-heading-3 text-note-h3",
+        h5: "mt-[0.75em] font-heading-3 text-note-h3",
+        h6: "mt-[0.75em] font-heading-3 text-note-h3",
       },
       isFirstBlock: {
         true: "mt-0",

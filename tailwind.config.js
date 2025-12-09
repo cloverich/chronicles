@@ -84,6 +84,14 @@ export const theme = {
       "system-body": ["var(--font-system-body)", ...fontFamily.sans],
       "system-heading": ["var(--font-system-heading)", ...fontFamily.sans],
     },
+    fontSize: {
+      "note-body": "var(--font-size-note-body)",
+      "note-title": "var(--font-size-note-title)",
+      // Headings use em so they scale proportionally with note-body
+      "note-h1": "1.5em", // equivalent to text-2xl (24px at 16px base)
+      "note-h2": "1.25em", // equivalent to text-xl (20px at 16px base)
+      "note-h3": "1.125em", // equivalent to text-lg (18px at 16px base)
+    },
     keyframes: {
       "accordion-down": {
         from: { height: "0" },

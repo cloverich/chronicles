@@ -76,7 +76,7 @@ const Editor = ({
           <div className="flex w-full flex-grow flex-col">
             <FrontMatter document={document} journals={journals} />
 
-            <div className="flex flex-grow pt-6" onClick={focusEditor}>
+            <div className="flex flex-grow pt-6 text-note-body" onClick={focusEditor}>
               {/* w-full ensures when content is empty, it has width, otherwise the cursor will be invisible */}
               <PlateContent className="w-full" />
             </div>
