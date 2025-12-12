@@ -45,6 +45,21 @@ export default function (dbUrl: string) {
     }
 
     db.exec(migration1);
+
+    // Migration: Add contentHash, fileSize, fileMtime to documents
+    const columns = [
+      "ALTER TABLE documents ADD COLUMN contentHash TEXT",
+      "ALTER TABLE documents ADD COLUMN fileSize INTEGER",
+      "ALTER TABLE documents ADD COLUMN fileMtime INTEGER",
+    ];
+
+    for (const col of columns) {
+      try {
+        db.prepare(col).run();
+      } catch (e) {
+        // Ignore error if column already exists
+      }
+    }
   } catch (err) {
     console.error("Error running migrations!", err);
     throw err;

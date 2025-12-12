@@ -1,4 +1,5 @@
 import fs from "fs";
+import crypto from "crypto";
 import { Knex } from "knex";
 import path from "path";
 import { walk } from "../utils/fs-utils";
@@ -71,10 +72,8 @@ export class SyncClient {
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
 
-    await this.knex("document_tags").delete();
-    await this.knex("documents").delete();
-    await this.knex("journals").delete();
-    // image and note links delete via cascade
+    // We use upsert/incremental sync now, so do not wipe tables.
+    // https://github.com/cloverich/chronicles/issues/282
 
     const rootDir = await this.preferences.get("notesDir");
 
@@ -90,9 +89,51 @@ export class SyncClient {
     // Track created journals and number of documents to help troubleshoot
     // sync issues
     const journals: Record<string, number> = {};
+    const journalPromises = new Map<string, Promise<void>>();
     const erroredDocumentPaths: string[] = [];
 
     let syncedCount = 0;
+    let skippedCount = 0;
+
+    // Incremental sync: determine cutoff time
+    // If force=true, we ignore last sync time and re-process all files.
+    let lastSyncTime = 0;
+    if (!force) {
+      const lastSync = await this.knex("sync")
+        .whereNotNull("completedAt")
+        .orderBy("id", "desc")
+        .first();
+      if (lastSync) {
+        lastSyncTime = new Date(lastSync.startedAt).getTime();
+      }
+    }
+
+    // Get existing metadata for hash checking
+    const existingDocs = new Map<
+      string,
+      {
+        fileSize: number | null;
+        fileMtime: number | null;
+        contentHash: string | null;
+      }
+    >();
+    const docs = await this.knex("documents").select(
+      "id",
+      "fileSize",
+      "fileMtime",
+      "contentHash",
+    );
+    for (const doc of docs) {
+      existingDocs.set(doc.id, {
+        fileSize: doc.fileSize,
+        fileMtime: doc.fileMtime,
+        contentHash: doc.contentHash,
+      });
+    }
+
+    const seenIds = new Set<string>();
+    const pool = new Set<Promise<void>>();
+    const CONCURRENCY = 50;
 
     for await (const file of walk(rootDir, 1, shouldIndex)) {
       const { name, dir } = path.parse(file.path);
@@ -115,37 +156,129 @@ export class SyncClient {
       // NOTE: This directory check only works because we limit depth to 1
       const dirname = path.basename(dir);
 
-      // Once we find at least one markdown file, we treat this directory
-      // as a journal
-      if (!(dirname in journals)) {
-        // probably unnecessary
-        await this.files.ensureDir(dir, false);
-        await this.journals.index(dirname);
+      // Ensure journal exists (memoized promise to handle concurrency)
+      if (!journalPromises.has(dirname)) {
+        journalPromises.set(
+          dirname,
+          (async () => {
+            // probably unnecessary
+            await this.files.ensureDir(dir, false);
+            await this.journals.index(dirname);
+          })(),
+        );
         journals[dirname] = 0;
       }
 
-      const { contents, frontMatter } = await this.documents.loadDoc(file.path);
+      seenIds.add(documentId);
 
-      try {
-        await this.documents.createIndex({
-          id: documentId,
-          journal: dirname, // using name as id
-          content: contents,
-          frontMatter,
-          rootDir,
-        });
-        syncedCount++;
-      } catch (e) {
-        erroredDocumentPaths.push(file.path);
+      // Smart Sync Heuristics
+      const docMeta = existingDocs.get(documentId);
+      const currentMtime = file.stats.mtime.getTime();
+      const currentSize = file.stats.size;
 
-        // https://github.com/cloverich/chronicles/issues/248
-        console.error(
-          "Error with document",
-          documentId,
-          "for journal",
-          dirname,
-          e,
-        );
+      // 1. Fast Check: mtime and size match
+      if (
+        !force &&
+        docMeta &&
+        docMeta.fileMtime === currentMtime &&
+        docMeta.fileSize === currentSize
+      ) {
+        skippedCount++;
+        continue;
+      }
+
+      // Worker function
+      const processFile = async () => {
+        try {
+          // Wait for journal to be ready (FK constraint)
+          await journalPromises.get(dirname);
+
+          // 2. Hash Check: Read file and hash
+          const { contents, frontMatter, mdast } =
+            await this.documents.loadDoc(file.path);
+          const contentHash = crypto
+            .createHash("sha1")
+            .update(contents)
+            .digest("hex");
+
+          // If hash matches, update metadata but skip indexing
+          if (
+            !force &&
+            docMeta &&
+            docMeta.contentHash === contentHash
+          ) {
+            // Update mtime/size in DB to match current file, so next sync hits fast path
+            await this.knex("documents")
+              .where({ id: documentId })
+              .update({
+                fileSize: currentSize,
+                fileMtime: currentMtime,
+              });
+            skippedCount++;
+            return;
+          }
+
+          await this.documents.upsertIndex({
+            id: documentId,
+            journal: dirname, // using name as id
+            content: contents,
+            frontMatter,
+            rootDir,
+            mdast,
+            contentHash,
+            fileSize: currentSize,
+            fileMtime: currentMtime,
+          });
+          syncedCount++;
+        } catch (e) {
+          erroredDocumentPaths.push(file.path);
+
+          // https://github.com/cloverich/chronicles/issues/248
+          console.error(
+            "Error with document",
+            documentId,
+            "for journal",
+            dirname,
+            e,
+          );
+        }
+      };
+
+      // Add to pool
+      const p = processFile().then(() => {
+        pool.delete(p);
+      });
+      pool.add(p);
+
+      if (pool.size >= CONCURRENCY) {
+        await Promise.race(pool);
+      }
+    }
+
+    // Await remaining tasks
+    await Promise.all(pool);
+
+    // Delete documents that were not seen on filesystem
+    // We get all IDs from DB first
+    // Note: We already fetched all IDs above into `docs`, but that was snapshot at start.
+    // Is it possible docs were added/removed during sync? Unlikely from other sources.
+    // Use existingDocs map keys as the set of known IDs at start.
+    // However, we only care about deleting IDs that are in DB but not in seenIds.
+    // Using `existingDocs` keys is safe enough.
+    const toDelete = Array.from(existingDocs.keys()).filter(
+      (id) => !seenIds.has(id),
+    );
+
+    if (toDelete.length > 0) {
+      console.log(`Deleting ${toDelete.length} stale documents`);
+      // Batch delete could be better but simple loop is fine for now given local DB
+      // Actually knex .whereIn is better
+      // Chunk it just in case of huge lists
+      const CHUNK_SIZE = 999;
+      for (let i = 0; i < toDelete.length; i += CHUNK_SIZE) {
+        const chunk = toDelete.slice(i, i + CHUNK_SIZE);
+        await this.knex("documents").whereIn("id", chunk).del();
+        // Cascades will handle tags/links
       }
     }
 
