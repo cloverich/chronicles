@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Label, Select } from "../../components";
 import { Button } from "../../components/Button";
 import {
-  Dialog,
+  DialogRoot as Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,

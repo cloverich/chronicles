@@ -117,7 +117,7 @@ export const ImageGalleryLightbox = ({
         )}
       </div>
 
-      <Dialog.Dialog open={open} onOpenChange={setOpen}>
+      <Dialog.DialogRoot open={open} onOpenChange={setOpen}>
         <Dialog.DialogPortal>
           <Dialog.DialogOverlay />
           <Dialog.DialogContent
@@ -135,7 +135,7 @@ export const ImageGalleryLightbox = ({
             <Dialog.DialogClose className="absolute right-4 top-4 text-white hover:text-gray-300" />
           </Dialog.DialogContent>
         </Dialog.DialogPortal>
-      </Dialog.Dialog>
+      </Dialog.DialogRoot>
     </>
   );
 };
