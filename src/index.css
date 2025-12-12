@@ -9,6 +9,9 @@
     --max-w-prose: 768px;
     --max-w-code: var(--max-w-prose);
 
+    --font-size-note-title: 1.5rem;
+    --font-size-note-body: 1rem;
+
     --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
       "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;

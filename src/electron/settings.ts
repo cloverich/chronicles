@@ -21,6 +21,10 @@ export interface IPreferences {
     prose?: string;
     code?: string;
   };
+  fontSize: {
+    noteTitle?: string;
+    noteBody?: string;
+  };
 }
 
 const defaults: IPreferences = {
@@ -46,6 +50,10 @@ const defaults: IPreferences = {
   maxWidth: {
     prose: "768px",
     code: undefined,
+  },
+  fontSize: {
+    noteTitle: "1.5rem", // equivalent to text-2xl (24px)
+    noteBody: "1rem", // base font size
   },
 };
 
