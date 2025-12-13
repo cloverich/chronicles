@@ -1,4 +1,5 @@
 import { Stats } from "fs";
+import { Root } from "mdast";
 import yaml from "yaml";
 import {
   mdastToString,
@@ -12,6 +13,7 @@ import { FrontMatter } from "../types";
 interface ParseTitleAndFrontMatterRes {
   frontMatter: Partial<FrontMatter>;
   body: string;
+  mdast?: Root;
 }
 
 interface RawExtractFrontMatterResponse {
@@ -49,7 +51,7 @@ function parseAndNormalizeDate(dateString: string): Date | null {
  * @returns - { frontMatter, body }
  */
 export function parseChroniclesFrontMatter(content: string, stats: Stats) {
-  const { frontMatter, body } = extractFronMatter(content);
+  const { frontMatter, body, mdast } = extractFronMatter(content);
 
   frontMatter.tags = frontMatter.tags || [];
   frontMatter.title = frontMatter.title;
@@ -60,7 +62,8 @@ export function parseChroniclesFrontMatter(content: string, stats: Stats) {
   return {
     frontMatter,
     body,
-  } as { frontMatter: FrontMatter; body: string };
+    mdast,
+  } as { frontMatter: FrontMatter; body: string; mdast: Root };
 }
 
 export const parseTitleAndFrontMatterForImport = (
@@ -118,21 +121,19 @@ function extractFronMatter(
 ): {
   frontMatter: Partial<FrontMatter>;
   body: string;
+  mdast: Root;
 } {
   let frontMatter = {};
   let body = contents.trim();
+  const mdast = parse(body);
 
-  if (body) {
-    const mdast = parse(body);
-
-    if (mdast.children[0].type === "yaml") {
-      frontMatter = yaml.parse(mdast.children[0].value);
-      mdast.children = mdast.children.slice(1);
-      body = serialize(mdast);
-    }
+  if (mdast.children.length && mdast.children[0].type === "yaml") {
+    frontMatter = yaml.parse(mdast.children[0].value);
+    mdast.children = mdast.children.slice(1);
+    body = serialize(mdast);
   }
 
-  return { frontMatter, body };
+  return { frontMatter, body, mdast };
 }
 
 /**

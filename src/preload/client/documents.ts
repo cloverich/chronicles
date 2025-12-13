@@ -1,5 +1,6 @@
 import fs from "fs";
 import { Knex } from "knex";
+import { Root } from "mdast";
 import path from "path";
 import yaml from "yaml";
 import {
@@ -122,9 +123,12 @@ export class DocumentsClient {
     // todo: sha comparison
     const contents = await this.files.readDocument(path);
     const stats = await fs.promises.stat(path);
-    const { frontMatter, body } = parseChroniclesFrontMatter(contents, stats);
+    const { frontMatter, body, mdast } = parseChroniclesFrontMatter(
+      contents,
+      stats,
+    );
 
-    return { contents: body, frontMatter };
+    return { contents: body, frontMatter, mdast };
   };
 
   del = async (id: string, journal: string) => {
@@ -326,6 +330,10 @@ export class DocumentsClient {
     content,
     frontMatter,
     rootDir,
+    mdast,
+    contentHash,
+    fileSize,
+    fileMtime,
   }: IndexRequest): Promise<string> => {
     if (!id) {
       throw new Error("id required to create document index");
@@ -340,6 +348,9 @@ export class DocumentsClient {
         createdAt: frontMatter.createdAt,
         updatedAt: frontMatter.updatedAt,
         frontMatter: JSON.stringify(frontMatter || {}),
+        contentHash,
+        fileSize,
+        fileMtime,
       });
 
       if (frontMatter.tags.length > 0) {
@@ -348,8 +359,57 @@ export class DocumentsClient {
         );
       }
 
-      await this.addNoteLinks(trx, id, content);
-      await this.addImageLinks(trx, id, content, rootDir, journal);
+      await this.addNoteLinks(trx, id, content, mdast);
+      await this.addImageLinks(trx, id, content, rootDir, journal, mdast);
+
+      return id;
+    });
+  };
+
+  upsertIndex = async ({
+    id,
+    journal,
+    content,
+    frontMatter,
+    rootDir,
+    mdast,
+    contentHash,
+    fileSize,
+    fileMtime,
+  }: IndexRequest): Promise<string> => {
+    if (!id) {
+      throw new Error("id required to create document index");
+    }
+
+    return this.knex.transaction(async (trx) => {
+      await trx("documents")
+        .insert({
+          id,
+          journal,
+          content,
+          title: frontMatter.title,
+          createdAt: frontMatter.createdAt,
+          updatedAt: frontMatter.updatedAt,
+          frontMatter: JSON.stringify(frontMatter || {}),
+          contentHash,
+          fileSize,
+          fileMtime,
+        })
+        .onConflict("id")
+        .merge();
+
+      // Tags
+      await trx("document_tags").where({ documentId: id }).del();
+      if (frontMatter.tags.length > 0) {
+        await trx("document_tags").insert(
+          frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
+        );
+      }
+
+      // Links
+      await trx("document_links").where({ documentId: id }).del();
+      await this.addNoteLinks(trx, id, content, mdast);
+      await this.addImageLinks(trx, id, content, rootDir, journal, mdast);
 
       return id;
     });
@@ -361,6 +421,10 @@ export class DocumentsClient {
     content,
     frontMatter,
     rootDir,
+    mdast,
+    contentHash,
+    fileSize,
+    fileMtime,
   }: IndexRequest): Promise<void> => {
     return this.knex.transaction(async (trx) => {
       await trx("documents")
@@ -370,6 +434,9 @@ export class DocumentsClient {
           journal,
           updatedAt: frontMatter.updatedAt,
           frontMatter: JSON.stringify(frontMatter),
+          contentHash,
+          fileSize,
+          fileMtime,
         })
         .where({ id });
 
@@ -381,8 +448,8 @@ export class DocumentsClient {
       }
 
       await trx("document_links").where({ documentId: id }).del();
-      await this.addNoteLinks(trx, id!, content);
-      await this.addImageLinks(trx, id, content, rootDir, journal);
+      await this.addNoteLinks(trx, id!, content, mdast);
+      await this.addImageLinks(trx, id, content, rootDir, journal, mdast);
     });
   };
 
@@ -395,9 +462,10 @@ export class DocumentsClient {
     content: string,
     rootDir: string,
     journal: string,
+    mdast?: Root,
   ) => {
-    const mdast = parseMarkdown(content);
-    const imageLinks = selectDistinctImageUrls(mdast);
+    const tree = mdast || parseMarkdown(content);
+    const imageLinks = selectDistinctImageUrls(tree);
 
     // Delete existing image links for this document
     await trx("image_links").where({ documentId }).del();
@@ -426,9 +494,10 @@ export class DocumentsClient {
     trx: Knex.Transaction,
     documentId: string,
     content: string,
+    mdast?: Root,
   ) => {
-    const mdast = parseMarkdown(content);
-    const noteLinks = selectNoteLinks(mdast)
+    const tree = mdast || parseMarkdown(content);
+    const noteLinks = selectNoteLinks(tree)
       .map((link) => parseNoteLink(link.url))
       .filter(Boolean) as { noteId: string; journalName: string }[];
 

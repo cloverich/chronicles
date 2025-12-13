@@ -27,6 +27,9 @@ CREATE TABLE  IF NOT EXISTS "documents" (
     "content" TEXT NOT NULL,
     "journal" TEXT NOT NULL,
     "frontmatter" TEXT NOT NULL,
+    "contentHash" TEXT,
+    "fileSize" INTEGER,
+    "fileMtime" INTEGER,
     FOREIGN KEY ("journal") REFERENCES "journals" ("name") ON DELETE CASCADE ON UPDATE CASCADE
 );
 

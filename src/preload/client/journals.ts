@@ -58,11 +58,14 @@ export class JournalsClient {
 
     const timestamp = new Date().toISOString();
 
-    await this.knex("journals").insert({
-      name: journalName,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    });
+    await this.knex("journals")
+      .insert({
+        name: journalName,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
+      .onConflict("name")
+      .ignore();
 
     const journal = await this.knex("journals")
       .where("name", journalName)

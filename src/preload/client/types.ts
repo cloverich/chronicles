@@ -1,4 +1,5 @@
 import { Knex } from "knex";
+import { Root } from "mdast";
 import { IBulkOperationsClient } from "./bulk-operations";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
@@ -138,6 +139,10 @@ export interface IndexRequest {
   content: string;
   frontMatter: FrontMatter;
   rootDir: string;
+  mdast?: Root;
+  contentHash?: string;
+  fileSize?: number;
+  fileMtime?: number;
 }
 
 // Nobody would put node_modules in their note directory... right?
