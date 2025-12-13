@@ -1,12 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../../../components/Dialog";
+import { Dialog } from "../../../components/Dialog";
 import { BulkOperationType } from "../../../preload/client/bulk-operations";
 
 /**
@@ -45,31 +39,28 @@ export const BulkOperationSelectorModal = observer(
     ];
 
     return (
-      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Bulk Operations</DialogTitle>
-            <DialogDescription>
-              Select an operation to apply to the current search results
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {operations.map((op) => (
-              <button
-                key={op.type}
-                className="flex flex-col items-start rounded-md border border-border p-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
-                onClick={() => {
-                  onSelectOperation(op.type);
-                }}
-              >
-                <span className="font-medium">{op.label}</span>
-                <span className="text-sm text-muted-foreground">
-                  {op.description}
-                </span>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => !isOpen && onClose()}
+        title="Bulk Operations"
+        description="Select an operation to apply to the current search results"
+      >
+        <div className="flex flex-col gap-2">
+          {operations.map((op) => (
+            <button
+              key={op.type}
+              className="flex flex-col items-start rounded-md border border-border p-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={() => {
+                onSelectOperation(op.type);
+              }}
+            >
+              <span className="font-medium">{op.label}</span>
+              <span className="text-sm text-muted-foreground">
+                {op.description}
+              </span>
+            </button>
+          ))}
+        </div>
       </Dialog>
     );
   },
