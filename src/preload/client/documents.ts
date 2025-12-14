@@ -1,5 +1,6 @@
 import fs from "fs";
 import { Knex } from "knex";
+import * as mdastTypes from "mdast";
 import path from "path";
 import yaml from "yaml";
 import {
@@ -10,7 +11,7 @@ import {
 } from "../../markdown";
 import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
 import { IFilesClient } from "./files";
-import { parseChroniclesFrontMatter } from "./importer/frontmatter";
+import { splitFrontMatter } from "./importer/frontmatter";
 import { IPreferencesClient } from "./preferences";
 
 import {
@@ -75,7 +76,7 @@ export class DocumentsClient {
     // freshly load the document from disk to avoid desync issues
     // todo: a real strategy for keeping db in sync w/ filesystem, that allows
     // loading from db.
-    const { contents, frontMatter } = await this.loadDoc(filepath);
+    const { mdast, frontMatter } = await this.loadDoc(filepath);
 
     // todo: Are the dates ever null at this point?
     frontMatter.createdAt = frontMatter.createdAt || document.createdAt;
@@ -91,7 +92,7 @@ export class DocumentsClient {
     return {
       ...document,
       frontMatter,
-      content: contents,
+      content: mdastToString(mdast),
     };
   };
 
@@ -116,15 +117,22 @@ export class DocumentsClient {
     return doc;
   };
 
-  // load a document + parse frontmatter from a file
-  loadDoc = async (path: string) => {
+  /**
+   * Load a document from disk, parsing it once into mdast.
+   * Returns the parsed mdast (body only, frontmatter removed) and frontMatter object.
+   *
+   * @param filePath - Path to the markdown file
+   * @returns { mdast, frontMatter } - Parsed body as mdast and frontmatter object
+   */
+  loadDoc = async (filePath: string) => {
     // todo: validate path is in notes dir
     // todo: sha comparison
-    const contents = await this.files.readDocument(path);
-    const stats = await fs.promises.stat(path);
-    const { frontMatter, body } = parseChroniclesFrontMatter(contents, stats);
+    const rawContents = await this.files.readDocument(filePath);
+    const stats = await fs.promises.stat(filePath);
+    const mdast = parseMarkdown(rawContents);
+    const { frontMatter, bodyMdast } = splitFrontMatter(mdast, stats);
 
-    return { contents: body, frontMatter };
+    return { mdast: bodyMdast, frontMatter };
   };
 
   del = async (id: string, journal: string) => {
@@ -230,11 +238,13 @@ export class DocumentsClient {
     );
 
     if (index) {
+      // Parse content body to mdast for indexing
+      const mdast = parseMarkdown(args.content);
       return [
         await this.createIndex({
           id,
           journal: args.journal,
-          content,
+          mdast,
           frontMatter: args.frontMatter,
           rootDir: await this.preferences.get("notesDir"),
         }),
@@ -270,9 +280,11 @@ export class DocumentsClient {
       this.updateDependentLinks([args.id!], args.journal);
     }
 
+    // Parse content body to mdast for indexing
+    const mdast = parseMarkdown(args.content);
     await this.updateIndex({
       id: args.id,
-      content,
+      mdast,
       journal: args.journal,
       frontMatter: args.frontMatter,
       rootDir: await this.preferences.get("notesDir"),
@@ -323,13 +335,16 @@ export class DocumentsClient {
   createIndex = async ({
     id,
     journal,
-    content,
+    mdast,
     frontMatter,
     rootDir,
   }: IndexRequest): Promise<string> => {
     if (!id) {
       throw new Error("id required to create document index");
     }
+
+    // Serialize mdast to string once for DB storage
+    const content = mdastToString(mdast);
 
     return this.knex.transaction(async (trx) => {
       await trx("documents").insert({
@@ -348,8 +363,9 @@ export class DocumentsClient {
         );
       }
 
-      await this.addNoteLinks(trx, id, content);
-      await this.addImageLinks(trx, id, content, rootDir, journal);
+      // Pass mdast directly - no re-parsing needed
+      await this.addNoteLinks(trx, id, mdast);
+      await this.addImageLinks(trx, id, mdast, rootDir, journal);
 
       return id;
     });
@@ -358,10 +374,13 @@ export class DocumentsClient {
   updateIndex = async ({
     id,
     journal,
-    content,
+    mdast,
     frontMatter,
     rootDir,
   }: IndexRequest): Promise<void> => {
+    // Serialize mdast to string once for DB storage
+    const content = mdastToString(mdast);
+
     return this.knex.transaction(async (trx) => {
       await trx("documents")
         .update({
@@ -381,8 +400,9 @@ export class DocumentsClient {
       }
 
       await trx("document_links").where({ documentId: id }).del();
-      await this.addNoteLinks(trx, id!, content);
-      await this.addImageLinks(trx, id, content, rootDir, journal);
+      // Pass mdast directly - no re-parsing needed
+      await this.addNoteLinks(trx, id!, mdast);
+      await this.addImageLinks(trx, id, mdast, rootDir, journal);
     });
   };
 
@@ -392,11 +412,10 @@ export class DocumentsClient {
   private addImageLinks = async (
     trx: Knex.Transaction,
     documentId: string,
-    content: string,
+    mdast: mdastTypes.Root,
     rootDir: string,
     journal: string,
   ) => {
-    const mdast = parseMarkdown(content);
     const imageLinks = selectDistinctImageUrls(mdast);
 
     // Delete existing image links for this document
@@ -425,9 +444,8 @@ export class DocumentsClient {
   private addNoteLinks = async (
     trx: Knex.Transaction,
     documentId: string,
-    content: string,
+    mdast: mdastTypes.Root,
   ) => {
-    const mdast = parseMarkdown(content);
     const noteLinks = selectNoteLinks(mdast)
       .map((link) => parseNoteLink(link.url))
       .filter(Boolean) as { noteId: string; journalName: string }[];

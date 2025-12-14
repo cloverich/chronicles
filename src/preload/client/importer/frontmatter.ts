@@ -1,4 +1,5 @@
 import { Stats } from "fs";
+import * as mdast from "mdast";
 import yaml from "yaml";
 import {
   mdastToString,
@@ -8,6 +9,47 @@ import {
 } from "../../../markdown";
 import { SourceType } from "../importer/SourceType";
 import { FrontMatter } from "../types";
+
+/**
+ * Split frontmatter from an already-parsed mdast tree.
+ * Returns the frontmatter object and the body mdast (with yaml node removed).
+ * This avoids re-serializing and re-parsing the body.
+ *
+ * @param root - The parsed mdast root node
+ * @param stats - File stats for default date values
+ * @returns { frontMatter, bodyMdast }
+ */
+export function splitFrontMatter(
+  root: mdast.Root,
+  stats: Stats,
+): { frontMatter: FrontMatter; bodyMdast: mdast.Root } {
+  let rawFrontMatter: Partial<FrontMatter> = {};
+  let bodyMdast: mdast.Root;
+
+  if (root.children[0]?.type === "yaml") {
+    rawFrontMatter = yaml.parse((root.children[0] as mdast.Yaml).value) || {};
+    // Create new root with yaml node removed
+    bodyMdast = {
+      ...root,
+      children: root.children.slice(1),
+    };
+  } else {
+    bodyMdast = root;
+  }
+
+  // Apply defaults
+  const frontMatter: FrontMatter = {
+    tags: rawFrontMatter.tags || [],
+    title: rawFrontMatter.title,
+    createdAt:
+      rawFrontMatter.createdAt ||
+      (stats.birthtime || stats.mtime).toISOString(),
+    updatedAt: rawFrontMatter.updatedAt || stats.mtime.toISOString(),
+    ...rawFrontMatter,
+  };
+
+  return { frontMatter, bodyMdast };
+}
 
 interface ParseTitleAndFrontMatterRes {
   frontMatter: Partial<FrontMatter>;

@@ -66,7 +66,7 @@ export class SyncClient {
    * Sync the notes directory with the database
    */
   sync = async (force = false) => {
-    if (!force && !this.needsSync()) return;
+    if (!force && !(await this.needsSync())) return;
 
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
@@ -124,13 +124,13 @@ export class SyncClient {
         journals[dirname] = 0;
       }
 
-      const { contents, frontMatter } = await this.documents.loadDoc(file.path);
+      const { mdast, frontMatter } = await this.documents.loadDoc(file.path);
 
       try {
         await this.documents.createIndex({
           id: documentId,
           journal: dirname, // using name as id
-          content: contents,
+          mdast,
           frontMatter,
           rootDir,
         });
