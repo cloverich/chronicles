@@ -33,7 +33,6 @@ The Sync system builds a **SQLite cache database** from markdown documents store
             ┌──────────────────────┐
             │  createIndex()       │
             │  - Insert document   │
-            │  - Parse AST         │
             │  - Extract metadata  │
             └──────────┬───────────┘
                        │
@@ -79,11 +78,10 @@ The Sync system builds a **SQLite cache database** from markdown documents store
 │ 4. INDEX EACH DOCUMENT                                          │
 │    for each markdown file:                                      │
 │      a) Create/update journal entry                             │
-│      b) loadDoc() → read file & parse YAML frontmatter         │
-│      c) createIndex() → insert into database                   │
+│      b) loadDoc() → read file & parse YAML frontmatter          │
+│      c) createIndex() → insert into database                    │
 │         - Insert document record                                │
 │         - Insert tags into document_tags                        │
-│         - Parse markdown AST for note links                     │
 │         - Extract image references                              │
 └────────────────────────────┬────────────────────────────────────┘
                              │

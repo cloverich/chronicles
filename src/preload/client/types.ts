@@ -132,10 +132,13 @@ export interface FrontMatter {
   [key: string]: any;
 }
 
+import type * as mdast from "mdast";
+
 export interface IndexRequest {
   id: string;
   journal: string;
-  content: string;
+  /** Parsed mdast body (frontmatter already removed) */
+  mdast: mdast.Root;
   frontMatter: FrontMatter;
   rootDir: string;
 }
