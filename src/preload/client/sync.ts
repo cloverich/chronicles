@@ -63,18 +63,14 @@ export class SyncClient {
   };
 
   /**
-   * Sync the notes directory with the database
+   * Sync the notes directory with the database.
+   * Uses incremental sync when possible - only processes changed files.
    */
   sync = async (force = false) => {
     if (!force && !(await this.needsSync())) return;
 
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
-
-    await this.knex("document_tags").delete();
-    await this.knex("documents").delete();
-    await this.knex("journals").delete();
-    // image and note links delete via cascade
 
     const rootDir = await this.preferences.get("notesDir");
 
@@ -87,12 +83,18 @@ export class SyncClient {
 
     console.log("syncing directory", rootDir);
 
-    // Track created journals and number of documents to help troubleshoot
-    // sync issues
-    const journals: Record<string, number> = {};
+    // Pre-fetch all sync metadata for O(1) lookups during walk
+    const allSyncMeta = await this.documents.getAllDocSyncMeta();
+
+    // Pre-load existing journals to avoid duplicate inserts
+    const journals = await this.initJournalsCounter();
+
+    // Track documents seen on disk
+    const seenDocumentIds = new Set<string>();
     const erroredDocumentPaths: string[] = [];
 
     let syncedCount = 0;
+    let skippedCount = 0;
 
     for await (const file of walk(rootDir, 1, shouldIndex)) {
       const { name, dir } = path.parse(file.path);
@@ -111,12 +113,15 @@ export class SyncClient {
         continue;
       }
 
+      // Track that we've seen this document on disk
+      seenDocumentIds.add(documentId);
+
       // treated as journal name
       // NOTE: This directory check only works because we limit depth to 1
       const dirname = path.basename(dir);
 
       // Once we find at least one markdown file, we treat this directory
-      // as a journal
+      // as a journal. Only index if it's a new journal.
       if (!(dirname in journals)) {
         // probably unnecessary
         await this.files.ensureDir(dir, false);
@@ -124,7 +129,40 @@ export class SyncClient {
         journals[dirname] = 0;
       }
 
-      const { mdast, frontMatter } = await this.documents.loadDoc(file.path);
+      // Get existing sync metadata from pre-fetched map
+      const existingMeta = allSyncMeta.get(documentId);
+      const fileMtime = Math.floor(file.stats.mtimeMs);
+      const fileSize = file.stats.size;
+
+      // FAST PATH: mtime + size match → skip entirely (no read, no parse)
+      if (
+        existingMeta?.mtime === fileMtime &&
+        existingMeta?.size === fileSize
+      ) {
+        skippedCount++;
+        continue;
+      }
+
+      // Read file + compute hash (cheap)
+      const { rawContents, contentHash } = await this.documents.readDocRaw(
+        file.path,
+      );
+
+      // MEDIUM PATH: hash matches → update meta only, skip parse
+      if (existingMeta?.contentHash === contentHash) {
+        await this.documents.updateDocSyncMeta(documentId, {
+          mtime: fileMtime,
+          size: fileSize,
+        });
+        skippedCount++;
+        continue;
+      }
+
+      // SLOW PATH: content changed → parse and reindex
+      const { mdast, frontMatter } = this.documents.parseDoc(
+        rawContents,
+        file.stats,
+      );
 
       try {
         await this.documents.createIndex({
@@ -133,6 +171,11 @@ export class SyncClient {
           mdast,
           frontMatter,
           rootDir,
+          syncMeta: {
+            mtime: fileMtime,
+            size: fileSize,
+            contentHash,
+          },
         });
         syncedCount++;
       } catch (e) {
@@ -148,6 +191,16 @@ export class SyncClient {
         );
       }
     }
+
+    // Delete documents that no longer exist on disk
+    const deletedCount =
+      await this.documents.deleteOrphanedDocuments(seenDocumentIds);
+    if (deletedCount > 0) {
+      console.log(`Deleted ${deletedCount} orphaned documents from index`);
+    }
+
+    // Clean up orphaned journals (journals with no documents)
+    await this.cleanupOrphanedJournals(journals);
 
     // Ensure default journal exists; attempt to declare one. Otherwise,
     // new documents will default to a journal that does not exist, and fail
@@ -190,6 +243,35 @@ export class SyncClient {
       syncedCount,
       durationMs,
     });
-    console.log("Errored documents (during sync)", erroredDocumentPaths);
+    console.log(
+      `Sync complete: ${syncedCount} indexed, ${skippedCount} skipped (unchanged), ${deletedCount} deleted, ${erroredDocumentPaths.length} errors`,
+    );
+    if (erroredDocumentPaths.length > 0) {
+      console.log("Errored documents (during sync)", erroredDocumentPaths);
+    }
+  };
+
+  private initJournalsCounter = async (): Promise<Record<string, number>> => {
+    const existingJournals = await this.knex("journals").select("name");
+    const journals: Record<string, number> = {};
+    for (const { name } of existingJournals) {
+      journals[name] = 0;
+    }
+    return journals;
+  };
+
+  /**
+   * Remove journals from the database that have no documents on disk.
+   */
+  private cleanupOrphanedJournals = async (
+    journalsOnDisk: Record<string, number>,
+  ) => {
+    const dbJournals = await this.knex("journals").select("name");
+    for (const { name } of dbJournals) {
+      if (!(name in journalsOnDisk)) {
+        await this.knex("journals").where({ name }).del();
+        console.log(`Deleted orphaned journal: ${name}`);
+      }
+    }
   };
 }

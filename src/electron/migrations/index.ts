@@ -45,8 +45,36 @@ export default function (dbUrl: string) {
     }
 
     db.exec(migration1);
+
+    // Incremental sync support: add columns for tracking file changes
+    // These columns allow skipping unchanged files during sync
+    runMigration2(db);
   } catch (err) {
     console.error("Error running migrations!", err);
     throw err;
+  }
+}
+
+/**
+ * Migration 2: Add columns for incremental sync support
+ * - mtime: file modification time (ms since epoch)
+ * - size: file size in bytes
+ * - contentHash: SHA-256 hash of file contents
+ */
+function runMigration2(db: DB.Database) {
+  // Check if columns already exist (idempotent migration)
+  const tableInfo = db.prepare("PRAGMA table_info(documents)").all() as Array<{
+    name: string;
+  }>;
+  const existingColumns = new Set(tableInfo.map((col) => col.name));
+
+  if (!existingColumns.has("mtime")) {
+    db.exec("ALTER TABLE documents ADD COLUMN mtime INTEGER");
+  }
+  if (!existingColumns.has("size")) {
+    db.exec("ALTER TABLE documents ADD COLUMN size INTEGER");
+  }
+  if (!existingColumns.has("contentHash")) {
+    db.exec("ALTER TABLE documents ADD COLUMN contentHash TEXT");
   }
 }
