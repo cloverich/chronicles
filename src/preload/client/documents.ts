@@ -1,4 +1,5 @@
-import fs from "fs";
+import crypto from "crypto";
+import fs, { Stats } from "fs";
 import { Knex } from "knex";
 import * as mdastTypes from "mdast";
 import path from "path";
@@ -34,6 +35,17 @@ interface DocumentDb {
   frontMatter: string;
   createdAt: string;
   updatedAt: string;
+  // Incremental sync support
+  mtime?: number; // file modification time (ms since epoch)
+  size?: number; // file size in bytes
+  contentHash?: string; // SHA-256 hash of file contents
+}
+
+// Metadata for incremental sync checks
+export interface DocSyncMeta {
+  mtime: number | null;
+  size: number | null;
+  contentHash: string | null;
 }
 
 // table structure of document_links
@@ -74,20 +86,11 @@ export class DocumentsClient {
     );
 
     // freshly load the document from disk to avoid desync issues
-    // todo: a real strategy for keeping db in sync w/ filesystem, that allows
-    // loading from db.
     const { mdast, frontMatter } = await this.loadDoc(filepath);
 
     // todo: Are the dates ever null at this point?
     frontMatter.createdAt = frontMatter.createdAt || document.createdAt;
     frontMatter.updatedAt = frontMatter.updatedAt || document.updatedAt;
-
-    // todo: parseChroniclesFrontMatter _should_ migrate my old tags to the new format...
-    // the old code would splice in documentTags at this point...
-    // const documentTags = await this.knex("document_tags")
-    // .where({ documentId: id })
-    // .select("tag");
-    // frontMatter.tags = frontMatter.tags || documentTags.map((t) => t.tag);
 
     return {
       ...document,
@@ -118,21 +121,85 @@ export class DocumentsClient {
   };
 
   /**
+   * Read raw document contents and compute hash.
+   * Use this for incremental sync to check if content changed before parsing.
+   *
+   * @param filePath - Path to the markdown file
+   * @returns { rawContents, contentHash } - Raw file contents and SHA-256 hash
+   */
+  readDocRaw = async (filePath: string) => {
+    const rawContents = await this.files.readDocument(filePath);
+    const contentHash = crypto
+      .createHash("sha256")
+      .update(rawContents)
+      .digest("hex");
+    return { rawContents, contentHash };
+  };
+
+  /**
+   * Parse raw document contents into mdast (expensive operation).
+   * Call this only after determining the document needs reindexing.
+   *
+   * @param rawContents - Raw markdown file contents
+   * @param stats - File stats for default date values in frontmatter
+   * @returns { mdast, frontMatter } - Parsed body as mdast and frontmatter object
+   */
+  parseDoc = (rawContents: string, stats: Stats) => {
+    const mdast = parseMarkdown(rawContents);
+    const { frontMatter, bodyMdast } = splitFrontMatter(mdast, stats);
+    return { mdast: bodyMdast, frontMatter };
+  };
+
+  /**
    * Load a document from disk, parsing it once into mdast.
    * Returns the parsed mdast (body only, frontmatter removed) and frontMatter object.
+   * This is a convenience method that combines readDocRaw + parseDoc.
    *
    * @param filePath - Path to the markdown file
    * @returns { mdast, frontMatter } - Parsed body as mdast and frontmatter object
    */
   loadDoc = async (filePath: string) => {
-    // todo: validate path is in notes dir
-    // todo: sha comparison
-    const rawContents = await this.files.readDocument(filePath);
+    const { rawContents } = await this.readDocRaw(filePath);
     const stats = await fs.promises.stat(filePath);
-    const mdast = parseMarkdown(rawContents);
-    const { frontMatter, bodyMdast } = splitFrontMatter(mdast, stats);
+    return this.parseDoc(rawContents, stats);
+  };
 
-    return { mdast: bodyMdast, frontMatter };
+  /**
+   * Get sync metadata for all documents (for incremental sync checks).
+   * Returns a Map for O(1) lookups during sync.
+   *
+   * @returns Map of document ID to sync metadata
+   */
+  getAllDocSyncMeta = async (): Promise<Map<string, DocSyncMeta>> => {
+    const results = await this.knex<DocumentDb>("documents").select(
+      "id",
+      "mtime",
+      "size",
+      "contentHash",
+    );
+
+    const map = new Map<string, DocSyncMeta>();
+    for (const row of results) {
+      map.set(row.id, {
+        mtime: row.mtime ?? null,
+        size: row.size ?? null,
+        contentHash: row.contentHash ?? null,
+      });
+    }
+    return map;
+  };
+
+  /**
+   * Update only sync metadata for a document (when mtime/size changed but hash didn't).
+   *
+   * @param id - Document ID
+   * @param meta - New mtime and size values
+   */
+  updateDocSyncMeta = async (
+    id: string,
+    meta: { mtime: number; size: number },
+  ) => {
+    await this.knex<DocumentDb>("documents").where({ id }).update(meta);
   };
 
   del = async (id: string, journal: string) => {
@@ -332,12 +399,17 @@ export class DocumentsClient {
     }
   };
 
+  /**
+   * Create or update a document index entry.
+   * Used by sync for incremental updates - inserts new documents or updates existing ones.
+   */
   createIndex = async ({
     id,
     journal,
     mdast,
     frontMatter,
     rootDir,
+    syncMeta,
   }: IndexRequest): Promise<string> => {
     if (!id) {
       throw new Error("id required to create document index");
@@ -347,21 +419,55 @@ export class DocumentsClient {
     const content = mdastToString(mdast);
 
     return this.knex.transaction(async (trx) => {
-      await trx("documents").insert({
-        id,
-        journal,
-        content,
-        title: frontMatter.title,
-        createdAt: frontMatter.createdAt,
-        updatedAt: frontMatter.updatedAt,
-        frontMatter: JSON.stringify(frontMatter || {}),
-      });
+      // Check if document exists
+      const existing = await trx("documents").where({ id }).first();
+
+      if (existing) {
+        // Update existing document
+        await trx("documents")
+          .where({ id })
+          .update({
+            journal,
+            content,
+            title: frontMatter.title,
+            updatedAt: frontMatter.updatedAt,
+            frontMatter: JSON.stringify(frontMatter || {}),
+            ...(syncMeta && {
+              mtime: syncMeta.mtime,
+              size: syncMeta.size,
+              contentHash: syncMeta.contentHash,
+            }),
+          });
+
+        // Clear and re-insert tags
+        await trx("document_tags").where({ documentId: id }).del();
+      } else {
+        // Insert new document
+        await trx("documents").insert({
+          id,
+          journal,
+          content,
+          title: frontMatter.title,
+          createdAt: frontMatter.createdAt,
+          updatedAt: frontMatter.updatedAt,
+          frontMatter: JSON.stringify(frontMatter || {}),
+          ...(syncMeta && {
+            mtime: syncMeta.mtime,
+            size: syncMeta.size,
+            contentHash: syncMeta.contentHash,
+          }),
+        });
+      }
 
       if (frontMatter.tags.length > 0) {
         await trx("document_tags").insert(
           frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
         );
       }
+
+      // Clear and re-insert links (for both insert and update)
+      await trx("document_links").where({ documentId: id }).del();
+      await trx("image_links").where({ documentId: id }).del();
 
       // Pass mdast directly - no re-parsing needed
       await this.addNoteLinks(trx, id, mdast);
@@ -470,6 +576,27 @@ export class DocumentsClient {
         })),
       );
     }
+  };
+
+  /**
+   * Delete documents that are no longer present on the filesystem.
+   * Used by incremental sync to clean up orphaned records.
+   *
+   * @param seenIds - Set of document IDs that still exist on disk
+   */
+  deleteOrphanedDocuments = async (seenIds: Set<string>): Promise<number> => {
+    // Get all document IDs currently in database
+    const allDocs = await this.knex<DocumentDb>("documents").select("id");
+    const orphanedIds = allDocs
+      .map((d) => d.id)
+      .filter((id) => !seenIds.has(id));
+
+    if (orphanedIds.length > 0) {
+      // Cascade deletes will handle document_tags, document_links, image_links
+      await this.knex<DocumentDb>("documents").whereIn("id", orphanedIds).del();
+    }
+
+    return orphanedIds.length;
   };
 
   /**

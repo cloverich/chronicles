@@ -141,6 +141,12 @@ export interface IndexRequest {
   mdast: mdast.Root;
   frontMatter: FrontMatter;
   rootDir: string;
+  /** File sync metadata for incremental sync */
+  syncMeta?: {
+    mtime: number;
+    size: number;
+    contentHash: string;
+  };
 }
 
 // Nobody would put node_modules in their note directory... right?
