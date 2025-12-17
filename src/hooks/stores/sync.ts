@@ -23,10 +23,11 @@ export class SyncStore {
    * Sync the filesystem to the database cache.
    * This is the central place to call sync in the UI.
    *
-   * @param force - If true, bypass the 1-hour check and force sync
+   * @param fullReindex - If true, skip mtime/hash optimizations and re-parse all documents.
+   *                      Automatically true if > 1 month since last sync.
    * @returns Promise that resolves when sync completes
    */
-  sync = async (force: boolean = false): Promise<void> => {
+  sync = async (fullReindex: boolean = false): Promise<void> => {
     // Prevent duplicate calls - no-op if already syncing
     if (this.isSyncing) {
       console.log("Sync already in progress, skipping duplicate call");
@@ -39,12 +40,10 @@ export class SyncStore {
 
     try {
       // Show toast notification
-      toastId = toast.info("Syncing cache...may take a few minutes", {
-        duration: Infinity,
-      });
+      toastId = toast.loading("Syncing cache...may take a few minutes");
 
       // Call underlying client sync
-      await this.client.sync.sync(force);
+      await this.client.sync.sync(fullReindex);
 
       // Update last sync time
       this.lastSyncTime = new Date();
@@ -70,10 +69,10 @@ export class SyncStore {
   };
 
   /**
-   * Check if sync is needed (> 1 hour since last sync)
+   * Check if a full re-index is needed (> 1 month since last sync)
    */
-  needsSync = async (): Promise<boolean> => {
-    return this.client.sync.needsSync();
+  needsFullReindex = async (): Promise<boolean> => {
+    return this.client.sync.needsFullReindex();
   };
 }
 

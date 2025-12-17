@@ -145,6 +145,7 @@ export interface IndexRequest {
   syncMeta?: {
     mtime: number;
     size: number;
+    /** SHA-256 hash of full file contents */
     contentHash: string;
   };
 }

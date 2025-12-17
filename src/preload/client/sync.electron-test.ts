@@ -70,7 +70,7 @@ This is from the second directory.
 
   // 3. Set preferences to first directory and sync
   store.set("notesDir", dir1);
-  await client.sync.sync(true); // force=true to bypass time check
+  await client.sync.sync(true); // fullReindex=true to skip mtime/hash checks
 
   // 4. Verify documents from first directory exist
   const resultsAfterFirstSync = await client.documents.search();
@@ -87,7 +87,7 @@ This is from the second directory.
 
   // 5. Switch to second directory and sync
   store.set("notesDir", dir2);
-  await client.sync.sync(true); // force=true
+  await client.sync.sync(true); // fullReindex=true
 
   // 6. Verify documents from second directory exist (not first)
   const resultsAfterSecondSync = await client.documents.search();
@@ -109,4 +109,37 @@ This is from the second directory.
     undefined,
     "Document from first directory should not exist after switching",
   );
+
+  // Create a new document and folder
+  const doc3Id = createId(new Date("2024-01-01").getTime());
+  const doc3Content = `---
+  title: Test Document 3
+  tags: []
+  createdAt: 2024-01-01T00:00:00.000Z
+  updatedAt: 2024-01-01T00:00:00.000Z
+  ---
+  # Test Document 3
+  This is a test document 3.
+  `;
+
+  const journal3 = path.join(dir2, "journal3");
+  fs.mkdirSync(journal3, { recursive: true });
+  fs.writeFileSync(path.join(journal3, `${doc3Id}.md`), doc3Content);
+
+  // First, assert that needsFullReindex returns false
+  const needsFullReindex = await client.sync.needsFullReindex();
+  assert.strictEqual(
+    needsFullReindex,
+    false,
+    "Expected needsFullReindex to return false",
+  );
+
+  // Not yet synced, so document should not be findable by documents client
+  assert.rejects(() => {
+    return client.documents.findById({ id: doc3Id });
+  });
+
+  // Run sync, no fullReindex. Should pick up new document.
+  await client.sync.sync(false);
+  assert.equal((await client.documents.findById({ id: doc3Id })).id, doc3Id);
 });

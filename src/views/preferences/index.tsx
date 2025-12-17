@@ -49,6 +49,7 @@ const PreferencesPane = observer((props: Props) => {
 
       // Save preference immediately before sync (bypasses 1-second debounce)
       await preferences.saveImmediate({ notesDir: result.value });
+      // Full reindex when changing directories
       syncStore.sync(true);
     } catch (e) {
       store.loading = false;

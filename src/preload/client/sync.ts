@@ -39,36 +39,46 @@ export class SyncClient {
   ) {}
 
   /**
-   * Check if a sync is needed based on the last sync time
+   * Check if a FULL re-index is needed based on the last sync time.
+   * Returns true if > 1 month since last sync, indicating we should
+   * skip the mtime/hash optimizations and fully re-parse all documents.
    *
-   * note: extremely naive; revisit in https://github.com/cloverich/chronicles/issues/282
-   * @returns true if a sync is needed
+   * @returns true if a full re-index is recommended
    */
-  needsSync = async () => {
-    const lastSync = await this.knex("sync").orderBy("id", "desc").first();
-    if (lastSync?.completedAt) {
-      const lastSyncDate = new Date(lastSync.completedAt);
-      const now = new Date();
-      const diff = now.getTime() - lastSyncDate.getTime();
-      const diffHours = Math.trunc(diff / (1000 * 60 * 60));
-      console.log(`last sync was ${diffHours} hours ago`);
+  needsFullReindex = async () => {
+    const lastSync = await this.knex("sync")
+      .whereNotNull("completedAt")
+      .orderBy("id", "desc")
+      .first();
 
-      if (diffHours < 1) {
-        console.log("skipping sync; last sync was less than an hour ago");
-        return false;
-      }
+    if (!lastSync) {
+      // No previous sync, need full index
+      console.log("No previously successful sync found");
+      return true;
     }
 
-    return true;
+    const lastSyncDate = new Date(lastSync.completedAt);
+    const now = new Date();
+    const diff = now.getTime() - lastSyncDate.getTime();
+    const diffDays = Math.trunc(diff / (1000 * 60 * 60 * 24));
+    console.log(`last completed sync was ${diffDays} days ago`);
+
+    if (diffDays >= 30) {
+      console.log("Full re-index needed; last sync was over a month ago");
+      return true;
+    }
+
+    return false;
   };
 
   /**
    * Sync the notes directory with the database.
    * Uses incremental sync when possible - only processes changed files.
+   *
+   * @param fullReindex - If true, skip mtime/hash optimizations and re-parse all documents.
+   *                      Also triggered automatically if > 1 month since last sync.
    */
-  sync = async (force = false) => {
-    if (!force && !(await this.needsSync())) return;
-
+  sync = async (fullReindex = false) => {
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
 
@@ -81,10 +91,18 @@ export class SyncClient {
     await this.files.ensureDir(rootDir);
     await this.files.ensureDir(path.join(rootDir, "_attachments"));
 
-    console.log("syncing directory", rootDir);
+    // Determine if we should do a full re-index (skip mtime/hash optimizations)
+    const needsFullReindex = fullReindex || (await this.needsFullReindex());
+    if (needsFullReindex) {
+      console.log("syncing directory (full re-index)", rootDir);
+    } else {
+      console.log("syncing directory (incremental)", rootDir);
+    }
 
     // Pre-fetch all sync metadata for O(1) lookups during walk
-    const allSyncMeta = await this.documents.getAllDocSyncMeta();
+    const allSyncMeta = needsFullReindex
+      ? new Map() // Empty map forces full re-index
+      : await this.documents.getAllDocSyncMeta();
 
     // Pre-load existing journals to avoid duplicate inserts
     const journals = await this.initJournalsCounter();
@@ -143,7 +161,7 @@ export class SyncClient {
         continue;
       }
 
-      // Read file + compute hash (cheap)
+      // Read file + compute hash
       const { rawContents, contentHash } = await this.documents.readDocRaw(
         file.path,
       );
