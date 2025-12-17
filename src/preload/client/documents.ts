@@ -129,11 +129,28 @@ export class DocumentsClient {
    */
   readDocRaw = async (filePath: string) => {
     const rawContents = await this.files.readDocument(filePath);
-    const contentHash = crypto
-      .createHash("sha256")
-      .update(rawContents)
-      .digest("hex");
+    const contentHash = this.computeHash(rawContents);
     return { rawContents, contentHash };
+  };
+
+  /**
+   * Compute SHA-256 hash of content string.
+   */
+  private computeHash = (content: string): string => {
+    return crypto.createHash("sha256").update(content).digest("hex");
+  };
+
+  /**
+   * Compute sync metadata for a file after writing it.
+   * Used to keep sync metadata current after user edits.
+   */
+  private computeSyncMeta = async (filePath: string, content: string) => {
+    const stats = await fs.promises.stat(filePath);
+    return {
+      mtime: Math.floor(stats.mtimeMs),
+      size: stats.size,
+      contentHash: this.computeHash(content),
+    };
   };
 
   /**
@@ -305,6 +322,9 @@ export class DocumentsClient {
     );
 
     if (index) {
+      // Compute sync metadata after writing file
+      const syncMeta = await this.computeSyncMeta(docPath, content);
+
       // Parse content body to mdast for indexing
       const mdast = parseMarkdown(args.content);
       return [
@@ -314,6 +334,7 @@ export class DocumentsClient {
           mdast,
           frontMatter: args.frontMatter,
           rootDir: await this.preferences.get("notesDir"),
+          syncMeta,
         }),
         docPath,
       ];
@@ -335,7 +356,10 @@ export class DocumentsClient {
     const content = this.prependFrontMatter(args.content, args.frontMatter);
 
     const origDoc = await this.findById({ id: args.id });
-    await this.files.uploadDocument({ id: args.id, content }, args.journal);
+    const docPath = await this.files.uploadDocument(
+      { id: args.id, content },
+      args.journal,
+    );
 
     // sigh; this is a bit of a mess.
     if (origDoc.journal !== args.journal) {
@@ -347,6 +371,9 @@ export class DocumentsClient {
       this.updateDependentLinks([args.id!], args.journal);
     }
 
+    // Compute sync metadata after writing file
+    const syncMeta = await this.computeSyncMeta(docPath, content);
+
     // Parse content body to mdast for indexing
     const mdast = parseMarkdown(args.content);
     await this.updateIndex({
@@ -355,6 +382,7 @@ export class DocumentsClient {
       journal: args.journal,
       frontMatter: args.frontMatter,
       rootDir: await this.preferences.get("notesDir"),
+      syncMeta,
     });
   };
 
@@ -401,7 +429,6 @@ export class DocumentsClient {
 
   /**
    * Create or update a document index entry.
-   * Used by sync for incremental updates - inserts new documents or updates existing ones.
    */
   createIndex = async ({
     id,
@@ -465,13 +492,7 @@ export class DocumentsClient {
         );
       }
 
-      // Clear and re-insert links (for both insert and update)
-      await trx("document_links").where({ documentId: id }).del();
-      await trx("image_links").where({ documentId: id }).del();
-
-      // Pass mdast directly - no re-parsing needed
-      await this.addNoteLinks(trx, id, mdast);
-      await this.addImageLinks(trx, id, mdast, rootDir, journal);
+      await this.resetLinks(trx, id, mdast, rootDir, journal);
 
       return id;
     });
@@ -483,6 +504,7 @@ export class DocumentsClient {
     mdast,
     frontMatter,
     rootDir,
+    syncMeta,
   }: IndexRequest): Promise<void> => {
     // Serialize mdast to string once for DB storage
     const content = mdastToString(mdast);
@@ -495,6 +517,11 @@ export class DocumentsClient {
           journal,
           updatedAt: frontMatter.updatedAt,
           frontMatter: JSON.stringify(frontMatter),
+          ...(syncMeta && {
+            mtime: syncMeta.mtime,
+            size: syncMeta.size,
+            contentHash: syncMeta.contentHash,
+          }),
         })
         .where({ id });
 
@@ -505,11 +532,21 @@ export class DocumentsClient {
         );
       }
 
-      await trx("document_links").where({ documentId: id }).del();
-      // Pass mdast directly - no re-parsing needed
-      await this.addNoteLinks(trx, id!, mdast);
-      await this.addImageLinks(trx, id, mdast, rootDir, journal);
+      await this.resetLinks(trx, id, mdast, rootDir, journal);
     });
+  };
+
+  private resetLinks = async (
+    trx: Knex.Transaction,
+    docId: string,
+    mdast: mdastTypes.Root,
+    rootDir: string,
+    journal: string,
+  ) => {
+    await trx("document_links").where({ documentId: docId }).del();
+    await trx("image_links").where({ documentId: docId }).del();
+    await this.addNoteLinks(trx, docId, mdast);
+    await this.addImageLinks(trx, docId, mdast, rootDir, journal);
   };
 
   // track image links for a document to assist debugging missing images. Unlike note links, which

@@ -76,11 +76,15 @@ Schema: `src/electron/migrations/20211005142122.sql`
 | **Directory walker**    | `src/preload/utils/fs-utils.ts`              |
 | **Migrations**          | `src/electron/migrations/index.ts`           |
 
-## Sync Triggers
+## When Sync Runs
 
-1. **Startup**: Auto-sync if > 1 hour since last sync
-2. **Manual**: Preferences → Storage → "Sync" button
-3. **Post-Import**: After importing from Notion/Obsidian
+| Scenario               | Behavior                                          |
+| ---------------------- | ------------------------------------------------- |
+| Normal startup         | Incremental sync in background (doesn't block UI) |
+| > 1 month since sync   | Full re-index (skips mtime/hash checks)           |
+| Change notes directory | Full re-index                                     |
+| Manual "Sync" button   | Full re-index                                     |
+| After import           | Full re-index                                     |
 
 ## Sync vs Import
 

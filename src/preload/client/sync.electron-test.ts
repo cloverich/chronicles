@@ -70,7 +70,7 @@ This is from the second directory.
 
   // 3. Set preferences to first directory and sync
   store.set("notesDir", dir1);
-  await client.sync.sync(true); // force=true to bypass time check
+  await client.sync.sync(true); // fullReindex=true to skip mtime/hash checks
 
   // 4. Verify documents from first directory exist
   const resultsAfterFirstSync = await client.documents.search();
@@ -87,7 +87,7 @@ This is from the second directory.
 
   // 5. Switch to second directory and sync
   store.set("notesDir", dir2);
-  await client.sync.sync(true); // force=true
+  await client.sync.sync(true); // fullReindex=true
 
   // 6. Verify documents from second directory exist (not first)
   const resultsAfterSecondSync = await client.documents.search();

@@ -1,5 +1,4 @@
 import React from "react";
-import { toast } from "sonner";
 import { BulkOperationsStore } from "./stores/BulkOperationsStore";
 import { ApplicationStore, IApplicationState } from "./stores/application";
 import { JournalsStore } from "./stores/journals";
@@ -38,33 +37,17 @@ export function useAppLoader(): IApplicationState {
     setLoading(true);
 
     async function load() {
-      let toastId = null;
-
-      try {
-        if (await client.sync.needsSync()) {
-          toastId = toast("Syncing notes database", {
-            duration: Infinity,
-          });
-
-          await client.sync.sync();
-
-          toast.dismiss(toastId);
-        }
-      } catch (err: any) {
-        if (toastId) toast.dismiss(toastId);
-
-        console.error("error syncing at startup", err);
-        setLoadingErr(err);
-        setLoading(false);
-        return;
-      }
-
       try {
         const journalStore = await JournalsStore.init(client);
-
-        if (!isEffectMounted) return;
-
         const syncStoreInstance = new SyncStore(client, journalStore);
+
+        syncStoreInstance.sync().catch((err) => {
+          // Error already logged and toasted by SyncStore
+          console.error("Background sync failed at startup:", err);
+        });
+
+        if (!isEffectMounted) return; // :thinkies?
+
         setJournalsStore(journalStore);
         setSyncStore(syncStoreInstance);
         setBulkOperationsStore(new BulkOperationsStore(client.bulkOperations));
