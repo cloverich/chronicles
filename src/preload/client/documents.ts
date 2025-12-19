@@ -31,7 +31,6 @@ interface DocumentDb {
   id: string;
   journal: string;
   title?: string;
-  content: string;
   frontMatter: string;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +38,13 @@ interface DocumentDb {
   mtime?: number; // file modification time (ms since epoch)
   size?: number; // file size in bytes
   contentHash?: string; // SHA-256 hash of file contents
+}
+
+// FTS5 table structure
+interface DocumentFts {
+  id: string;
+  title: string;
+  content: string;
 }
 
 // Metadata for incremental sync checks
@@ -222,6 +228,8 @@ export class DocumentsClient {
   del = async (id: string, journal: string) => {
     await this.files.deleteDocument(id, journal);
     await this.knex<DocumentDb>("documents").where({ id }).del();
+    // Also clean up FTS index (use raw SQL for FTS5 compatibility)
+    await this.knex.raw("DELETE FROM documents_fts WHERE id = ?", [id]);
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
@@ -247,15 +255,29 @@ export class DocumentsClient {
       for (const title of q.titles) {
         // note: andWhereILike throws a SQL syntax error in SQLite.
         // It seems case insensitive without it?
-        query = query.andWhereLike("title", `%${title}%`);
+        query = query.andWhereLike("documents.title", `%${title}%`);
       }
     }
 
-    // filter by raw text
+    // FTS5 full-text search
     if (q?.texts?.length) {
-      for (const rawTxt of q.texts) {
-        query = query.andWhereLike("content", `%${rawTxt}%`);
-      }
+      // Build FTS5 query - join multiple terms with spaces (AND by default)
+      // Escape special FTS5 characters and wrap in quotes for phrase matching
+      const ftsTerms = q.texts
+        .map((t) => `"${t.replace(/"/g, '""')}"`)
+        .join(" ");
+
+      // Join with FTS results - get matching document IDs
+      query = query
+        .join(
+          this.knex.raw(
+            `(SELECT id as fts_id FROM documents_fts WHERE documents_fts MATCH ?) as fts`,
+            [ftsTerms],
+          ),
+          "documents.id",
+          "fts.fts_id",
+        )
+        .select("documents.*");
     }
 
     // todo: test id, date, and unknown formats
@@ -442,20 +464,19 @@ export class DocumentsClient {
       throw new Error("id required to create document index");
     }
 
-    // Serialize mdast to string once for DB storage
+    // Serialize mdast to string for FTS indexing
     const content = mdastToString(mdast);
+    const title = frontMatter.title || "";
 
     return this.knex.transaction(async (trx) => {
       // Check if document exists
       const existing = await trx("documents").where({ id }).first();
 
       if (existing) {
-        // Update existing document
         await trx("documents")
           .where({ id })
           .update({
             journal,
-            content,
             title: frontMatter.title,
             updatedAt: frontMatter.updatedAt,
             frontMatter: JSON.stringify(frontMatter || {}),
@@ -468,12 +489,19 @@ export class DocumentsClient {
 
         // Clear and re-insert tags
         await trx("document_tags").where({ documentId: id }).del();
+
+        // Update FTS index (delete + insert since FTS5 doesn't support UPDATE well)
+        // Use raw SQL because Knex doesn't handle FTS5 virtual tables well
+        await trx.raw("DELETE FROM documents_fts WHERE id = ?", [id]);
+        await trx.raw(
+          "INSERT INTO documents_fts (id, title, content) VALUES (?, ?, ?)",
+          [id, title, content],
+        );
       } else {
-        // Insert new document
+        // Insert new document (content stored in FTS only, not in documents table)
         await trx("documents").insert({
           id,
           journal,
-          content,
           title: frontMatter.title,
           createdAt: frontMatter.createdAt,
           updatedAt: frontMatter.updatedAt,
@@ -484,6 +512,12 @@ export class DocumentsClient {
             contentHash: syncMeta.contentHash,
           }),
         });
+
+        // Insert into FTS index (use raw SQL for FTS5 compatibility)
+        await trx.raw(
+          "INSERT INTO documents_fts (id, title, content) VALUES (?, ?, ?)",
+          [id, title, content],
+        );
       }
 
       if (frontMatter.tags.length > 0) {
@@ -506,13 +540,14 @@ export class DocumentsClient {
     rootDir,
     syncMeta,
   }: IndexRequest): Promise<void> => {
-    // Serialize mdast to string once for DB storage
+    // Serialize mdast to string for FTS indexing
     const content = mdastToString(mdast);
+    const title = frontMatter.title || "";
 
     return this.knex.transaction(async (trx) => {
+      // Update main document table (no content column - stored in FTS only)
       await trx("documents")
         .update({
-          content,
           title: frontMatter.title,
           journal,
           updatedAt: frontMatter.updatedAt,
@@ -524,6 +559,14 @@ export class DocumentsClient {
           }),
         })
         .where({ id });
+
+      // Update FTS index (delete + insert since FTS5 doesn't support UPDATE well)
+      // Use raw SQL because Knex doesn't handle FTS5 virtual tables well
+      await trx.raw("DELETE FROM documents_fts WHERE id = ?", [id]);
+      await trx.raw(
+        "INSERT INTO documents_fts (id, title, content) VALUES (?, ?, ?)",
+        [id, title, content],
+      );
 
       await trx("document_tags").where({ documentId: id }).del();
       if (frontMatter.tags.length > 0) {
@@ -631,6 +674,12 @@ export class DocumentsClient {
     if (orphanedIds.length > 0) {
       // Cascade deletes will handle document_tags, document_links, image_links
       await this.knex<DocumentDb>("documents").whereIn("id", orphanedIds).del();
+      // Also clean up FTS index (use raw SQL for FTS5 compatibility)
+      for (const orphanId of orphanedIds) {
+        await this.knex.raw("DELETE FROM documents_fts WHERE id = ?", [
+          orphanId,
+        ]);
+      }
     }
 
     return orphanedIds.length;
@@ -639,8 +688,20 @@ export class DocumentsClient {
   /**
    * When removing a journal, call this to de-index all documents from that journal.
    */
-  deindexJournal = (journal: string): Promise<void> => {
-    return this.knex<DocumentDb>("documents").where({ journal }).del();
+  deindexJournal = async (journal: string): Promise<void> => {
+    // Get document IDs in this journal for FTS cleanup
+    const docs = await this.knex<DocumentDb>("documents")
+      .where({ journal })
+      .select("id");
+    const ids = docs.map((d) => d.id);
+
+    // Delete from main table (cascade handles tags, links, etc.)
+    await this.knex<DocumentDb>("documents").where({ journal }).del();
+
+    // Clean up FTS index (use raw SQL for FTS5 compatibility)
+    for (const docId of ids) {
+      await this.knex.raw("DELETE FROM documents_fts WHERE id = ?", [docId]);
+    }
   };
 
   /**

@@ -24,7 +24,6 @@ CREATE TABLE  IF NOT EXISTS "documents" (
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "title" TEXT,
-    "content" TEXT NOT NULL,
     "journal" TEXT NOT NULL,
     "frontmatter" TEXT NOT NULL,
     FOREIGN KEY ("journal") REFERENCES "journals" ("name") ON DELETE CASCADE ON UPDATE CASCADE
