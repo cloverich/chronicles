@@ -3,12 +3,12 @@ import path from "path";
 import { PathStatsFile, walk } from "../utils/fs-utils";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
+import { IIndexerClient } from "./indexer";
 import {
   MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
   validateJournalName,
 } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import { ISyncClient } from "./sync";
 import { FrontMatter, SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
 
 import * as mdast from "mdast";
@@ -83,7 +83,7 @@ export class ImporterClient {
     private documents: IDocumentsClient,
     private files: IFilesClient,
     private preferences: IPreferencesClient,
-    private syncs: ISyncClient, // sync is keyword?
+    private indexer: IIndexerClient,
   ) {}
 
   processPending = async () => {
@@ -108,7 +108,7 @@ export class ImporterClient {
    * - Re-names all files to use a unique ID for their name
    * - Copies all referenced files to the _attachments directory
    *
-   * Designed for my own Notion export, and assumes sync will be called afterwards.
+   * Designed for my own Notion export, and assumes indexer will be called afterwards.
    */
   import = async (
     importDir: string,
@@ -369,7 +369,7 @@ export class ImporterClient {
             content: mdastToString(mdast),
             frontMatter,
           },
-          false, // don't index; we'll call sync after import
+          false, // don't index; we call indexer.index() after import
         );
 
         await this.knex<StagedNote>("import_notes")
@@ -403,9 +403,9 @@ export class ImporterClient {
         .update({ status: "complete" });
     }
 
-    console.log("import complete; calling sync to update indexes");
+    console.log("import complete; calling indexer to update indexes");
 
-    await this.syncs.sync(true);
+    await this.indexer.index(true);
   };
 
   // probably shouldn't make it to final version
