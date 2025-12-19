@@ -35,11 +35,44 @@ The indexer uses **incremental updates**: unchanged files are skipped based on m
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    SQLite Database (Cache)                  │
-│  ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌─────────────┐  │
-│  │documents │ │journals  │ │doc_tags   │ │document_links│  │
-│  └──────────┘ └──────────┘ └───────────┘ └─────────────┘  │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌─────────────┐   │
+│  │documents │ │journals  │ │doc_tags   │ │document_links│   │
+│  └──────────┘ └──────────┘ └───────────┘ └─────────────┘   │
+│  ┌──────────────┐                                           │
+│  │documents_fts │  ← FTS5 full-text search index            │
+│  └──────────────┘                                           │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+## Full-Text Search (FTS5)
+
+Chronicles uses SQLite's **FTS5** extension for fast, feature-rich text search.
+
+### Features
+
+- **Fast lookups**: O(log n) via inverted index, not O(n) table scan
+- **Stemming**: "running" matches "run" via Porter stemmer
+- **Unicode support**: Proper handling of international characters
+- **Phrase search**: `"exact phrase"` matching
+- **Prefix search**: `java*` matches javascript, java, etc.
+
+### How It Works
+
+1. **Separate FTS table**: `documents_fts` is a virtual table parallel to `documents`
+2. **Content indexed**: Title and markdown body are tokenized and indexed
+3. **Search queries**: Use `MATCH` operator for fast lookups:
+   ```sql
+   SELECT id FROM documents_fts WHERE documents_fts MATCH 'search terms'
+   ```
+
+### Search Syntax
+
+| Query              | Matches                               |
+| ------------------ | ------------------------------------- |
+| `javascript`       | Documents containing "javascript"     |
+| `javascript react` | Documents containing both terms (AND) |
+| `"react hooks"`    | Exact phrase                          |
+| `java*`            | Prefix match (java, javascript, etc.) |
 
 ## Performance
 
@@ -52,18 +85,23 @@ The incremental index strategy minimizes parsing:
 
 For 4000 documents with no changes, indexing completes in ~2-4 seconds instead of ~30+ seconds.
 
+**Text search**: Near-instant via FTS5 inverted index (vs. slow LIKE scans).
+
 ## Database Tables
 
-| Table            | Purpose                                                                       |
-| ---------------- | ----------------------------------------------------------------------------- |
-| `documents`      | Content, title, journal, frontmatter, index metadata (mtime/size/contentHash) |
-| `journals`       | Organizational containers (directories)                                       |
-| `document_tags`  | Many-to-many: document ↔ tags                                                |
-| `document_links` | Links between documents (for backlinks)                                       |
-| `image_links`    | Image references with resolution status                                       |
-| `sync`           | Index run metadata (timestamps, counts, errors)                               |
+| Table            | Purpose                                                   |
+| ---------------- | --------------------------------------------------------- |
+| `documents`      | Metadata: title, journal, frontmatter, sync info          |
+| `documents_fts`  | FTS5 virtual table for full-text search (title + content) |
+| `journals`       | Organizational containers (directories)                   |
+| `document_tags`  | Many-to-many: document ↔ tags                            |
+| `document_links` | Links between documents (for backlinks)                   |
+| `image_links`    | Image references with resolution status                   |
+| `sync`           | Index run metadata (timestamps, counts, errors)           |
 
 Schema: `src/electron/migrations/20211005142122.sql`
+
+**Note**: Document content is stored only in the FTS table, not duplicated in `documents`. The markdown file on disk is the source of truth; content is read from disk when editing.
 
 ## Key Files
 
@@ -91,7 +129,7 @@ Schema: `src/electron/migrations/20211005142122.sql`
 |             | **Import**                             | **Indexer**                      |
 | ----------- | -------------------------------------- | -------------------------------- |
 | **Input**   | External files (Notion, Obsidian)      | Existing markdown files          |
-| **Output**  | Markdown files on disk                 | SQLite index                     |
+| **Output**  | Markdown files on disk                 | SQLite index + FTS               |
 | **Purpose** | Convert formats to Chronicles markdown | Build searchable cache           |
 | **Parses**  | External formats, wikilinks, OFM tags  | YAML frontmatter, markdown links |
 
@@ -104,6 +142,6 @@ Import converts `[[wikilinks]]` to standard markdown links during file creation.
 During indexing, the indexer extracts from each markdown file:
 
 - **Frontmatter**: title, createdAt, updatedAt, tags
-- **Content**: Full markdown body (stored for search)
+- **Content**: Full markdown body (indexed in FTS5 for search)
 - **Links**: Internal document links (`[title](../journal/id.md)`)
 - **Images**: Image references (tracked for validation)

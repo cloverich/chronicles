@@ -49,6 +49,9 @@ export default function (dbUrl: string) {
     // Incremental sync support: add columns for tracking file changes
     // These columns allow skipping unchanged files during sync
     runMigration2(db);
+
+    // FTS5 full-text search support
+    runMigration3(db);
   } catch (err) {
     console.error("Error running migrations!", err);
     throw err;
@@ -76,5 +79,35 @@ function runMigration2(db: DB.Database) {
   }
   if (!existingColumns.has("contentHash")) {
     db.exec("ALTER TABLE documents ADD COLUMN contentHash TEXT");
+  }
+}
+
+/**
+ * Migration 3: Add FTS5 full-text search support
+ * Creates documents_fts virtual table for fast text search.
+ * Content is populated during indexing.
+ */
+function runMigration3(db: DB.Database) {
+  const ftsExists = db
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='documents_fts'",
+    )
+    .get();
+
+  if (!ftsExists) {
+    console.log("Creating FTS5 table for full-text search...");
+
+    // Create FTS5 virtual table
+    // - tokenize='porter unicode61' enables stemming (run->running) and unicode support
+    db.exec(`
+      CREATE VIRTUAL TABLE documents_fts USING fts5(
+        id,
+        title,
+        content,
+        tokenize='porter unicode61'
+      );
+    `);
+
+    console.log("FTS5 table created.");
   }
 }

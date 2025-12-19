@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
+const testMatches = process.argv.slice(2);
 
 // Find all electron test bundles
 function findElectronTestBundles(dir, files = []) {
@@ -32,6 +33,12 @@ console.log(`Found ${testFiles.length} electron test file(s)`);
 // Run tests sequentially
 async function runTests() {
   for (const testFile of testFiles) {
+    if (
+      testMatches.length > 0 &&
+      !testMatches.some((match) => testFile.includes(match))
+    )
+      continue;
+
     const relativeTestFile = path.relative(projectRoot, testFile);
     console.log(`\nRunning: ${relativeTestFile}`);
 
