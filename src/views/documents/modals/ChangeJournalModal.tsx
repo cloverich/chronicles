@@ -1,14 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { Button } from "../../../components/Button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../../components/Dialog";
+import { Dialog } from "../../../components/Dialog";
 import * as Select from "../../../components/Select";
 import { useBulkOperationsStore } from "../../../hooks/useBulkOperations";
 import { useJournals } from "../../../hooks/useJournals";
@@ -50,47 +43,44 @@ export const ChangeJournalModal = observer(
     };
 
     return (
-      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Journal</DialogTitle>
-            <DialogDescription>
-              Move all documents in the active search to a different journal
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-4">
-            <label className="mb-2 block text-sm font-medium">
-              Destination journal
-            </label>
-            <Select.Base
-              value={selectedJournal || ""}
-              onValueChange={(value) => setSelectedJournal(value || null)}
-            >
-              <Select.Trigger className="w-full">
-                <Select.Value placeholder="Select a journal..." />
-              </Select.Trigger>
-              <Select.Content>
-                {journalsStore.journals
-                  .filter((j) => !j.archived)
-                  .map((journal) => (
-                    <Select.Item key={journal.name} value={journal.name}>
-                      {journal.name}
-                    </Select.Item>
-                  ))}
-              </Select.Content>
-            </Select.Base>
-          </div>
-
-          <DialogFooter>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => !isOpen && handleClose()}
+        title="Change Journal"
+        description="Move all documents in the active search to a different journal"
+        actions={
+          <>
             <Button variant="ghost" onClick={handleClose}>
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={!selectedJournal}>
               Change Journal
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </>
+        }
+      >
+        <div className="py-4">
+          <label className="mb-2 block text-sm font-medium">
+            Destination journal
+          </label>
+          <Select.Base
+            value={selectedJournal || ""}
+            onValueChange={(value) => setSelectedJournal(value || null)}
+          >
+            <Select.Trigger className="w-full">
+              <Select.Value placeholder="Select a journal..." />
+            </Select.Trigger>
+            <Select.Content>
+              {journalsStore.journals
+                .filter((j) => !j.archived)
+                .map((journal) => (
+                  <Select.Item key={journal.name} value={journal.name}>
+                    {journal.name}
+                  </Select.Item>
+                ))}
+            </Select.Content>
+          </Select.Base>
+        </div>
       </Dialog>
     );
   },
