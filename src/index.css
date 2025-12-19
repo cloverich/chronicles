@@ -19,8 +19,8 @@
     --font-heading: "Hubot Sans", var(--font-sans);
     --font-heading-2: var(--font-heading);
     --font-heading-3: var(--font-heading);
-    --font-system-body: var(--font-body);
-    --font-system-heading: var(--font-heading);
+    --font-system-body: "Mona Sans", var(--font-sans);
+    --font-system-heading: "Hubot Sans", var(--font-sans);
 
     --background: 0 0% 100%;
     --background-hint: hsl(0 0% 100%);
