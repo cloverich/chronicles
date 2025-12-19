@@ -4,7 +4,7 @@ import { cva, VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import * as React from "react";
 
-const Dialog = DialogPrimitive.Root;
+const DialogRoot = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
@@ -151,6 +151,55 @@ DialogTitle.displayName = DialogPrimitive.Title.displayName;
 DialogDescriptionMuted.displayName = DialogPrimitive.Description.displayName;
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
+/**
+ * Simplified Dialog component with a declarative API.
+ * Reduces boilerplate for common dialog patterns.
+ */
+interface DialogProps {
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+  variant?: VariantProps<typeof dialogVariants>["variant"];
+  animate?: VariantProps<typeof dialogVariants>["animate"];
+  className?: string;
+}
+
+const Dialog = ({
+  open,
+  defaultOpen,
+  onOpenChange,
+  title,
+  description,
+  children,
+  actions,
+  variant,
+  animate,
+  className,
+}: DialogProps) => {
+  return (
+    <DialogRoot
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
+    >
+      <DialogContent variant={variant} animate={animate} className={className}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description && <DialogDescription>{description}</DialogDescription>}
+        </DialogHeader>
+        {children}
+        {actions && <DialogFooter>{actions}</DialogFooter>}
+      </DialogContent>
+    </DialogRoot>
+  );
+};
+
+Dialog.displayName = "Dialog";
+
 export {
   Dialog,
   DialogClose,
@@ -161,6 +210,7 @@ export {
   DialogHeader,
   DialogOverlay,
   DialogPortal,
+  DialogRoot,
   DialogTitle,
   DialogTrigger,
 };

@@ -1,14 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { Button } from "../../../components/Button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../../components/Dialog";
+import { Dialog } from "../../../components/Dialog";
 import { useBulkOperationsStore } from "../../../hooks/useBulkOperations";
 import { useTags } from "../../../hooks/useTags";
 import { SearchStore } from "../SearchStore";
@@ -49,42 +42,39 @@ export const RemoveTagModal = observer(
     };
 
     return (
-      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove Tag</DialogTitle>
-            <DialogDescription>
-              Remove a tag from all documents in the active search
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-4">
-            <label className="mb-2 block text-sm font-medium">
-              Tag to remove
-            </label>
-            <select
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              value={selectedTag || ""}
-              onChange={(e) => setSelectedTag(e.target.value || null)}
-            >
-              <option value="">Select a tag...</option>
-              {tags.map((tag) => (
-                <option key={tag} value={tag}>
-                  #{tag}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <DialogFooter>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => !isOpen && handleClose()}
+        title="Remove Tag"
+        description="Remove a tag from all documents in the active search"
+        actions={
+          <>
             <Button variant="ghost" onClick={handleClose}>
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={!selectedTag}>
               Remove Tag
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </>
+        }
+      >
+        <div className="py-4">
+          <label className="mb-2 block text-sm font-medium">
+            Tag to remove
+          </label>
+          <select
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            value={selectedTag || ""}
+            onChange={(e) => setSelectedTag(e.target.value || null)}
+          >
+            <option value="">Select a tag...</option>
+            {tags.map((tag) => (
+              <option key={tag} value={tag}>
+                #{tag}
+              </option>
+            ))}
+          </select>
+        </div>
       </Dialog>
     );
   },

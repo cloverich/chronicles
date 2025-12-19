@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "../../../../components/Button";
 import {
-  Dialog,
+  DialogRoot as Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
