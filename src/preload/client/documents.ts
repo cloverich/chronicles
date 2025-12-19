@@ -301,7 +301,7 @@ export class DocumentsClient {
   /**
    * Create (upload) a new document and index it
    * @param args - The document to create
-   * @param index - Whether to index the document - set to false when importing (we import, then call `sync` instead)
+   * @param index - Whether to index the document - set to false when importing (we import, then call indexer.index() instead)
    */
   createDocument = async (
     args: CreateRequest,
@@ -551,7 +551,7 @@ export class DocumentsClient {
 
   // track image links for a document to assist debugging missing images. Unlike note links, which
   // are live and updated as part of document udpate process, as of now this routine exists purlely
-  // for debugging import / sync issues.
+  // for debugging import / indexing issues.
   private addImageLinks = async (
     trx: Knex.Transaction,
     documentId: string,

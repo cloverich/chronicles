@@ -1,13 +1,13 @@
 import { makeObservable, observable } from "mobx";
 import { BulkOperationsStore } from "./BulkOperationsStore";
+import { IndexerStore } from "./indexer";
 import { JournalsStore } from "./journals";
 import { Preferences } from "./preferences";
-import { SyncStore } from "./sync";
 
 export class ApplicationStore {
   preferences: Preferences;
   journals: JournalsStore;
-  sync: SyncStore;
+  indexer: IndexerStore;
   bulkOperations: BulkOperationsStore;
 
   isPreferencesOpen: boolean;
@@ -15,12 +15,12 @@ export class ApplicationStore {
   constructor(
     preferences: Preferences,
     journals: JournalsStore,
-    sync: SyncStore,
+    indexer: IndexerStore,
     bulkOperations: BulkOperationsStore,
   ) {
     this.preferences = preferences;
     this.journals = journals;
-    this.sync = sync;
+    this.indexer = indexer;
     this.bulkOperations = bulkOperations;
     this.isPreferencesOpen = false;
 

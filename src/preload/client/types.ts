@@ -3,9 +3,9 @@ import { IBulkOperationsClient } from "./bulk-operations";
 import { IDocumentsClient } from "./documents";
 import { IFilesClient } from "./files";
 import { IImporterClient } from "./importer";
+import { IIndexerClient } from "./indexer";
 import { IJournalsClient } from "./journals";
 import { IPreferencesClient } from "./preferences";
-import { ISyncClient } from "./sync";
 import { ITagsClient } from "./tags";
 
 // This interface was created with these "I" types like this
@@ -19,7 +19,7 @@ export interface IClient {
   documents: IDocumentsClient;
   preferences: IPreferencesClient;
   files: IFilesClient;
-  sync: ISyncClient;
+  indexer: IIndexerClient;
   importer: IImporterClient;
   bulkOperations: IBulkOperationsClient;
 }
