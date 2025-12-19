@@ -13,8 +13,8 @@ import {
   DialogTitle,
 } from "../../components/Dialog";
 import useClient from "../../hooks/useClient";
+import { useIndexerStore } from "../../hooks/useIndexerStore";
 import { usePreferences } from "../../hooks/usePreferences";
-import { useSyncStore } from "../../hooks/useSyncStore";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
   SKIPPABLE_FILES,
@@ -28,7 +28,7 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
-  const syncStore = useSyncStore();
+  const indexerStore = useIndexerStore();
   const client = useClient();
   const [store, _] = React.useState(() =>
     observable({
@@ -47,10 +47,10 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
-      // Save preference immediately before sync (bypasses 1-second debounce)
+      // Save preference immediately before index (bypasses 1-second debounce)
       await preferences.saveImmediate({ notesDir: result.value });
       // Full reindex when changing directories
-      syncStore.sync(true);
+      indexerStore.index(true);
     } catch (e) {
       store.loading = false;
       toast.error("Failed to set new directory");
@@ -388,36 +388,35 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
-                  title="Sync (Rebuild cache)"
-                  sub="Rebuild the cache from the filesystem"
+                  title="Rebuild Index"
+                  sub="Rebuild the document index from the filesystem"
                 />
                 <p className="mb-2 max-w-[500px]">
                   Chronicles builds an index of all documents and journals
                   (folders) in <code>notesDir</code> to power its search and
-                  general operation. When the cache is out of sync with the
+                  general operation. When the index is out of sync with the
                   filesystem, this can cause issues such as missing documents,
                   tags, or journals.
                 </p>
                 <p className="mb-2 max-w-[500px]">
-                  "Syncing" the cache will rebuild the index from the
-                  filesystem, ensuring that all documents, journals, and tags
-                  are correctly indexed. This should be done anytime you make
-                  changes to the filesystem outside of the app, including from
-                  another device (if the <code>notesDir</code> is synced via a
-                  cloud service).
+                  Rebuilding the index will re-scan the filesystem, ensuring
+                  that all documents, journals, and tags are correctly indexed.
+                  This should be done anytime you make changes to the filesystem
+                  outside of the app, including from another device (if the{" "}
+                  <code>notesDir</code> is synced via a cloud service).
                 </p>
                 <p className="mb-2 max-w-[500px]">
-                  The current Chronicles cache is located at{" "}
+                  The current Chronicles index is located at{" "}
                   <code>{preferences.databaseUrl}</code>
                 </p>
                 <div className="mt-4 flex">
                   <Button
                     variant="ghost"
-                    loading={syncStore.isSyncing}
-                    disabled={syncStore.isSyncing}
-                    onClick={() => syncStore.sync(true)}
+                    loading={indexerStore.isIndexing}
+                    disabled={indexerStore.isIndexing}
+                    onClick={() => indexerStore.index(true)}
                   >
-                    Sync folder
+                    Rebuild Index
                   </Button>
                 </div>
               </Section>

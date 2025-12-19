@@ -1,8 +1,8 @@
 import React from "react";
 import { BulkOperationsStore } from "./stores/BulkOperationsStore";
 import { ApplicationStore, IApplicationState } from "./stores/application";
+import { IndexerStore } from "./stores/indexer";
 import { JournalsStore } from "./stores/journals";
-import { SyncStore } from "./stores/sync";
 import useClient from "./useClient";
 import { usePreferencesSetup } from "./usePreferences";
 
@@ -16,7 +16,7 @@ export function useAppLoader(): IApplicationState {
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
   const [bulkOperationsStore, setBulkOperationsStore] =
     React.useState<BulkOperationsStore>();
-  const [syncStore, setSyncStore] = React.useState<SyncStore>();
+  const [indexerStore, setIndexerStore] = React.useState<IndexerStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
   const client = useClient();
@@ -39,17 +39,17 @@ export function useAppLoader(): IApplicationState {
     async function load() {
       try {
         const journalStore = await JournalsStore.init(client);
-        const syncStoreInstance = new SyncStore(client, journalStore);
+        const indexerStoreInstance = new IndexerStore(client, journalStore);
 
-        syncStoreInstance.sync().catch((err) => {
-          // Error already logged and toasted by SyncStore
-          console.error("Background sync failed at startup:", err);
+        indexerStoreInstance.index().catch((err) => {
+          // Error already logged and toasted by IndexerStore
+          console.error("Background index failed at startup:", err);
         });
 
         if (!isEffectMounted) return; // :thinkies?
 
         setJournalsStore(journalStore);
-        setSyncStore(syncStoreInstance);
+        setIndexerStore(indexerStoreInstance);
         setBulkOperationsStore(new BulkOperationsStore(client.bulkOperations));
         setLoading(false);
       } catch (err: any) {
@@ -71,7 +71,7 @@ export function useAppLoader(): IApplicationState {
       loading ||
       loadingErr ||
       !journalsStore ||
-      !syncStore ||
+      !indexerStore ||
       !preferences ||
       !bulkOperationsStore
     )
@@ -82,11 +82,11 @@ export function useAppLoader(): IApplicationState {
       new ApplicationStore(
         preferences,
         journalsStore,
-        syncStore,
+        indexerStore,
         bulkOperationsStore,
       ),
     );
-  }, [loading, loadingErr, journalsStore, syncStore, preferences]);
+  }, [loading, loadingErr, journalsStore, indexerStore, preferences]);
 
   return {
     loading: loading,

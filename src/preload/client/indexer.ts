@@ -9,9 +9,9 @@ import { IPreferencesClient } from "./preferences";
 import { SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
 import { checkId } from "./util";
 
-export type ISyncClient = SyncClient;
+export type IIndexerClient = IndexerClient;
 
-// Indicates which files to index when syncing
+// Indicates which files to index when indexing
 const shouldIndex = (dirent: fs.Dirent) => {
   for (const prefix of SKIPPABLE_PREFIXES) {
     if (dirent.name.startsWith(prefix)) return false;
@@ -29,7 +29,7 @@ const shouldIndex = (dirent: fs.Dirent) => {
   }
 };
 
-export class SyncClient {
+export class IndexerClient {
   constructor(
     private knex: Knex,
     private journals: IJournalsClient,
@@ -39,32 +39,32 @@ export class SyncClient {
   ) {}
 
   /**
-   * Check if a FULL re-index is needed based on the last sync time.
-   * Returns true if > 1 month since last sync, indicating we should
+   * Check if a FULL re-index is needed based on the last index time.
+   * Returns true if > 1 month since last index, indicating we should
    * skip the mtime/hash optimizations and fully re-parse all documents.
    *
    * @returns true if a full re-index is recommended
    */
   needsFullReindex = async () => {
-    const lastSync = await this.knex("sync")
+    const lastIndex = await this.knex("sync")
       .whereNotNull("completedAt")
       .orderBy("id", "desc")
       .first();
 
-    if (!lastSync) {
-      // No previous sync, need full index
-      console.log("No previously successful sync found");
+    if (!lastIndex) {
+      // No previous index, need full index
+      console.log("No previously successful index found");
       return true;
     }
 
-    const lastSyncDate = new Date(lastSync.completedAt);
+    const lastIndexDate = new Date(lastIndex.completedAt);
     const now = new Date();
-    const diff = now.getTime() - lastSyncDate.getTime();
+    const diff = now.getTime() - lastIndexDate.getTime();
     const diffDays = Math.trunc(diff / (1000 * 60 * 60 * 24));
-    console.log(`last completed sync was ${diffDays} days ago`);
+    console.log(`last completed index was ${diffDays} days ago`);
 
     if (diffDays >= 30) {
-      console.log("Full re-index needed; last sync was over a month ago");
+      console.log("Full re-index needed; last index was over a month ago");
       return true;
     }
 
@@ -72,13 +72,13 @@ export class SyncClient {
   };
 
   /**
-   * Sync the notes directory with the database.
-   * Uses incremental sync when possible - only processes changed files.
+   * Index the notes directory into the database.
+   * Uses incremental indexing when possible - only processes changed files.
    *
    * @param fullReindex - If true, skip mtime/hash optimizations and re-parse all documents.
-   *                      Also triggered automatically if > 1 month since last sync.
+   *                      Also triggered automatically if > 1 month since last index.
    */
-  sync = async (fullReindex = false) => {
+  index = async (fullReindex = false) => {
     const id = (await this.knex("sync").returning("id").insert({}))[0];
     const start = performance.now();
 
@@ -94,9 +94,9 @@ export class SyncClient {
     // Determine if we should do a full re-index (skip mtime/hash optimizations)
     const needsFullReindex = fullReindex || (await this.needsFullReindex());
     if (needsFullReindex) {
-      console.log("syncing directory (full re-index)", rootDir);
+      console.log("indexing directory (full re-index)", rootDir);
     } else {
-      console.log("syncing directory (incremental)", rootDir);
+      console.log("indexing directory (incremental)", rootDir);
     }
 
     // Pre-fetch all sync metadata for O(1) lookups during walk
@@ -111,7 +111,7 @@ export class SyncClient {
     const seenDocumentIds = new Set<string>();
     const erroredDocumentPaths: string[] = [];
 
-    let syncedCount = 0;
+    let indexedCount = 0;
     let skippedCount = 0;
 
     for await (const file of walk(rootDir, 1, shouldIndex)) {
@@ -123,7 +123,7 @@ export class SyncClient {
         checkId(documentId);
       } catch (e) {
         console.error(
-          "Invalid document id in sync; skipping",
+          "Invalid document id in index; skipping",
           file.path,
           documentId,
           e,
@@ -195,7 +195,7 @@ export class SyncClient {
             contentHash,
           },
         });
-        syncedCount++;
+        indexedCount++;
       } catch (e) {
         erroredDocumentPaths.push(file.path);
 
@@ -258,14 +258,14 @@ export class SyncClient {
     await this.knex("sync").where("id", id).update({
       completedAt: new Date().toISOString(),
       errorCount: erroredDocumentPaths.length,
-      syncedCount,
+      syncedCount: indexedCount,
       durationMs,
     });
     console.log(
-      `Sync complete: ${syncedCount} indexed, ${skippedCount} skipped (unchanged), ${deletedCount} deleted, ${erroredDocumentPaths.length} errors`,
+      `Index complete: ${indexedCount} indexed, ${skippedCount} skipped (unchanged), ${deletedCount} deleted, ${erroredDocumentPaths.length} errors`,
     );
     if (erroredDocumentPaths.length > 0) {
-      console.log("Errored documents (during sync)", erroredDocumentPaths);
+      console.log("Errored documents (during index)", erroredDocumentPaths);
     }
   };
 

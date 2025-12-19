@@ -27,7 +27,7 @@ after(async () => {
   ipcRenderer.send("test-complete", 0);
 });
 
-test("sync switches directories and indexes correct documents", async () => {
+test("indexer switches directories and indexes correct documents", async () => {
   // Generate proper UUID25 IDs
   const doc1Id = createId(new Date("2024-01-01").getTime());
   const doc2Id = createId(new Date("2024-01-02").getTime());
@@ -68,36 +68,36 @@ This is from the second directory.
 `;
   fs.writeFileSync(path.join(dir2Journal, `${doc2Id}.md`), doc2Content);
 
-  // 3. Set preferences to first directory and sync
+  // 3. Set preferences to first directory and index
   store.set("notesDir", dir1);
-  await client.sync.sync(true); // fullReindex=true to skip mtime/hash checks
+  await client.indexer.index(true); // fullReindex=true to skip mtime/hash checks
 
   // 4. Verify documents from first directory exist
-  const resultsAfterFirstSync = await client.documents.search();
+  const resultsAfterFirstIndex = await client.documents.search();
   assert.strictEqual(
-    resultsAfterFirstSync.data.length,
+    resultsAfterFirstIndex.data.length,
     1,
-    "Expected one document after first sync",
+    "Expected one document after first index",
   );
   assert.strictEqual(
-    resultsAfterFirstSync.data[0].title,
+    resultsAfterFirstIndex.data[0].title,
     "Document from Directory 1",
     "Expected document from first directory",
   );
 
-  // 5. Switch to second directory and sync
+  // 5. Switch to second directory and index
   store.set("notesDir", dir2);
-  await client.sync.sync(true); // fullReindex=true
+  await client.indexer.index(true); // fullReindex=true
 
   // 6. Verify documents from second directory exist (not first)
-  const resultsAfterSecondSync = await client.documents.search();
+  const resultsAfterSecondIndex = await client.documents.search();
   assert.strictEqual(
-    resultsAfterSecondSync.data.length,
+    resultsAfterSecondIndex.data.length,
     1,
-    "Expected one document after second sync",
+    "Expected one document after second index",
   );
   assert.strictEqual(
-    resultsAfterSecondSync.data[0].title,
+    resultsAfterSecondIndex.data[0].title,
     "Document from Directory 2",
     "Expected document from second directory, not first",
   );
@@ -127,19 +127,19 @@ This is from the second directory.
   fs.writeFileSync(path.join(journal3, `${doc3Id}.md`), doc3Content);
 
   // First, assert that needsFullReindex returns false
-  const needsFullReindex = await client.sync.needsFullReindex();
+  const needsFullReindex = await client.indexer.needsFullReindex();
   assert.strictEqual(
     needsFullReindex,
     false,
     "Expected needsFullReindex to return false",
   );
 
-  // Not yet synced, so document should not be findable by documents client
+  // Not yet indexed, so document should not be findable by documents client
   assert.rejects(() => {
     return client.documents.findById({ id: doc3Id });
   });
 
-  // Run sync, no fullReindex. Should pick up new document.
-  await client.sync.sync(false);
+  // Run index, no fullReindex. Should pick up new document.
+  await client.indexer.index(false);
   assert.equal((await client.documents.findById({ id: doc3Id })).id, doc3Id);
 });

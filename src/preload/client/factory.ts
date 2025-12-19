@@ -4,9 +4,9 @@ import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
 import { ImporterClient } from "./importer";
+import { IndexerClient } from "./indexer";
 import { JournalsClient } from "./journals";
 import { PreferencesClient } from "./preferences";
-import { SyncClient } from "./sync";
 import { TagsClient } from "./tags";
 import { IClient } from "./types";
 
@@ -33,14 +33,20 @@ export function createClient({ store }: ClientFactoryParams): IClient {
   const files = new FilesClient(store);
   const journals = new JournalsClient(knex, files, preferences);
   const documents = new DocumentsClient(knex, files, preferences);
-  const sync = new SyncClient(knex, journals, documents, files, preferences);
+  const indexer = new IndexerClient(
+    knex,
+    journals,
+    documents,
+    files,
+    preferences,
+  );
 
   const importer = new ImporterClient(
     knex,
     documents,
     files,
     preferences,
-    sync,
+    indexer,
   );
 
   const bulkOperations = new BulkOperationsClient(knex, documents);
@@ -52,7 +58,7 @@ export function createClient({ store }: ClientFactoryParams): IClient {
     tags: new TagsClient(knex),
     preferences: preferences,
     files: files,
-    sync,
+    indexer,
     importer,
     bulkOperations,
   };
