@@ -308,6 +308,64 @@ export class DocumentsClient {
     return { data: [] };
   };
 
+  searchCount = async (q?: SearchRequest): Promise<number> => {
+    let query = this.knex<DocumentDb>("documents");
+
+    if (q?.ids) {
+      query = query.whereIn("id", q.ids);
+    }
+
+    // filter by journal
+    if (q?.journals?.length) {
+      query = query.whereIn("journal", q.journals);
+    }
+
+    if (q?.tags?.length) {
+      query = query
+        .join("document_tags", "documents.id", "document_tags.documentId")
+        .whereIn("document_tags.tag", q.tags);
+    }
+
+    // filter by title
+    if (q?.titles?.length) {
+      for (const title of q.titles) {
+        query = query.andWhereLike("documents.title", `%${title}%`);
+      }
+    }
+
+    // FTS5 full-text search
+    if (q?.texts?.length) {
+      const ftsTerms = q.texts
+        .map((t) => `"${t.replace(/"/g, '""')}"`)
+        .join(" ");
+
+      query = query.join(
+        this.knex.raw(
+          `(SELECT id as fts_id FROM documents_fts WHERE documents_fts MATCH ?) as fts`,
+          [ftsTerms],
+        ),
+        "documents.id",
+        "fts.fts_id",
+      );
+    }
+
+    // Note: before filter is intentionally excluded for total count
+    // We want the total count of matching documents, not paginated count
+
+    try {
+      const result = await query
+        .count("documents.id as count")
+        .first<{ count: number }>();
+      return Number(result?.count || 0);
+    } catch (err) {
+      console.error(
+        "error in client.documents.searchCount",
+        (err as Error).message,
+      );
+      return 0;
+    }
+  };
+
   // Extend front-matter (if any) with Chronicles standard properties, then
   // add to serialized document contents.
   private prependFrontMatter = (

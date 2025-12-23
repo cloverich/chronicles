@@ -7,6 +7,14 @@ import { JournalResponse } from "./types";
 
 export type IJournalsClient = JournalsClient;
 
+export interface JournalWithCount {
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  archived: boolean;
+  count: number;
+}
+
 export class JournalsClient {
   constructor(
     private knex: Knex,
@@ -33,6 +41,27 @@ export class JournalsClient {
     }
 
     return journals;
+  };
+
+  listWithCounts = async (): Promise<JournalWithCount[]> => {
+    // Get document counts per journal
+    const counts = await this.knex("documents")
+      .select("journal")
+      .count("id as count")
+      .groupBy("journal");
+
+    const countMap = new Map(
+      counts.map((row: any) => [row.journal, Number(row.count)]),
+    );
+
+    // Get all journals with their metadata
+    const journals = await this.list();
+
+    // Combine journals with their counts
+    return journals.map((j) => ({
+      ...j,
+      count: countMap.get(j.name) || 0,
+    }));
   };
 
   create = async (journal: { name: string }): Promise<JournalResponse> => {
