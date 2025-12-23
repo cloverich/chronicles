@@ -13,6 +13,8 @@ import React, {
 } from "react";
 
 import type { PointRef } from "slate";
+import { Editor, Transforms } from "slate";
+import { ReactEditor } from "slate-react";
 
 import {
   Combobox,
@@ -25,22 +27,14 @@ import {
   type ComboboxItemProps,
 } from "@ariakit/react";
 import { cn } from "@udecode/cn";
+import { type TElement } from "@udecode/plate";
+import { filterWords } from "@udecode/plate-combobox";
 import {
-  filterWords,
   useComboboxInput,
   useHTMLInputCursorState,
   type UseComboboxInputResult,
-} from "@udecode/plate-combobox";
-import {
-  createPointRef,
-  findNodePath,
-  getPointBefore,
-  insertText,
-  moveSelection,
-  useComposedRef,
-  useEditorRef,
-  type TElement,
-} from "@udecode/plate-common";
+} from "@udecode/plate-combobox/react";
+import { useComposedRef, useEditorRef } from "@udecode/plate/react";
 import { cva } from "class-variance-authority";
 
 type FilterFn = (
@@ -112,15 +106,15 @@ const InlineCombobox = ({
   const [insertPoint, setInsertPoint] = useState<PointRef | null>(null);
 
   useEffect(() => {
-    const path = findNodePath(editor, element);
+    const path = ReactEditor.findPath(editor as any, element);
 
     if (!path) return;
 
-    const point = getPointBefore(editor, path);
+    const point = Editor.before(editor as any, path);
 
     if (!point) return;
 
-    const pointRef = createPointRef(editor, point);
+    const pointRef = Editor.pointRef(editor as any, point);
     setInsertPoint(pointRef);
 
     return () => {
@@ -133,12 +127,12 @@ const InlineCombobox = ({
     cursorState,
     onCancelInput: (cause) => {
       if (cause !== "backspace") {
-        insertText(editor, trigger + value, {
+        Transforms.insertText(editor as any, trigger + value, {
           at: insertPoint?.current ?? undefined,
         });
       }
       if (cause === "arrowLeft" || cause === "arrowRight") {
-        moveSelection(editor, {
+        Transforms.move(editor as any, {
           distance: 1,
           reverse: cause === "arrowLeft",
         });
@@ -176,8 +170,6 @@ const InlineCombobox = ({
   });
 
   const items = store.useState("items");
-
-  useEffect;
 
   /**
    * If there is no active ID and the list of items changes, select the first

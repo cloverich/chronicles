@@ -1,5 +1,5 @@
 import { cn, withRef } from "@udecode/cn";
-import { PlateElement, useElement } from "@udecode/plate-common";
+import { PlateElement, useElement } from "@udecode/plate/react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { BaseElement } from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
@@ -23,18 +23,16 @@ export const NoteLinkElement = withRef<typeof PlateElement>(
     }
 
     return (
-      <PlateElement ref={ref} asChild {...props}>
-        <>
-          <a
-            onClick={edit}
-            className={cn(
-              "cursor-pointer text-link underline decoration-1 underline-offset-1 hover:text-link-hover",
-              className,
-            )}
-          >
-            {children}
-          </a>
-        </>
+      <PlateElement ref={ref} {...props}>
+        <a
+          onClick={edit}
+          className={cn(
+            "cursor-pointer text-link underline decoration-1 underline-offset-1 hover:text-link-hover",
+            className,
+          )}
+        >
+          {children}
+        </a>
       </PlateElement>
     );
   },

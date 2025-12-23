@@ -1,23 +1,24 @@
 import { AutoformatRule } from "@udecode/plate-autoformat";
-import { ELEMENT_BLOCKQUOTE } from "@udecode/plate-block-quote";
+import { insertEmptyCodeBlock } from "@udecode/plate-code-block";
+
 import {
+  ELEMENT_BLOCKQUOTE,
   ELEMENT_CODE_BLOCK,
-  insertEmptyCodeBlock,
-} from "@udecode/plate-code-block";
-import { ELEMENT_DEFAULT } from "@udecode/plate-common";
-import { ELEMENT_H1, ELEMENT_H2, ELEMENT_H3 } from "@udecode/plate-heading";
-
-import { ELEMENT_LI, ELEMENT_OL, ELEMENT_UL } from "@udecode/plate-list";
-
-import { formatList, preFormat } from "./autoformatUtils";
-
-import {
+  ELEMENT_H1,
+  ELEMENT_H2,
+  ELEMENT_H3,
+  ELEMENT_LI,
+  ELEMENT_OL,
+  ELEMENT_PARAGRAPH,
+  ELEMENT_UL,
   MARK_BOLD,
   MARK_CODE,
   MARK_ITALIC,
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
-} from "@udecode/plate-basic-marks";
+} from "../../plate-types";
+
+import { formatList, preFormat } from "./autoformatUtils";
 
 // These rules are configuration for autoformat plugin, pulled from plate docs at
 // https://platejs.org/docs/autoformat#autoformatrules
@@ -70,19 +71,6 @@ export const autoformatRules: AutoformatRule[] = [
   },
   {
     mode: "block",
-    type: ELEMENT_CODE_BLOCK,
-    match: "```",
-    triggerAtBlockStart: false,
-    preFormat,
-    format: (editor) => {
-      insertEmptyCodeBlock(editor, {
-        defaultType: ELEMENT_DEFAULT,
-        insertNodesOptions: { select: true },
-      });
-    },
-  },
-  {
-    mode: "block",
     type: ELEMENT_LI,
     match: ["* ", "- "],
     preFormat,
@@ -94,6 +82,26 @@ export const autoformatRules: AutoformatRule[] = [
     match: ["1. ", "1) "],
     preFormat,
     format: (editor) => formatList(editor, ELEMENT_OL),
+  },
+  // Inline code: single backtick wrapping text like `code`
+  // Must be before code block rule so it's checked first
+  {
+    mode: "mark",
+    type: MARK_CODE,
+    match: "`",
+  },
+  // Code block: triple backticks followed by space at start of line
+  {
+    mode: "block",
+    type: ELEMENT_CODE_BLOCK,
+    match: "``` ",
+    preFormat,
+    format: (editor) => {
+      insertEmptyCodeBlock(editor as any, {
+        defaultType: ELEMENT_PARAGRAPH,
+        insertNodesOptions: { select: true },
+      });
+    },
   },
   {
     mode: "mark",
@@ -139,11 +147,6 @@ export const autoformatRules: AutoformatRule[] = [
     mode: "mark",
     type: MARK_STRIKETHROUGH,
     match: "~~",
-  },
-  {
-    mode: "mark",
-    type: MARK_CODE,
-    match: "`",
   },
   // I haven't set these up yet
   // {

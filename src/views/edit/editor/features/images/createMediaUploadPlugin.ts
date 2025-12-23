@@ -1,12 +1,7 @@
-import {
-  PlateEditor,
-  WithPlatePlugin,
-  createPluginFactory,
-  insertNode,
-} from "@udecode/plate-common";
+import { PlateEditor, createPlatePlugin } from "@udecode/plate/react";
 
-import { ELEMENT_IMAGE, ELEMENT_LINK } from "@udecode/plate";
 import { isImageUrl, isVideoUrl } from "../../../../../hooks/images";
+import { ELEMENT_IMAGE, ELEMENT_LINK } from "../../plate-types";
 import { ELEMENT_VIDEO } from "../../plugins/createVideoPlugin";
 
 // Ideally this is injected
@@ -19,73 +14,94 @@ const client = window.chronicles.getClient();
  *
  * Created to unify the image, video, and file handling plugins.
  */
-export const createMediaUploadPlugin = createPluginFactory({
+export const createMediaUploadPlugin = createPlatePlugin({
   key: "mediaUploadPlugin",
-  // https://docs.slatejs.org/concepts/02-nodes
-  isElement: false,
-
-  withOverrides: (editor: PlateEditor, _: WithPlatePlugin) => {
-    // store reference to original insertData function; so we can delegate
-    // if we do not handle the data ourselves
-    const insertData = editor.insertData;
-
-    // override insertData function to handle video files
-    editor.insertData = async (dataTransfer: DataTransfer) => {
+  node: {
+    isElement: false,
+  },
+}).overrideEditor(({ editor, tf: { insertData } }) => ({
+  transforms: {
+    insertData(dataTransfer: DataTransfer) {
       const text = dataTransfer.getData("text/plain");
       const { files } = dataTransfer;
-      let processed = 0;
-      let expected = 0;
 
-      // note: !text copied from createImagePlugin; I'm unsure if it's necessary.
+      console.log(
+        "[MediaUpload] insertData called, files:",
+        files?.length,
+        "text:",
+        !!text,
+      );
+
+      // If there are files and no text, handle file uploads
       if (!text && files && files.length > 0) {
-        expected = files.length;
+        console.log("[MediaUpload] Processing", files.length, "files");
 
-        for (const file of files) {
-          let handled = false;
-          [handled] = await handleImage(file, editor);
-          if (handled) {
-            processed++;
-            continue;
-          }
+        // Process files asynchronously
+        processFiles(Array.from(files), editor).then((handled) => {
+          console.log("[MediaUpload] Processed files, handled:", handled);
+          // If we didn't handle all files, we could delegate,
+          // but DataTransfer is consumed at this point
+        });
 
-          [handled] = await handleVideo(file, editor);
-          if (handled) {
-            processed++;
-            continue;
-          }
-
-          [handled] = await handleFile(file, editor);
-          if (handled) {
-            processed++;
-            continue;
-          }
-        }
-
-        // handled all files
-        if (expected === processed) return;
-      }
-
-      // If it's not a file, or unhandled, delegate to the next plugin.
-      if (processed > 0) {
-        // edge case: Unclear when we'd handle only some but not all. There's no easy way to modify or re-create
-        // dataTransfer objects to pass only a sub-set down; if we pass the full thing, the remaining plugins will
-        // (re)upload the ones already processed. If this happens in practice make note here.
-        console.warn(
-          "Handled",
-          processed,
-          "of",
-          expected,
-          "not delegating remainder",
-        );
+        // Return early - we're handling it (asynchronously)
         return;
       }
 
+      // Not files, delegate to the next plugin
+      console.log("[MediaUpload] Delegating to next insertData");
       insertData(dataTransfer);
-    };
-
-    return editor;
+    },
   },
-});
+}));
+
+/**
+ * Process an array of files, uploading and inserting each one.
+ */
+async function processFiles(
+  files: File[],
+  editor: PlateEditor,
+): Promise<number> {
+  let processed = 0;
+
+  for (const file of files) {
+    console.log(
+      "[MediaUpload] Processing file:",
+      file.name,
+      "type:",
+      file.type,
+    );
+
+    let handled = false;
+
+    // Try image first
+    [handled] = await handleImage(file, editor);
+    if (handled) {
+      console.log("[MediaUpload] Handled as image");
+      processed++;
+      continue;
+    }
+
+    // Try video
+    [handled] = await handleVideo(file, editor);
+    if (handled) {
+      console.log("[MediaUpload] Handled as video");
+      processed++;
+      continue;
+    }
+
+    // Try generic file
+    [handled] = await handleFile(file, editor);
+    if (handled) {
+      console.log("[MediaUpload] Handled as file");
+      processed++;
+      continue;
+    }
+
+    console.log("[MediaUpload] File not handled:", file.name);
+  }
+
+  return processed;
+}
 
 const handleVideo = async (
   file: File,
@@ -93,7 +109,18 @@ const handleVideo = async (
 ): Promise<[boolean, string?]> => {
   const [mime] = file.type.split("/");
   const extension = (file.name.split(".").pop() || "").toLowerCase();
-  if (mime !== "video") return [false];
+  console.log(
+    "[MediaUpload] handleVideo - file:",
+    file.name,
+    "mime:",
+    file.type,
+    "parsed mime:",
+    mime,
+  );
+  if (mime !== "video") {
+    console.log("[MediaUpload] handleVideo - not a video mime type");
+    return [false];
+  }
 
   // The slate-mdast parser / serializer relies on a whitelist of
   // extensions to parse and serialize the video element correctly.
@@ -102,11 +129,12 @@ const handleVideo = async (
     return [false];
   }
 
-  const json = await client.files.uploadFile(file);
-  const filepath = `chronicles://../_attachments/${json.filename}`;
+  // Read file as ArrayBuffer and upload (file.path is not available in Plate context)
+  const buffer = await file.arrayBuffer();
+  const filepath = await client.files.uploadFileBytes(buffer, file.name);
 
-  // todo: Find a way to tie this type to the video element -- see Plate's insertNode
-  insertNode(editor, {
+  // Use Plate's transform API instead of Slate's insertNode
+  editor.tf.insertNode({
     type: ELEMENT_VIDEO,
     url: filepath,
     children: [{ text: "" }],
@@ -125,13 +153,16 @@ const handleFile = async (
     return [false];
   }
 
-  const json = await client.files.uploadFile(file);
-  const filepath = `chronicles://../_attachments/${json.filename}`;
+  // Read file as ArrayBuffer and upload (file.path is not available in Plate context)
+  const buffer = await file.arrayBuffer();
+  const filepath = await client.files.uploadFileBytes(buffer, file.name);
 
-  insertNode(editor, {
+  // Extract filename from the filepath for display
+  const filename = filepath.split("/").pop() || file.name;
+  editor.tf.insertNode({
     type: ELEMENT_LINK,
     url: filepath,
-    children: [{ text: `File: ${json.filename}` }],
+    children: [{ text: `File: ${filename}` }],
   });
 
   return [true, filepath];
@@ -144,28 +175,11 @@ const handleImage = async (
   const [mime] = file.type.split("/");
   if (mime !== "image") return [false];
 
-  // NOTE: The older implementation would first load the image as base64; this is
-  // useful if we want to display a preview of the image before processing / upload
-  // but otherwise slower.
-  // const reader = new FileReader();
-  // reader.addEventListener("load", async () => {
-  //   if (!reader.result) {
-  //     return;
-  //   }
-
-  //   const uploadedUrl = uploadImage
-  //     ? await uploadImage(reader.result)
-  //     : reader.result;
-
-  //   insertImage(editor, uploadedUrl);
-  // });
-  // reader.readAsDataURL(file);
-
-  // Instead, upload the bytes directly:
+  // Upload the bytes directly:
   const buffer = await file.arrayBuffer();
   const filepath = await client.files.uploadImageBytes(buffer, file.name);
 
-  insertNode(editor, {
+  editor.tf.insertNode({
     type: ELEMENT_IMAGE,
     url: filepath,
     children: [{ text: "" }],

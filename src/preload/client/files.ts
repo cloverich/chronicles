@@ -88,6 +88,30 @@ export class FilesClient {
   };
 
   /**
+   * Upload a generic file (video, document, etc.) from an ArrayBuffer.
+   * Unlike uploadImageBytes, this does not process the file.
+   *
+   * @returns the chronicles prefixed filename
+   */
+  uploadFileBytes = async (
+    arrayBuffer: ArrayBuffer,
+    name = "upload.bin",
+  ): Promise<string> => {
+    const chronRoot = (await this.settings.get("notesDir")) as string;
+    const dir = path.join(chronRoot, "_attachments");
+    await this.ensureDir(dir);
+
+    const buffer = Buffer.from(arrayBuffer);
+    const ext = path.extname(name) || ".bin";
+    const filename = `${createId()}${ext}`;
+    const filepath = path.join(dir, filename);
+
+    await fs.promises.writeFile(filepath, buffer);
+
+    return `chronicles://../_attachments/${filename}`;
+  };
+
+  /**
    * The uploadImage option on plate's createImagesPlugin.
    * @param dataUrl - It receives a dataurl after users drag and drop an image onto the editor of
    *  the form: data:image/png;base64,iVBORw0KGg...

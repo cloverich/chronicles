@@ -2,7 +2,12 @@ import React from "react";
 
 import type { DropdownMenuProps } from "@radix-ui/react-dropdown-menu";
 
+import { TElement } from "@udecode/plate";
+import { useEditorRef, useEditorSelector } from "@udecode/plate/react";
+import { Editor, Element, Range, Transforms } from "slate";
+
 import {
+  ELEMENT_BLOCKQUOTE,
   ELEMENT_CODE_BLOCK,
   ELEMENT_H1,
   ELEMENT_H2,
@@ -10,19 +15,7 @@ import {
   ELEMENT_OL,
   ELEMENT_PARAGRAPH,
   ELEMENT_UL,
-} from "@udecode/plate";
-import { ELEMENT_BLOCKQUOTE } from "@udecode/plate-block-quote";
-import {
-  collapseSelection,
-  findNode,
-  focusEditor,
-  isBlock,
-  isCollapsed,
-  toggleNodeType,
-  useEditorRef,
-  useEditorSelector,
-  type TElement,
-} from "@udecode/plate-common";
+} from "../../plate-types";
 
 import {
   DropdownMenu,
@@ -97,14 +90,19 @@ const defaultItem = items.find((item) => item.value === ELEMENT_PARAGRAPH)!;
  */
 export default function ChangeBlockDropdown(props: DropdownMenuProps) {
   const value: string = useEditorSelector((editor) => {
-    if (isCollapsed(editor.selection)) {
-      const entry = findNode<TElement>(editor, {
-        match: (n) => isBlock(editor, n),
-      });
+    const { selection } = editor;
+    if (selection && Range.isCollapsed(selection)) {
+      const [entry] = Array.from(
+        Editor.nodes(editor as any, {
+          match: (n) =>
+            Element.isElement(n) && Editor.isBlock(editor as any, n),
+        }),
+      );
 
       if (entry) {
+        const [node] = entry;
         return (
-          items.find((item) => item.value === entry[0].type)?.value ??
+          items.find((item) => item.value === (node as TElement).type)?.value ??
           ELEMENT_PARAGRAPH
         );
       }
@@ -140,21 +138,23 @@ export default function ChangeBlockDropdown(props: DropdownMenuProps) {
         <DropdownMenuRadioGroup
           className="flex flex-col gap-0.5"
           onValueChange={(type) => {
-            // if (type === 'ul' || type === 'ol') {
-            //   if (settingsStore.get.checkedId(KEY_LIST_STYLE_TYPE)) {
-            //     toggleIndentList(editor, {
-            //       listStyleType: type === 'ul' ? 'disc' : 'decimal',
-            //     });
-            //   } else if (settingsStore.get.checkedId('list')) {
-            //     toggleList(editor, { type });
-            //   }
-            // } else {
-            //   unwrapList(editor);
-            toggleNodeType(editor, { activeType: type });
-            // }
+            // Toggle the node type
+            Transforms.setNodes(editor as any, { type } as any, {
+              match: (n: any) =>
+                Element.isElement(n) && Editor.isBlock(editor as any, n),
+            });
 
-            collapseSelection(editor);
-            focusEditor(editor);
+            // Collapse selection and focus
+            if (editor.selection) {
+              Transforms.collapse(editor as any, { edge: "end" });
+            }
+            // Focus using ReactEditor if available, otherwise try native focus
+            try {
+              const { ReactEditor } = require("slate-react");
+              ReactEditor.focus(editor);
+            } catch {
+              // Fallback - editor may already be focused
+            }
           }}
           value={value}
         >

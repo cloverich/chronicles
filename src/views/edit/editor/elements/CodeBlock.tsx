@@ -1,23 +1,15 @@
 import React from "react";
 
 import { cn, withRef } from "@udecode/cn";
-import { useCodeBlockElementState } from "@udecode/plate-code-block";
-import {
-  PlateElement,
-  findNodePath,
-  useEditorRef,
-} from "@udecode/plate-common";
-
-import { CODE_BLOCK_LANGUAGES } from "@udecode/plate-code-block";
+import { PlateElement, useEditorRef } from "@udecode/plate/react";
 import { Transforms } from "slate";
+import { ReactEditor } from "slate-react";
+
+import { CODE_BLOCK_LANGUAGES } from "../plate-types";
 
 const knownLangOptions: { label: string; value: string }[] = [
   { label: "Plain Text", value: "text" },
-  ...Object.entries({
-    // doesn't include python? But does SVG and GraphQL? WTF?
-    // ...CODE_BLOCK_LANGUAGES_POPULAR,
-    ...CODE_BLOCK_LANGUAGES,
-  }).map(([key, val]) => ({
+  ...Object.entries(CODE_BLOCK_LANGUAGES).map(([key, val]) => ({
     label: val as string,
     value: key,
   })),
@@ -29,14 +21,14 @@ function defaultLang(lang: string | null) {
   if (lang === "js") return "javascript";
   if (lang === "ts") return "typescript";
 
-  // NOTE: If lang is a language not found in Prism / the menus above, it will default to "Plain text"
+  // NOTE: If lang is a language not found in the menus above, it will default to "Plain text"
   // in the dropdown.
   return lang;
 }
 
 // On first render, if the language is not in the known options, add it to the list.
 // This is to support unknown languages that are in the underlying markdown, but not known
-// to Prism / language list above; syntax highlighting will not work.
+// to the language list above; syntax highlighting will not work.
 function amendLanguageOptions(lang: string) {
   if (!knownLangOptions.find((l) => l.value === lang)) {
     return [{ label: lang, value: lang }, ...knownLangOptions];
@@ -46,35 +38,25 @@ function amendLanguageOptions(lang: string) {
 }
 
 // className -> slate-code_block
-// state -> { className: '', syntax: true }
 // props -> attributes, editor, element
-// The Typescript types for ...props are wrong? They say slot, style, onChange, ...266 more
-// Instead I see: attributes: data-slate-node: element
-// element: lang (null), meta (null), type (code_block), children (node content)
 export const CodeBlockElement = withRef<typeof PlateElement>(
   ({ children, className, ...props }, ref) => {
     const { element } = props;
     const editor = useEditorRef();
     const [lang, setLang] = React.useState(defaultLang(element.lang as string));
 
-    // When the language changes, update S|Plate nodes.
+    // When the language changes, update Slate/Plate nodes.
     React.useEffect(() => {
       if (element.lang !== lang) {
-        const path = findNodePath(editor, element);
+        const path = ReactEditor.findPath(editor as any, element);
         if (!path) return;
         Transforms.setNodes(editor as any, { lang } as any, { at: path });
       }
     }, [lang]);
 
-    const state = useCodeBlockElementState({ element });
-
     return (
       <PlateElement
-        className={cn(
-          "max-w-code relative my-8 bg-muted",
-          state.className,
-          className,
-        )}
+        className={cn("max-w-code relative my-8 bg-muted", className)}
         ref={ref}
         {...props}
       >

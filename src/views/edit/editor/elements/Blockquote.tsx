@@ -1,5 +1,5 @@
 import { cn, withRef } from "@udecode/cn";
-import { PlateElement } from "@udecode/plate-common";
+import { PlateElement } from "@udecode/plate/react";
 import React from "react";
 
 export const BlockquoteElement = withRef<typeof PlateElement>(
@@ -7,7 +7,6 @@ export const BlockquoteElement = withRef<typeof PlateElement>(
     return (
       <PlateElement
         ref={ref}
-        asChild
         className={cn(
           "my-6 max-w-prose border-l-4 pl-6 italic text-muted-foreground",
           className,

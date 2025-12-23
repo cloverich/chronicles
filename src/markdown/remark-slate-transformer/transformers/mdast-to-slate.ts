@@ -17,7 +17,7 @@ import {
   ELEMENT_LINK,
   ELEMENT_OL,
   ELEMENT_UL,
-} from "@udecode/plate"; // todo: sub-package which has only elements?
+} from "../../../views/edit/editor/plate-types";
 
 import {
   createImageGalleryElement,

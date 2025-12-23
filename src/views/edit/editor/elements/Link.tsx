@@ -1,17 +1,22 @@
 import { cn, withRef } from "@udecode/cn";
-import { PlateElement, useElement } from "@udecode/plate-common";
-import { TLinkElement, useLink } from "@udecode/plate-link";
+import { TElement } from "@udecode/plate";
+import { useLink } from "@udecode/plate-link/react";
+import { PlateElement, useElement } from "@udecode/plate/react";
 import React from "react";
+
+interface LinkElement extends TElement {
+  url: string;
+}
 
 export const LinkElement = withRef<typeof PlateElement>(
   ({ className, children, ...props }, ref) => {
-    const element = useElement<TLinkElement>();
+    const element = useElement<LinkElement>();
     const { props: linkProps } = useLink({ element });
 
     return (
       <PlateElement
         ref={ref}
-        asChild
+        as="a"
         className={cn(
           "cursor-pointer text-link underline decoration-1 underline-offset-1 hover:text-link-hover",
           className,
@@ -19,7 +24,7 @@ export const LinkElement = withRef<typeof PlateElement>(
         {...(linkProps as any)}
         {...props}
       >
-        <a>{children}</a>
+        {children}
       </PlateElement>
     );
   },

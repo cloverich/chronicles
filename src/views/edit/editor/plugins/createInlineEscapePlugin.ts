@@ -1,15 +1,5 @@
-import { createPluginFactory } from "@udecode/plate-core";
-
-// These are all effectively overrides of Slate Editor.blah methods, sometimes re-named,
-// usually handling Plate types and doing inline null checking
-import {
-  getAboveNode,
-  getPointAfter,
-  isEndPoint,
-  isInline,
-  setSelection,
-} from "@udecode/plate-common";
-import { Range } from "slate";
+import { createPlatePlugin } from "@udecode/plate/react";
+import { Editor, Range } from "slate";
 
 const KEY_INLINE_ESCAPE = "inline-escape";
 
@@ -27,42 +17,43 @@ const KEY_INLINE_ESCAPE = "inline-escape";
  * Advanced example: https://github.com/ianstormtaylor/slate/pull/4615
  * (Active issue) strongly related to ^: https://github.com/ianstormtaylor/slate/issues/4704
  */
-export const createInlineEscapePlugin = createPluginFactory({
+export const createInlineEscapePlugin = createPlatePlugin({
   key: KEY_INLINE_ESCAPE,
-  isVoid: true,
-  withOverrides: (editor) => {
-    const { insertText } = editor;
+  node: {
+    isVoid: true,
+  },
+}).overrideEditor(({ editor }) => {
+  const originalInsertText = editor.insertText;
 
-    editor.insertText = (text) => {
-      const { selection } = editor;
+  editor.insertText = (text: string) => {
+    const { selection } = editor;
 
-      if (selection) {
-        const { anchor } = selection;
+    if (selection) {
+      const { anchor } = selection;
 
-        // Check if the selection is collapsed and at the end of an inline
-        if (Range.isCollapsed(selection)) {
-          const inline = getAboveNode(editor, {
-            match: (n) => isInline(editor, n),
-          });
+      // Check if the selection is collapsed and at the end of an inline
+      if (Range.isCollapsed(selection)) {
+        const inline = Editor.above(editor as any, {
+          match: (n: any) => Editor.isInline(editor as any, n),
+        });
 
-          if (inline) {
-            const [, inlinePath] = inline;
+        if (inline) {
+          const [, inlinePath] = inline;
 
-            // If the cursor is at the end of the inline, move it outside
-            if (isEndPoint(editor, anchor, inlinePath)) {
-              const point = getPointAfter(editor, inlinePath);
-              if (point) {
-                setSelection(editor, { anchor: point, focus: point });
-              }
+          // If the cursor is at the end of the inline, move it outside
+          if (Editor.isEnd(editor as any, anchor, inlinePath)) {
+            const point = Editor.after(editor as any, inlinePath);
+            if (point) {
+              editor.selection = { anchor: point, focus: point };
             }
           }
         }
       }
+    }
 
-      // Call the original insertText method
-      insertText(text);
-    };
+    // Call the original insertText method
+    (originalInsertText as any)(text);
+  };
 
-    return editor;
-  },
+  return editor;
 });

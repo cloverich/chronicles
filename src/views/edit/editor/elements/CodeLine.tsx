@@ -1,7 +1,7 @@
 import React from "react";
 
 import { withRef } from "@udecode/cn";
-import { PlateElement } from "@udecode/plate-common";
+import { PlateElement } from "@udecode/plate/react";
 
 /**
  * See: CodeBlockElement, CodeLeafElement, and the mdast / slate transformations for code.
