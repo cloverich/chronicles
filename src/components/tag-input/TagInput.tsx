@@ -257,7 +257,7 @@ export default TagInput;
 
 const tagVariants = cva(
   cn(
-    "mr-2 flex flex-shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border px-1 py-0.5 text-xs ",
+    "mr-1 flex flex-shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border px-1.5 py-1 text-xs hover:opacity-80 transition-opacity",
   ),
   {
     variants: {

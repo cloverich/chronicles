@@ -1,14 +1,14 @@
 import React from "react";
 
 import { ClickableTag as Tag } from "../../../components/tag-input/TagInput";
-import { useTags } from "../../../hooks/useTags";
+import { useTagsWithCounts } from "../../../hooks/useTags";
 import { Card } from "./Card";
 
 /**
  * List of tags to search by.
  */
 export function TagsList(props: { search: (tag: string) => boolean }) {
-  const { loading, error, tags } = useTags();
+  const { loading, error, tags } = useTagsWithCounts();
 
   if (loading) {
     return "loading...";
@@ -24,11 +24,12 @@ export function TagsList(props: { search: (tag: string) => boolean }) {
       <div className="text-md mb-2 flex cursor-pointer items-center font-medium tracking-tight">
         Tags
       </div>
-      <div className="flex flex-wrap">
+      <div className="flex flex-wrap gap-2">
         {tags.map((t) => {
           return (
-            <Tag className="mb-1 mr-1" key={t} onClick={() => props.search(t)}>
-              #{t}
+            <Tag key={t.tag} onClick={() => props.search(t.tag)}>
+              <span>{t.tag}</span>
+              <span className="ml-0.5 text-xs opacity-60">({t.count})</span>
             </Tag>
           );
         })}
