@@ -1,7 +1,7 @@
 import React from "react";
 
 import { cn, withRef, withVariants } from "@udecode/cn";
-import { PlateElement } from "@udecode/plate-common";
+import { PlateElement } from "@udecode/plate/react";
 import { cva } from "class-variance-authority";
 
 const listVariants = cva(
@@ -33,7 +33,7 @@ export const ListElement = withRef<typeof ListElementVariants>(
     const Component = variant!;
 
     return (
-      <ListElementVariants asChild ref={ref} variant={variant} {...props}>
+      <ListElementVariants ref={ref} variant={variant} {...props}>
         <Component>{children}</Component>
       </ListElementVariants>
     );

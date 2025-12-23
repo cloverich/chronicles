@@ -1,50 +1,47 @@
-import { ELEMENT_CODE_BLOCK } from "@udecode/plate";
-import { createPluginFactory, PlateEditor } from "@udecode/plate-common";
-import { Editor, Transforms } from "slate";
+import { createPlatePlugin, PlateEditor } from "@udecode/plate/react";
+import { Transforms } from "slate";
 import { dedent } from "../../../../dedent.js";
+import { ELEMENT_CODE_BLOCK } from "../plate-types";
 
 const isInCodeBlock = (editor: PlateEditor) => {
-  return Editor.above(editor as Editor, {
-    match: (n: any) => n.type === ELEMENT_CODE_BLOCK,
-  });
+  const [match] = Array.from(
+    (editor as any).nodes({
+      match: (n: any) => n.type === ELEMENT_CODE_BLOCK,
+    }),
+  );
+  return !!match;
 };
 
 /**
  * This plugin handles pasted code to ensure it is pasted as a single block and indentation
  * is normalized.
  */
-export const createCodeBlockNormalizationPlugin = createPluginFactory({
+export const createCodeBlockNormalizationPlugin = createPlatePlugin({
   key: "createCodeBlockNormalizationPlugin",
-  withOverrides: (editor) => {
-    // todo: types -- Various methods below do `editor as Editor` because editor here is PlateEditor.
-    // Unsure what the right way to cast this is -- Grepped a few examples from Plate's codebase
-    // and they do `Editor as any` which seems wrong.
-    // Also, `node as any` -- Slate's methods aren't expecting `type` on Node but its foundational
-    // to custom elements.
-    const { insertData } = editor;
+}).overrideEditor(({ editor }) => {
+  const originalInsertData = editor.insertData;
 
-    editor.insertData = (data: DataTransfer) => {
-      let text = data.getData("text/plain");
+  editor.insertData = (data: DataTransfer) => {
+    let text = data.getData("text/plain");
 
-      // Bail if we aren't pasting text into a code block.
-      if (!text || !isInCodeBlock(editor)) {
-        insertData(data);
-        return;
-      }
+    // Bail if we aren't pasting text into a code block.
+    if (!text || !isInCodeBlock(editor)) {
+      (originalInsertData as any)(data);
+      return;
+    }
 
-      const { selection } = editor;
-      if (!selection) return;
+    const { selection } = editor;
+    if (!selection) return;
 
-      // strip base indentation: common when pasting from an editor
-      // note this maintains relative indentation, just not the overall
-      // indentation of the block (e.g. copying from a very nested function)
-      text = dedent(text.trim());
+    // strip base indentation: common when pasting from an editor
+    // note this maintains relative indentation, just not the overall
+    // indentation of the block (e.g. copying from a very nested function)
+    text = dedent(text.trim());
 
-      Transforms.insertText(editor as Editor, text, {
-        at: selection,
-      });
-    };
+    Transforms.insertText(editor as any, text, {
+      at: selection,
+    });
+  };
 
-    return editor;
-  },
+  return editor;
 });

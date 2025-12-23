@@ -1,5 +1,5 @@
 import { withCn } from "@udecode/cn";
-import { PlateElement } from "@udecode/plate-common";
+import { PlateElement } from "@udecode/plate/react";
 
 export const ParagraphElement = withCn(
   PlateElement,

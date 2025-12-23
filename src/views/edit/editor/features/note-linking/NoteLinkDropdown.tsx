@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 
 import { cn, withRef } from "@udecode/cn";
-import { PlateEditor, PlateElement } from "@udecode/plate-common";
+import { PlateEditor, PlateElement } from "@udecode/plate/react";
+import { Editor, Transforms } from "slate";
 
+import { SearchItem, SearchStore } from "../../../../documents/SearchStore";
 import {
   InlineCombobox,
   InlineComboboxContent,
@@ -10,20 +12,8 @@ import {
   InlineComboboxInput,
   InlineComboboxItem,
 } from "../../components/InlineCombobox";
-import { NOTE_LINK } from "./createNoteLinkDropdownPlugin";
 import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
-
-import { MentionPlugin } from "@udecode/plate";
-
-import {
-  getBlockAbove,
-  getPlugin,
-  insertNodes,
-  insertText,
-  isEndPoint,
-  moveSelection,
-} from "@udecode/plate-common";
-import { SearchItem, SearchStore } from "../../../../documents/SearchStore";
+import { NOTE_LINK } from "./createNoteLinkDropdownPlugin";
 
 type Option = Pick<INoteLinkElement, "noteId" | "title" | "journalName">;
 
@@ -31,37 +21,38 @@ type Option = Pick<INoteLinkElement, "noteId" | "title" | "journalName">;
  * When selecting an item, insert a "note link" to the selected note.
  */
 const onSelect = (editor: PlateEditor, item: Option) => {
-  // Get the parent createNoteRefPlugin
-  const {
-    options: { insertSpaceAfterMention },
-    type,
-  } = getPlugin<MentionPlugin>(editor as any, NOTE_LINK);
-
-  // Inlined (and de-paramaterized) from createMentionNode
+  // Build the note link element
   const props = {
     title: item.title,
     noteId: item.noteId,
     journalName: item.journalName,
   };
 
-  insertNodes<INoteLinkElement>(editor, {
-    children: [{ text: item.title }],
-    type: ELEMENT_NOTE_LINK,
-    ...props,
-  } as INoteLinkElement);
+  Transforms.insertNodes(
+    editor as any,
+    {
+      children: [{ text: item.title }],
+      type: ELEMENT_NOTE_LINK,
+      ...props,
+    } as INoteLinkElement,
+  );
 
-  // move the selection after the element
-  moveSelection(editor, { unit: "offset" });
+  // Move the selection after the element
+  Transforms.move(editor as any, { unit: "offset" });
 
-  const pathAbove = getBlockAbove(editor)?.[1];
+  // Insert space after mention if at end of block
+  const blockEntry = Editor.above(editor as any, {
+    match: (n: any) => Editor.isBlock(editor as any, n),
+  });
+  const pathAbove = blockEntry?.[1];
 
   const isBlockEnd =
     editor.selection &&
     pathAbove &&
-    isEndPoint(editor, editor.selection.anchor, pathAbove);
+    Editor.isEnd(editor as any, editor.selection.anchor, pathAbove);
 
-  if (isBlockEnd && insertSpaceAfterMention) {
-    insertText(editor, " ");
+  if (isBlockEnd) {
+    Transforms.insertText(editor as any, " ");
   }
 };
 
@@ -82,10 +73,10 @@ function toOptions(
  */
 export const NoteLinkDropdownElement = withRef<typeof PlateElement>(
   ({ className, ...props }, ref) => {
-    const { children, editor, element, store } = props as typeof props & {
-      // todo: Use a dedicated store, or a (type) sub-set of the SearchStore
-      store: SearchStore;
-    };
+    const { children, editor, element } = props;
+
+    // Get the store from plugin options
+    const store = editor.getOptions({ key: NOTE_LINK }).store as SearchStore;
 
     const [search, setSearch] = useState("");
 

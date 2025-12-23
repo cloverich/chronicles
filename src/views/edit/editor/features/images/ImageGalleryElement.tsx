@@ -1,5 +1,6 @@
 import { withRef } from "@udecode/cn";
-import { PlateElement, TElement, useElement } from "@udecode/plate-common";
+import { TElement } from "@udecode/plate";
+import { PlateElement, useElement } from "@udecode/plate/react";
 import React from "react";
 
 import { Button } from "../../../../../components/Button";
@@ -31,11 +32,9 @@ export const ImageGalleryElement = withRef<typeof PlateElement>(
     const images = element.images || [];
 
     return (
-      <PlateElement ref={ref} asChild {...props}>
-        <>
-          <ImageGalleryLightbox images={images} />
-          {children}
-        </>
+      <PlateElement ref={ref} {...props}>
+        <ImageGalleryLightbox images={images} />
+        {children}
       </PlateElement>
     );
   },

@@ -14,7 +14,7 @@ import {
   ELEMENT_LIC,
   ELEMENT_OL,
   ELEMENT_UL,
-} from "@udecode/plate";
+} from "../../../views/edit/editor/plate-types";
 
 import {
   createImagesFromImageGallery,
@@ -57,13 +57,6 @@ type TextOrDecoration =
 
 export function slateToMdast(nodes: SlateCustom.SlateNode[]): mdast.Root {
   const converted = convertNodes(nodes);
-  // Slate / Plate sometimes set top-level text nodes as just { text: "foo ..."}
-  // without a type. Patch here so mdast doesn't throw an error. Consider fixing
-  // in the Slate/Plate UI layer.
-
-  nodes.forEach((node) => {
-    node.type = node.type || "paragraph";
-  });
 
   return {
     type: "root",

@@ -1,12 +1,14 @@
-import { createPluginFactory } from "@udecode/plate-common";
+import { createPlatePlugin } from "@udecode/plate/react";
 
 const ELEMENT_FILE = "file";
 
 /**
  * Supports the file element; uploading moved to createMediaPlugin
  */
-export const createFilesPlugin = createPluginFactory({
+export const createFilesPlugin = createPlatePlugin({
   key: ELEMENT_FILE,
-  isLeaf: true,
-  isVoid: true,
+  node: {
+    isLeaf: true,
+    isVoid: true,
+  },
 });

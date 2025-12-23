@@ -1,14 +1,15 @@
+import React from "react";
+// import { KEY_LIST_STYLE_TYPE, ListStyleType } from "@udecode/plate-indent-list";
+// import { ELEMENT_OL, ELEMENT_UL } from "@udecode/plate-list";
+// import { ELEMENT_IMAGE } from "@udecode/plate-media";
+
 import {
   MARK_BOLD,
   MARK_CODE,
   MARK_ITALIC,
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
-} from "@udecode/plate-basic-marks";
-import React from "react";
-// import { KEY_LIST_STYLE_TYPE, ListStyleType } from "@udecode/plate-indent-list";
-// import { ELEMENT_OL, ELEMENT_UL } from "@udecode/plate-list";
-// import { ELEMENT_IMAGE } from "@udecode/plate-media";
+} from "../plate-types";
 
 import { Toolbar, ToolbarGroup } from "../components/Toolbar";
 import { LinkToolbarButton } from "./components/LinkToolbarButton";

@@ -1,16 +1,12 @@
-import {
-  isSelectionExpanded,
-  useEditorSelector,
-  useElement,
-  useRemoveNodeButton,
-} from "@udecode/plate-common";
-import React, { useEffect } from "react";
+import { useRemoveNodeButton } from "@udecode/plate-utils/react";
+import { useEditorSelector, useElement } from "@udecode/plate/react";
+import React from "react";
+import { Range } from "slate";
 
 import {
-  floatingMediaActions,
   FloatingMedia as FloatingMediaPrimitive,
-  useFloatingMediaSelectors,
-} from "@udecode/plate-media";
+  useFloatingMediaValue,
+} from "@udecode/plate-media/react";
 import { useReadOnly, useSelected } from "slate-react";
 
 import { Icons } from "../../../../components/icons";
@@ -38,19 +34,12 @@ export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
   const readOnly = useReadOnly();
   const selected = useSelected();
 
-  const selectionCollapsed = useEditorSelector(
-    (editor) => !isSelectionExpanded(editor),
-    [],
-  );
+  const selectionCollapsed = useEditorSelector((editor) => {
+    const { selection } = editor;
+    return selection ? Range.isCollapsed(selection) : false;
+  }, []);
   const isOpen = !readOnly && selected && selectionCollapsed;
-  const isEditing = useFloatingMediaSelectors().isEditing();
-
-  useEffect(() => {
-    if (!isOpen && isEditing) {
-      floatingMediaActions.isEditing(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  const isEditing = useFloatingMediaValue("isEditing");
 
   const element = useElement();
   const { props: buttonProps } = useRemoveNodeButton({ element });
@@ -76,7 +65,7 @@ export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
                 className={inputVariants({ variant: "ghost", h: "sm" })}
                 placeholder="Paste the embed link..."
                 options={{
-                  pluginKey,
+                  plugin: { key: pluginKey || "image" },
                 }}
               />
             </div>

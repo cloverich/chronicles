@@ -1,4 +1,4 @@
-import { PlateContent } from "@udecode/plate-common";
+import { PlateContent } from "@udecode/plate/react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useFocusEditor } from "..";

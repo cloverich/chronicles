@@ -1,25 +1,53 @@
 import { withProps } from "@udecode/cn";
 import {
+  ParagraphPlugin,
   Plate,
   PlateElement,
   PlateLeaf,
-  RenderAfterEditable,
-  createHistoryPlugin,
-  createPlugins,
-  createReactPlugin,
-  isBlockAboveEmpty,
-  isSelectionAtBlockStart,
-} from "@udecode/plate-common";
+  usePlateEditor,
+} from "@udecode/plate/react";
+
+// Feature plugins
+import { AutoformatPlugin } from "@udecode/plate-autoformat/react";
+import {
+  BoldPlugin,
+  CodePlugin,
+  ItalicPlugin,
+  StrikethroughPlugin,
+  SubscriptPlugin,
+  SuperscriptPlugin,
+  UnderlinePlugin,
+} from "@udecode/plate-basic-marks/react";
+import { BlockquotePlugin } from "@udecode/plate-block-quote/react";
+import { ExitBreakPlugin, SoftBreakPlugin } from "@udecode/plate-break/react";
+import {
+  isCodeBlockEmpty,
+  isSelectionAtCodeBlockStart,
+  unwrapCodeBlock,
+} from "@udecode/plate-code-block";
+import {
+  CodeBlockPlugin,
+  CodeLinePlugin,
+  CodeSyntaxPlugin,
+} from "@udecode/plate-code-block/react";
+import { HEADING_KEYS } from "@udecode/plate-heading";
+import { HeadingPlugin } from "@udecode/plate-heading/react";
+import { IndentListPlugin } from "@udecode/plate-indent-list/react";
+import { IndentPlugin } from "@udecode/plate-indent/react";
+import { LinkPlugin } from "@udecode/plate-link/react";
+import { ListPlugin } from "@udecode/plate-list/react";
+import { ImagePlugin } from "@udecode/plate-media/react";
+import { ResetNodePlugin } from "@udecode/plate-reset-node/react";
+import { SelectOnBackspacePlugin } from "@udecode/plate-select";
+import { TrailingBlockPlugin } from "@udecode/plate-trailing-block";
+
 import { observer } from "mobx-react-lite";
 import React from "react";
-// import { Node as SNode } from "slate";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 
 import {
   ELEMENT_BLOCKQUOTE,
   ELEMENT_CODE_BLOCK,
-  ELEMENT_CODE_LINE, // inside code_block, not inline code (that's mark_code)
-  ELEMENT_CODE_SYNTAX,
   ELEMENT_H1,
   ELEMENT_H2,
   ELEMENT_H3,
@@ -28,15 +56,12 @@ import {
   ELEMENT_H6,
   ELEMENT_IMAGE,
   ELEMENT_LI,
-  ELEMENT_LINK,
   ELEMENT_MEDIA_EMBED,
   ELEMENT_OL,
   ELEMENT_PARAGRAPH,
   ELEMENT_TD,
   ELEMENT_TODO_LI,
   ELEMENT_UL,
-  // elements
-  KEYS_HEADING,
   MARK_BOLD,
   MARK_CODE,
   MARK_ITALIC,
@@ -44,32 +69,7 @@ import {
   MARK_SUBSCRIPT,
   MARK_SUPERSCRIPT,
   MARK_UNDERLINE,
-  // @udecode/plate-autoformat
-  createAutoformatPlugin,
-  createBasicElementsPlugin,
-  createBasicMarksPlugin,
-  createExitBreakPlugin,
-  createFilePlugin,
-  createImagePlugin,
-  createIndentListPlugin,
-  createIndentPlugin,
-  // links
-  createLinkPlugin,
-  createListPlugin,
-  // images
-  // https://platejs.org/docs/media
-  createSelectOnBackspacePlugin,
-  createSoftBreakPlugin,
-  // createTogglePlugin
-  // So document always has a trailing paragraph, ensures you
-  // can always type after the last non-paragraph block.
-  createTrailingBlockPlugin,
-  createVideoPlugin,
-  isCodeBlockEmpty,
-  isSelectionAtCodeBlockStart,
-  // imported for resetNodePlugin
-  unwrapCodeBlock,
-} from "@udecode/plate";
+} from "./editor/plate-types";
 
 import {
   BlockquoteElement,
@@ -97,7 +97,6 @@ import {
 import { autoformatRules } from "./editor/plugins/autoformat/autoformatRules";
 import { createCodeBlockNormalizationPlugin } from "./editor/plugins/createCodeBlockNormalizationPlugin";
 import { createInlineEscapePlugin } from "./editor/plugins/createInlineEscapePlugin";
-import { createResetNodePlugin } from "./editor/plugins/createResetNodePlugin";
 
 import { ELEMENT_VIDEO } from "./editor/plugins/createVideoPlugin";
 
@@ -112,6 +111,52 @@ import {
 } from "./editor/features/images/ImageGalleryElement";
 import { createMediaUploadPlugin } from "./editor/features/images/createMediaUploadPlugin";
 import { createNormalizeImagesPlugin } from "./editor/features/images/createNormalizeImagesPlugin";
+import { createFilesPlugin } from "./editor/plugins/createFilesPlugin";
+import { createVideoPlugin } from "./editor/plugins/createVideoPlugin";
+
+// Simple predicates for reset node plugin
+const isBlockAboveEmpty = (editor: any): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+
+  const [entry] = Array.from(
+    editor.nodes({
+      match: (n: any) => editor.isBlock(n),
+    }),
+  ) as any[];
+
+  if (!entry) return false;
+  const [node] = entry;
+
+  // Check if the block has only one empty text child
+  if (node.children?.length === 1) {
+    const child = node.children[0];
+    if (child.text !== undefined && child.text === "") {
+      return true;
+    }
+  }
+  return false;
+};
+
+const isSelectionAtBlockStart = (editor: any): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+
+  const { Range, Point } = require("slate");
+  if (!Range.isCollapsed(selection)) return false;
+
+  const [entry] = Array.from(
+    editor.nodes({
+      match: (n: any) => editor.isBlock(n),
+    }),
+  ) as any[];
+
+  if (!entry) return false;
+  const [, path] = entry;
+
+  const start = editor.start(path);
+  return Point.equals(selection.anchor, start);
+};
 
 export interface Props {
   saving: boolean;
@@ -126,56 +171,71 @@ export default observer(
     const indexerStore = useIndexerStore();
     const store = new SearchStore(client, jstore!, () => {}, [], indexerStore);
 
-    const plugins = createPlugins(
-      [
-        createCodeBlockNormalizationPlugin(),
+    const editor = usePlateEditor({
+      plugins: [
+        // Custom normalization for code blocks
+        createCodeBlockNormalizationPlugin,
 
-        // editor
-        createReactPlugin(), // withReact
-        createHistoryPlugin(), // withHistory
-
-        // Paragraph, blockquote, code block, heading, etcj
+        // Paragraph, blockquote, code block, heading, etc
         // https://platejs.org/docs/basic-elements
-        createBasicElementsPlugin(),
+        BlockquotePlugin.withComponent(BlockquoteElement),
+        CodeBlockPlugin.withComponent(CodeBlockElement),
+        CodeLinePlugin.withComponent(CodeLineElement),
+        CodeSyntaxPlugin.withComponent(CodeSyntaxLeaf),
+        HeadingPlugin.configure({
+          options: {
+            levels: 6,
+          },
+        }),
+        ParagraphPlugin.withComponent(ParagraphElement),
 
-        // marks: bold, iatlic, underline, etc
-        createBasicMarksPlugin(),
+        // marks: bold, italic, underline, etc
+        BoldPlugin,
+        ItalicPlugin,
+        UnderlinePlugin,
+        StrikethroughPlugin,
+        SubscriptPlugin,
+        SuperscriptPlugin,
+        // Inline code mark - mod+e (cmd+e on macOS)
+        CodePlugin.configure({
+          shortcuts: {
+            toggle: { keys: "mod+e" },
+          },
+        }),
 
-        createLinkPlugin({
-          // Without the toolbar, links cannot be easily edited
-          renderAfterEditable: LinkFloatingToolbar as RenderAfterEditable,
+        // Links
+        LinkPlugin.configure({
+          render: {
+            afterEditable: () => <LinkFloatingToolbar />,
+          },
           options: {
             allowedSchemes: ["http", "https", "mailto", "chronicles"],
           },
-        }),
+        }).withComponent(LinkElement),
 
-        createListPlugin(),
+        // Lists
+        ListPlugin,
 
-        // The new createMediaUploadPlugin supercedes this one; leave for
-        // deserialization and embed handling? Or integrate into media plugin...
-        // NOTE: The image, file, video plugins are needed to tell Plate to use the
-        // corresponding element. The upload / insert behavior is defined in
-        // createMediaUploadPlugin()
-        createImagePlugin({
+        // Media plugins
+        ImagePlugin.configure({
           options: {
-            uploadImage: client.files.uploadImage,
+            uploadImage: client.files.uploadImage as any,
           },
+        }).withComponent(ImageElement),
+        createVideoPlugin.withComponent(VideoElement),
+        createFilesPlugin,
+        createNormalizeImagesPlugin,
+        createMediaUploadPlugin,
+
+        // Note linking
+        createNoteLinkDropdownPlugin.configure({
+          options: { store },
         }),
-        createVideoPlugin(),
-        createFilePlugin(),
-        createNormalizeImagesPlugin(),
-        createMediaUploadPlugin(),
+        createNoteLinkElementPlugin,
+        createImageGalleryPlugin,
 
-        // Plate's media handler turns youtube links, twitter links, etc, into embeds.
-        // I'm unsure how to trigger the logic, probably via toolbar or shortcut.
-        // createMediaEmbedPlugin(),
-
-        createNoteLinkDropdownPlugin({ options: { store } } as any),
-        createNoteLinkElementPlugin(),
-        createImageGalleryPlugin(),
-
-        // Backspacing into an element selects the block before deleting it.
-        createSelectOnBackspacePlugin({
+        // Backspacing into an element selects the block before deleting it
+        SelectOnBackspacePlugin.configure({
           options: {
             query: {
               allow: [
@@ -187,11 +247,9 @@ export default observer(
           },
         }),
 
-        // createTodoListPlugin(),
-
         // So you can shift+enter new-line inside of the specified elements
         // https://platejs.org/docs/soft-break
-        createSoftBreakPlugin({
+        SoftBreakPlugin.configure({
           options: {
             rules: [
               { hotkey: "shift+enter" },
@@ -207,7 +265,7 @@ export default observer(
 
         // Exit text blocks with cmd+enter
         // https://platejs.org/docs/exit-break
-        createExitBreakPlugin({
+        ExitBreakPlugin.configure({
           options: {
             rules: [
               {
@@ -222,7 +280,7 @@ export default observer(
                 query: {
                   start: true,
                   end: true,
-                  allow: KEYS_HEADING, // shrug emoji
+                  allow: Object.values(HEADING_KEYS),
                 },
                 relative: true,
                 level: 1,
@@ -234,7 +292,7 @@ export default observer(
         // Reset block when hitting enter, e.g. to stop
         // making new todo list items, etc.
         // https://platejs.org/docs/reset-node
-        createResetNodePlugin({
+        ResetNodePlugin.configure({
           options: {
             rules: [
               {
@@ -252,104 +310,86 @@ export default observer(
               {
                 types: [ELEMENT_CODE_BLOCK],
                 defaultType: ELEMENT_PARAGRAPH,
-                onReset: unwrapCodeBlock,
+                onReset: unwrapCodeBlock as any,
                 hotkey: "Enter",
-                predicate: isCodeBlockEmpty,
+                predicate: isCodeBlockEmpty as any,
               },
               {
                 types: [ELEMENT_CODE_BLOCK],
                 defaultType: ELEMENT_PARAGRAPH,
-                onReset: unwrapCodeBlock,
+                onReset: unwrapCodeBlock as any,
                 hotkey: "Backspace",
-                predicate: isSelectionAtCodeBlockStart,
+                predicate: isSelectionAtCodeBlockStart as any,
               },
             ],
           },
         }),
 
-        // When editing "inline" elements, allow space at the end to "escape" from the element.
-        // ex: link or note link editing.
-        // See plugin comments for links and details; this is
-        createInlineEscapePlugin(),
+        // When editing "inline" elements, allow space at the end to "escape" from the element
+        createInlineEscapePlugin,
 
-        // Set text block indentation for differentiating structural
-        // elements or emphasizing certain content sections.
+        // Set text block indentation
         // https://platejs.org/docs/indent
-        createIndentPlugin({
+        IndentPlugin.configure({
           inject: {
-            props: {
-              validTypes: [
-                // These elements from my prior implementation; docs
-                // only have paragraph and h1
-                ELEMENT_PARAGRAPH,
-                ELEMENT_H1,
-                ELEMENT_H2,
-                ELEMENT_H3,
-                ELEMENT_H4,
-                ELEMENT_H5,
-                ELEMENT_H6,
-                ELEMENT_BLOCKQUOTE,
-                ELEMENT_CODE_BLOCK,
-              ],
-            },
+            targetPlugins: [
+              ParagraphPlugin.key,
+              ELEMENT_H1,
+              ELEMENT_H2,
+              ELEMENT_H3,
+              ELEMENT_H4,
+              ELEMENT_H5,
+              ELEMENT_H6,
+              ELEMENT_BLOCKQUOTE,
+              ELEMENT_CODE_BLOCK,
+            ],
           },
         }),
 
-        createIndentListPlugin(),
+        IndentListPlugin,
 
-        // Ensures there is always a paragraph element at the end of the document; avoids
-        // document getting stuck with an image or other non-text element at the end, or
-        // being confused about how to exit an e.g. code block to add more content.
-        createTrailingBlockPlugin({ type: ELEMENT_PARAGRAPH }),
+        // Ensures there is always a paragraph element at the end of the document
+        TrailingBlockPlugin.configure({
+          options: { type: ELEMENT_PARAGRAPH },
+        }),
 
-        // convert markdown to wysiwyg as you type:
-        // # -> h1, ``` -> code block, etc
-        createAutoformatPlugin({
+        // convert markdown to wysiwyg as you type
+        AutoformatPlugin.configure({
           options: {
-            rules: autoformatRules,
+            rules: autoformatRules as any,
             enableUndoOnDelete: true,
           },
         }),
       ],
-      {
+      override: {
         components: {
           [ELEMENT_VIDEO]: VideoElement,
-          [ELEMENT_BLOCKQUOTE]: BlockquoteElement,
-          [ELEMENT_CODE_BLOCK]: CodeBlockElement,
-          [ELEMENT_CODE_LINE]: CodeLineElement,
-          [ELEMENT_CODE_SYNTAX]: CodeSyntaxLeaf,
-          [MARK_CODE]: CodeLeaf,
           [ELEMENT_H1]: withProps(HeadingElement, { variant: "h1" }),
           [ELEMENT_H2]: withProps(HeadingElement, { variant: "h2" }),
           [ELEMENT_H3]: withProps(HeadingElement, { variant: "h3" }),
           [ELEMENT_H4]: withProps(HeadingElement, { variant: "h4" }),
           [ELEMENT_H5]: withProps(HeadingElement, { variant: "h5" }),
           [ELEMENT_H6]: withProps(HeadingElement, { variant: "h6" }),
-          [ELEMENT_IMAGE]: ImageElement,
           [ELEMENT_IMAGE_GALLERY]: ImageGalleryElement,
-          [ELEMENT_LINK]: LinkElement,
-
-          // NoteLinkDropdown provides the dropdown when typing `@`; NoteLinkElement
-          // is the actual element that gets inserted when you select a note.
           [NOTE_LINK]: NoteLinkDropdownElement,
           [ELEMENT_NOTE_LINK]: NoteLinkElement,
-
           [ELEMENT_UL]: withProps(ListElement, { variant: "ul" }),
           [ELEMENT_LI]: withProps(PlateElement, { as: "li" }),
           [ELEMENT_OL]: withProps(ListElement, { variant: "ol" }),
-          [ELEMENT_PARAGRAPH]: ParagraphElement,
           [MARK_BOLD]: withProps(PlateLeaf, { as: "strong" }),
           [MARK_ITALIC]: withProps(PlateLeaf, { as: "em" }),
           [MARK_STRIKETHROUGH]: withProps(PlateLeaf, { as: "s" }),
           [MARK_SUBSCRIPT]: withProps(PlateLeaf, { as: "sub" }),
           [MARK_SUPERSCRIPT]: withProps(PlateLeaf, { as: "sup" }),
           [MARK_UNDERLINE]: withProps(PlateLeaf, { as: "u" }),
+          [MARK_CODE]: CodeLeaf,
         },
       },
-    );
+      value: value as any,
+    });
 
     return (
-      <Plate initialValue={value as any} onChange={setValue} plugins={plugins}>
+      <Plate editor={editor} onChange={({ value }) => setValue(value as any)}>
         {children}
       </Plate>
     );
