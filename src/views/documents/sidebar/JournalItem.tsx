@@ -9,6 +9,7 @@ import { Icons } from "../../../components/icons";
 import { JournalResponse } from "../../../hooks/useClient";
 import { useIsMounted } from "../../../hooks/useIsMounted";
 import { useJournals } from "../../../hooks/useJournals";
+import { JournalWithCount } from "../../../preload/client/journals";
 import { SidebarStore } from "./store";
 
 export function JournalCreateForm({ done }: { done: () => any }) {
@@ -42,7 +43,7 @@ export const JournalItem = observer(
     isArchived,
     isDefault,
   }: {
-    journal: JournalResponse;
+    journal: JournalWithCount;
     store: SidebarStore;
     editing: boolean;
     isArchived: boolean;
@@ -63,6 +64,9 @@ export const JournalItem = observer(
               <a href="" onClick={() => store.search(journal.name)}>
                 {journal.name}
                 {isDefault ? "*" : ""}
+                <span className="ml-1 text-xs opacity-60">
+                  ({journal.count})
+                </span>
               </a>
             )}
           </div>

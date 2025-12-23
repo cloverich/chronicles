@@ -1,11 +1,12 @@
 import { computed, makeObservable, observable } from "mobx";
+import { JournalWithCount } from "../../preload/client/journals";
 import { IClient, JournalResponse } from "../useClient";
 
 export class JournalsStore {
   loading: boolean = true;
   saving: boolean = false;
   error: Error | null = null;
-  journals: JournalResponse[];
+  journals: JournalWithCount[];
 
   get active() {
     return this.journals.filter((j) => !j.archived);
@@ -19,7 +20,7 @@ export class JournalsStore {
 
   constructor(
     private client: IClient,
-    journals: JournalResponse[],
+    journals: JournalWithCount[],
     defaultJournal: string,
   ) {
     this.client = client;
@@ -59,7 +60,7 @@ export class JournalsStore {
   refresh = async () => {
     this.loading = true;
     try {
-      this.journals = await this.client.journals.list();
+      this.journals = await this.client.journals.listWithCounts();
       this.defaultJournal = await this.client.preferences.get("defaultJournal");
     } catch (err: any) {
       console.error("Error refreshing journals:", err);
@@ -112,7 +113,8 @@ export class JournalsStore {
         name: validName!,
       });
 
-      this.journals.push(newJournal);
+      // New journals start with count: 0
+      this.journals.push({ ...newJournal, count: 0 });
     } catch (err: any) {
       console.error(err);
       throw err;
@@ -159,10 +161,12 @@ export class JournalsStore {
       }
 
       if (journal.archived) {
-        this.journals = await this.client.journals.unarchive(journal.name);
+        await this.client.journals.unarchive(journal.name);
       } else {
-        this.journals = await this.client.journals.archive(journal.name);
+        await this.client.journals.archive(journal.name);
       }
+      // Refresh to get updated list with counts
+      this.journals = await this.client.journals.listWithCounts();
     } catch (err: any) {
       console.error(`Error toggling archive for journal ${journal.name}:`, err);
 

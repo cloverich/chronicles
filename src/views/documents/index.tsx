@@ -104,6 +104,9 @@ function DocumentsContainer() {
 
   return (
     <Layout store={searchStore}>
+      <div className="mb-4 flex justify-end font-mono text-sm uppercase text-muted-foreground">
+        [{searchStore.count} DOCS FOUND]
+      </div>
       {groupedDocs.map((group) => (
         <div key={group.key} className="mb-8">
           <h2 className="mb-3 font-heading text-xl font-semibold text-accent-foreground">

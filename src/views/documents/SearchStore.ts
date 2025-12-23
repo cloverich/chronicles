@@ -68,6 +68,7 @@ export class SearchStore {
   docs: SearchItem[] = [];
   loading = true;
   error: string | null = null;
+  count: number = 0;
   private journals: JournalsStore;
   private parser: SearchParser;
   // NOTE: Public so it can be updated by render calls, since useSearchParmas changes on
@@ -92,6 +93,7 @@ export class SearchStore {
       docs: observable,
       loading: observable,
       error: observable,
+      count: observable,
       _tokens: observable,
       setTokens: action,
       tokens: computed,
@@ -245,6 +247,10 @@ export class SearchStore {
       }
 
       this.docs = docs;
+
+      // Get total count for search results (without pagination)
+      const countQuery = this.tokensToQuery();
+      this.count = await this.client.documents.searchCount(countQuery);
     } catch (err) {
       console.error("Error with documents.search results", err);
       this.error = err instanceof Error ? err.message : JSON.stringify(err);
