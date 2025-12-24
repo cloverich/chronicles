@@ -1,0 +1,243 @@
+/**
+ * Syntax highlighting theme for code blocks.
+ * Uses highlight.js (lowlight) token classes.
+ *
+ * Based on One Light theme from Atom:
+ * https://github.com/atom/atom/tree/master/packages/one-light-syntax
+ *
+ * Colors:
+ * --mono-1: hsl(230, 8%, 24%)   - main text
+ * --mono-2: hsl(230, 6%, 44%)   - secondary
+ * --mono-3: hsl(230, 4%, 64%)   - comments
+ * --hue-1:  hsl(198, 99%, 37%)  - cyan (urls, attrs)
+ * --hue-2:  hsl(221, 87%, 60%)  - blue (functions, variables)
+ * --hue-3:  hsl(301, 63%, 40%)  - purple (keywords)
+ * --hue-4:  hsl(119, 34%, 47%)  - green (strings)
+ * --hue-5:  hsl(5, 74%, 59%)    - red (tags, properties)
+ * --hue-6:  hsl(35, 99%, 36%)   - orange (numbers, constants)
+ */
+
+/* Comments */
+.hljs-comment,
+.hljs-quote {
+  color: hsl(230, 4%, 64%);
+  font-style: italic;
+}
+
+/* Keywords and reserved words */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-addition {
+  color: hsl(301, 63%, 40%);
+}
+
+/* Strings and string-like values */
+.hljs-string,
+.hljs-doctag,
+.hljs-regexp,
+.hljs-meta .hljs-string {
+  color: hsl(119, 34%, 47%);
+}
+
+/* Numbers, booleans, and constants */
+.hljs-number,
+.hljs-literal,
+.hljs-variable.constant_,
+.hljs-type {
+  color: hsl(35, 99%, 36%);
+}
+
+/* Built-in keywords and types */
+.hljs-built_in,
+.hljs-builtin-name {
+  color: hsl(198, 99%, 37%);
+}
+
+/* Functions and methods */
+.hljs-function,
+.hljs-title,
+.hljs-title.function_ {
+  color: hsl(221, 87%, 60%);
+}
+
+/* Class names and types */
+.hljs-class .hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__ {
+  color: hsl(35, 99%, 40%);
+}
+
+/* Variables and parameters */
+.hljs-variable,
+.hljs-params,
+.hljs-template-variable {
+  color: hsl(5, 74%, 59%);
+}
+
+/* Attributes */
+.hljs-attr,
+.hljs-attribute {
+  color: hsl(35, 99%, 36%);
+}
+
+/* Tags (HTML, XML) */
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: hsl(5, 74%, 59%);
+}
+
+/* Property names (objects, CSS) */
+.hljs-property {
+  color: hsl(5, 74%, 59%);
+}
+
+/* Symbols and special */
+.hljs-symbol,
+.hljs-bullet {
+  color: hsl(198, 99%, 37%);
+}
+
+/* Links */
+.hljs-link {
+  color: hsl(198, 99%, 37%);
+  text-decoration: underline;
+}
+
+/* Meta/preprocessor */
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: hsl(301, 63%, 40%);
+}
+
+/* Deletion (diffs) */
+.hljs-deletion {
+  color: hsl(5, 74%, 59%);
+  background-color: hsla(353, 100%, 66%, 0.15);
+}
+
+/* Addition (diffs) */
+.hljs-addition {
+  color: hsl(119, 34%, 47%);
+  background-color: hsla(137, 100%, 55%, 0.15);
+}
+
+/* Section headers */
+.hljs-section {
+  color: hsl(221, 87%, 60%);
+  font-weight: bold;
+}
+
+/* Emphasis */
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Punctuation - use main text color */
+.hljs-punctuation {
+  color: hsl(230, 8%, 24%);
+}
+
+/* Operator */
+.hljs-operator {
+  color: hsl(301, 63%, 40%);
+}
+
+/*
+ * Dark mode overrides
+ * Based on One Dark theme
+ */
+.dark .hljs-comment,
+.dark .hljs-quote {
+  color: hsl(220, 10%, 50%);
+}
+
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-addition {
+  color: hsl(286, 60%, 67%);
+}
+
+.dark .hljs-string,
+.dark .hljs-doctag,
+.dark .hljs-regexp,
+.dark .hljs-meta .hljs-string {
+  color: hsl(95, 38%, 62%);
+}
+
+.dark .hljs-number,
+.dark .hljs-literal,
+.dark .hljs-variable.constant_,
+.dark .hljs-type {
+  color: hsl(29, 54%, 61%);
+}
+
+.dark .hljs-built_in,
+.dark .hljs-builtin-name {
+  color: hsl(187, 47%, 55%);
+}
+
+.dark .hljs-function,
+.dark .hljs-title,
+.dark .hljs-title.function_ {
+  color: hsl(207, 82%, 66%);
+}
+
+.dark .hljs-class .hljs-title,
+.dark .hljs-title.class_,
+.dark .hljs-title.class_.inherited__ {
+  color: hsl(39, 67%, 69%);
+}
+
+.dark .hljs-variable,
+.dark .hljs-params,
+.dark .hljs-template-variable {
+  color: hsl(355, 65%, 65%);
+}
+
+.dark .hljs-attr,
+.dark .hljs-attribute {
+  color: hsl(29, 54%, 61%);
+}
+
+.dark .hljs-tag,
+.dark .hljs-name,
+.dark .hljs-selector-id,
+.dark .hljs-selector-class {
+  color: hsl(355, 65%, 65%);
+}
+
+.dark .hljs-property {
+  color: hsl(355, 65%, 65%);
+}
+
+.dark .hljs-symbol,
+.dark .hljs-bullet {
+  color: hsl(187, 47%, 55%);
+}
+
+.dark .hljs-link {
+  color: hsl(187, 47%, 55%);
+}
+
+.dark .hljs-meta,
+.dark .hljs-meta .hljs-keyword {
+  color: hsl(286, 60%, 67%);
+}
+
+.dark .hljs-section {
+  color: hsl(207, 82%, 66%);
+}
+
+.dark .hljs-punctuation {
+  color: hsl(220, 14%, 71%);
+}
+
+.dark .hljs-operator {
+  color: hsl(286, 60%, 67%);
+}

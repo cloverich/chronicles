@@ -40,6 +40,7 @@ import { ImagePlugin } from "@udecode/plate-media/react";
 import { ResetNodePlugin } from "@udecode/plate-reset-node/react";
 import { SelectOnBackspacePlugin } from "@udecode/plate-select";
 import { TrailingBlockPlugin } from "@udecode/plate-trailing-block";
+import { lowlight } from "./editor/plugins/lowlight";
 
 import { observer } from "mobx-react-lite";
 import React from "react";
@@ -179,7 +180,11 @@ export default observer(
         // Paragraph, blockquote, code block, heading, etc
         // https://platejs.org/docs/basic-elements
         BlockquotePlugin.withComponent(BlockquoteElement),
-        CodeBlockPlugin.withComponent(CodeBlockElement),
+        CodeBlockPlugin.configure({
+          options: {
+            lowlight,
+          },
+        }).withComponent(CodeBlockElement),
         CodeLinePlugin.withComponent(CodeLineElement),
         CodeSyntaxPlugin.withComponent(CodeSyntaxLeaf),
         HeadingPlugin.configure({

@@ -150,5 +150,4 @@ Communication between main and renderer processes via `src/preload/`:
 
 - Tailwind for utility-first styling
 - Radix UI for accessible component primitives
-- Custom CSS for editor-specific styles and Prism code highlighting
 - Dark mode support via CSS variables and theme switching
