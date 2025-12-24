@@ -70,6 +70,11 @@ export interface SearchRequest {
    */
   tags?: string[];
 
+  exclude?: {
+    tags?: string[];
+    journals?: string[];
+  };
+
   limit?: number;
 
   nodeMatch?: {

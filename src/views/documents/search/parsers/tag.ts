@@ -4,7 +4,7 @@ export class TagTokenParser {
   prefix = "tag:";
 
   serialize = (token: TagToken) => {
-    return this.prefix + token.value;
+    return (token.excluded ? "-" : "") + this.prefix + token.value;
   };
 
   parse = (text: string): TagToken | undefined => {
@@ -32,7 +32,14 @@ export class TagTokenParser {
 
   add = (tokens: SearchToken[], token: TagToken) => {
     // there can be only one of each named journal
-    if (tokens.find((t) => t.type === "tag" && t.value === token.value)) {
+    if (
+      tokens.find(
+        (t) =>
+          t.type === "tag" &&
+          t.value === token.value &&
+          (t as TagToken).excluded === token.excluded,
+      )
+    ) {
       return tokens;
     }
 
@@ -50,7 +57,9 @@ export class TagTokenParser {
       if (t.type !== "tag") return true;
 
       // Remove if it matches...
-      return t.value !== token.value;
+      return (
+        t.value !== token.value || (t as TagToken).excluded !== token.excluded
+      );
     });
   };
 }

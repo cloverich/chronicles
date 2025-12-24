@@ -3,7 +3,7 @@ import { JournalToken, SearchToken } from "../tokens";
 export class JournalTokenParser {
   prefix = "in:";
   serialize = (token: JournalToken) => {
-    return this.prefix + token.value;
+    return (token.excluded ? "-" : "") + this.prefix + token.value;
   };
 
   parse = (text: string): JournalToken | undefined => {
@@ -14,7 +14,14 @@ export class JournalTokenParser {
 
   add = (tokens: SearchToken[], token: JournalToken) => {
     // there can be only one of each named journal
-    if (tokens.find((t) => t.type === "in" && t.value === token.value)) {
+    if (
+      tokens.find(
+        (t) =>
+          t.type === "in" &&
+          t.value === token.value &&
+          (t as JournalToken).excluded === token.excluded,
+      )
+    ) {
       return tokens;
     }
 
@@ -32,7 +39,10 @@ export class JournalTokenParser {
       if (t.type !== "in") return true;
 
       // Remove if it matches...
-      return t.value !== token.value;
+      return (
+        t.value !== token.value ||
+        (t as JournalToken).excluded !== token.excluded
+      );
     });
   };
 }

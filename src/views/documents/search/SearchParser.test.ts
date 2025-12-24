@@ -106,6 +106,39 @@ describe("SearchParser", function () {
       });
     });
 
+    test("in: with negation", function () {
+      const parser = new SearchParser();
+      const negativeJournalToken = parser.parseToken("-in:work");
+
+      assert.exists(negativeJournalToken);
+      assert.deepEqual(negativeJournalToken, {
+        type: "in",
+        value: "work",
+        excluded: true,
+      });
+
+      const serialized = parser.serializeToken(
+        negativeJournalToken as SearchToken,
+      );
+      assert.equal(serialized, "-in:work");
+    });
+
+    test("mergeToken (in) with negation", function () {
+      const parser = new SearchParser();
+      const tokens = parser.parseTokens(["in:personal"]);
+
+      const negativeJournalToken = parser.parseToken("-in:work");
+      const mergedTokens = parser.mergeToken(
+        tokens,
+        negativeJournalToken as SearchToken,
+      );
+      assert.equal(mergedTokens.length, 2);
+      assert.deepEqual(mergedTokens, [
+        { type: "in", value: "personal" },
+        { type: "in", value: "work", excluded: true },
+      ]);
+    });
+
     test("tag:", function () {
       const pasrer = new SearchParser();
       const tagToken = pasrer.parseToken("tag:javascript");
@@ -173,6 +206,64 @@ describe("SearchParser", function () {
         type: "before",
         value: "2022-01-03",
       });
+    });
+
+    test("tag: with negation", function () {
+      const parser = new SearchParser();
+      const negativeTagToken = parser.parseToken("-tag:javascript");
+
+      assert.exists(negativeTagToken);
+      assert.deepEqual(negativeTagToken, {
+        type: "tag",
+        value: "javascript",
+        excluded: true,
+      });
+
+      const serialized = parser.serializeToken(negativeTagToken as SearchToken);
+      assert.equal(serialized, "-tag:javascript");
+    });
+
+    test("mergeToken with negation", function () {
+      const parser = new SearchParser();
+      const tokens = parser.parseTokens(["tag:alpha"]);
+
+      const negativeTagToken = parser.parseToken("-tag:alpha");
+      const mergedTokens = parser.mergeToken(
+        tokens,
+        negativeTagToken as SearchToken,
+      );
+      assert.equal(
+        mergedTokens.length,
+        2,
+        "Should allow both included and excluded tags for the same value",
+      );
+      assert.deepEqual(mergedTokens, [
+        { type: "tag", value: "alpha" },
+        { type: "tag", value: "alpha", excluded: true },
+      ]);
+    });
+
+    test("removeToken with negation", function () {
+      const parser = new SearchParser();
+      const tokens = [
+        { type: "tag", value: "alpha" },
+        { type: "tag", value: "beta", excluded: true },
+        { type: "tag", value: "gamma" },
+      ] as SearchToken[];
+
+      const removedTokens = parser.removeToken(tokens, "-tag:beta");
+      assert.equal(removedTokens.length, 2);
+      assert.deepEqual(removedTokens, [
+        { type: "tag", value: "alpha" },
+        { type: "tag", value: "gamma" },
+      ]);
+
+      const notRemovedTokens = parser.removeToken(tokens, "tag:beta");
+      assert.equal(
+        notRemovedTokens.length,
+        3,
+        "Should not remove included tag if excluded was specified",
+      );
     });
   });
 });
