@@ -57,18 +57,18 @@ packager({
   icon: iconPath,
   // … other options
   // Documentation does this in afterCopy. Why did I do this in afterPrune?
+  // Note: @electron/packager v19 changed hooks to use object args instead of positional
   afterPrune: [
-    (buildPath, electronVersion, platform, arch, callback) => {
+    async ({ buildPath, electronVersion, platform, arch }) => {
       console.log("rebuilding...", buildPath, electronVersion, platform, arch);
 
-      // Previously, and after they are fixed:
-      rebuild({ buildPath, electronVersion, arch })
-        .then(() => callback())
-        .catch((error) => {
-          console.error("Error rebuilding native dependencies!");
-          console.error(error);
-          callback(error);
-        });
+      try {
+        await rebuild({ buildPath, electronVersion, arch });
+      } catch (error) {
+        console.error("Error rebuilding native dependencies!");
+        console.error(error);
+        throw error;
+      }
     },
   ],
 });
