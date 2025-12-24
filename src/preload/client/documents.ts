@@ -250,6 +250,19 @@ export class DocumentsClient {
         .whereIn("document_tags.tag", q.tags);
     }
 
+    if (q?.exclude?.tags?.length) {
+      query = query.whereNotExists(function () {
+        this.select("documentId")
+          .from("document_tags")
+          .whereRaw("document_tags.documentId = documents.id")
+          .whereIn("document_tags.tag", q.exclude!.tags!);
+      });
+    }
+
+    if (q?.exclude?.journals?.length) {
+      query = query.whereNotIn("journal", q.exclude.journals);
+    }
+
     // filter by title
     if (q?.titles?.length) {
       for (const title of q.titles) {

@@ -53,6 +53,10 @@ interface SearchQuery {
   titles?: string[];
   before?: string;
   tags?: string[];
+  exclude?: {
+    tags?: string[];
+    journals?: string[];
+  };
   texts?: string[];
   limit?: number;
 }
@@ -156,11 +160,19 @@ export class SearchStore {
   // todo: this might be better as a @computed get
   private tokensToQuery = (): SearchQuery => {
     const journals = this.tokens
-      .filter((t) => t.type === "in")
+      .filter((t) => t.type === "in" && !(t as any).excluded)
       .map((token) => token.value) as string[]; // assumes pre-validated by addToeken above
 
+    const excludedJournals = this.tokens
+      .filter((t) => t.type === "in" && (t as any).excluded)
+      .map((token) => token.value) as string[];
+
     const tags = this.tokens
-      .filter((t) => t.type === "tag")
+      .filter((t) => t.type === "tag" && !(t as any).excluded)
+      .map((t) => t.value) as string[];
+
+    const excludedTags = this.tokens
+      .filter((t) => t.type === "tag" && (t as any).excluded)
       .map((t) => t.value) as string[];
 
     // todo: Typescript doesn't know when I filter to type === 'title' its TitleTokens
@@ -178,7 +190,14 @@ export class SearchStore {
       before = beforeToken.value as string;
     }
 
-    return { journals, tags, titles, texts, before };
+    return {
+      journals,
+      tags,
+      exclude: { tags: excludedTags, journals: excludedJournals },
+      titles,
+      texts,
+      before,
+    };
   };
 
   /**

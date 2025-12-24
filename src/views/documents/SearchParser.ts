@@ -57,14 +57,24 @@ export class SearchParser {
       return [parsers.text, parsers.text.parse(tokenStr)];
     }
 
-    const [, prefix, value] = matches;
+    let [, prefix, value] = matches;
     if (!value) return;
+
+    let excluded = false;
+    if (prefix.startsWith("-")) {
+      excluded = true;
+      prefix = prefix.substring(1);
+    }
 
     const parser: TokenParser = (parsers as any)[prefix];
     if (!parser) return;
 
     const parsedToken = parser.parse(value);
     if (!parsedToken) return;
+
+    if (excluded) {
+      (parsedToken as any).excluded = true;
+    }
 
     return [parser, parsedToken];
   }

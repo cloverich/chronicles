@@ -30,6 +30,7 @@ export type FilterToken = {
 export type JournalToken = {
   type: "in";
   value: string; // keyof Journals
+  excluded?: boolean;
 };
 
 /**
@@ -47,6 +48,7 @@ export type FocusToken = {
 export type TagToken = {
   type: "tag";
   value: string;
+  excluded?: boolean;
 };
 
 /**
