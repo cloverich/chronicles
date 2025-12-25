@@ -60,7 +60,7 @@ export function EditorToolbar({
     >
       <div className="w-full overflow-hidden">
         <div
-          className="flex flex-wrap text-muted-foreground"
+          className="text-muted-foreground flex flex-wrap"
           style={{
             // Conceal the first separator on each line using overflow
             transform: "translateX(calc(-1px))",

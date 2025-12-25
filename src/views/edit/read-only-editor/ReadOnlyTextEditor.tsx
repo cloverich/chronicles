@@ -44,7 +44,7 @@ export const ReadOnlyTextEditor = observer(
           <IconButton
             aria-label="Back to documents"
             icon="chevron-left"
-            className="mr-4 drag-none"
+            className="drag-none mr-4"
             onClick={goBack}
           />
           <Separator orientation="vertical" />
@@ -58,8 +58,8 @@ export const ReadOnlyTextEditor = observer(
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
         <Base.TitlebarSpacer />
         <Base.ScrollContainer>
-          <div className="flex w-full flex-grow flex-col">
-            <div className="flex flex-grow pt-6">
+          <div className="flex w-full grow flex-col">
+            <div className="flex grow pt-6">
               <div>{content()}</div>
             </div>
 

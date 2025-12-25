@@ -20,7 +20,7 @@ export function Collapse({ heading, defaultOpen, children }: CollapseProps) {
   return (
     <div>
       <div
-        className="mb-2 flex cursor-pointer items-center font-system-heading tracking-tight"
+        className="font-system-heading mb-2 flex cursor-pointer items-center tracking-tight"
         onClick={() => setIsOpen(!isOpen)}
       >
         {heading}

@@ -22,7 +22,7 @@ export const ImageDisplay = (props: Props) => {
       MediaComponent={({ url, className, onClick, onError, onLoad }) => (
         <img
           src={url}
-          className={cn("border border-black shadow-sm", className)}
+          className={cn("border border-black shadow-xs", className)}
           onClick={(e) => onClick?.(e)}
           onError={onError}
           onLoad={onLoad}

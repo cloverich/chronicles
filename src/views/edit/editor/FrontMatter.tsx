@@ -84,7 +84,7 @@ const FrontMatter = observer(
       return (
         <D.DropdownMenu modal={false} {...journalSelectorOpenState}>
           <D.DropdownMenuTrigger asChild>
-            <span className="cursor-pointer border-b border-accent">
+            <span className="border-accent cursor-pointer border-b">
               {getName(document.journal)}
             </span>
           </D.DropdownMenuTrigger>
@@ -107,7 +107,7 @@ const FrontMatter = observer(
       return (
         <Popover.Popover {...datePickerOpenState}>
           <Popover.PopoverTrigger>
-            <span className="cursor-pointer border-b border-accent">
+            <span className="border-accent cursor-pointer border-b">
               {document.createdAt.slice(0, 10)}
             </span>
           </Popover.PopoverTrigger>
@@ -132,7 +132,7 @@ const FrontMatter = observer(
           <textarea
             name="title"
             ref={titleRef}
-            className="min-h-[1.5rem] w-full resize-none overflow-hidden border-none bg-background font-heading text-2xl font-medium text-foreground focus:outline-none"
+            className="bg-background font-heading text-foreground min-h-6 w-full resize-none overflow-hidden border-none text-2xl font-medium focus:outline-hidden"
             onChange={(e: any) => {
               document.title = e.target.value;
             }}

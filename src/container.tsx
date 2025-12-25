@@ -100,7 +100,7 @@ function LayoutDummy({ children }: any) {
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen min-w-[480px] flex-col bg-background text-foreground">
+      <div className="bg-background text-foreground flex min-h-screen min-w-[480px] flex-col">
         {children}
       </div>
     </ErrorBoundary>

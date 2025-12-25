@@ -117,7 +117,7 @@ const PreferencesPane = observer((props: Props) => {
                   <div className="text-foreground-strong mb-2 font-medium">
                     Theme
                   </div>
-                  <div className="mb-2 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground mb-2 text-xs">
                     <code>Default</code>
                   </div>
                 </div>
@@ -128,7 +128,7 @@ const PreferencesPane = observer((props: Props) => {
                       Appearance
                     </Label.Base>
                   </div>
-                  <div className="mb-2 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground mb-2 text-xs">
                     <Select.Base
                       value={preferences.darkMode}
                       onValueChange={(selected) =>
@@ -261,21 +261,21 @@ const PreferencesPane = observer((props: Props) => {
                   <dt className="text-foreground-strong font-medium">
                     Settings file
                   </dt>
-                  <dd className="mb-2 text-xs text-muted-foreground">
+                  <dd className="text-muted-foreground mb-2 text-xs">
                     <code>{client.preferences.settingsPath()}</code>
                   </dd>
 
                   <dt className="text-foreground-strong font-medium">
                     Database file
                   </dt>
-                  <dd className="mb-2 text-xs text-muted-foreground">
+                  <dd className="text-muted-foreground mb-2 text-xs">
                     <code>{preferences.databaseUrl}</code>
                   </dd>
 
                   <dt className="text-foreground-strong font-medium">
                     Notes directory
                   </dt>
-                  <dd className="mb-2 text-xs text-muted-foreground">
+                  <dd className="text-muted-foreground mb-2 text-xs">
                     <code>{preferences.notesDir}</code>
                   </dd>
                 </dl>
@@ -299,7 +299,7 @@ const PreferencesPane = observer((props: Props) => {
                 />
 
                 <details className="my-4">
-                  <summary className="cursor-pointer outline-none">
+                  <summary className="cursor-pointer outline-hidden">
                     Ignored files and directories
                   </summary>
                   <p className="p-2">
@@ -315,14 +315,14 @@ const PreferencesPane = observer((props: Props) => {
 
                 <div className="my-6 flex max-w-[500px] flex-col space-y-2">
                   <Label.Base
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     htmlFor=":r2g:-form-item"
                   >
                     Import Type
                   </Label.Base>
                   <p
                     id=":r2g:-form-item-description"
-                    className="text-[0.8rem] text-muted-foreground"
+                    className="text-muted-foreground text-[0.8rem]"
                   >
                     Whether to use the Notion specific parser, which checks for
                     ids in titles and pseudo-front matter in content.
@@ -436,14 +436,14 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-4">
       <h3 className="mb-0 text-lg font-medium">{title}</h3>
-      {sub && <p className="text-sm text-muted-foreground">{sub}</p>}
+      {sub && <p className="text-muted-foreground text-sm">{sub}</p>}
     </div>
   );
 }
 
 function Section(props: PropsWithChildren<any>) {
   return (
-    <div className="mb-10 mt-4 border-b border-gray-200 pb-8 dark:border-gray-700">
+    <div className="mt-4 mb-10 border-b border-gray-200 pb-8 dark:border-gray-700">
       {props.children}
     </div>
   );
@@ -524,7 +524,7 @@ function FontSelector({
     <div className="flex justify-between">
       <div className="mb-2">
         <Label.Base className="text-sm font-medium">{label}</Label.Base>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground text-xs">{description}</p>
       </div>
       <Select.Base value={displayValue} onValueChange={handleChange}>
         <Select.Trigger className="max-w-[250px]">
@@ -562,7 +562,7 @@ function WidthSelector({
     <div className="flex items-start justify-between">
       <div className="mb-2">
         <Label.Base className="text-sm font-medium">{label}</Label.Base>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground text-xs">{description}</p>
       </div>
       <Input className="max-w-[250px]" {...rest} />
     </div>

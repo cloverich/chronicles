@@ -63,7 +63,7 @@ export const RemoveTagModal = observer(
             Tag to remove
           </label>
           <select
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="border-border bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-hidden"
             value={selectedTag || ""}
             onChange={(e) => setSelectedTag(e.target.value || null)}
           >

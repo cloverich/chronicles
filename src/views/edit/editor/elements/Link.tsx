@@ -20,7 +20,7 @@ export const LinkElement = withRef<typeof PlateElement>(
         ref={ref}
         as="a"
         className={cn(
-          "cursor-pointer text-link underline decoration-1 underline-offset-1 hover:text-link-hover",
+          "text-link hover:text-link-hover cursor-pointer underline decoration-1 underline-offset-1",
           className,
         )}
         {...(linkProps as any)}

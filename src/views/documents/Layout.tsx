@@ -50,7 +50,7 @@ export const Layout = observer((props: Props) => {
           <SheetTrigger asChild>
             <IconButton
               variant="ghost"
-              className="mr-2 drag-none"
+              className="drag-none mr-2"
               icon="panel-right"
               aria-label="Select journals"
             />
@@ -59,7 +59,7 @@ export const Layout = observer((props: Props) => {
 
         <IconButton
           variant="ghost"
-          className="mr-2 drag-none"
+          className="drag-none mr-2"
           icon="editing"
           disabled={jstore.journals.length === 0}
           onClick={() => navigate("/documents/edit/new")}
@@ -71,7 +71,7 @@ export const Layout = observer((props: Props) => {
         <IconButton
           variant="ghost"
           icon="settings"
-          className="ml-2 drag-none"
+          className="drag-none ml-2"
           onClick={() => appState.togglePreferences(true)}
           aria-label="Open preferences"
         />

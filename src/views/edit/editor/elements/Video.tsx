@@ -97,7 +97,7 @@ export const VideoElement = ({
             <video
               src={resolvedUrl}
               controls
-              className="mx-auto block max-h-80 max-w-[80%] border border-black shadow-sm"
+              className="mx-auto block max-h-80 max-w-[80%] border border-black shadow-xs"
               onError={(e) => {
                 const v = e.currentTarget;
 

@@ -57,15 +57,15 @@ export const CodeBlockElement = withRef<typeof PlateElement>(
 
     return (
       <PlateElement
-        className={cn("max-w-code relative my-8 bg-muted", className)}
+        className={cn("max-w-code bg-muted relative my-8", className)}
         ref={ref}
         {...props}
       >
-        <pre className="font-code overflow-x-auto rounded-md px-6 pb-4 pt-10 text-sm leading-[normal] [tab-size:2]">
+        <pre className="font-code overflow-x-auto rounded-md px-6 pt-10 pb-4 text-sm leading-[normal] [tab-size:2]">
           <code spellCheck={false}>{children}</code>
         </pre>
         <div
-          className="absolute right-2 top-2 z-10 select-none"
+          className="absolute top-2 right-2 z-10 select-none"
           contentEditable={false}
         >
           <LanguageSelect lang={lang} setLang={setLang} />

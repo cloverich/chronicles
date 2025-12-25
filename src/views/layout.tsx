@@ -19,7 +19,7 @@ import React from "react";
  */
 export const Container: React.FC<ClickableDivProps> = ({ children }) => {
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+    <div className="bg-background text-foreground flex h-screen flex-col overflow-hidden">
       {children}
     </div>
   );
@@ -46,9 +46,7 @@ export const EditorContainer: React.FC<ClickableDivProps> = ({ children }) => {
  * Add space equivalent to the fixed position titlebar. See Container for usage.
  */
 export const TitlebarSpacer = () => {
-  return (
-    <div className="h-[var(--titlebar-height)] min-h-[var(--titlebar-height)]" />
-  );
+  return <div className="h-(--titlebar-height) min-h-(--titlebar-height)" />;
 };
 
 /**
@@ -68,7 +66,7 @@ export const ScrollContainer: React.FC<ClickableDivProps> = ({
 }) => {
   return (
     <div
-      className="flex flex-grow flex-col overflow-y-auto p-12"
+      className="flex grow flex-col overflow-y-auto p-12"
       onClick={onClick || noop}
     >
       {children}
