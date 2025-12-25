@@ -1,14 +1,15 @@
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { cn } from "@udecode/cn";
 import { noop } from "lodash";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
+
 import { Icons } from "../../../components/icons";
 import { JournalResponse } from "../../../hooks/useClient";
 import { useIsMounted } from "../../../hooks/useIsMounted";
 import { useJournals } from "../../../hooks/useJournals";
+import { cn } from "../../../lib/utils";
 import { JournalWithCount } from "../../../preload/client/journals";
 import { SidebarStore } from "./store";
 

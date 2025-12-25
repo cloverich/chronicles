@@ -1,4 +1,3 @@
-import { cn } from "@udecode/cn";
 import {
   flip,
   offset,
@@ -15,6 +14,7 @@ import {
 } from "@udecode/plate-link/react";
 import React from "react";
 
+import { cn } from "../../../../lib/utils";
 import { Icons } from "../.././../../components/icons";
 
 import { popoverVariants } from "../../../../components/Popover";

@@ -1,8 +1,10 @@
-import { cn, withRef } from "@udecode/cn";
+import { withRef } from "@udecode/cn";
 import { TElement } from "@udecode/plate";
 import { useLink } from "@udecode/plate-link/react";
 import { PlateElement, useElement } from "@udecode/plate/react";
 import React from "react";
+
+import { cn } from "../../../../lib/utils";
 
 interface LinkElement extends TElement {
   url: string;

@@ -1,7 +1,9 @@
-import { cn, withRef } from "@udecode/cn";
+import { withRef } from "@udecode/cn";
 import { PlateElement, useElement } from "@udecode/plate/react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
+import { cn } from "../../../../../lib/utils";
 import { BaseElement } from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 
 export const ELEMENT_NOTE_LINK = "noteLinkElement";

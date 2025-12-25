@@ -1,6 +1,6 @@
-import { cn } from "@udecode/cn";
 import React from "react";
 
+import { cn } from "../../../../../lib/utils";
 import { MediaWrapper } from "./MediaWrapper";
 
 interface Props {

@@ -1,6 +1,7 @@
-import { cn } from "@udecode/cn";
 import React from "react";
+
 import { Alert } from "../../../../../components/Alert";
+import { cn } from "../../../../../lib/utils";
 
 type MediaLoadStatus =
   | "invalid_prefix"

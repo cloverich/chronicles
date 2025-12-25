@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import {
-  cn,
   createPrimitiveElement,
   withCn,
   withProps,
@@ -12,6 +11,7 @@ import {
 } from "@udecode/cn";
 import { cva } from "class-variance-authority";
 
+import { cn } from "../lib/utils";
 import { Icons } from "./icons";
 
 /**
