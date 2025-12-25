@@ -1,9 +1,10 @@
-import { cn } from "@udecode/cn";
 import { cva } from "class-variance-authority";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+
+import { cn } from "../../lib/utils";
 import { TagStore } from "./TagStore";
 
 interface TagInputProps {

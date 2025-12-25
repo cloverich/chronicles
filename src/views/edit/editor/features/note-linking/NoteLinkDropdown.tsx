@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 
-import { cn, withRef } from "@udecode/cn";
+import { withRef } from "@udecode/cn";
 import { PlateEditor, PlateElement } from "@udecode/plate/react";
 import { Editor, Transforms } from "slate";
 
+import { cn } from "../../../../../lib/utils";
 import { SearchItem, SearchStore } from "../../../../documents/SearchStore";
 import {
   InlineCombobox,

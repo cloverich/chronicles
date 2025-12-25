@@ -1,8 +1,8 @@
-import { cn } from "@udecode/cn";
 import { useMediaState } from "@udecode/plate-media/react";
 import { PlateElement, PlateElementProps } from "@udecode/plate/react";
 import React from "react";
 
+import { cn } from "../../../../../lib/utils";
 import { MediaPopover } from "../../elements/MediaPopover";
 import { ELEMENT_IMAGE } from "../../plate-types";
 import { ImageDisplay } from "./ImageDisplay";

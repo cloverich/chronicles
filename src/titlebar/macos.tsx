@@ -1,5 +1,6 @@
-import { cn } from "@udecode/cn";
 import React, { PropsWithChildren } from "react";
+
+import { cn } from "../lib/utils";
 
 interface Props extends PropsWithChildren {
   className?: string;

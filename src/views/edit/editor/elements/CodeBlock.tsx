@@ -1,10 +1,11 @@
 import React from "react";
 
-import { cn, withRef } from "@udecode/cn";
+import { withRef } from "@udecode/cn";
 import { PlateElement, useEditorRef } from "@udecode/plate/react";
 import { Transforms } from "slate";
 import { ReactEditor } from "slate-react";
 
+import { cn } from "../../../../lib/utils";
 import { CODE_BLOCK_LANGUAGES } from "../plate-types";
 
 const knownLangOptions: { label: string; value: string }[] = [

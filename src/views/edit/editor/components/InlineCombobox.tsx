@@ -26,7 +26,6 @@ import {
   useComboboxStore,
   type ComboboxItemProps,
 } from "@ariakit/react";
-import { cn } from "@udecode/cn";
 import { type TElement } from "@udecode/plate";
 import { filterWords } from "@udecode/plate-combobox";
 import {
@@ -36,6 +35,8 @@ import {
 } from "@udecode/plate-combobox/react";
 import { useComposedRef, useEditorRef } from "@udecode/plate/react";
 import { cva } from "class-variance-authority";
+
+import { cn } from "../../../../lib/utils";
 
 type FilterFn = (
   item: { keywords?: string[]; value: string },

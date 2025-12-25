@@ -1,8 +1,10 @@
 import React from "react";
 
-import { cn, withRef, withVariants } from "@udecode/cn";
+import { withRef, withVariants } from "@udecode/cn";
 import { PlateElement } from "@udecode/plate/react";
 import { cva } from "class-variance-authority";
+
+import { cn } from "../../../../lib/utils";
 
 const listVariants = cva(
   cn(

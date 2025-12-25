@@ -1,8 +1,9 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cn } from "@udecode/cn";
 import { cva, VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import * as React from "react";
+
+import { cn } from "../lib/utils";
 
 const DialogRoot = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;

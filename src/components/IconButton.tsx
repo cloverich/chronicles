@@ -1,7 +1,7 @@
 import React from "react";
 
-import { cn } from "@udecode/cn";
 import { cva, VariantProps } from "class-variance-authority";
+import { cn } from "../lib/utils";
 import { Icons } from "./icons";
 
 // NOTE: Barebones variants to get style similar to the prior IconButton, stopping
