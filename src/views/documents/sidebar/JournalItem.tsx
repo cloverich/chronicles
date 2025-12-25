@@ -27,8 +27,8 @@ export function JournalCreateForm({ done }: { done: () => any }) {
 }
 
 const menuItemCss = cn(
-  "relative flex h-6 cursor-pointer select-none items-center pr-1 pl-6 text-xs outline-none transition-colors",
-  "data-[disabled]:text-muted-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[disabled]:pointer-events-none",
+  "relative flex h-6 cursor-pointer select-none items-center pr-1 pl-6 text-xs outline-hidden transition-colors",
+  "data-disabled:text-muted-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-disabled:pointer-events-none",
   "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
 );
 
@@ -74,10 +74,10 @@ export const JournalItem = observer(
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
           <ContextMenu.Content
-            className="z-50 min-w-56 overflow-y-auto overflow-x-hidden border bg-popover p-1 text-popover-foreground shadow-md"
+            className="bg-popover text-popover-foreground z-50 min-w-56 overflow-x-hidden overflow-y-auto border p-1 shadow-md"
             alignOffset={5}
           >
-            <ContextMenu.Label className="py-1 pl-6 text-xs text-accent-foreground">
+            <ContextMenu.Label className="text-accent-foreground py-1 pl-6 text-xs">
               Journal management
             </ContextMenu.Label>
 
@@ -110,7 +110,7 @@ export const JournalItem = observer(
               Default
             </ContextMenu.CheckboxItem>
 
-            <ContextMenu.Separator className="m-1 h-[1px] bg-accent" />
+            <ContextMenu.Separator className="bg-accent m-1 h-px" />
 
             <ContextMenu.Item
               className={menuItemCss}
@@ -188,7 +188,7 @@ const JournalEditor = observer(function JournalEditor({
       <input
         type="text"
         autoFocus
-        className="border border-input bg-transparent px-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="border-input placeholder:text-muted-foreground focus-visible:ring-ring border bg-transparent px-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
         ref={ref}
         value={name}
         onChange={(e) => setName(e.target.value)}

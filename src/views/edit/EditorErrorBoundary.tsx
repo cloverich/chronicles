@@ -47,7 +47,7 @@ export default class EditorErrorBoundary extends React.Component<Props, State> {
         <Titlebar>
           <IconButton
             icon="chevron-left"
-            className="mr-4 drag-none"
+            className="drag-none mr-4"
             onClick={() => this.props.navigate("/documents")}
             aria-label="Back to documents"
           />

@@ -104,12 +104,12 @@ function DocumentsContainer() {
 
   return (
     <Layout store={searchStore}>
-      <div className="mb-4 flex justify-end font-mono text-sm uppercase text-muted-foreground">
+      <div className="text-muted-foreground mb-4 flex justify-end font-mono text-sm uppercase">
         [{searchStore.count} DOCS FOUND]
       </div>
       {groupedDocs.map((group) => (
         <div key={group.key} className="mb-8">
-          <h2 className="mb-3 font-heading text-xl font-semibold text-accent-foreground">
+          <h2 className="font-heading text-accent-foreground mb-3 text-xl font-semibold">
             {group.label}
           </h2>
           <div className="space-y-1">

@@ -49,13 +49,13 @@ export const BulkOperationSelectorModal = observer(
           {operations.map((op) => (
             <button
               key={op.type}
-              className="flex flex-col items-start rounded-md border border-border p-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="border-border hover:bg-accent hover:text-accent-foreground flex flex-col items-start rounded-md border p-3 text-left transition-colors"
               onClick={() => {
                 onSelectOperation(op.type);
               }}
             >
               <span className="font-medium">{op.label}</span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {op.description}
               </span>
             </button>

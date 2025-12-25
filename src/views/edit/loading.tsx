@@ -23,7 +23,7 @@ export const EditLoadingComponent = observer((props: LoadingComponentProps) => {
       <Titlebar>
         <IconButton
           icon="chevron-left"
-          className="mr-4 drag-none"
+          className="drag-none mr-4"
           onClick={() => navigate(-1)}
           aria-label="Back to documents"
         />

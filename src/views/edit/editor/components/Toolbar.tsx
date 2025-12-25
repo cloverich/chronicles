@@ -24,7 +24,7 @@ export const ToolbarLink = withCn(
 
 export const ToolbarSeparator = withCn(
   ToolbarPrimitive.Separator,
-  "my-1 w-[1px] shrink-0 bg-border",
+  "my-1 w-px shrink-0 bg-border",
 );
 
 // todo: Merge these variant classes with IconButton, and / or merge IconButton and
@@ -32,7 +32,7 @@ export const ToolbarSeparator = withCn(
 const toolbarButtonVariants = cva(
   cn(
     "inline-flex items-center justify-center text-xs ring-offset-background transition-colors disabled:pointer-events-none disabled:opacity-50",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     // "[&_svg:not([data-icon])]:h-5 [&_svg:not([data-icon])]:w-5",
     "rounded-sm border border-transparent",
   ),

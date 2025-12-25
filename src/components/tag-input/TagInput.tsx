@@ -133,18 +133,13 @@ const TagInput = observer((props: TagInputProps) => {
   return (
     <div
       className={cn(
-        "flex max-w-full flex-grow flex-col rounded-sm border bg-background text-xs drag-none",
+        "bg-background drag-none flex max-w-full grow flex-col rounded-sm border text-xs",
         props.ghost && "border-none",
       )}
       ref={containerRef}
       onClick={() => inputRef.current?.focus()}
     >
-      <div
-        className={cn(
-          "flex flex-grow items-center p-1.5",
-          props.ghost && "p-0",
-        )}
-      >
+      <div className={cn("flex grow items-center p-1.5", props.ghost && "p-0")}>
         {props.tokens.map((token, idx) => (
           <CloseableTag key={idx} remove={() => props.onRemove(token)}>
             {hash}
@@ -153,7 +148,7 @@ const TagInput = observer((props: TagInputProps) => {
         ))}
         <input
           ref={inputRef}
-          className="text-tag-foreground w-0 min-w-8 flex-shrink flex-grow bg-background outline-none"
+          className="text-tag-foreground bg-background w-0 min-w-8 shrink grow outline-hidden"
           type="text"
           placeholder={props.tokens.length ? "" : props.placeholder}
           value={store.query}
@@ -216,16 +211,16 @@ const TagInput = observer((props: TagInputProps) => {
         {store.isDropdownOpen && (
           <div
             className={cn(
-              "absolute left-0 top-1 z-10 mt-2 max-h-60 w-full overflow-y-auto",
-              "bg-secondary/80 shadow-md backdrop-blur-sm",
-              "border-b border-l border-r border-accent",
+              "absolute top-1 left-0 z-10 mt-2 max-h-60 w-full overflow-y-auto",
+              "bg-secondary/80 shadow-md backdrop-blur-xs",
+              "border-accent border-r border-b border-l",
             )}
           >
             {store.filteredOptions.slice(0, 10).map((tag, idx) => (
               <div
                 key={idx}
                 className={cn(
-                  "flex cursor-pointer justify-between p-2 hover:bg-accent hover:text-accent-foreground",
+                  "hover:bg-accent hover:text-accent-foreground flex cursor-pointer justify-between p-2",
                   idx === store.focusedIdx &&
                     "bg-accent text-accent-foreground",
                 )}
@@ -258,7 +253,7 @@ export default TagInput;
 
 const tagVariants = cva(
   cn(
-    "mr-1 flex flex-shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border px-1.5 py-1 text-xs hover:opacity-80 transition-opacity",
+    "mr-1 flex shrink cursor-pointer items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border px-1.5 py-1 text-xs hover:opacity-80 transition-opacity",
   ),
   {
     variants: {
@@ -309,9 +304,7 @@ type ClickableTagProps = PTag & {
 export const ClickableTag = ({ children, ...rest }: ClickableTagProps) => {
   return (
     <Tag {...rest}>
-      <span className="flex-shrink overflow-hidden text-ellipsis">
-        {children}
-      </span>
+      <span className="shrink overflow-hidden text-ellipsis">{children}</span>
     </Tag>
   );
 };
@@ -326,10 +319,8 @@ type PClosableTag = PTag & {
 const CloseableTag = ({ remove, children, ...rest }: PClosableTag) => {
   return (
     <Tag {...rest}>
-      <span className="flex-shrink overflow-hidden text-ellipsis">
-        {children}
-      </span>
-      <button className="ml-1 flex-shrink-0" onClick={remove}>
+      <span className="shrink overflow-hidden text-ellipsis">{children}</span>
+      <button className="ml-1 shrink-0" onClick={remove}>
         ×
       </button>
     </Tag>

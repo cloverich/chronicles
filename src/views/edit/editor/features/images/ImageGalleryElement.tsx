@@ -104,7 +104,7 @@ export const ImageGalleryLightbox = ({
         {images.length > 3 && (
           <Button
             variant="ghost"
-            className="absolute bottom-0 right-0"
+            className="absolute right-0 bottom-0"
             onClick={() => {
               setCurrent(3);
               setOpen(true);
@@ -129,9 +129,9 @@ export const ImageGalleryLightbox = ({
             </Dialog.DialogTitle>
             <img
               src={images[current]?.url}
-              className="mb-0 max-h-full max-w-full border border-black object-contain shadow-sm"
+              className="mb-0 max-h-full max-w-full border border-black object-contain shadow-xs"
             />
-            <Dialog.DialogClose className="absolute right-4 top-4 text-white hover:text-gray-300" />
+            <Dialog.DialogClose className="absolute top-4 right-4 text-white hover:text-gray-300" />
           </Dialog.DialogContent>
         </Dialog.DialogPortal>
       </Dialog.DialogRoot>

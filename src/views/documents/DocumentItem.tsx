@@ -26,12 +26,12 @@ export function DocumentItem(props: {
         >
           {doc.title || "Untitled"}
         </div>
-        <div className="mr-2 shrink-0 text-xs text-muted-foreground">
+        <div className="text-muted-foreground mr-2 shrink-0 text-xs">
           {shortDate}
         </div>
       </div>
       <div
-        className="mr-2 shrink-0 cursor-pointer text-xs text-muted-foreground"
+        className="text-muted-foreground mr-2 shrink-0 cursor-pointer text-xs"
         onClick={() => search.addToken(`in:${doc.journal}`)}
       >
         /{doc.journal.toUpperCase()}

@@ -55,7 +55,7 @@ const MarkdownEditor = observer(
           <IconButton
             aria-label="Back to documents"
             icon="chevron-left"
-            className="mr-4 drag-none"
+            className="drag-none mr-4"
             onClick={goBack}
           />
           <Separator orientation="vertical" />
@@ -70,12 +70,12 @@ const MarkdownEditor = observer(
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
         <Base.TitlebarSpacer />
         <Base.ScrollContainer>
-          <div className="flex w-full flex-grow flex-col">
+          <div className="flex w-full grow flex-col">
             <MarkdownFrontMatter document={document} journals={journals} />
 
             <textarea
               placeholder="Write your markdown here..."
-              className="flex w-full flex-grow bg-background font-mono text-sm focus:outline-none"
+              className="bg-background flex w-full grow font-mono text-sm focus:outline-hidden"
               value={markdownContent}
               onChange={handleMarkdownChange}
               spellCheck="true"

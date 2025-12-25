@@ -226,7 +226,7 @@ const InlineComboboxInput = forwardRef<
     <>
       {showTrigger && trigger}
 
-      <span className="relative min-h-[1lh]">
+      <span className="relative min-h-lh">
         <span
           aria-hidden="true"
           className="invisible overflow-hidden text-nowrap"
@@ -237,7 +237,7 @@ const InlineComboboxInput = forwardRef<
         <Combobox
           autoSelect
           className={cn(
-            "absolute left-0 top-0 size-full bg-transparent outline-none",
+            "absolute top-0 left-0 size-full bg-transparent outline-hidden",
             className,
           )}
           ref={ref}
@@ -261,7 +261,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({
     <Portal>
       <ComboboxPopover
         className={cn(
-          "z-[500] max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+          "bg-popover z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md shadow-md",
           className,
         )}
         {...props}
@@ -271,7 +271,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({
 };
 
 const comboboxItemVariants = cva(
-  "relative flex h-9 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+  "relative flex h-9 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden",
   {
     defaultVariants: {
       interactive: true,

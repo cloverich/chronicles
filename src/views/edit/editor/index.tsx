@@ -58,7 +58,7 @@ const Editor = ({
           <IconButton
             aria-label="Back to documents"
             icon="chevron-left"
-            className="mr-4 drag-none"
+            className="drag-none mr-4"
             onClick={goBack}
           />
           <Separator orientation="vertical" />
@@ -73,12 +73,12 @@ const Editor = ({
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
         <Base.TitlebarSpacer />
         <Base.ScrollContainer>
-          <div className="flex w-full flex-grow flex-col">
+          <div className="flex w-full grow flex-col">
             <FrontMatter document={document} journals={journals} />
 
-            <div className="flex flex-grow pt-6" onClick={focusEditor}>
+            <div className="flex grow pt-6" onClick={focusEditor}>
               {/* w-full ensures when content is empty, it has width, otherwise the cursor will be invisible */}
-              <PlateContent className="w-full font-body" />
+              <PlateContent className="font-body w-full" />
             </div>
 
             {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}

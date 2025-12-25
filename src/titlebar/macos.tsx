@@ -11,7 +11,7 @@ export default function Titlebar({ children, className }: Props) {
     <div
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       className={cn(
-        "fixed z-10 flex h-[var(--titlebar-height)] w-full items-center justify-between border-b border-accent-muted bg-secondary px-2.5 py-3 pl-20 text-accent-foreground shadow",
+        "border-accent-muted bg-secondary text-accent-foreground fixed z-10 flex h-(--titlebar-height) w-full items-center justify-between border-b px-2.5 py-3 pl-20 shadow-sm",
         className,
       )}
     >

@@ -29,7 +29,7 @@ export const NoteLinkElement = withRef<typeof PlateElement>(
         <a
           onClick={edit}
           className={cn(
-            "cursor-pointer text-link underline decoration-1 underline-offset-1 hover:text-link-hover",
+            "text-link hover:text-link-hover cursor-pointer underline decoration-1 underline-offset-1",
             className,
           )}
         >

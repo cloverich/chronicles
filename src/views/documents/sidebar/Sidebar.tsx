@@ -61,10 +61,10 @@ export default observer(function JournalSelectionSidebar(props: SidebarProps) {
 
 const InnerContent = observer(({ store }: { store: SidebarStore }) => {
   return (
-    <div className="mt-6 text-secondary-foreground">
+    <div className="text-secondary-foreground mt-6">
       <Card>
         <div>
-          <div className="mb-2 flex cursor-pointer items-center font-system-heading tracking-tight">
+          <div className="font-system-heading mb-2 flex cursor-pointer items-center tracking-tight">
             Active Journals
             <IconButton
               icon="add"
