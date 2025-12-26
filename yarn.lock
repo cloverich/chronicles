@@ -902,6 +902,14 @@
   resolved "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
+"@platejs/autoformat@^52.0.11":
+  version "52.0.11"
+  resolved "https://registry.yarnpkg.com/@platejs/autoformat/-/autoformat-52.0.11.tgz#f79ee4ebd83fd5957904d5ed798870de2412fa4e"
+  integrity sha512-5/pLa0uAOrN/jfwpEWEhk/5G9wmSD12EnBnVDP0lB2tuosOzyMCH0rNylMYwgLFACNO7goLw7ka6tvjJ1ErxtQ==
+  dependencies:
+    lodash "^4.17.21"
+    react-compiler-runtime "^1.0.0"
+
 "@platejs/basic-nodes@^52.0.11":
   version "52.0.11"
   resolved "https://registry.yarnpkg.com/@platejs/basic-nodes/-/basic-nodes-52.0.11.tgz#13e180fbbe948baaec03f73b277ae48287091617"

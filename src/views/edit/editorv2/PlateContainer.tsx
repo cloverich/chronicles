@@ -22,6 +22,7 @@ import { EditorMode } from "../EditorMode";
 // import FrontMatter from "./FrontMatter";
 // import { Separator } from "./components/Separator";
 // import { EditorToolbar } from "./toolbar/EditorToolbar";
+import { AutoformatPlugin, AutoformatRule } from "@platejs/autoformat";
 import {
   CodeBlockPlugin,
   CodeLinePlugin,
@@ -75,7 +76,7 @@ import {
   NoteLinkElement,
   createNoteLinkDropdownPlugin,
   createNoteLinkElementPlugin,
-} from "./features/note-linking /index";
+} from "./features/note-linking/index";
 
 interface Props {
   document: EditableDocument;
@@ -106,6 +107,70 @@ export const PlateContainer = (props: Props) => {
   const searchStore = useSearchStore()!;
   const editor = usePlateEditor({
     plugins: [
+      AutoformatPlugin.configure({
+        options: {
+          enableUndoOnDelete: true,
+          rules: [
+            // Custom block rules
+            {
+              match: "# ",
+              mode: "block",
+              type: "h1",
+            },
+            {
+              match: "> ",
+              mode: "block",
+              type: "blockquote",
+            },
+            // Mark rules
+            {
+              match: "**",
+              mode: "mark",
+              type: "bold",
+            },
+            {
+              match: "_",
+              mode: "mark",
+              type: "italic",
+            },
+            {
+              match: "`",
+              mode: "mark",
+              type: "code",
+            },
+            {
+              match: "```",
+              mode: "block",
+              type: "code_block",
+            },
+            {
+              match: "- ",
+              mode: "block",
+              type: "ul",
+            },
+            {
+              match: "1. ",
+              mode: "block",
+              type: "ol",
+            },
+            {
+              match: "[ ] ",
+              mode: "block",
+              type: "taskList",
+            },
+          ].map(
+            (rule) =>
+              ({
+                ...rule,
+                // Disable autoformat in code blocks
+                query: (editor: any) =>
+                  !editor.api.some({
+                    match: { type: "code_block" },
+                  }),
+              }) as any as AutoformatRule,
+          ),
+        },
+      }),
       BoldPlugin,
       CodePlugin.configure({
         node: { component: CodeLeaf },

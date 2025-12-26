@@ -39,6 +39,7 @@
   "devDependencies": {
     "@electron/packager": "^19.0.0",
     "@electron/rebuild": "^4.0.2",
+    "@platejs/autoformat": "^52.0.11",
     "@platejs/basic-nodes": "^52.0.11",
     "@platejs/code-block": "^52.0.11",
     "@platejs/combobox": "^52.0.15",
