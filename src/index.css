@@ -1,109 +1,8 @@
 @import url("./fonts.css") layer(base);
 @import "tailwindcss";
-
-@custom-variant dark (&:is(.dark *));
-
-@utility container {
-  margin-inline: auto;
-  padding-inline: 2rem;
-  @media (width >= --theme(--breakpoint-sm)) {
-    max-width: none;
-  }
-  @media (width >= 1400px) {
-    max-width: 1400px;
-  }
-}
-
-@theme {
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-link: hsl(var(--link));
-  --color-link-hover: hsl(var(--link-hover));
-
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
-  --color-accent-muted: hsl(var(--accent-muted));
-
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-accent-secondary: hsl(var(--accent-secondary));
-  --color-accent-secondary-foreground: hsl(var(--accent-secondary-foreground));
-  --color-accent-tertiary: hsl(var(--accent-tertiary));
-  --color-accent-tertiary-foreground: hsl(var(--accent-tertiary-foreground));
-
-  --color-tagg: hsl(var(--tag));
-  --color-tagg-foreground: hsl(var(--tag-foreground));
-  --color-tagg-muted: hsl(var(--tag-muted));
-  --color-tagg-muted-foreground: hsl(var(--tag-muted-foreground));
-
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-
-  --color-tooltip: hsl(var(--tooltip));
-  --color-tooltip-foreground: hsl(var(--tooltip-foreground));
-
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman",
-    Times, serif;
-  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-body: var(--font-body), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-heading: var(--font-heading), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-heading-2: var(--font-heading-2), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-heading-3: var(--font-heading-3), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-system-body: var(--font-system-body), ui-sans-serif, system-ui,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
-  --font-system-heading: var(--font-system-heading), ui-sans-serif, system-ui,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
-
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
-}
+/* TODO: Net step Shadcn
+@import "tw-animate-css";
+*/
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
@@ -158,75 +57,46 @@
     --font-system-body: "Mona Sans", var(--font-sans);
     --font-system-heading: "Hubot Sans", var(--font-sans);
 
-    --background: 0 0% 100%;
-    --background-hint: hsl(0 0% 100%);
-    --foreground: 222.2 84% 4.9%;
-    --foreground-hint: hsl(222.2 84% 4.9%);
+    --background: hsl(0 0% 100%);
+    --foreground: hsl(222.2 84% 4.9%);
 
-    --muted: 210 40% 96.1%;
-    --muted-hint: hsl(210 40% 96.1%);
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --muted-foreground-hint: hsl(215.4 16.3% 46.9%);
+    --muted: hsl(210 40% 96.1%);
+    --muted-foreground: hsl(215.4 16.3% 46.9%);
 
-    --tooltip: 222.2 84% 4.9%;
-    --tooltip-hint: hsl(222.2 84% 4.9%);
-    --tooltip-foreground: 0 0% 100%;
-    --tooltip-foreground-hint: hsl(0 0% 100%);
+    --tooltip: hsl(222.2 84% 4.9%);
+    --tooltip-foreground: hsl(0 0% 100%);
 
-    --popover: 0 0% 100%;
-    --popover-hint: hsl(0 0% 100%);
-    --popover-foreground: 222.2 84% 4.9%;
-    --popover-foreground-hint: hsl(222.2 84% 4.9%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(222.2 84% 4.9%);
 
-    --card: 0 0% 100%;
-    --card-hint: hsl(0 0% 100%);
-    --card-foreground: 222.2 84% 4.9%;
-    --card-foreground-hint: hsl(222.2 84% 4.9%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(222.2 84% 4.9%);
 
-    --border: 214.3 31.8% 91.4%;
-    --border-hint: hsl(214.3 31.8% 91.4%);
-    --input: 214.3 31.8% 91.4%;
-    --input-hint: hsl(214.3 31.8% 91.4%);
+    --border: hsl(214.3 31.8% 91.4%);
+    --input: hsl(214.3 31.8% 91.4%);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-hint: hsl(222.2 47.4% 11.2%);
-    --primary-foreground: 210 40% 98%;
-    --primary-foreground-hint: hsl(210 40% 98%);
+    --primary: hsl(222.2 47.4% 11.2%);
+    --primary-foreground: hsl(210 40% 98%);
 
-    --secondary: 210 40% 96.1%;
-    --secondary-hint: hsl(210 40% 96.1%);
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --secondary-foreground-hint: hsl(222.2 47.4% 11.2%);
+    --secondary: hsl(210 40% 96.1%);
+    --secondary-foreground: hsl(222.2 47.4% 11.2%);
 
-    --accent: 173, 80%, 40%;
-    --accent-hint: hsl(173, 80%, 40%);
-    --accent-foreground: 180, 1%, 19%;
-    --accent-foreground-hint: hsl(180, 1%, 19%);
-    --accent-secondary: 173, 80%, 40%;
-    --accent-secondary-hint: hsl(173, 80%, 40%);
-    --accent-secondary-foreground: 168, 83%, 89%;
-    --accent-secondary-foreground-hint: hsl(168, 83%, 89%);
-    --accent-tertiary: 173, 80%, 40%;
-    --accent-tertiary-hint: hsl(173, 80%, 40%);
-    --accent-tertiary-foreground: 168, 83%, 89%;
-    --accent-tertiary-foreground-hint: hsl(168, 83%, 89%);
+    --accent: hsl(173, 80%, 40%);
+    --accent-foreground: hsl(180, 1%, 19%);
+    --accent-secondary: hsl(173, 80%, 40%);
+    --accent-secondary-foreground: hsl(168, 83%, 89%);
+    --accent-tertiary: hsl(173, 80%, 40%);
+    --accent-tertiary-foreground: hsl(168, 83%, 89%);
 
-    --destructive: 0 72.22% 50.59%;
-    --destructive-hint: hsl(0 72.22% 50.59%);
-    --destructive-foreground: 210 40% 98%;
-    --destructive-foreground-hint: hsl(210 40% 98%);
+    --destructive: hsl(0 72.22% 50.59%);
+    --destructive-foreground: hsl(210 40% 98%);
 
-    --tag: 257, 8%, 83%;
-    --tag-hint: hsl(257, 8%, 83%);
-    --tag-foreground: 210, 3%, 15%;
-    --tag-foreground-hint: hsl(210, 3%, 15%);
-    --tag-secondary: 217.2 32.6% 17.5%;
-    --tag-secondary-hint: hsl(217.2 32.6% 17.5%);
-    --tag-secondary-foreground: 210 40% 98%;
-    --tag-secondary-foreground-hint: hsl(210 40% 98%);
+    --tag: hsl(257, 8%, 83%);
+    --tag-foreground: hsl(210, 3%, 15%);
+    --tag-secondary: hsl(217.2 32.6% 17.5%);
+    --tag-secondary-foreground: hsl(210 40% 98%);
 
-    --ring: 215 20.2% 65.1%;
-    --ring-hint: hsl(215 20.2% 65.1%);
+    --ring: hsl(215 20.2% 65.1%);
 
     --radius: 0.5rem;
     /* The MacOS titlebar takes up this space, other components should push below it */
@@ -234,93 +104,165 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --background-hint: hsl(222.2 84% 4.9%);
-    --foreground: 254 35% 78%;
-    --foreground-hint: hsl(254, 35%, 78%);
+    --background: hsl(222.2 84% 4.9%);
+    --foreground: hsl(254 35% 78%);
 
     /* Decrease hue, increase saturation, reduce lightness */
     /* Increasing lightness works too, but I think this looks better */
-    --foreground-strong: 224 100% 72%;
-    --foreground-strong-hint: hsl(224 100% 72%);
+    --foreground-strong: hsl(224 100% 72%);
 
     /* Similar to strong, but lighter */
-    --link: 224 100% 78%;
-    --link-hint: hsl(224, 100%, 78%);
-    --link-hover: 224 100% 72%;
-    --link-hover-hint: hsl(224 100% 72%);
+    --link: hsl(224 100% 78%);
+    --link-hover: hsl(224 100% 72%);
 
-    --muted: 217.2 32.6% 20%;
-    --muted-hint: hsl(217.2 32.6% 20%);
-    --muted-foreground: 215 20.2% 65.1%;
-    --muted-foreground-hint: hsl(215 20.2% 65.1%);
-    --accent-muted: 224 40% 40%; /* lower saturation + lightness */
-    --accent-muted-hint: hsl(224 40% 40%);
+    --muted: hsl(217.2 32.6% 20%);
+    --muted-foreground: hsl(215 20.2% 65.1%);
+    --accent-muted: hsl(224 40% 40%); /* lower saturation + lightness */
 
-    --tooltip: 222.2 84% 4.9%;
-    --tooltip-hint: hsl(222.2 84% 4.9%);
-    --tooltip-foreground: 210 40% 98%;
-    --tooltip-foreground-hint: hsl(210 40% 98%);
+    --tooltip: hsl(222.2 84% 4.9%);
+    --tooltip-foreground: hsl(210 40% 98%);
 
-    --popover: 222.2 84% 4.9%;
-    --popover-hint: hsl(222.2 84% 4.9%);
-    --popover-foreground: 210 40% 98%;
-    --popover-foreground-hint: hsl(210 40% 98%);
+    --popover: hsl(222.2 84% 4.9%);
+    --popover-foreground: hsl(210 40% 98%);
 
-    --card: 222.2 84% 4.9%;
-    --card-hint: hsl(222.2 84% 4.9%);
-    --card-foreground: 210 40% 98%;
-    --card-foreground-hint: hsl(210 40% 98%);
+    --card: hsl(222.2 84% 4.9%);
+    --card-foreground: hsl(210 40% 98%);
 
-    --border: 217.2 32.6% 17.5%;
-    --border-hint: hsl(217.2 32.6% 17.5%);
-    --input: 217.2 32.6% 17.5%;
-    --input-hint: hsl(217.2 32.6% 17.5%);
+    --border: hsl(217.2 32.6% 17.5%);
+    --input: hsl(217.2 32.6% 17.5%);
 
-    --primary: 254, 35%, 78%;
-    --primary-hint: hsl(254, 35%, 78%);
-    --primary-foreground: 217.2 32.6% 17.5%;
-    --primary-foreground-hint: hsl(217.2 32.6% 17.5%);
+    --primary: hsl(254, 35%, 78%);
+    --primary-foreground: hsl(217.2 32.6% 17.5%);
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-hint: hsl(217.2 32.6% 17.5%);
-    --secondary-foreground: 210 40% 98%;
-    --secondary-foreground-hint: hsl(210 40% 98%);
-    --accent: 173, 80%, 40%;
-    --accent-hint: hsl(173, 80%, 40%);
-    --accent-foreground: 168, 83%, 89%;
-    --accent-foreground-hint: hsl(168, 83%, 89%);
-    --accent-secondary: 173, 80%, 40%;
-    --accent-secondary-hint: hsl(173, 80%, 40%);
-    --accent-secondary-foreground: 168, 83%, 89%;
-    --accent-secondary-foreground-hint: hsl(168, 83%, 89%);
-    --accent-tertiary: 173, 80%, 40%;
-    --accent-tertiary-hint: hsl(173, 80%, 40%);
-    --accent-tertiary-foreground: 168, 83%, 89%;
-    --accent-tertiary-foreground-hint: hsl(168, 83%, 89%);
+    --secondary: hsl(217.2 32.6% 17.5%);
+    --secondary-foreground: hsl(210 40% 98%);
+    --accent: hsl(173, 80%, 40%);
+    --accent-foreground: hsl(168, 83%, 89%);
+    --accent-secondary: hsl(173, 80%, 40%);
+    --accent-secondary-foreground: hsl(168, 83%, 89%);
+    --accent-tertiary: hsl(173, 80%, 40%);
+    --accent-tertiary-foreground: hsl(168, 83%, 89%);
 
-    --destructive: 350 70% 45%; /* deep crimson / blood red */
-    --destructive-hint: hsl(0 62.8% 30.6%);
-    --destructive-foreground: 0 80% 90%; /* soft warm light red-pink */
-    --destructive-foreground-hint: hsl(0 85.7% 97.3%);
+    --destructive: hsl(350 70% 45%); /* deep crimson / blood red */
+    --destructive-foreground: hsl(0 80% 90%); /* soft warm light red-pink */
 
-    --tag: 234, 35%, 44%;
-    --tag-hint: hsl(234, 35%, 44%);
-    --tag-foreground: 210 40% 98%;
-    --tag-foreground-hint: hsl(210 40% 98%);
-    --tag-secondary: 217.2 32.6% 17.5%;
-    --tag-secondary-hint: hsl(217.2 32.6% 17.5%);
-    --tag-secondary-foreground: 210 40% 98%;
-    --tag-secondary-foreground-hint: hsl(210 40% 98%);
+    --tag: hsl(234, 35%, 44%);
+    --tag-foreground: hsl(210 40% 98%);
+    --tag-secondary: hsl(217.2 32.6% 17.5%);
+    --tag-secondary-foreground: hsl(210 40% 98%);
 
-    --ring: 217.2 32.6% 17.5%;
+    --ring: hsl(217.2 32.6% 17.5%);
+  }
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent-muted: var(--accent-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-secondary-foreground: var(--accent-secondary-foreground);
+  --color-accent-tertiary: var(--accent-tertiary);
+  --color-accent-tertiary-foreground: var(--accent-tertiary-foreground);
+
+  --color-tagg: var(--tag);
+  --color-tagg-foreground: var(--tag-foreground);
+  --color-tagg-muted: var(--tag-muted);
+  --color-tagg-muted-foreground: var(--tag-muted-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-foreground: var(--tooltip-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman",
+    Times, serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-body: var(--font-body), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: var(--font-heading), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading-2: var(--font-heading-2), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading-3: var(--font-heading-3), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-system-body: var(--font-system-body), ui-sans-serif, system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-system-heading: var(--font-system-heading), ui-sans-serif, system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
   }
 }
 
 @layer utilities {
   ::selection {
-    background-color: hsl(var(--accent-secondary));
-    color: hsl(var(--accent-foreground));
+    background-color: var(--accent-secondary);
+    color: var(--accent-foreground);
   }
 
   /**
@@ -332,7 +274,7 @@
   .slate-bold,
   strong {
     font-weight: 600;
-    color: hsl(var(--foreground-strong));
+    color: var(--foreground-strong);
   }
 
   .slate-li {
@@ -342,13 +284,13 @@
 
   .slate-code,
   code {
-    color: hsl(var(--foreground-strong));
+    color: var(--foreground-strong);
   }
 
   .slate-code::before,
   .slate-code::after {
     content: "`";
-    color: hsl(var(--muted-foreground)); /* or use a token */
+    color: var(--muted-foreground); /* or use a token */
   }
 
   .slate-noteLinkElement::after {
@@ -368,7 +310,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--muted-foreground) / 40%);
+    background-color: var(--muted-foreground) / 40%;
     border-radius: 4px;
     border: 2px solid transparent; /* Creates inner padding */
     background-clip: content-box;
