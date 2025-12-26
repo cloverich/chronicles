@@ -83,7 +83,7 @@ interface LangSelectProps {
 /**
  * Dropdown menu for selecting the language of a code block.
  */
-function LanguageSelect({ lang, setLang }: LangSelectProps) {
+export function LanguageSelect({ lang, setLang }: LangSelectProps) {
   function onChange(e: any) {
     setLang(e.target.value);
   }

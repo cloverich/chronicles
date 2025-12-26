@@ -1,4 +1,10 @@
-import { Plate, PlateContent, PlateElement, PlateElementProps, usePlateEditor } from "platejs/react";
+import {
+  Plate,
+  PlateContent,
+  PlateElement,
+  PlateElementProps,
+  usePlateEditor,
+} from "platejs/react";
 import React from "react";
 import { ReactEditor } from "slate-react";
 import { EditorLayout } from "./EditorLayout";
@@ -14,8 +20,23 @@ import { EditorMode } from "../EditorMode";
 // import FrontMatter from "./FrontMatter";
 // import { Separator } from "./components/Separator";
 // import { EditorToolbar } from "./toolbar/EditorToolbar";
-import { H1Element, H2Element, H3Element, H4Element, H5Element } from "./features/HeadingElement";
+import {
+  CodeBlockPlugin,
+  CodeLinePlugin,
+  CodeSyntaxPlugin,
+} from "@platejs/code-block/react";
+import { all, createLowlight } from "lowlight";
+import {
+  H1Element,
+  H2Element,
+  H3Element,
+  H4Element,
+  H5Element,
+} from "./features/HeadingElement";
+import { IndentPlugin } from '@platejs/indent/react';
 
+// Create a lowlight instance with all languages
+const lowlight = createLowlight(all);
 
 import {
   BlockquotePlugin,
@@ -27,7 +48,12 @@ import {
   H5Plugin,
   ItalicPlugin,
   UnderlinePlugin,
-} from '@platejs/basic-nodes/react';
+} from "@platejs/basic-nodes/react";
+import {
+  CodeBlockElement,
+  CodeLineElement,
+  CodeSyntaxLeaf,
+} from "./features/code-block/CodeBlockNode";
 
 interface Props {
   document: EditableDocument;
@@ -37,18 +63,17 @@ interface Props {
   goBack: () => void;
 }
 
-
 function BlockquoteElement(props: PlateElementProps) {
   return (
     <PlateElement
       as="blockquote"
       style={{
-        borderLeft: '2px solid #eee',
+        borderLeft: "2px solid #eee",
         marginLeft: 0,
         marginRight: 0,
-        paddingLeft: '24px',
-        color: '#666',
-        fontStyle: 'italic',
+        paddingLeft: "24px",
+        color: "#666",
+        fontStyle: "italic",
       }}
       {...props}
     />
@@ -57,18 +82,37 @@ function BlockquoteElement(props: PlateElementProps) {
 
 export const PlateContainer = (props: Props) => {
   const editor = usePlateEditor({
-    plugins: [BoldPlugin, ItalicPlugin, UnderlinePlugin, 
+    plugins: [
+      BoldPlugin,
+      ItalicPlugin,
+      UnderlinePlugin,
       H1Plugin.withComponent(H1Element),
       H2Plugin.withComponent(H2Element),
       H3Plugin.withComponent(H3Element),
       H4Plugin.withComponent(H4Element),
       H5Plugin.withComponent(H5Element),
-      BlockquotePlugin.withComponent(BlockquoteElement),],
+      BlockquotePlugin.withComponent(BlockquoteElement),
+      CodeBlockPlugin.configure({
+        node: { component: CodeBlockElement },
+        options: {
+          lowlight,
+          defaultLanguage: "ts",
+        },
+        shortcuts: { toggle: { keys: "mod+alt+8" } },
+      }),
+      CodeLinePlugin.withComponent(CodeLineElement),
+      CodeSyntaxPlugin.withComponent(CodeSyntaxLeaf),
+      IndentPlugin,
+    ],
+
     value: props.document.getInitialSlateContent(),
   });
   const focusEditor = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      if (e.target === e.currentTarget && !ReactEditor.isFocused(editor as any)) {
+      if (
+        e.target === e.currentTarget &&
+        !ReactEditor.isFocused(editor as any)
+      ) {
         ReactEditor.focus(editor as any);
       }
     },
@@ -76,7 +120,7 @@ export const PlateContainer = (props: Props) => {
   );
 
   return (
-    <Plate editor={editor}>
+    <Plate editor={editor as any}>
       <EditorLayout {...props} focusEditor={focusEditor}>
         <PlateContent
           style={{ padding: "16px 64px", minHeight: "100px", width: "100%" }}
