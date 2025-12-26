@@ -7,6 +7,7 @@ import {
 } from "platejs/react";
 import React from "react";
 import { ReactEditor } from "slate-react";
+// import { Editor, Element as SlateElement, Node, Range, Transforms } from "slate";
 import { EditorLayout } from "./EditorLayout";
 // import { useNavigate } from "react-router-dom";
 // import { useFocusEditor } from "..";
@@ -48,12 +49,16 @@ import {
   H5Plugin,
   ItalicPlugin,
   UnderlinePlugin,
+  CodePlugin,
 } from "@platejs/basic-nodes/react";
 import {
   CodeBlockElement,
   CodeLineElement,
   CodeSyntaxLeaf,
 } from "./features/code-block/CodeBlockNode";
+import { CodeLeaf } from "./features/code-block/CodeLeaf";
+import { ListPlugin, BulletedListPlugin, NumberedListPlugin, TaskListPlugin, ListItemPlugin } from '@platejs/list-classic/react';
+import { BulletedListElement, NumberedListElement, TaskListElement } from "./features/list-item/ListItem";
 
 interface Props {
   document: EditableDocument;
@@ -84,6 +89,10 @@ export const PlateContainer = (props: Props) => {
   const editor = usePlateEditor({
     plugins: [
       BoldPlugin,
+      CodePlugin.configure({
+      node: { component: CodeLeaf },
+      shortcuts: { toggle: { keys: 'mod+e' } },
+    }),
       ItalicPlugin,
       UnderlinePlugin,
       H1Plugin.withComponent(H1Element),
@@ -103,10 +112,26 @@ export const PlateContainer = (props: Props) => {
       CodeLinePlugin.withComponent(CodeLineElement),
       CodeSyntaxPlugin.withComponent(CodeSyntaxLeaf),
       IndentPlugin,
+          // ...otherPlugins,
+    ListPlugin,
+    BulletedListPlugin.configure({
+      node: { component: BulletedListElement },
+      shortcuts: { toggle: { keys: 'mod+alt+5' } },
+    }),
+    NumberedListPlugin.configure({
+      node: { component: NumberedListElement },
+      shortcuts: { toggle: { keys: 'mod+alt+6' } },
+    }),
+    TaskListPlugin.configure({
+      node: { component: TaskListElement },
+      shortcuts: { toggle: { keys: 'mod+alt+7' } },
+    }),
+    ListItemPlugin,
     ],
 
     value: props.document.getInitialSlateContent(),
   });
+
   const focusEditor = React.useCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       if (

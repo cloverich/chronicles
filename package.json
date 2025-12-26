@@ -42,6 +42,7 @@
     "@platejs/basic-nodes": "^52.0.11",
     "@platejs/code-block": "^52.0.11",
     "@platejs/indent": "^52.0.11",
+    "@platejs/list-classic": "^52.0.11",
     "@radix-ui/colors": "^3.0.0",
     "@radix-ui/react-context-menu": "^2.2.1",
     "@radix-ui/react-dialog": "^1.1.15",

@@ -950,6 +950,14 @@
   dependencies:
     react-compiler-runtime "^1.0.0"
 
+"@platejs/list-classic@^52.0.11":
+  version "52.0.11"
+  resolved "https://registry.yarnpkg.com/@platejs/list-classic/-/list-classic-52.0.11.tgz#3ab869e6cfe45ae4cadb30b03bd008a15e3da6c4"
+  integrity sha512-cuR0UJcfT7X45dvptofbozEznx604Y263pjlK7vLFerI2k7cUBuXRKOxtUuwVD4VaWE5aHCr8cO+nb+jhdGHSQ==
+  dependencies:
+    lodash "^4.17.21"
+    react-compiler-runtime "^1.0.0"
+
 "@platejs/slate@52.0.10":
   version "52.0.10"
   resolved "https://registry.yarnpkg.com/@platejs/slate/-/slate-52.0.10.tgz#90950bc2b07b0b1b9a12bad82bcfc57d7b3db8aa"
