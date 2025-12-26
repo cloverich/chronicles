@@ -7,6 +7,7 @@ import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
 import EditorErrorBoundary from "../EditorErrorBoundary";
 import { EditorMode } from "../EditorMode";
+import { EditorToolbar } from "./features/EditorToolbar";
 import FrontMatter from "../editor/FrontMatter";
 import { Separator } from "../editor/components/Separator";
 // import { EditorToolbar } from "../editor/toolbar/EditorToolbar";
@@ -46,12 +47,10 @@ export const EditorLayout = ({
             onClick={goBack}
           />
           <Separator orientation="vertical" />
-          {/* 
           <EditorToolbar
             selectedEditorMode={selectedViewMode}
             setSelectedEditorMode={setSelectedViewMode}
-            document={document}
-          /> */}
+          />
         </Titlebar>
 
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
