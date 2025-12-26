@@ -7,9 +7,9 @@ import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
 import EditorErrorBoundary from "../EditorErrorBoundary";
 import { EditorMode } from "../EditorMode";
-import { EditorToolbar } from "./features/EditorToolbar";
 import FrontMatter from "../editor/FrontMatter";
 import { Separator } from "../editor/components/Separator";
+import { EditorToolbar } from "./features/EditorToolbar";
 // import { EditorToolbar } from "../editor/toolbar/EditorToolbar";
 
 interface Props {

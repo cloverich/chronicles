@@ -17,6 +17,7 @@ import { JournalResponse } from "../../../hooks/useClient";
 // import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
 // import EditorErrorBoundary from "../EditorErrorBoundary";
+import { useSearchStore } from "../../documents/SearchStore";
 import { EditorMode } from "../EditorMode";
 // import FrontMatter from "./FrontMatter";
 // import { Separator } from "./components/Separator";
@@ -26,6 +27,7 @@ import {
   CodeLinePlugin,
   CodeSyntaxPlugin,
 } from "@platejs/code-block/react";
+import { IndentPlugin } from "@platejs/indent/react";
 import { all, createLowlight } from "lowlight";
 import {
   H1Element,
@@ -34,7 +36,6 @@ import {
   H4Element,
   H5Element,
 } from "./features/HeadingElement";
-import { IndentPlugin } from '@platejs/indent/react';
 
 // Create a lowlight instance with all languages
 const lowlight = createLowlight(all);
@@ -42,6 +43,7 @@ const lowlight = createLowlight(all);
 import {
   BlockquotePlugin,
   BoldPlugin,
+  CodePlugin,
   H1Plugin,
   H2Plugin,
   H3Plugin,
@@ -49,16 +51,31 @@ import {
   H5Plugin,
   ItalicPlugin,
   UnderlinePlugin,
-  CodePlugin,
 } from "@platejs/basic-nodes/react";
+import {
+  BulletedListPlugin,
+  ListItemPlugin,
+  ListPlugin,
+  NumberedListPlugin,
+  TaskListPlugin,
+} from "@platejs/list-classic/react";
 import {
   CodeBlockElement,
   CodeLineElement,
   CodeSyntaxLeaf,
 } from "./features/code-block/CodeBlockNode";
 import { CodeLeaf } from "./features/code-block/CodeLeaf";
-import { ListPlugin, BulletedListPlugin, NumberedListPlugin, TaskListPlugin, ListItemPlugin } from '@platejs/list-classic/react';
-import { BulletedListElement, NumberedListElement, TaskListElement } from "./features/list-item/ListItem";
+import {
+  BulletedListElement,
+  NumberedListElement,
+  TaskListElement,
+} from "./features/list-item/ListItem";
+import {
+  NoteLinkDropdownElement,
+  NoteLinkElement,
+  createNoteLinkDropdownPlugin,
+  createNoteLinkElementPlugin,
+} from "./features/note-linking /index";
 
 interface Props {
   document: EditableDocument;
@@ -86,13 +103,14 @@ function BlockquoteElement(props: PlateElementProps) {
 }
 
 export const PlateContainer = (props: Props) => {
+  const searchStore = useSearchStore()!;
   const editor = usePlateEditor({
     plugins: [
       BoldPlugin,
       CodePlugin.configure({
-      node: { component: CodeLeaf },
-      shortcuts: { toggle: { keys: 'mod+e' } },
-    }),
+        node: { component: CodeLeaf },
+        shortcuts: { toggle: { keys: "mod+e" } },
+      }),
       ItalicPlugin,
       UnderlinePlugin,
       H1Plugin.withComponent(H1Element),
@@ -112,21 +130,27 @@ export const PlateContainer = (props: Props) => {
       CodeLinePlugin.withComponent(CodeLineElement),
       CodeSyntaxPlugin.withComponent(CodeSyntaxLeaf),
       IndentPlugin,
-          // ...otherPlugins,
-    ListPlugin,
-    BulletedListPlugin.configure({
-      node: { component: BulletedListElement },
-      shortcuts: { toggle: { keys: 'mod+alt+5' } },
-    }),
-    NumberedListPlugin.configure({
-      node: { component: NumberedListElement },
-      shortcuts: { toggle: { keys: 'mod+alt+6' } },
-    }),
-    TaskListPlugin.configure({
-      node: { component: TaskListElement },
-      shortcuts: { toggle: { keys: 'mod+alt+7' } },
-    }),
-    ListItemPlugin,
+      // ...otherPlugins,
+      ListPlugin,
+      BulletedListPlugin.configure({
+        node: { component: BulletedListElement },
+        shortcuts: { toggle: { keys: "mod+alt+5" } },
+      }),
+      NumberedListPlugin.configure({
+        node: { component: NumberedListElement },
+        shortcuts: { toggle: { keys: "mod+alt+6" } },
+      }),
+      TaskListPlugin.configure({
+        node: { component: TaskListElement },
+        shortcuts: { toggle: { keys: "mod+alt+7" } },
+      }),
+      ListItemPlugin,
+      createNoteLinkDropdownPlugin
+        .configure({
+          options: { store: searchStore },
+        })
+        .withComponent(NoteLinkDropdownElement),
+      createNoteLinkElementPlugin.withComponent(NoteLinkElement),
     ],
 
     value: props.document.getInitialSlateContent(),

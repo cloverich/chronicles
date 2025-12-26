@@ -41,6 +41,7 @@
     "@electron/rebuild": "^4.0.2",
     "@platejs/basic-nodes": "^52.0.11",
     "@platejs/code-block": "^52.0.11",
+    "@platejs/combobox": "^52.0.15",
     "@platejs/indent": "^52.0.11",
     "@platejs/list-classic": "^52.0.11",
     "@radix-ui/colors": "^3.0.0",

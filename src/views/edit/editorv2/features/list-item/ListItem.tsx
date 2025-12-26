@@ -1,21 +1,21 @@
-import * as React from 'react';
+import * as React from "react";
 
-import type { PlateElementProps } from 'platejs/react';
+import type { PlateElementProps } from "platejs/react";
 
 import {
   useTodoListElement,
   useTodoListElementState,
-} from '@platejs/list-classic/react';
-import { type VariantProps, cva } from 'class-variance-authority';
-import { PlateElement } from 'platejs/react';
+} from "@platejs/list-classic/react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { PlateElement } from "platejs/react";
 
-import { cn } from '@/src/lib/utils';
+import { cn } from "@/src/lib/utils";
 
-const listVariants = cva('m-0 py-1 ps-6', {
+const listVariants = cva("m-0 py-1 ps-6", {
   variants: {
     variant: {
-      ol: 'list-decimal',
-      ul: 'list-disc [&_ul]:list-[circle] [&_ul_ul]:list-[square]',
+      ol: "list-decimal",
+      ul: "list-disc [&_ul]:list-[circle] [&_ul_ul]:list-[square]",
     },
   },
 });
@@ -52,7 +52,7 @@ export function TaskListElement(props: PlateElementProps) {
 }
 
 export function ListItemElement(props: PlateElementProps) {
-  const isTaskList = 'checked' in props.element;
+  const isTaskList = "checked" in props.element;
 
   if (isTaskList) {
     return <TaskListItemElement {...props} />;
@@ -79,19 +79,18 @@ export function TaskListItemElement(props: PlateElementProps) {
     <BaseListItemElement {...props}>
       <div
         className={cn(
-          'flex items-stretch *:nth-[2]:flex-1 *:nth-[2]:focus:outline-none',
+          "flex items-stretch *:nth-[2]:flex-1 *:nth-[2]:focus:outline-none",
           {
-            '*:nth-[2]:text-muted-foreground *:nth-[2]:line-through':
+            "*:nth-[2]:text-muted-foreground *:nth-[2]:line-through":
               state.checked,
-          }
+          },
         )}
       >
         <div
-          className="-ms-5 me-1.5 flex w-fit select-none items-start justify-center pt-[0.275em]"
+          className="-ms-5 me-1.5 flex w-fit items-start justify-center pt-[0.275em] select-none"
           contentEditable={false}
         >
-          [ ]
-          {/* <Checkbox {...checkboxProps} /> */}
+          [ ]{/* <Checkbox {...checkboxProps} /> */}
         </div>
 
         {firstChild}

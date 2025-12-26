@@ -916,6 +916,13 @@
   dependencies:
     react-compiler-runtime "^1.0.0"
 
+"@platejs/combobox@^52.0.15":
+  version "52.0.15"
+  resolved "https://registry.yarnpkg.com/@platejs/combobox/-/combobox-52.0.15.tgz#df67783afc255f009f6d9e4df11a24db80cf589b"
+  integrity sha512-ib5sdP91GA8BhmfyK7Pi57OGDRK/Kjxv399kCNRt/qxk0nLG7b15MUM/Apauf/pm/mvUJNmA7LwWHCZCuEuChw==
+  dependencies:
+    react-compiler-runtime "^1.0.0"
+
 "@platejs/core@52.0.15":
   version "52.0.15"
   resolved "https://registry.yarnpkg.com/@platejs/core/-/core-52.0.15.tgz#38d2a6fb6b3bc73325ed148c2081f2b637816e66"
