@@ -1,4 +1,5 @@
 import { PlateEditor, createPlatePlugin } from "@udecode/plate/react";
+import { toast } from "sonner";
 
 import { isImageUrl, isVideoUrl } from "../../../../../hooks/images";
 import { ELEMENT_IMAGE, ELEMENT_LINK } from "../../plate-types";
@@ -177,13 +178,33 @@ const handleImage = async (
 
   // Upload the bytes directly:
   const buffer = await file.arrayBuffer();
-  const filepath = await client.files.uploadImageBytes(buffer, file.name);
+  const result = await client.files.uploadImageBytes(buffer, file.name);
+  const { url, warning } =
+    typeof result === "string" ? { url: result, warning: undefined } : result;
+
+  if (warning) {
+    toast.warning(buildImageWarningMessage(file.name, warning.code));
+  }
 
   editor.tf.insertNode({
     type: ELEMENT_IMAGE,
-    url: filepath,
+    url,
     children: [{ text: "" }],
   });
 
-  return [true, filepath];
+  return [true, url];
 };
+
+function buildImageWarningMessage(
+  filename: string,
+  code: "decode_missing_plugin" | "decode_failed" | "process_failed",
+) {
+  switch (code) {
+    case "decode_missing_plugin":
+      return `Image "${filename}" could not be processed (missing decoder). Saved original file; preview may fail.`;
+    case "decode_failed":
+      return `Image "${filename}" could not be processed. Saved original file; preview may fail.`;
+    default:
+      return `Image "${filename}" processing failed. Saved original file; preview may fail.`;
+  }
+}

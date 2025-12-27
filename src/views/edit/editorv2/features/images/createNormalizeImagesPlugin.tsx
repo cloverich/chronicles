@@ -1,4 +1,4 @@
-import { createPlatePlugin } from "@udecode/plate/react";
+import { createPlatePlugin } from "platejs/react";
 import { Element, NodeEntry, Transforms } from "slate";
 import { ELEMENT_IMAGE, ELEMENT_VIDEO } from "../../../editor/plate-types";
 

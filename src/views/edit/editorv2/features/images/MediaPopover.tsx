@@ -1,15 +1,9 @@
-import { useRemoveNodeButton } from "@udecode/plate-utils/react";
-import { useEditorSelector, useElement } from "@udecode/plate/react";
+import { useEditorRef, useElement } from "platejs/react";
 import React from "react";
 import { Range } from "slate";
-
-import {
-  FloatingMedia as FloatingMediaPrimitive,
-  useFloatingMediaValue,
-} from "@udecode/plate-media/react";
 import { useReadOnly, useSelected } from "slate-react";
 
-import { Button, buttonVariants } from "../../../../../components/Button";
+import { Button } from "../../../../../components/Button";
 import {
   Popover,
   PopoverAnchor,
@@ -30,21 +24,43 @@ export interface MediaPopoverProps {
  *
  * I added this because the Image and Media elements required it.
  */
-export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
+export function MediaPopover({
+  pluginKey: _pluginKey,
+  children,
+}: MediaPopoverProps) {
   const readOnly = useReadOnly();
   const selected = useSelected();
-
-  const selectionCollapsed = useEditorSelector((editor) => {
-    const { selection } = editor;
-    return selection ? Range.isCollapsed(selection) : false;
-  }, []);
-  const isOpen = !readOnly && selected && selectionCollapsed;
-  const isEditing = useFloatingMediaValue("isEditing");
-
+  const editor = useEditorRef();
   const element = useElement();
-  const { props: buttonProps } = useRemoveNodeButton({ element });
+
+  const selectionCollapsed = editor.selection
+    ? Range.isCollapsed(editor.selection)
+    : false;
+  const isOpen = !readOnly && selected && selectionCollapsed;
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [url, setUrl] = React.useState((element as any)?.url ?? "");
+
+  React.useEffect(() => {
+    setUrl((element as any)?.url ?? "");
+  }, [(element as any)?.url]);
 
   if (readOnly) return <>{children}</>;
+
+  const updateUrl = () => {
+    try {
+      const path = editor.api.findPath(element);
+      if (!path) return;
+      editor.tf.setNodes(
+        {
+          url: url.trim(),
+        },
+        { at: path },
+      );
+      setIsEditing(false);
+    } catch (_error) {
+      // If the node disappeared, just bail quietly.
+    }
+  };
 
   return (
     <Popover open={isOpen} modal={false}>
@@ -61,27 +77,46 @@ export function MediaPopover({ pluginKey, children }: MediaPopoverProps) {
                 <Icons.link className="h-4 w-4" />
               </div>
 
-              <FloatingMediaPrimitive.UrlInput
+              <input
                 className={inputVariants({ variant: "ghost", h: "sm" })}
-                placeholder="Paste the embed link..."
-                options={{
-                  plugin: { key: pluginKey || "image" },
+                placeholder="Paste the media link..."
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    updateUrl();
+                  }
                 }}
               />
             </div>
           </div>
         ) : (
           <div className="box-content flex items-center">
-            <FloatingMediaPrimitive.EditButton
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
             >
               Edit link
-            </FloatingMediaPrimitive.EditButton>
+            </Button>
 
             {/* Ah, I broke this (invisible). Fix it at some point */}
             <Separator orientation="vertical" />
 
-            <Button variant="ghost" size="sm" {...buttonProps}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                try {
+                  const path = editor.api.findPath(element);
+                  if (!path) return;
+                  editor.tf.removeNodes({ at: path });
+                } catch (_error) {
+                  // If the node disappeared, just bail quietly.
+                }
+              }}
+            >
               <Icons.delete className="h-4 w-4" />
             </Button>
           </div>

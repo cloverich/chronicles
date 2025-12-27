@@ -1,4 +1,4 @@
-import { createPlatePlugin } from "@udecode/plate/react";
+import { createPlatePlugin } from "platejs/react";
 import { ELEMENT_IMAGE_GALLERY } from "./ImageGalleryElement";
 
 export const createImageGalleryPlugin = createPlatePlugin({

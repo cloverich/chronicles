@@ -1,6 +1,5 @@
-import { withRef } from "@udecode/cn";
-import { TElement } from "@udecode/plate";
-import { PlateElement, useElement } from "@udecode/plate/react";
+import type { TElement } from "platejs";
+import { PlateElement, useElement } from "platejs/react";
 import React from "react";
 
 import { Button } from "../../../../../components/Button";
@@ -26,19 +25,22 @@ export interface IImageGalleryElement extends TElement {
  * into an imageGroupElement node type (see parser). This component displays them
  * as a gallery
  */
-export const ImageGalleryElement = withRef<typeof PlateElement>(
-  ({ className, children, ...props }, ref) => {
-    const element = useElement<IImageGalleryElement>();
-    const images = element.images || [];
+export const ImageGalleryElement = React.forwardRef<
+  React.ElementRef<typeof PlateElement>,
+  React.ComponentPropsWithoutRef<typeof PlateElement>
+>(({ className, children, ...props }, ref) => {
+  const element = useElement<IImageGalleryElement>();
+  const images = element.images || [];
 
-    return (
-      <PlateElement ref={ref} {...props}>
-        <ImageGalleryLightbox images={images} />
-        {children}
-      </PlateElement>
-    );
-  },
-);
+  return (
+    <PlateElement ref={ref} {...props}>
+      <ImageGalleryLightbox images={images} />
+      {children}
+    </PlateElement>
+  );
+});
+
+ImageGalleryElement.displayName = "ImageGalleryElement";
 
 export const ImageGalleryLightbox = ({
   images,

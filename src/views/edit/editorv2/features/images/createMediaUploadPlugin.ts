@@ -1,4 +1,5 @@
-import { PlateEditor, createPlatePlugin } from "@udecode/plate/react";
+import { PlateEditor, createPlatePlugin } from "platejs/react";
+import { toast } from "sonner";
 
 import { isImageUrl, isVideoUrl } from "../../../../../hooks/images";
 import {
@@ -176,17 +177,44 @@ const handleImage = async (
   editor: PlateEditor,
 ): Promise<[boolean, string?]> => {
   const [mime] = file.type.split("/");
+  console.log(
+    "[MediaUpload] handleImage - file:",
+    file.name,
+    "mime:",
+    mime,
+    file.type,
+  );
   if (mime !== "image") return [false];
 
   // Upload the bytes directly:
   const buffer = await file.arrayBuffer();
-  const filepath = await client.files.uploadImageBytes(buffer, file.name);
+  const result = await client.files.uploadImageBytes(buffer, file.name);
+  const { url, warning } =
+    typeof result === "string" ? { url: result, warning: undefined } : result;
+
+  if (warning) {
+    toast.warning(buildImageWarningMessage(file.name, warning.code));
+  }
 
   editor.tf.insertNode({
     type: ELEMENT_IMAGE,
-    url: filepath,
+    url,
     children: [{ text: "" }],
   });
 
-  return [true, filepath];
+  return [true, url];
 };
+
+function buildImageWarningMessage(
+  filename: string,
+  code: "decode_missing_plugin" | "decode_failed" | "process_failed",
+) {
+  switch (code) {
+    case "decode_missing_plugin":
+      return `Image "${filename}" could not be processed (missing decoder). Saved original file; preview may fail.`;
+    case "decode_failed":
+      return `Image "${filename}" could not be processed. Saved original file; preview may fail.`;
+    default:
+      return `Image "${filename}" processing failed. Saved original file; preview may fail.`;
+  }
+}

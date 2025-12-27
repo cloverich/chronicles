@@ -1,6 +1,6 @@
-import { useMediaState } from "@udecode/plate-media/react";
-import { PlateElement, PlateElementProps } from "@udecode/plate/react";
+import { PlateElement, type PlateElementProps } from "platejs/react";
 import React from "react";
+import { useFocused, useSelected } from "slate-react";
 
 import { cn } from "../../../../../lib/utils";
 import { ELEMENT_IMAGE } from "../../../editor/plate-types";
@@ -13,16 +13,17 @@ export const ImageElement = ({
   children,
   ...props
 }: PlateElementProps) => {
-  const media = useMediaState();
-  // useMediaState returns unsafeUrl but not url - we need to pass url to ImageDisplay
-  const url = media.unsafeUrl || (props.element as any)?.url || "";
+  const selected = useSelected();
+  const focused = useFocused();
+  const url = (props.element as any)?.url || "";
 
   return (
     <MediaPopover pluginKey={ELEMENT_IMAGE}>
       <PlateElement className={cn("flex justify-start", className)} {...props}>
         <ImageDisplay
-          {...media}
           url={url}
+          focused={focused}
+          selected={selected}
           className="my-8 max-h-96 max-w-full cursor-pointer object-scale-down"
         />
         {children}

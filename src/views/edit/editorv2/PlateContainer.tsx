@@ -66,6 +66,14 @@ import {
   CodeSyntaxLeaf,
 } from "./features/code-block/CodeBlockNode";
 import { CodeLeaf } from "./features/code-block/CodeLeaf";
+import { ImageElement } from "./features/images/ImageElement";
+import { ImageGalleryElement } from "./features/images/ImageGalleryElement";
+import { createFilesPlugin } from "./features/images/createFilesPlugin";
+import { createImageGalleryPlugin } from "./features/images/createImageGalleryElementPlugin";
+import { createImagePlugin } from "./features/images/createImagePlugin";
+import { createMediaUploadPlugin } from "./features/images/createMediaUploadPlugin";
+import { createNormalizeImagesPlugin } from "./features/images/createNormalizeImagesPlugin";
+import { createVideoPlugin } from "./features/images/createVideoPlugin";
 import {
   BulletedListElement,
   NumberedListElement,
@@ -210,6 +218,12 @@ export const PlateContainer = (props: Props) => {
         shortcuts: { toggle: { keys: "mod+alt+7" } },
       }),
       ListItemPlugin,
+      createMediaUploadPlugin,
+      createNormalizeImagesPlugin,
+      createFilesPlugin,
+      createVideoPlugin,
+      createImagePlugin.withComponent(ImageElement),
+      createImageGalleryPlugin.withComponent(ImageGalleryElement),
       createNoteLinkDropdownPlugin
         .configure({
           options: { store: searchStore },
