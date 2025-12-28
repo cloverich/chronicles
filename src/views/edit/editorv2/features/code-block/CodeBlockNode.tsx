@@ -96,7 +96,9 @@ function CodeBlockCombobox() {
     <LanguageSelect
       lang={value}
       setLang={(lang) => {
-        editor.tf.setNodes<TCodeBlockElement>({ lang }, { at: element });
+        const path = editor.api.findPath(element);
+        if (!path) return;
+        editor.tf.setNodes<TCodeBlockElement>({ lang }, { at: path });
       }}
     />
     // <Popover open={open} onOpenChange={setOpen}>
