@@ -470,7 +470,7 @@
   dependencies:
     "@floating-ui/utils" "^0.2.1"
 
-"@floating-ui/core@^1.6.9", "@floating-ui/core@^1.7.3":
+"@floating-ui/core@^1.6.9", "@floating-ui/core@^1.7.1", "@floating-ui/core@^1.7.3":
   version "1.7.3"
   resolved "https://registry.npmjs.org/@floating-ui/core/-/core-1.7.3.tgz"
   integrity sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==
@@ -515,7 +515,7 @@
   dependencies:
     "@floating-ui/dom" "^1.7.4"
 
-"@floating-ui/react@^0.27.8":
+"@floating-ui/react@^0.27.12", "@floating-ui/react@^0.27.8":
   version "0.27.16"
   resolved "https://registry.npmjs.org/@floating-ui/react/-/react-0.27.16.tgz"
   integrity sha512-9O8N4SeG2z++TSM8QA/KTeKFBVCNEz/AGS7gWPJf6KFRzmRWixFRnCnkPHRDwSVZW6QPDO6uT0P2SpWNKCc9/g==
@@ -958,11 +958,28 @@
     zustand "^5.0.5"
     zustand-x "6.2.1"
 
+"@platejs/floating@52.0.11", "@platejs/floating@^52.0.11":
+  version "52.0.11"
+  resolved "https://registry.yarnpkg.com/@platejs/floating/-/floating-52.0.11.tgz#6d16073ed34760f1799e8c80134f7f7884a3fde9"
+  integrity sha512-ApNpw4KWml+kuK+XTTpji+f/7GxTR4nRzlnfJMvGBrJpLPQ4elS5MABm3oUi81DZn+aub5HvsyH7UqCw7F76IA==
+  dependencies:
+    "@floating-ui/core" "^1.7.1"
+    "@floating-ui/react" "^0.27.12"
+    react-compiler-runtime "^1.0.0"
+
 "@platejs/indent@^52.0.11":
   version "52.0.11"
   resolved "https://registry.yarnpkg.com/@platejs/indent/-/indent-52.0.11.tgz#8a3be759c0f9a54cadf18dacc2d96ae03664e81f"
   integrity sha512-CZYFOZObce4yzQal/coKtPzp2+N+DiLetLiYR2U8z4Tgc9da/Fsj11DNR7CorVcdNmBPWkr3vwbTwuSayNOYgQ==
   dependencies:
+    react-compiler-runtime "^1.0.0"
+
+"@platejs/link@^52.0.11":
+  version "52.0.11"
+  resolved "https://registry.yarnpkg.com/@platejs/link/-/link-52.0.11.tgz#4f50ce05b24c632e7b6857532b61d6306abdd7cf"
+  integrity sha512-ykfTL1NtvDJYGbp+QZiZU+N1WNo5xLiInuBl/Gb/EVeI/PU8He1PLR1ub/zhIuJiiT487u07QT5b4jltvnd86g==
+  dependencies:
+    "@platejs/floating" "52.0.11"
     react-compiler-runtime "^1.0.0"
 
 "@platejs/list-classic@^52.0.11":
@@ -1509,7 +1526,7 @@
   dependencies:
     "@radix-ui/react-slot" "1.2.3"
 
-"@radix-ui/react-primitive@^2.0.2":
+"@radix-ui/react-primitive@2.1.4", "@radix-ui/react-primitive@^2.0.2":
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/@radix-ui/react-primitive/-/react-primitive-2.1.4.tgz#2626ea309ebd63bf5767d3e7fc4081f81b993df0"
   integrity sha512-9hQc4+GNVtJAIEPEqlYqW5RiYdrr8ea5XQ0ZOnD6fgru+83kqT15mq2OCcbe8KnjRZl5vF3ks69AKz3kh1jrhg==
@@ -1574,13 +1591,20 @@
     aria-hidden "^1.2.4"
     react-remove-scroll "^2.6.3"
 
-"@radix-ui/react-separator@1.0.3", "@radix-ui/react-separator@^1.0.3":
+"@radix-ui/react-separator@1.0.3":
   version "1.0.3"
   resolved "https://registry.npmjs.org/@radix-ui/react-separator/-/react-separator-1.0.3.tgz"
   integrity sha512-itYmTy/kokS21aiV5+Z56MZB54KrhPgn6eHDKkFeOLR34HMN2s8PaN47qZZAGnvupcjxHaFZnW4pQEh0BvvVuw==
   dependencies:
     "@babel/runtime" "^7.13.10"
     "@radix-ui/react-primitive" "1.0.3"
+
+"@radix-ui/react-separator@^1.1.8":
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/@radix-ui/react-separator/-/react-separator-1.1.8.tgz#24f871fbf9630af316d0c14cbc7519a6e33aa11e"
+  integrity sha512-sDvqVY4itsKwwSMEe0jtKgfTh+72Sy3gPmQpjqcQneqQ4PFmr/1I0YA+2/puilhggCe2gJcx5EBAYFkWkdpa5g==
+  dependencies:
+    "@radix-ui/react-primitive" "2.1.4"
 
 "@radix-ui/react-slot@1.0.2":
   version "1.0.2"

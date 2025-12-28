@@ -1,10 +1,5 @@
-import {
-  Plate,
-  PlateContent,
-  PlateElement,
-  PlateElementProps,
-  usePlateEditor,
-} from "platejs/react";
+import { ExitBreakPlugin, TrailingBlockPlugin } from "platejs";
+import { Plate, PlateContent, usePlateEditor } from "platejs/react";
 import React from "react";
 import { ReactEditor } from "slate-react";
 // import { Editor, Element as SlateElement, Node, Range, Transforms } from "slate";
@@ -28,6 +23,7 @@ import {
   CodeLinePlugin,
   CodeSyntaxPlugin,
 } from "@platejs/code-block/react";
+import { getDOMSelectionBoundingClientRect } from "@platejs/floating";
 import { IndentPlugin } from "@platejs/indent/react";
 import { all, createLowlight } from "lowlight";
 import {
@@ -37,9 +33,6 @@ import {
   H4Element,
   H5Element,
 } from "./features/HeadingElement";
-
-// Create a lowlight instance with all languages
-const lowlight = createLowlight(all);
 
 import {
   BlockquotePlugin,
@@ -53,6 +46,7 @@ import {
   ItalicPlugin,
   UnderlinePlugin,
 } from "@platejs/basic-nodes/react";
+import { LinkPlugin } from "@platejs/link/react";
 import {
   BulletedListPlugin,
   ListItemPlugin,
@@ -60,6 +54,8 @@ import {
   NumberedListPlugin,
   TaskListPlugin,
 } from "@platejs/list-classic/react";
+import { ELEMENT_PARAGRAPH } from "../editor/plate-types";
+import { BlockquoteElement } from "./features/BlockQuoteElement";
 import {
   CodeBlockElement,
   CodeLineElement,
@@ -68,12 +64,15 @@ import {
 import { CodeLeaf } from "./features/code-block/CodeLeaf";
 import { ImageElement } from "./features/images/ImageElement";
 import { ImageGalleryElement } from "./features/images/ImageGalleryElement";
+import { VideoElement } from "./features/images/VideoElement";
 import { createFilesPlugin } from "./features/images/createFilesPlugin";
 import { createImageGalleryPlugin } from "./features/images/createImageGalleryElementPlugin";
 import { createImagePlugin } from "./features/images/createImagePlugin";
 import { createMediaUploadPlugin } from "./features/images/createMediaUploadPlugin";
 import { createNormalizeImagesPlugin } from "./features/images/createNormalizeImagesPlugin";
 import { createVideoPlugin } from "./features/images/createVideoPlugin";
+import { LinkElement } from "./features/link/LinkElement";
+import { LinkFloatingToolbar } from "./features/link/LinkToolbar";
 import {
   BulletedListElement,
   NumberedListElement,
@@ -86,6 +85,9 @@ import {
   createNoteLinkElementPlugin,
 } from "./features/note-linking/index";
 
+// Create a lowlight instance with all languages
+const lowlight = createLowlight(all);
+
 interface Props {
   document: EditableDocument;
   selectedViewMode: EditorMode;
@@ -94,27 +96,19 @@ interface Props {
   goBack: () => void;
 }
 
-function BlockquoteElement(props: PlateElementProps) {
-  return (
-    <PlateElement
-      as="blockquote"
-      style={{
-        borderLeft: "2px solid #eee",
-        marginLeft: 0,
-        marginRight: 0,
-        paddingLeft: "24px",
-        color: "#666",
-        fontStyle: "italic",
-      }}
-      {...props}
-    />
-  );
-}
-
 export const PlateContainer = (props: Props) => {
   const searchStore = useSearchStore()!;
   const editor = usePlateEditor({
     plugins: [
+      TrailingBlockPlugin.configure({
+        options: { type: ELEMENT_PARAGRAPH },
+      }),
+      ExitBreakPlugin.configure({
+        shortcuts: {
+          insert: { keys: "mod+enter" },
+          insertBefore: { keys: "mod+shift+enter" },
+        },
+      }),
       AutoformatPlugin.configure({
         options: {
           enableUndoOnDelete: true,
@@ -209,6 +203,22 @@ export const PlateContainer = (props: Props) => {
         node: { component: BulletedListElement },
         shortcuts: { toggle: { keys: "mod+alt+5" } },
       }),
+      LinkPlugin.configure({
+        render: {
+          afterEditable: () => (
+            <LinkFloatingToolbar
+              state={{
+                floatingOptions: {
+                  getBoundingClientRect: getDOMSelectionBoundingClientRect,
+                },
+              }}
+            />
+          ),
+        },
+        options: {
+          allowedSchemes: ["http", "https", "mailto", "chronicles"],
+        },
+      }).withComponent(LinkElement),
       NumberedListPlugin.configure({
         node: { component: NumberedListElement },
         shortcuts: { toggle: { keys: "mod+alt+6" } },
@@ -221,7 +231,7 @@ export const PlateContainer = (props: Props) => {
       createMediaUploadPlugin,
       createNormalizeImagesPlugin,
       createFilesPlugin,
-      createVideoPlugin,
+      createVideoPlugin.withComponent(VideoElement),
       createImagePlugin.withComponent(ImageElement),
       createImageGalleryPlugin.withComponent(ImageGalleryElement),
       createNoteLinkDropdownPlugin
