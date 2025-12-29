@@ -1,4 +1,4 @@
-import { ExitBreakPlugin, TrailingBlockPlugin } from "platejs";
+import { ExitBreakPlugin, TElement, TrailingBlockPlugin } from "platejs";
 import { Plate, PlateContent, usePlateEditor } from "platejs/react";
 import React from "react";
 import { ReactEditor } from "slate-react";
@@ -242,7 +242,7 @@ export const PlateContainer = (props: Props) => {
       createNoteLinkElementPlugin.withComponent(NoteLinkElement),
     ],
 
-    value: props.document.getInitialSlateContent(),
+    value: props.document.getInitialSlateContent() as TElement[],
   });
 
   const focusEditor = React.useCallback(

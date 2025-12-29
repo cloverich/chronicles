@@ -1,10 +1,10 @@
-import React from "react";
 import { PlateElement, type PlateElementProps } from "platejs/react";
+import React from "react";
 import { useFocused, useSelected } from "slate-react";
 
-import { MediaWrapper } from "./MediaWrapper";
-import { MediaPopover } from "./MediaPopover";
 import { ELEMENT_VIDEO } from "../../../editor/plate-types";
+import { MediaPopover } from "./MediaPopover";
+import { MediaWrapper } from "./MediaWrapper";
 
 /**
  * Renders <video> elements for editorv2, with verbose error logging.
