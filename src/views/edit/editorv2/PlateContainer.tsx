@@ -62,6 +62,7 @@ import {
   CodeSyntaxLeaf,
 } from "./features/code-block/CodeBlockNode";
 import { CodeLeaf } from "./features/code-block/CodeLeaf";
+import { exitCodeBlockOnEnterPlugin } from "./features/code-block/createExitCodeBlockOnEnterPlugin";
 import { ImageElement } from "./features/images/ImageElement";
 import { ImageGalleryElement } from "./features/images/ImageGalleryElement";
 import { VideoElement } from "./features/images/VideoElement";
@@ -109,6 +110,7 @@ export const PlateContainer = (props: Props) => {
           insertBefore: { keys: "mod+shift+enter" },
         },
       }),
+      exitCodeBlockOnEnterPlugin,
       AutoformatPlugin.configure({
         options: {
           enableUndoOnDelete: true,
