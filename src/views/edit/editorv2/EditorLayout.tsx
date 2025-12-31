@@ -9,7 +9,7 @@ import EditorErrorBoundary from "../EditorErrorBoundary";
 import { EditorMode } from "../EditorMode";
 import FrontMatter from "../editor/FrontMatter";
 import { Separator } from "../editor/components/Separator";
-import { EditorToolbar } from "./features/EditorToolbar";
+import { EditorToolbar } from "./features/toolbar/EditorToolbar";
 // import { EditorToolbar } from "../editor/toolbar/EditorToolbar";
 
 interface Props {

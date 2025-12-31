@@ -8,15 +8,23 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   useOpenState,
-} from "../../../../components/DropdownMenu";
-import { Icons } from "../../../../components/icons";
-import { EditorMode } from "../../EditorMode";
+} from "../../../../../components/DropdownMenu";
+import { Icons } from "../../../../../components/icons";
+import { EditorMode } from "../../../EditorMode";
 import {
   Toolbar,
   ToolbarButton,
   ToolbarGroup,
-} from "../../editor/components/Toolbar";
-import { TooltipProvider } from "../../editor/components/Tooltip";
+} from "../../../editor/components/Toolbar";
+import { TooltipProvider } from "../../../editor/components/Tooltip";
+import {
+  MARK_BOLD,
+  MARK_CODE,
+  MARK_ITALIC,
+  MARK_STRIKETHROUGH,
+  MARK_UNDERLINE,
+} from "../../../editor/plate-types";
+import { MarkToolbarButton } from "./MarkToolbarButton";
 
 const options = Object.freeze([
   { key: EditorMode.EditorV2, label: "Editor v2" },
@@ -47,6 +55,39 @@ export function EditorToolbar({
         <div className="text-muted-foreground flex flex-wrap">
           <div className="grow" />
           <Toolbar>
+            <ToolbarGroup className="drag-none">
+              <MarkToolbarButton
+                size="inherit"
+                tooltip="Bold (⌘+B)"
+                nodeType={MARK_BOLD}
+                icon="bold"
+              />
+              <MarkToolbarButton
+                tooltip="Italic (⌘+I)"
+                nodeType={MARK_ITALIC}
+                icon="italic"
+              />
+              <MarkToolbarButton
+                tooltip="Underline (⌘+U)"
+                nodeType={MARK_UNDERLINE}
+                icon="underline"
+              />
+
+              <>
+                <MarkToolbarButton
+                  tooltip="Strikethrough (⌘+⇧+M)"
+                  nodeType={MARK_STRIKETHROUGH}
+                  icon="strikethrough"
+                />
+                <MarkToolbarButton
+                  tooltip="Code (⌘+E)"
+                  nodeType={MARK_CODE}
+                  icon="code"
+                />
+              </>
+              {/* <LinkToolbarButton /> */}
+            </ToolbarGroup>
+
             <ToolbarGroup className="drag-none">
               <DropdownMenu modal={false} {...openState}>
                 <DropdownMenuTrigger asChild>
