@@ -260,13 +260,14 @@ export const PlateContainer = (props: Props) => {
   );
 
   return (
-    <Plate editor={editor as any}>
+    <Plate
+      editor={editor as any}
+      onChange={({ value }) => props.document.setSlateContent(value)}
+    >
       <EditorLayout {...props} focusEditor={focusEditor}>
         <PlateContent
           style={{ padding: "16px 64px", minHeight: "100px", width: "100%" }}
           placeholder="Type your amazing content here..."
-          // todo: once we do this it overrides
-          // onChange={({value}) => props.document.setSlateContent(value)}
         />
       </EditorLayout>
     </Plate>

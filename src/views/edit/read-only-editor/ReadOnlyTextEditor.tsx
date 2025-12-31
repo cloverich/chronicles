@@ -32,7 +32,11 @@ export const ReadOnlyTextEditor = observer(
   }: Props) => {
     function content() {
       if (json) {
-        return <pre>{JSON.stringify(json, null, 2)}</pre>;
+        return (
+          <pre className="font-mono text-xs">
+            {JSON.stringify(json, null, 2)}
+          </pre>
+        );
       } else {
         return <pre>{markdown}</pre>;
       }
