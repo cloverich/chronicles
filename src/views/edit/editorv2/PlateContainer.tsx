@@ -1,5 +1,10 @@
 import { ExitBreakPlugin, TElement, TrailingBlockPlugin } from "platejs";
-import { Plate, PlateContent, usePlateEditor } from "platejs/react";
+import {
+  ParagraphPlugin,
+  Plate,
+  PlateContent,
+  usePlateEditor,
+} from "platejs/react";
 import React from "react";
 import { ReactEditor } from "slate-react";
 // import { Editor, Element as SlateElement, Node, Range, Transforms } from "slate";
@@ -56,6 +61,7 @@ import {
 } from "@platejs/list-classic/react";
 import { ELEMENT_PARAGRAPH } from "../editor/plate-types";
 import { BlockquoteElement } from "./features/BlockQuoteElement";
+import { ParagraphElement } from "./features/ParagraphElement";
 import {
   CodeBlockElement,
   CodeLineElement,
@@ -180,6 +186,7 @@ export const PlateContainer = (props: Props) => {
         node: { component: CodeLeaf },
         shortcuts: { toggle: { keys: "mod+e" } },
       }),
+      ParagraphPlugin.withComponent(ParagraphElement),
       ItalicPlugin,
       UnderlinePlugin,
       H1Plugin.withComponent(H1Element),
