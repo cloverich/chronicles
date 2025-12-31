@@ -273,7 +273,7 @@ export const PlateContainer = (props: Props) => {
     >
       <EditorLayout {...props} focusEditor={focusEditor}>
         <PlateContent
-          style={{ padding: "16px 64px", minHeight: "100px", width: "100%" }}
+          className="font-body min-h-full w-full"
           placeholder="Type your amazing content here..."
         />
       </EditorLayout>
