@@ -24,6 +24,7 @@ import {
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
 } from "../../../editor/plate-types";
+import { LinkToolbarButton } from "./LinkToolbarButton";
 import { MarkToolbarButton } from "./MarkToolbarButton";
 
 const options = Object.freeze([
@@ -85,7 +86,7 @@ export function EditorToolbar({
                   icon="code"
                 />
               </>
-              {/* <LinkToolbarButton /> */}
+              <LinkToolbarButton />
             </ToolbarGroup>
 
             <ToolbarGroup className="drag-none">
