@@ -10,7 +10,7 @@ import { EditorMode } from "../EditorMode";
 import FrontMatter from "../editor/FrontMatter";
 import { Separator } from "../editor/components/Separator";
 import { EditorToolbar } from "./features/toolbar/EditorToolbar";
-// import { EditorToolbar } from "../editor/toolbar/EditorToolbar";
+import { useFocusEditor } from "./useFocusEditor";
 
 interface Props {
   document: EditableDocument;
@@ -18,7 +18,6 @@ interface Props {
   setSelectedViewMode: (mode: EditorMode) => void;
   journals: JournalResponse[];
   goBack: () => void;
-  focusEditor: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 }
 
 export const EditorLayout = ({
@@ -27,10 +26,10 @@ export const EditorLayout = ({
   goBack,
   selectedViewMode,
   setSelectedViewMode,
-  focusEditor,
   children,
 }: React.PropsWithChildren<Props>) => {
   const navigate = useNavigate();
+  const focusEditor = useFocusEditor();
 
   return (
     <EditorErrorBoundary

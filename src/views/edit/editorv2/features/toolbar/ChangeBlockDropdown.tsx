@@ -139,7 +139,6 @@ const MenuToggle = React.memo(
       items.find((item) => item.value === value) ?? defaultItem;
     const { icon: SelectedItemIcon, label: selectedItemLabel } = selectedItem;
 
-    console.log("MenuToggle selectedItem", selectedItem);
     return (
       <DropdownMenuTrigger asChild>
         <ToolbarButton

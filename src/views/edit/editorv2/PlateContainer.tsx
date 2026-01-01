@@ -1,12 +1,6 @@
 import { ExitBreakPlugin, TElement, TrailingBlockPlugin } from "platejs";
-import {
-  ParagraphPlugin,
-  Plate,
-  PlateContent,
-  usePlateEditor,
-} from "platejs/react";
+import { ParagraphPlugin, Plate, PlateContent, usePlateEditor } from "platejs/react";
 import React from "react";
-import { ReactEditor } from "slate-react";
 // import { Editor, Element as SlateElement, Node, Range, Transforms } from "slate";
 import { EditorLayout } from "./EditorLayout";
 // import { useNavigate } from "react-router-dom";
@@ -254,24 +248,12 @@ export const PlateContainer = (props: Props) => {
     value: props.document.getInitialSlateContent() as TElement[],
   });
 
-  const focusEditor = React.useCallback(
-    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      if (
-        e.target === e.currentTarget &&
-        !ReactEditor.isFocused(editor as any)
-      ) {
-        ReactEditor.focus(editor as any);
-      }
-    },
-    [editor],
-  );
-
   return (
     <Plate
       editor={editor as any}
       onChange={({ value }) => props.document.setSlateContent(value)}
     >
-      <EditorLayout {...props} focusEditor={focusEditor}>
+      <EditorLayout {...props}>
         <PlateContent
           className="font-body min-h-full w-full"
           placeholder="Type your amazing content here..."
