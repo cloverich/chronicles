@@ -54,7 +54,7 @@ export const EditorLayout = ({
 
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
         <Base.TitlebarSpacer />
-        <Base.ScrollContainer>
+        <Base.ScrollContainer onClick={focusEditor}>
           <div className="flex w-full grow flex-col">
             <FrontMatter document={document} journals={journals} />
 

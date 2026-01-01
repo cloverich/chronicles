@@ -1,21 +1,3 @@
-import { ExitBreakPlugin, TElement, TrailingBlockPlugin } from "platejs";
-import { ParagraphPlugin, Plate, PlateContent, usePlateEditor } from "platejs/react";
-import React from "react";
-// import { Editor, Element as SlateElement, Node, Range, Transforms } from "slate";
-import { EditorLayout } from "./EditorLayout";
-// import { useNavigate } from "react-router-dom";
-// import { useFocusEditor } from "..";
-// import { IconButton } from "../../../components/IconButton";
-import { JournalResponse } from "../../../hooks/useClient";
-// import Titlebar from "../../../titlebar/macos";
-// import * as Base from "../../layout";
-import { EditableDocument } from "../EditableDocument";
-// import EditorErrorBoundary from "../EditorErrorBoundary";
-import { useSearchStore } from "../../documents/SearchStore";
-import { EditorMode } from "../EditorMode";
-// import FrontMatter from "./FrontMatter";
-// import { Separator } from "./components/Separator";
-// import { EditorToolbar } from "./toolbar/EditorToolbar";
 import { AutoformatPlugin, AutoformatRule } from "@platejs/autoformat";
 import {
   CodeBlockPlugin,
@@ -25,6 +7,19 @@ import {
 import { getDOMSelectionBoundingClientRect } from "@platejs/floating";
 import { IndentPlugin } from "@platejs/indent/react";
 import { all, createLowlight } from "lowlight";
+import { ExitBreakPlugin, TElement, TrailingBlockPlugin } from "platejs";
+import {
+  ParagraphPlugin,
+  Plate,
+  PlateContent,
+  usePlateEditor,
+} from "platejs/react";
+import React from "react";
+import { JournalResponse } from "../../../hooks/useClient";
+import { useSearchStore } from "../../documents/SearchStore";
+import { EditableDocument } from "../EditableDocument";
+import { EditorMode } from "../EditorMode";
+import { EditorLayout } from "./EditorLayout";
 import {
   H1Element,
   H2Element,
@@ -120,6 +115,16 @@ export const PlateContainer = (props: Props) => {
               match: "# ",
               mode: "block",
               type: "h1",
+            },
+            {
+              match: "## ",
+              mode: "block",
+              type: "h2",
+            },
+            {
+              match: "### ",
+              mode: "block",
+              type: "h3",
             },
             {
               match: "> ",
