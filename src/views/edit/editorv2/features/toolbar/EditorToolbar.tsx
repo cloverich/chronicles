@@ -24,6 +24,7 @@ import {
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
 } from "../../../editor/plate-types";
+import { ChangeBlockDropdown } from "./ChangeBlockDropdown";
 import { LinkToolbarButton } from "./LinkToolbarButton";
 import { MarkToolbarButton } from "./MarkToolbarButton";
 
@@ -56,6 +57,9 @@ export function EditorToolbar({
         <div className="text-muted-foreground flex flex-wrap">
           <div className="grow" />
           <Toolbar>
+            <ToolbarGroup className="drag-none">
+              <ChangeBlockDropdown />
+            </ToolbarGroup>
             <ToolbarGroup className="drag-none">
               <MarkToolbarButton
                 size="inherit"
