@@ -1,5 +1,5 @@
-import { TElement, TText } from "@udecode/slate";
 import * as mdast from "mdast";
+import { TElement, TText } from "platejs";
 
 export function toUndefined<T>(value: T | undefined | null): T | undefined {
   return value ?? undefined;

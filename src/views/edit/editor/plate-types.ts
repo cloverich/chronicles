@@ -71,6 +71,8 @@ export const ELEMENT_LIC = "lic";
 export const ELEMENT_IMAGE = "img";
 export const ELEMENT_VIDEO = "video";
 export const ELEMENT_MEDIA_EMBED = "media_embed";
+export const ELEMENT_FILE = "file";
+export const ELEMENT_IMAGE_GALLERY = "imageGalleryElement";
 
 // Other elements
 export const ELEMENT_TODO_LI = "action_item";

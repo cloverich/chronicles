@@ -1,9 +1,12 @@
-import { PlateEditor, createPlatePlugin } from "@udecode/plate/react";
+import { PlateEditor, createPlatePlugin } from "platejs/react";
 import { toast } from "sonner";
 
 import { isImageUrl, isVideoUrl } from "../../../../../hooks/images";
-import { ELEMENT_IMAGE, ELEMENT_LINK } from "../../plate-types";
-import { ELEMENT_VIDEO } from "../../plugins/createVideoPlugin";
+import {
+  ELEMENT_IMAGE,
+  ELEMENT_LINK,
+  ELEMENT_VIDEO,
+} from "../../../editor/plate-types";
 
 // Ideally this is injected
 const client = window.chronicles.getClient();
@@ -174,6 +177,13 @@ const handleImage = async (
   editor: PlateEditor,
 ): Promise<[boolean, string?]> => {
   const [mime] = file.type.split("/");
+  console.log(
+    "[MediaUpload] handleImage - file:",
+    file.name,
+    "mime:",
+    mime,
+    file.type,
+  );
   if (mime !== "image") return [false];
 
   // Upload the bytes directly:
