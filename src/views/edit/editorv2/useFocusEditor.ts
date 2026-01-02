@@ -5,34 +5,26 @@ import { Editor } from "slate";
 /**
  * Focus the editor when clicking on surrounding layout containers.
  */
-export function useFocusEditor() {
+export function useFocusEditor(
+  className: string = "[data-slate-editor='true']",
+) {
   const editor = useEditorRef();
 
   return React.useCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       if (e.target !== e.currentTarget) return;
 
-      try {
-        const isFocused =
-          typeof editor.api?.isFocused === "function"
-            ? editor.api.isFocused()
-            : false;
+      e.preventDefault();
 
-        if (isFocused) return;
+      const end = Editor.end(editor as any, []);
 
-        if (!editor.selection) {
-          const end = Editor.end(editor as any, []);
-          editor.tf.select(end);
-        }
+      // oddly, editor.tf.focus() does not work, but this does.
+      const editable = document.querySelector(className) as HTMLElement | null;
 
-        editor.tf.focus();
-      } catch (_error) {
-        // If the editor can't resolve DOM nodes, attempt a safe focus fallback.
-        try {
-          editor.tf.focus({ edge: "endEditor" });
-        } catch {
-          // ignore
-        }
+      if (editable) {
+        editable.focus();
+      } else {
+        console.warn("useFocusEditor: no editable element found");
       }
     },
     [editor],

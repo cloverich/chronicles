@@ -58,13 +58,13 @@ export const EditorLayout = ({
           <div className="flex w-full grow flex-col">
             <FrontMatter document={document} journals={journals} />
 
-            <div className="flex grow pt-6" onClick={focusEditor}>
+            <div className="flex grow pt-6">
               {/* w-full ensures when content is empty, it has width, otherwise the cursor will be invisible */}
               {children}
             </div>
 
             {/* Add padding to bottom of editor without disrupting the scrollbar on the parent */}
-            <Base.BottomSpacer onClick={focusEditor} />
+            <Base.BottomSpacer onMouseDown={focusEditor} />
           </div>
         </Base.ScrollContainer>
       </Base.EditorContainer>
