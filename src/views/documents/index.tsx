@@ -104,7 +104,7 @@ function DocumentsContainer() {
 
   return (
     <Layout store={searchStore}>
-      <div className="text-muted-foreground mb-4 flex justify-end font-mono text-sm uppercase">
+      <div className="text-muted-foreground mb-4 flex justify-start font-mono text-sm uppercase">
         [{searchStore.count} DOCS FOUND]
       </div>
       {groupedDocs.map((group) => (
