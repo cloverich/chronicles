@@ -549,6 +549,7 @@ export class DocumentsClient {
           .update({
             journal,
             title: frontMatter.title,
+            createdAt: frontMatter.createdAt,
             updatedAt: frontMatter.updatedAt,
             frontMatter: JSON.stringify(frontMatter || {}),
             ...(syncMeta && {
@@ -621,6 +622,7 @@ export class DocumentsClient {
         .update({
           title: frontMatter.title,
           journal,
+          createdAt: frontMatter.createdAt,
           updatedAt: frontMatter.updatedAt,
           frontMatter: JSON.stringify(frontMatter),
           ...(syncMeta && {
