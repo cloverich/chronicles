@@ -75,6 +75,14 @@ export type BeforeToken = {
   value: string;
 };
 
+/**
+ * Searching documents created on a specific date (year, month, or day)
+ */
+export type DateToken = {
+  type: "date";
+  value: string;
+};
+
 export type SearchToken =
   | FilterToken
   | JournalToken
@@ -82,4 +90,5 @@ export type SearchToken =
   | TagToken
   | TitleToken
   | TextToken
-  | BeforeToken;
+  | BeforeToken
+  | DateToken;
