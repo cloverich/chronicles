@@ -208,6 +208,64 @@ describe("SearchParser", function () {
       });
     });
 
+    test("date: with year", function () {
+      const parser = new SearchParser();
+      const dateToken = parser.parseToken("date:2025");
+
+      assert.exists(dateToken);
+      assert.deepEqual(dateToken, {
+        type: "date",
+        value: "2025",
+      });
+    });
+
+    test("date: with year-month", function () {
+      const parser = new SearchParser();
+      const dateToken = parser.parseToken("date:2025-02");
+
+      assert.exists(dateToken);
+      assert.deepEqual(dateToken, {
+        type: "date",
+        value: "2025-02",
+      });
+    });
+
+    test("date: with full date", function () {
+      const parser = new SearchParser();
+      const dateToken = parser.parseToken("date:2025-02-05");
+
+      assert.exists(dateToken);
+      assert.deepEqual(dateToken, {
+        type: "date",
+        value: "2025-02-05",
+      });
+    });
+
+    test("date: invalid format", function () {
+      const parser = new SearchParser();
+      const dateToken = parser.parseToken("date:invalid");
+
+      assert.notExists(dateToken, "Invalid date format should return undefined");
+    });
+
+    test("date: replacement", function () {
+      const parser = new SearchParser();
+      const dateToken1 = parser.parseToken("date:2025");
+      const dateToken2 = parser.parseToken("date:2025-02");
+
+      const tokens = parser.mergeToken(
+        [dateToken1 as SearchToken],
+        dateToken2 as SearchToken,
+      );
+
+      // the second date: token should replace the first
+      assert.equal(tokens.length, 1);
+      assert.deepEqual(tokens[0], {
+        type: "date",
+        value: "2025-02",
+      });
+    });
+
     test("tag: with negation", function () {
       const parser = new SearchParser();
       const negativeTagToken = parser.parseToken("-tag:javascript");

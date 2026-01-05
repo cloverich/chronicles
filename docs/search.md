@@ -52,6 +52,7 @@ The system defines several token types (`src/views/documents/search/tokens.ts`):
 | `tag:`    | `TagToken`     | Filters documents containing a specific tag | `tag:todo`          |
 | `title:`  | `TitleToken`   | Searches only within document titles        | `title:meeting`     |
 | `before:` | `BeforeToken`  | Filters documents created before a date     | `before:2023-01-01` |
+| `date:`   | `DateToken`    | Filters documents from a specific date      | `date:2025-02`      |
 | `filter:` | `FilterToken`  | Advanced node matching (AST)                | _Internal use_      |
 | _(none)_  | `TextToken`    | Standard full-text search                   | `banana`            |
 

@@ -26,4 +26,5 @@ const searchTags = [
   { value: "title:", label: "Filter by title" },
   { value: "text:", label: "Search body text" },
   { value: "before:", label: "Filter to notes before date (YYYY-MM-DD)" },
+  { value: "date:", label: "Filter to notes from specific date (YYYY, YYYY-MM, or YYYY-MM-DD)" },
 ];
