@@ -283,3 +283,24 @@ ipcMain.on("inspect-element", async (event, arg) => {
 
   mainWindow.webContents.inspectElement(arg.x, arg.y);
 });
+
+// Development hot-reload support - listen for commands from dev.mjs via stdin
+if (!app.isPackaged && process.stdin.isTTY === false) {
+  process.stdin.on("data", (data) => {
+    const command = data.toString().trim();
+
+    if (command === "reload-renderer") {
+      if (mainWindow) {
+        console.log("[DEV] Reloading renderer...");
+        mainWindow.webContents.reload();
+      }
+    } else if (command === "recreate-window") {
+      console.log("[DEV] Recreating window for preload changes...");
+      if (mainWindow) {
+        mainWindow.destroy();
+        mainWindow = null;
+      }
+      createWindow();
+    }
+  });
+}
