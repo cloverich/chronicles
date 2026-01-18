@@ -2,12 +2,12 @@ import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconButton } from "../../../components/IconButton";
+import { Separator } from "../../../components/Separator";
 import { JournalResponse } from "../../../hooks/useClient";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
 import { EditorMode } from "../EditorMode";
-import { Separator } from "../editor/components/Separator";
 import { MarkdownFrontMatter } from "./MarkdownFrontMatter";
 import { MarkdownToolbar } from "./MarkdownToolbar";
 

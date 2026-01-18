@@ -6,7 +6,7 @@ import {
   ELEMENT_IMAGE,
   ELEMENT_LINK,
   ELEMENT_VIDEO,
-} from "../../../editor/plate-types";
+} from "../../../plate-types";
 
 // Ideally this is injected
 const client = window.chronicles.getClient();

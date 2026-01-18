@@ -9,9 +9,9 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "../../../../../components/Popover";
+import { Separator } from "../../../../../components/Separator";
 import { Icons } from "../../../../../components/icons";
-import { inputVariants } from "../../../editor/components/Input";
-import { Separator } from "../../../editor/components/Separator";
+import { inputVariants } from "../../components/Input";
 
 export interface MediaPopoverProps {
   pluginKey?: string;

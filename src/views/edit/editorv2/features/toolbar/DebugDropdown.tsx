@@ -16,7 +16,7 @@ import { EditorMode } from "../../../EditorMode";
 import { ToolbarButton } from "../../components/Toolbar";
 
 const options = Object.freeze([
-  { key: EditorMode.EditorV2, label: "Editor V2" },
+  // { key: EditorMode.EditorV2, label: "Editor V2" },
   { key: EditorMode.Editor, label: "Editor" },
   { key: EditorMode.SlateDom, label: "Slate DOM" },
   { key: EditorMode.Mdast, label: "MDAST" },

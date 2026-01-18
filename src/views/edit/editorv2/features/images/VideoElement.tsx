@@ -2,7 +2,7 @@ import { PlateElement, type PlateElementProps } from "platejs/react";
 import React from "react";
 import { useFocused, useSelected } from "slate-react";
 
-import { ELEMENT_VIDEO } from "../../../editor/plate-types";
+import { ELEMENT_VIDEO } from "../../../plate-types";
 import { MediaPopover } from "./MediaPopover";
 import { MediaWrapper } from "./MediaWrapper";
 

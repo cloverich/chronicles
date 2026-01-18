@@ -13,6 +13,8 @@ import {
   type PlateLeafProps,
 } from "platejs/react";
 
+import { CODE_BLOCK_LANGUAGES } from "../../../plate-types";
+
 // import {
 //   Command,
 //   CommandEmpty,
@@ -24,9 +26,7 @@ import {
 
 // import { cn } from '@/src/lib/utils';
 import { IconButton } from "@/src/components/IconButton";
-import { Button } from "../../../editor/components/Button";
-// import { Select } from '@/src/components';
-import { LanguageSelect } from "../../../editor/elements";
+import { Button } from "../../components/Button";
 
 export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
   const { editor, element } = props;
@@ -69,6 +69,66 @@ export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
         </div>
       </div>
     </PlateElement>
+  );
+}
+
+const knownLangOptions: { label: string; value: string }[] = [
+  { label: "Plain Text", value: "text" },
+  ...Object.entries(CODE_BLOCK_LANGUAGES).map(([key, val]) => ({
+    label: val as string,
+    value: key,
+  })),
+];
+
+// Set initial selected language, with some defaults.
+function defaultLang(lang: string | null) {
+  if (!lang) return "text";
+  if (lang === "js") return "javascript";
+  if (lang === "ts") return "typescript";
+
+  // NOTE: If lang is a language not found in the menus above, it will default to "Plain text"
+  // in the dropdown.
+  return lang;
+}
+
+// On first render, if the language is not in the known options, add it to the list.
+// This is to support unknown languages that are in the underlying markdown, but not known
+// to the language list above; syntax highlighting will not work.
+function amendLanguageOptions(lang: string) {
+  if (!knownLangOptions.find((l) => l.value === lang)) {
+    return [{ label: lang, value: lang }, ...knownLangOptions];
+  }
+
+  return knownLangOptions;
+}
+
+interface LangSelectProps {
+  lang: string;
+  setLang: (lang: string) => void;
+}
+
+/**
+ * Dropdown menu for selecting the language of a code block.
+ */
+export function LanguageSelect({ lang, setLang }: LangSelectProps) {
+  function onChange(e: any) {
+    setLang(e.target.value);
+  }
+
+  const languageOptions = React.useMemo(() => {
+    const languages = amendLanguageOptions(lang);
+
+    return languages.map((language) => (
+      <option key={language.value} value={language.value}>
+        {language.label}
+      </option>
+    ));
+  }, []);
+
+  return (
+    <select value={lang} onChange={onChange} className="bg-muted">
+      {languageOptions}
+    </select>
   );
 }
 

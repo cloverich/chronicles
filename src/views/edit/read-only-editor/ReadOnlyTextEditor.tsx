@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import * as React from "react";
 import { IconButton } from "../../../components/IconButton";
+import { Separator } from "../../../components/Separator";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
 import { EditorMode } from "../EditorMode";
-import { Separator } from "../editor/components/Separator";
 import { ReadonlyToolbar } from "./ReadonlyToolbar";
 
 interface Props {

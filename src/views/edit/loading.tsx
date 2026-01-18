@@ -2,9 +2,9 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { IconButton } from "../../components/IconButton";
+import { Separator } from "../../components/Separator";
 import Titlebar from "../../titlebar/macos";
 import { ErrorContent } from "./EditorErrorBoundary";
-import { Separator } from "./editor/components/Separator";
 
 export interface LoadingComponentProps {
   error?: Error | null;

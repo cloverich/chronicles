@@ -1,14 +1,14 @@
 import { observer } from "mobx-react-lite";
 import React, { useMemo } from "react";
 import { DayPicker } from "react-day-picker";
-import * as D from "../../../components/DropdownMenu";
-import * as Popover from "../../../components/Popover";
-import TagInput from "../../../components/tag-input/TagInput";
-import { useAutosizeTextarea } from "../../../hooks/useAutosizeTextarea";
-import { JournalResponse } from "../../../hooks/useClient";
-import { useTags } from "../../../hooks/useTags";
-import { TagTokenParser } from "../../documents/search/parsers/tag";
-import { EditableDocument } from "../EditableDocument";
+import * as D from "../../components/DropdownMenu";
+import * as Popover from "../../components/Popover";
+import TagInput from "../../components/tag-input/TagInput";
+import { useAutosizeTextarea } from "../../hooks/useAutosizeTextarea";
+import { JournalResponse } from "../../hooks/useClient";
+import { useTags } from "../../hooks/useTags";
+import { TagTokenParser } from "../documents/search/parsers/tag";
+import { EditableDocument } from "./EditableDocument";
 
 const FrontMatter = observer(
   ({

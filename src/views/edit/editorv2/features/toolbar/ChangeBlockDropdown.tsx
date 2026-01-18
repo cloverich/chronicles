@@ -15,7 +15,7 @@ import {
   ELEMENT_OL,
   ELEMENT_PARAGRAPH,
   ELEMENT_UL,
-} from "../../../editor/plate-types";
+} from "../../../plate-types";
 
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ import {
   useOpenState,
 } from "../../../../../components/DropdownMenu";
 import { Icons } from "../../../../../components/icons";
-import { ToolbarButton } from "../../../editor/components/Toolbar";
+import { ToolbarButton } from "../../components/Toolbar";
 
 const items = [
   {

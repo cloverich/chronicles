@@ -1,14 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
 import { IconButton } from "../../../components/IconButton";
+import { Separator } from "../../../components/Separator";
 import { JournalResponse } from "../../../hooks/useClient";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
 import EditorErrorBoundary from "../EditorErrorBoundary";
 import { EditorMode } from "../EditorMode";
-import FrontMatter from "../editor/FrontMatter";
-import { Separator } from "../editor/components/Separator";
+import FrontMatter from "../FrontMatter";
 import { EditorToolbar } from "./features/toolbar/EditorToolbar";
 import { useFocusEditor } from "./useFocusEditor";
 

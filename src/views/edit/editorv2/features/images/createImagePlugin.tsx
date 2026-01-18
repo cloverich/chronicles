@@ -1,6 +1,6 @@
 import { createPlatePlugin } from "platejs/react";
 
-import { ELEMENT_IMAGE } from "../../../editor/plate-types";
+import { ELEMENT_IMAGE } from "../../../plate-types";
 
 /**
  * Minimal image element plugin for editorv2.

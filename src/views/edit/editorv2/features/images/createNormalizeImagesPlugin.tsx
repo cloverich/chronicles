@@ -1,6 +1,6 @@
 import { createPlatePlugin } from "platejs/react";
 import { Element, NodeEntry, Transforms } from "slate";
-import { ELEMENT_IMAGE, ELEMENT_VIDEO } from "../../../editor/plate-types";
+import { ELEMENT_IMAGE, ELEMENT_VIDEO } from "../../../plate-types";
 
 /**
  * Ensure a dropped image is always at the top level of the document.

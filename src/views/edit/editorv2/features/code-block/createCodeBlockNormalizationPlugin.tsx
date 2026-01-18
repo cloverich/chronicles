@@ -1,6 +1,6 @@
 import { createPlatePlugin } from "platejs/react";
 import { dedent } from "../../../../../dedent.js";
-import { ELEMENT_CODE_BLOCK } from "../../../editor/plate-types";
+import { ELEMENT_CODE_BLOCK } from "../../../plate-types";
 
 const isInCodeBlock = (editor: any) =>
   editor.api.some({

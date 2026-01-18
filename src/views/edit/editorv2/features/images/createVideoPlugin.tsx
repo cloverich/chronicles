@@ -1,5 +1,5 @@
 import { createPlatePlugin } from "platejs/react";
-import { ELEMENT_VIDEO } from "../../../editor/plate-types";
+import { ELEMENT_VIDEO } from "../../../plate-types";
 
 /**
  * Supports the video element.

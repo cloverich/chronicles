@@ -3,7 +3,7 @@ import React from "react";
 import { useFocused, useSelected } from "slate-react";
 
 import { cn } from "../../../../../lib/utils";
-import { ELEMENT_IMAGE } from "../../../editor/plate-types";
+import { ELEMENT_IMAGE } from "../../../plate-types";
 import { ImageDisplay } from "./ImageDisplay";
 import { MediaPopover } from "./MediaPopover";
 

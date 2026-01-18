@@ -57,7 +57,7 @@ import {
   MARK_CODE,
   MARK_ITALIC,
   MARK_STRIKETHROUGH,
-} from "../editor/plate-types";
+} from "../plate-types";
 import { BlockquoteElement } from "./features/BlockQuoteElement";
 import { ParagraphElement } from "./features/ParagraphElement";
 import {

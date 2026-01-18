@@ -9,7 +9,7 @@ import { useSearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
-import Editor from "./editor";
+// import Editor from "./editor";
 import { PlateContainer } from "./editorv2/PlateContainer";
 import { EditLoadingComponent } from "./loading";
 import MarkdownEditor from "./markdown-editor";
@@ -99,7 +99,7 @@ interface DocumentEditProps {
 const DocumentEditView = observer((props: DocumentEditProps) => {
   const { document, journals } = props;
   const [selectedViewMode, setSelectedViewMode] = React.useState<EditorMode>(
-    EditorMode.EditorV2,
+    EditorMode.Editor,
   );
   const navigate = useNavigate();
   const searchStore = useSearchStore()!;
@@ -159,7 +159,7 @@ function EditorInner({
   goBack: () => void;
 }) {
   switch (selectedViewMode) {
-    case EditorMode.EditorV2:
+    case EditorMode.Editor:
       return (
         <PlateContainer
           document={document}
@@ -169,16 +169,16 @@ function EditorInner({
           setSelectedViewMode={setSelectedViewMode}
         />
       );
-    case EditorMode.Editor:
-      return (
-        <Editor
-          document={document}
-          journals={journals}
-          goBack={goBack}
-          selectedViewMode={selectedViewMode}
-          setSelectedViewMode={setSelectedViewMode}
-        />
-      );
+    // case EditorMode.Editor:
+    //   return (
+    //     <Editor
+    //       document={document}
+    //       journals={journals}
+    //       goBack={goBack}
+    //       selectedViewMode={selectedViewMode}
+    //       setSelectedViewMode={setSelectedViewMode}
+    //     />
+    //   );
     case EditorMode.Markdown:
       return (
         <MarkdownEditor

@@ -12,24 +12,19 @@ import {
 import { Icons } from "../../../../../components/icons";
 import { EditorMode } from "../../../EditorMode";
 import {
-  Toolbar,
-  ToolbarButton,
-  ToolbarGroup,
-} from "../../../editor/components/Toolbar";
-import { TooltipProvider } from "../../../editor/components/Tooltip";
-import {
   MARK_BOLD,
   MARK_CODE,
   MARK_ITALIC,
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
-} from "../../../editor/plate-types";
+} from "../../../plate-types";
+import { Toolbar, ToolbarButton, ToolbarGroup } from "../../components/Toolbar";
+import { TooltipProvider } from "../../components/Tooltip";
 import { ChangeBlockDropdown } from "./ChangeBlockDropdown";
 import { LinkToolbarButton } from "./LinkToolbarButton";
 import { MarkToolbarButton } from "./MarkToolbarButton";
 
 const options = Object.freeze([
-  { key: EditorMode.EditorV2, label: "Editor v2" },
   { key: EditorMode.Editor, label: "Editor" },
   { key: EditorMode.Markdown, label: "Markdown" },
   { key: EditorMode.SlateDom, label: "Slate DOM" },

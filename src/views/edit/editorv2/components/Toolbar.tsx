@@ -3,8 +3,8 @@ import { withCn, withRef, withVariants } from "@udecode/cn";
 import { VariantProps, cva } from "class-variance-authority";
 import * as React from "react";
 
+import { Separator } from "../../../../components/Separator";
 import { cn } from "../../../../lib/utils";
-import { Separator } from "./Separator";
 import { withTooltip } from "./Tooltip";
 
 export const Toolbar = withCn(
