@@ -48,7 +48,16 @@ import {
   NumberedListPlugin,
   TaskListPlugin,
 } from "@platejs/list-classic/react";
-import { ELEMENT_PARAGRAPH } from "../editor/plate-types";
+import {
+  ELEMENT_CODE_BLOCK,
+  ELEMENT_OL,
+  ELEMENT_PARAGRAPH,
+  ELEMENT_UL,
+  MARK_BOLD,
+  MARK_CODE,
+  MARK_ITALIC,
+  MARK_STRIKETHROUGH,
+} from "../editor/plate-types";
 import { BlockquoteElement } from "./features/BlockQuoteElement";
 import { ParagraphElement } from "./features/ParagraphElement";
 import {
@@ -57,6 +66,7 @@ import {
   CodeSyntaxLeaf,
 } from "./features/code-block/CodeBlockNode";
 import { CodeLeaf } from "./features/code-block/CodeLeaf";
+import { createCodeBlockNormalizationPlugin } from "./features/code-block/createCodeBlockNormalizationPlugin";
 import { exitCodeBlockOnEnterPlugin } from "./features/code-block/createExitCodeBlockOnEnterPlugin";
 import { ImageElement } from "./features/images/ImageElement";
 import { ImageGalleryElement } from "./features/images/ImageGalleryElement";
@@ -96,6 +106,7 @@ export const PlateContainer = (props: Props) => {
   const searchStore = useSearchStore()!;
   const editor = usePlateEditor({
     plugins: [
+      createCodeBlockNormalizationPlugin,
       TrailingBlockPlugin.configure({
         options: { type: ELEMENT_PARAGRAPH },
       }),
@@ -135,33 +146,39 @@ export const PlateContainer = (props: Props) => {
             {
               match: "**",
               mode: "mark",
-              type: "bold",
+              type: MARK_BOLD,
             },
             {
               match: "_",
               mode: "mark",
-              type: "italic",
+              type: MARK_ITALIC,
+            },
+            {
+              match: "~~",
+              mode: "mark",
+              type: MARK_STRIKETHROUGH,
             },
             {
               match: "`",
               mode: "mark",
-              type: "code",
+              type: MARK_CODE,
             },
             {
               match: "```",
               mode: "block",
-              type: "code_block",
+              type: ELEMENT_CODE_BLOCK,
             },
             {
               match: "- ",
               mode: "block",
-              type: "ul",
+              type: ELEMENT_UL,
             },
             {
               match: "1. ",
               mode: "block",
-              type: "ol",
+              type: ELEMENT_OL,
             },
+            // todo: This isn't actually implemented yet
             {
               match: "[ ] ",
               mode: "block",
