@@ -1,5 +1,5 @@
-import { TElement, TText } from "@udecode/slate";
 import * as mdast from "mdast";
+import { TElement, TText } from "platejs";
 
 export function toUndefined<T>(value: T | undefined | null): T | undefined {
   return value ?? undefined;
@@ -17,21 +17,21 @@ import {
   ELEMENT_LINK,
   ELEMENT_OL,
   ELEMENT_UL,
-} from "../../../views/edit/editor/plate-types";
+} from "../../../views/edit/plate-types";
 
 import {
   createImageGalleryElement,
   SlateImageGallery,
-} from "../../../views/edit/editor/features/images";
+} from "../../../views/edit/editorv2/features/images";
 import {
   createImage,
   Image,
   Video,
-} from "../../../views/edit/editor/features/images/toMdast";
+} from "../../../views/edit/editorv2/features/images/toMdast";
 import {
   SlateNoteLink,
   toSlateNoteLink,
-} from "../../../views/edit/editor/features/note-linking/toMdast";
+} from "../../../views/edit/editorv2/features/note-linking/toMdast";
 
 export type Decoration = {
   [key in (

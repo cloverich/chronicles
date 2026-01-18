@@ -9,7 +9,8 @@ import { useSearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
-import Editor from "./editor";
+// import Editor from "./editor";
+import { PlateContainer } from "./editorv2/PlateContainer";
 import { EditLoadingComponent } from "./loading";
 import MarkdownEditor from "./markdown-editor";
 import ReadOnlyTextEditor from "./read-only-editor";
@@ -160,7 +161,7 @@ function EditorInner({
   switch (selectedViewMode) {
     case EditorMode.Editor:
       return (
-        <Editor
+        <PlateContainer
           document={document}
           journals={journals}
           goBack={goBack}
@@ -168,6 +169,16 @@ function EditorInner({
           setSelectedViewMode={setSelectedViewMode}
         />
       );
+    // case EditorMode.Editor:
+    //   return (
+    //     <Editor
+    //       document={document}
+    //       journals={journals}
+    //       goBack={goBack}
+    //       selectedViewMode={selectedViewMode}
+    //       setSelectedViewMode={setSelectedViewMode}
+    //     />
+    //   );
     case EditorMode.Markdown:
       return (
         <MarkdownEditor

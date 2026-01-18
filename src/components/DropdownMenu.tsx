@@ -168,7 +168,12 @@ export const DropdownMenuShortcut = withCn(
   "ml-auto text-xs tracking-widest opacity-60",
 );
 
-export const useOpenState = () => {
+export interface OpenState {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const useOpenState = (): OpenState => {
   const [open, setOpen] = useState(false);
 
   const onOpenChange = useCallback(
