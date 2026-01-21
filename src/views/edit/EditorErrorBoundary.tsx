@@ -2,9 +2,9 @@ import React from "react";
 import { NavigateFunction } from "react-router-dom";
 import { Alert } from "../../components";
 import { IconButton } from "../../components/IconButton";
+import { Separator } from "../../components/Separator";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
-import { Separator } from "./editor/components/Separator";
 
 interface State {
   hasError: boolean;

@@ -55,7 +55,12 @@ packager({
   out: outDir,
   osxSign: true,
   icon: iconPath,
-  // … other options
+  // Unpack native modules from asar so they can load their native binaries.
+  // sharp depends on @img/sharp-libvips-* for the actual libvips dylib,
+  // so we need to unpack the entire @img scope to preserve relative paths.
+  asar: {
+    unpack: "**/node_modules/{@img/**,better-sqlite3/**}",
+  },
   // Documentation does this in afterCopy. Why did I do this in afterPrune?
   // Note: @electron/packager v19 changed hooks to use object args instead of positional
   afterPrune: [

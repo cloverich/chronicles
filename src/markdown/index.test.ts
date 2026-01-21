@@ -352,7 +352,7 @@ describe("Slate processing", function () {
               {
                 journalName: "research",
                 noteId: "01931c56fc2378079233d986767c519c",
-                title: "",
+                title: "Behavioral Interview Prep",
                 type: "noteLinkElement",
                 url: "../research/01931c56fc2378079233d986767c519c.md",
                 children: [

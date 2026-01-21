@@ -1,7 +1,7 @@
 import * as mdast from "mdast";
 import * as SlateCustom from "./mdast-to-slate";
 
-import { TText } from "@udecode/slate";
+import { TText } from "platejs";
 import { Node as SNode } from "slate";
 
 // One of the main reasons this fork exists:
@@ -14,21 +14,21 @@ import {
   ELEMENT_LIC,
   ELEMENT_OL,
   ELEMENT_UL,
-} from "../../../views/edit/editor/plate-types";
+} from "../../../views/edit/plate-types";
 
 import {
   createImagesFromImageGallery,
   ELEMENT_IMAGE_GALLERY,
-} from "../../../views/edit/editor/features/images";
+} from "../../../views/edit/editorv2/features/images";
 
 import {
   Image,
   Video,
-} from "../../../views/edit/editor/features/images/toMdast";
+} from "../../../views/edit/editorv2/features/images/toMdast";
 import {
   createLinkFromNoteLinkFactory,
   ELEMENT_NOTE_LINK,
-} from "../../../views/edit/editor/features/note-linking";
+} from "../../../views/edit/editorv2/features/note-linking";
 
 // NOTE: Changed these, they were just mirroring mdasts' before
 // which doesn't make sense

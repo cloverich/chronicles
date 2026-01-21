@@ -60,56 +60,23 @@ const dataURLToBufferAndExtension = (dataUrl: string) => {
 
 export type IFilesClient = FilesClient;
 
+export type UploadImageWarningCode =
+  | "decode_missing_plugin"
+  | "decode_failed"
+  | "process_failed";
+
+export interface UploadImageWarning {
+  code: UploadImageWarningCode;
+  message: string;
+}
+
+export interface UploadImageResult {
+  url: string;
+  warning?: UploadImageWarning;
+}
+
 export class FilesClient {
   constructor(private settings: Store<IPreferences>) {}
-
-  /**
-   * Upload a file dropped onto the editor.
-   *
-   * @returns the chronicles prefixed filename
-   */
-  uploadImageBytes = async (arrayBuffer: ArrayBuffer, name = "upload.png") => {
-    const chronRoot = (await this.settings.get("notesDir")) as string;
-    const dir = path.join(chronRoot, "_attachments");
-    await this.ensureDir(dir);
-
-    const buffer = Buffer.from(arrayBuffer);
-    const ext = path.extname(name) || ".webp";
-    const filename = `${createId()}${ext}`;
-    const filepath = path.join(dir, filename);
-
-    await sharp(buffer)
-      .rotate()
-      .resize({ width: 1600, withoutEnlargement: true })
-      .webp({ quality: 90 })
-      .toFile(filepath);
-
-    return `chronicles://../_attachments/${filename}`;
-  };
-
-  /**
-   * Upload a generic file (video, document, etc.) from an ArrayBuffer.
-   * Unlike uploadImageBytes, this does not process the file.
-   *
-   * @returns the chronicles prefixed filename
-   */
-  uploadFileBytes = async (
-    arrayBuffer: ArrayBuffer,
-    name = "upload.bin",
-  ): Promise<string> => {
-    const chronRoot = (await this.settings.get("notesDir")) as string;
-    const dir = path.join(chronRoot, "_attachments");
-    await this.ensureDir(dir);
-
-    const buffer = Buffer.from(arrayBuffer);
-    const ext = path.extname(name) || ".bin";
-    const filename = `${createId()}${ext}`;
-    const filepath = path.join(dir, filename);
-
-    await fs.promises.writeFile(filepath, buffer);
-
-    return `chronicles://../_attachments/${filename}`;
-  };
 
   /**
    * The uploadImage option on plate's createImagesPlugin.
@@ -142,22 +109,97 @@ export class FilesClient {
     const filename = `${createId()}${extension}`;
     const filepath = path.join(dir, filename);
 
-    return (
-      sharp(buffer)
+    try {
+      await sharp(buffer)
         // handle orientation
         .rotate()
         // todo: make configurable via settings, and eventually per journal
         .resize({ width: 1600, withoutEnlargement: true })
         .webp({ quality: 90 })
-        .toFile(filepath)
-        .then(() => {
-          return `chronicles://../_attachments/${filename}`;
-        })
-        .catch((err) => {
-          console.error("Error uploading or resizing file...", err);
-          throw err;
-        })
+        .toFile(filepath);
+    } catch (error) {
+      const warning = getSharpWarning(error);
+      console.warn(
+        "[FilesClient] sharp failed, saving original bytes",
+        warning,
+      );
+      await writeFile(filepath, buffer);
+    }
+
+    return `chronicles://../_attachments/${filename}`;
+  };
+
+  /**
+   * Upload a file dropped onto the editor.
+   *
+   * @returns the chronicles prefixed filename
+   */
+  uploadImageBytes = async (
+    arrayBuffer: ArrayBuffer,
+    name = "upload.png",
+  ): Promise<UploadImageResult> => {
+    console.log(
+      "[FilesClient] uploadImageBytes - name:",
+      name,
+      "arrayBuffer:",
+      arrayBuffer,
     );
+    const chronRoot = (await this.settings.get("notesDir")) as string;
+    const dir = path.join(chronRoot, "_attachments");
+    await this.ensureDir(dir);
+
+    const buffer = Buffer.from(arrayBuffer);
+    const ext = path.extname(name) || ".webp";
+    const filename = `${createId()}${ext}`;
+    const filepath = path.join(dir, filename);
+
+    console.log("[FilesClient] uploadImageBytes - filepath:", filepath);
+    let warning: UploadImageWarning | undefined;
+
+    try {
+      await sharp(buffer)
+        .rotate()
+        .resize({ width: 1600, withoutEnlargement: true })
+        .webp({ quality: 90 })
+        .toFile(filepath);
+    } catch (error) {
+      warning = getSharpWarning(error);
+      console.warn(
+        "[FilesClient] sharp failed, saving original bytes",
+        (error as Error).message,
+      );
+      await writeFile(filepath, buffer);
+    }
+
+    console.log("[FilesClient] sharp.processing completed");
+    return {
+      url: `chronicles://../_attachments/${filename}`,
+      warning,
+    };
+  };
+
+  /**
+   * Upload a generic file (video, document, etc.) from an ArrayBuffer.
+   * Unlike uploadImageBytes, this does not process the file.
+   *
+   * @returns the chronicles prefixed filename
+   */
+  uploadFileBytes = async (
+    arrayBuffer: ArrayBuffer,
+    name = "upload.bin",
+  ): Promise<string> => {
+    const chronRoot = (await this.settings.get("notesDir")) as string;
+    const dir = path.join(chronRoot, "_attachments");
+    await this.ensureDir(dir);
+
+    const buffer = Buffer.from(arrayBuffer);
+    const ext = path.extname(name) || ".bin";
+    const filename = `${createId()}${ext}`;
+    const filepath = path.join(dir, filename);
+
+    await fs.promises.writeFile(filepath, buffer);
+
+    return `chronicles://../_attachments/${filename}`;
   };
 
   uploadFile = async (file: File): Promise<UploadResponse> => {
@@ -335,5 +377,34 @@ export class FilesClient {
             .once("close", () => resolve(dest)),
         );
     });
+  };
+}
+
+function getSharpWarning(error: unknown): UploadImageWarning {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("no decoding plugin installed") ||
+    normalized.includes("heif") ||
+    normalized.includes("heic") ||
+    normalized.includes("libheif")
+  ) {
+    return {
+      code: "decode_missing_plugin",
+      message,
+    };
+  }
+
+  if (normalized.includes("bad seek") || normalized.includes("unsupported")) {
+    return {
+      code: "decode_failed",
+      message,
+    };
+  }
+
+  return {
+    code: "process_failed",
+    message,
   };
 }

@@ -34,6 +34,7 @@ const noop = () => {};
  */
 interface ClickableDivProps extends React.HTMLAttributes<HTMLDivElement> {
   onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 }
 
 export const EditorContainer: React.FC<ClickableDivProps> = ({ children }) => {
@@ -53,8 +54,17 @@ export const TitlebarSpacer = () => {
  * Add padding at the bottom of ScrollContainer without disrupting the scrollbar on the parent.
  * See Container for usage.
  */
-export const BottomSpacer: React.FC<ClickableDivProps> = ({ onClick }) => {
-  return <div className="h-16 min-h-16" onClick={onClick || noop} />;
+export const BottomSpacer: React.FC<ClickableDivProps> = ({
+  onClick,
+  onMouseDown,
+}) => {
+  return (
+    <div
+      className="h-16 min-h-16"
+      onClick={onClick || noop}
+      onMouseDown={onMouseDown}
+    />
+  );
 };
 
 /**
@@ -63,11 +73,13 @@ export const BottomSpacer: React.FC<ClickableDivProps> = ({ onClick }) => {
 export const ScrollContainer: React.FC<ClickableDivProps> = ({
   children,
   onClick,
+  onMouseDown,
 }) => {
   return (
     <div
       className="flex grow flex-col overflow-y-auto p-12"
       onClick={onClick || noop}
+      onMouseDown={onMouseDown}
     >
       {children}
     </div>

@@ -4,7 +4,7 @@ Chronicles uses Plate.js v48 with a plugin-based architecture.
 
 ## Configuration
 
-Main editor setup is in `src/views/edit/PlateContainer.tsx`:
+Main editor setup is in `src/views/edit/editorv2/PlateContainer.tsx`:
 
 ```typescript
 const editor = usePlateEditor({
@@ -20,22 +20,18 @@ const editor = usePlateEditor({
 
 ## Built-in Plugins
 
-From `@udecode/plate-*` packages:
+From `@platejs` packages:
 
-| Plugin             | Purpose                             |
-| ------------------ | ----------------------------------- |
-| `ParagraphPlugin`  | Paragraph blocks                    |
-| `HeadingPlugin`    | h1-h6 headings                      |
-| `BlockquotePlugin` | Blockquotes                         |
-| `CodeBlockPlugin`  | Fenced code blocks with syntax      |
-| `BoldPlugin`, etc. | Text formatting marks               |
-| `LinkPlugin`       | Hyperlinks with floating toolbar    |
-| `ListPlugin`       | Ordered/unordered lists             |
-| `ImagePlugin`      | Image handling                      |
-| `AutoformatPlugin` | Markdown shortcuts (# → h1, etc.)   |
-| `SoftBreakPlugin`  | Shift+Enter for line breaks         |
-| `ExitBreakPlugin`  | Cmd+Enter to exit blocks            |
-| `ResetNodePlugin`  | Reset block type on Enter/Backspace |
+| Plugin             | Purpose                           |
+| ------------------ | --------------------------------- |
+| `ParagraphPlugin`  | Paragraph blocks                  |
+| `BlockquotePlugin` | Blockquotes                       |
+| `CodeBlockPlugin`  | Fenced code blocks with syntax    |
+| `BoldPlugin`, etc. | Text formatting marks             |
+| `LinkPlugin`       | Hyperlinks with floating toolbar  |
+| `ListPlugin`       | Ordered/unordered lists           |
+| `AutoformatPlugin` | Markdown shortcuts (# → h1, etc.) |
+| `ExitBreakPlugin`  | Cmd+Enter to exit blocks          |
 
 ## Custom Plugins
 
@@ -60,7 +56,7 @@ Located in `src/views/edit/editor/`:
 ## Plugin Structure (v48)
 
 ```typescript
-import { createPlatePlugin } from "@udecode/plate/react";
+import { createPlatePlugin } from "@platejs/react";
 
 export const MyPlugin = createPlatePlugin({
   key: "myPlugin",
