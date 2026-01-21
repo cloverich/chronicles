@@ -1,36 +1,18 @@
-import { useEditorRef } from "@udecode/plate/react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ReactEditor } from "slate-react";
 import { JournalResponse } from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { useSearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
-import Editor from "./editor";
+// import Editor from "./editor";
+import { PlateContainer } from "./editorv2/PlateContainer";
 import { EditLoadingComponent } from "./loading";
 import MarkdownEditor from "./markdown-editor";
 import ReadOnlyTextEditor from "./read-only-editor";
 import { useEditableDocument } from "./useEditableDocument";
-
-/**
- * Helper for focusing the editor on click.
- *
- * Since the editor is styled to blend into the surrounding surfaces, some of which are just
- * spacers for layout, it can be confusing to know where to click to focus the editor. Adding this handler
- * onto the divs that should focus on click solves that. Note that, this hook MUST be used from components
- * wrapped by <PlateContainer> or they will error.
- */
-export function useFocusEditor() {
-  const editor = useEditorRef();
-  return (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (e.target === e.currentTarget && !ReactEditor.isFocused(editor as any)) {
-      ReactEditor.focus(editor as any);
-    }
-  };
-}
 
 // Loads document, with loading and error placeholders
 const DocumentLoadingContainer = observer(() => {
@@ -160,7 +142,7 @@ function EditorInner({
   switch (selectedViewMode) {
     case EditorMode.Editor:
       return (
-        <Editor
+        <PlateContainer
           document={document}
           journals={journals}
           goBack={goBack}
@@ -168,6 +150,16 @@ function EditorInner({
           setSelectedViewMode={setSelectedViewMode}
         />
       );
+    // case EditorMode.Editor:
+    //   return (
+    //     <Editor
+    //       document={document}
+    //       journals={journals}
+    //       goBack={goBack}
+    //       selectedViewMode={selectedViewMode}
+    //       setSelectedViewMode={setSelectedViewMode}
+    //     />
+    //   );
     case EditorMode.Markdown:
       return (
         <MarkdownEditor

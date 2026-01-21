@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import * as React from "react";
 import { IconButton } from "../../../components/IconButton";
+import { Separator } from "../../../components/Separator";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
 import { EditorMode } from "../EditorMode";
-import { Separator } from "../editor/components/Separator";
 import { ReadonlyToolbar } from "./ReadonlyToolbar";
 
 interface Props {
@@ -32,7 +32,11 @@ export const ReadOnlyTextEditor = observer(
   }: Props) => {
     function content() {
       if (json) {
-        return <pre>{JSON.stringify(json, null, 2)}</pre>;
+        return (
+          <pre className="font-mono text-xs">
+            {JSON.stringify(json, null, 2)}
+          </pre>
+        );
       } else {
         return <pre>{markdown}</pre>;
       }

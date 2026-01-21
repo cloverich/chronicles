@@ -10,7 +10,7 @@ import {
   selectDistinctImageUrls,
   selectNoteLinks,
 } from "../../markdown";
-import { parseNoteLink } from "../../views/edit/editor/features/note-linking/toMdast";
+import { parseNoteLink } from "../../views/edit/editorv2/features/note-linking/toMdast";
 import { IFilesClient } from "./files";
 import { splitFrontMatter } from "./importer/frontmatter";
 import { IPreferencesClient } from "./preferences";
