@@ -200,7 +200,7 @@ export const PlateContainer = (props: Props) => {
       BoldPlugin,
       CodePlugin.configure({
         node: { component: CodeLeaf },
-        shortcuts: { toggle: { keys: "mod+e" } },
+        shortcuts: { toggle: { keys: "meta+e" } },
       }),
       ParagraphPlugin.withComponent(ParagraphElement),
       ItalicPlugin,
