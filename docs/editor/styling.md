@@ -1,73 +1,70 @@
 # Editor Styling
 
-The editor's styling is primarily managed through Tailwind CSS classes applied to Plate.js components. This document provides a high-level overview for developers familiar with React and Tailwind.
+Styling is managed through Tailwind CSS v4 classes on Plate.js element components.
 
-## Key Files & Concepts
+## Key Files
 
-- **`src/views/edit/PlateContainer.tsx`**: This is the central configuration for the Plate editor. It uses `createPlugins` to initialize all editor features (elements, marks, plugins). The `components` object within this configuration is crucial, as it maps Plate's abstract element types (e.g., `ELEMENT_H1`, `MARK_BOLD`) to specific React components.
+- **`src/views/edit/editorv2/PlateContainer.tsx`**: Editor setup — maps Plate element types to React components via `usePlateEditor({ plugins, components })`
+- **`src/views/edit/editorv2/EditorLayout.tsx`**: Layout wrapper — flex column with `items-center` for centering
+- **`src/views/edit/editorv2/features/`**: Element components, each responsible for its own Tailwind styling
+- **`src/index.css`**: CSS custom properties (`--max-w-prose`, `--max-w-code`, fonts) and `@utility` definitions
+- **`src/views/StyleWatcher.tsx`**: Syncs user preference values to CSS custom properties at runtime
 
-- **`src/views/edit/editor/elements/`**: This directory contains the custom React components that render the visual representation of each editor element. Each component is responsible for its own styling via Tailwind classes.
+## Width & Centering Model
 
-- **Styling Libraries**:
-  - **`class-variance-authority` (`cva`)**: Used in components like `Heading.tsx` to create different style variants based on props (e.g., heading level).
-  - **`@udecode/cn` (`withCn`, `withVariants`, `cn`)**: A set of utilities for applying Tailwind classes to Plate components. `withCn` applies a static set of classes, while `withVariants` combines a component with `cva` variants.
+Content uses a two-tier width system driven by CSS variables set via user preferences:
+
+- `--max-w-prose` (default `768px`): paragraphs, headings, blockquotes, lists
+- `--max-w-code` (default `var(--max-w-prose)`): code blocks (independently configurable)
+
+Centering is achieved via `items-center` on the `PlateContent` flex column. Each block element sets `w-full max-w-[var(--max-w-prose)]` (or `--max-w-code` for code). Breakout elements (images, galleries) omit `max-w` to fill the container.
+
+## Tailwind v4 Pitfalls
+
+**Never use `max-w-prose` as a class name.** Tailwind v4 has a built-in `max-w-prose` utility that outputs `max-width: 65ch`. Custom `@utility max-w-prose` definitions get silently overridden by the built-in (later in cascade wins). Use arbitrary value syntax instead:
+
+```
+WRONG:  max-w-prose                        → resolves to 65ch (Tailwind built-in wins)
+RIGHT:  max-w-[var(--max-w-prose)]         → resolves to CSS variable value
+RIGHT:  max-w-[var(--max-w-code)]          → resolves to CSS variable value
+```
+
+**Flex centering requires `w-full` on intermediate containers.** When a parent has `items-center`, child elements shrink to intrinsic width unless given `w-full`. Every intermediate `div` between the centering parent and the block elements needs `w-full`.
+
+**`@utility` classes must be detectable by the scanner.** Tailwind only emits `@utility` CSS when it finds the class name in source files. Dense single-line strings (like hljs syntax highlighting classes) can cause scanner misses. Arbitrary value syntax `[var(--foo)]` is more reliable since it generates inline.
+
+**CSS variable changes from preferences may require a restart.** `StyleWatcher` injects CSS custom properties (e.g. `--max-w-prose`) at runtime from electron settings. When a preference value changes, the electron store updates on disk but the renderer process may not re-read it until restart. Even if the React state updates, the dev server's HMR may have cached the initial layout before the new variable value was applied. If a width or layout preference change doesn't seem to take effect, restart the app before debugging further.
 
 ## Styling Patterns
 
-The common pattern is to wrap a `PlateElement` and apply styles using Tailwind classes.
-
-### Example 1: `Heading.tsx`
+Element components wrap `PlateElement` with Tailwind classes:
 
 ```tsx
-// src/views/edit/editor/elements/Heading.tsx
+// Simple element
+export const BlockquoteElement = (props: PlateElementProps) => (
+  <PlateElement
+    as="blockquote"
+    className="text-muted-foreground my-6 w-full max-w-[var(--max-w-prose)] border-l-4 pl-6 italic"
+    {...props}
+  />
+);
 
-const headingVariants = cva("", {
+// Variant-based element using cva
+const headingVariants = cva("relative mb-1 max-w-[var(--max-w-prose)] w-full", {
   variants: {
     variant: {
-      h1: "font-heading text-2xl font-medium",
-      h2: "font-heading-2 text-xl font-medium",
-      // ...
+      h1: "mb-[0.5em] mt-[1.6em] font-heading font-medium text-2xl",
+      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 font-medium text-xl",
     },
   },
 });
-
-const HeadingElementVariants = withVariants(PlateElement, headingVariants, [
-  "variant",
-]);
 ```
 
-This demonstrates the use of `cva` and `withVariants` to create styled components based on props. The `variant` prop (`h1`, `h2`, etc.) is passed from `PlateContainer.tsx`.
+Libraries used: `class-variance-authority` (cva) for variants, `cn` from `src/lib/utils` for class merging.
 
-### Example 2: `Blockquote.tsx`
+## Adding/Modifying Styles
 
-```tsx
-// src/views/edit/editor/elements/Blockquote.tsx
-
-export const BlockquoteElement = withRef<typeof PlateElement>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <PlateElement
-        ref={ref}
-        asChild
-        className={cn("border-l-4 pl-6 italic", className)}
-        {...props}
-      >
-        <blockquote>{children}</blockquote>
-      </PlateElement>
-    );
-  },
-);
-```
-
-This shows two important patterns:
-
-1.  The `cn` utility is used to merge base classes with any classes passed via props.
-2.  The `asChild` prop instructs `PlateElement` to pass its props (including the merged `className`) to its immediate child (`<blockquote>`) instead of rendering its own `div`. This results in cleaner HTML and is a common pattern when using component libraries with Tailwind.
-
-## Summary
-
-To modify or add styles to editor elements, a developer should:
-
-1.  Locate the corresponding element component in `src/views/edit/editor/elements/`.
-2.  Modify the Tailwind CSS classes within that file.
-3.  For new elements, create a new component, and map it to a Plate element type in `src/views/edit/PlateContainer.tsx`.
+1. Locate the element component in `src/views/edit/editorv2/features/`
+2. Modify Tailwind classes in that file
+3. For width constraints, use `max-w-[var(--max-w-prose)]` or `max-w-[var(--max-w-code)]` — never bare `max-w-prose`
+4. For new elements, create a component and register it in `PlateContainer.tsx`

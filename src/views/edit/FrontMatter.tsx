@@ -126,7 +126,7 @@ const FrontMatter = observer(
     }
 
     return (
-      <>
+      <div className="w-full max-w-[var(--max-w-frontmatter)]">
         {/* Document title */}
         <div>
           <textarea
@@ -163,7 +163,7 @@ const FrontMatter = observer(
             openOnEmptyFocus={false}
           />
         </div>
-      </>
+      </div>
     );
   },
 );

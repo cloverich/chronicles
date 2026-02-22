@@ -11,7 +11,10 @@ export const ParagraphElement = ({
   return (
     <PlateElement
       {...props}
-      className={cn("min-w-prose mt-px mb-4 max-w-prose px-0", className)}
+      className={cn(
+        "mt-px mb-4 w-full max-w-[var(--max-w-prose)] px-0",
+        className,
+      )}
     >
       {props.children}
     </PlateElement>

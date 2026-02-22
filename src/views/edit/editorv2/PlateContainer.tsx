@@ -277,7 +277,7 @@ export const PlateContainer = (props: Props) => {
     >
       <EditorLayout {...props}>
         <PlateContent
-          className="font-body min-h-full w-full"
+          className="font-body flex min-h-full w-full flex-col items-center"
           placeholder="Type your amazing content here..."
         />
       </EditorLayout>

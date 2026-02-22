@@ -56,10 +56,10 @@ export const EditorLayout = ({
         {/* This Ghost div is same height as titlebar, so pushes the main content below it -- necessary for the contents scrollbar to make sense */}
         <Base.TitlebarSpacer />
         <Base.ScrollContainer onClick={focusEditor}>
-          <div className="flex w-full grow flex-col">
+          <div className="flex w-full grow flex-col items-center">
             <FrontMatter document={document} journals={journals} />
 
-            <div className="flex grow pt-6">
+            <div className="flex w-full grow pt-6">
               {/* w-full ensures when content is empty, it has width, otherwise the cursor will be invisible */}
               {children}
             </div>

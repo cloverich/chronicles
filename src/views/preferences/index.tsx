@@ -248,6 +248,15 @@ const PreferencesPane = observer((props: Props) => {
                           preferences.maxWidth.code = e.target.value;
                         }}
                       />
+                      <WidthSelector
+                        label="Front Matter"
+                        description="Max-width for title and front matter"
+                        value={preferences.maxWidth?.frontmatter || ""}
+                        placeholder="Defaults to Prose width ^"
+                        onChange={(e) => {
+                          preferences.maxWidth.frontmatter = e.target.value;
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

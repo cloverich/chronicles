@@ -4,15 +4,15 @@ Chronicles is a local-first, markdown-based journaling app built with Electron +
 
 ## Technology Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Electron (main + renderer) |
-| Editor | Slate.js / Plate |
-| State | MobX |
-| Bundler | esbuild |
-| Styling | Tailwind CSS v4, Radix UI |
-| Database | better-sqlite3 + Knex migrations |
-| Markdown | micromark, MDAST, unified/remark |
+| Layer     | Technology                       |
+| --------- | -------------------------------- |
+| Framework | Electron (main + renderer)       |
+| Editor    | Slate.js / Plate                 |
+| State     | MobX                             |
+| Bundler   | esbuild                          |
+| Styling   | Tailwind CSS v4, Radix UI        |
+| Database  | better-sqlite3 + Knex migrations |
+| Markdown  | micromark, MDAST, unified/remark |
 
 ## Process Model
 

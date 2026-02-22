@@ -20,6 +20,7 @@ export interface IPreferences {
   maxWidth: {
     prose?: string;
     code?: string;
+    frontmatter?: string;
   };
 }
 

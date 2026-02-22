@@ -27,6 +27,7 @@ export class Preferences implements IPreferences {
   maxWidth!: {
     prose?: string;
     code?: string;
+    frontmatter?: string;
   };
 
   constructor(prefs: IPreferences, client: IClient["preferences"]) {

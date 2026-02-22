@@ -67,6 +67,12 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
         } else {
           root.style.setProperty("--max-w-code", "var(--max-w-prose)");
         }
+
+        if (maxWidth.frontmatter) {
+          root.style.setProperty("--max-w-frontmatter", maxWidth.frontmatter);
+        } else {
+          root.style.setProperty("--max-w-frontmatter", "var(--max-w-prose)");
+        }
       },
       {
         fireImmediately: true,
