@@ -30,6 +30,12 @@ src/hooks/           React hooks, MobX stores (hooks/stores/)
 src/markdown/        Markdown parsing + serialization
 ```
 
+## Environment Variables
+
+- `CHRONICLES_SETTINGS_DIR`: Overrides the directory for `settings.json` (see `src/electron/settings.ts`).
+- `CHRONICLES_USER_DATA`: Overrides Electron's `userData` path for database and local storage (see `src/electron/index.ts`).
+- `HEADLESS=true`: Runs the application without showing the main window (useful for background scripts/dev).
+
 ## Commits foramt
 
 ```

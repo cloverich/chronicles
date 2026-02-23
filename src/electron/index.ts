@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 // Consolidated user files and database setup
 const { databaseUrl: dbUrl, notesDir } = initAppEnvironment(
   settings,
-  app.getPath("userData"),
+  process.env.CHRONICLES_USER_DATA || app.getPath("userData"),
 );
 console.log("application settings at startup:", settings.store);
 
