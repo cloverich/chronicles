@@ -272,4 +272,20 @@ Start with the hybrid approach (Vite for renderer, esbuild for main/preload), th
 
 ---
 
+## Follow-On: Vitest
+
+Once Vite owns the renderer bundle (Phase 1 complete), migrating to **Vitest** for renderer tests becomes trivial:
+
+- Vitest shares the Vite config (no separate transform setup)
+- Instant test re-runs via HMR
+- Browser mode for component testing
+- Much faster than Jest for component-heavy test suites
+
+**Key insight:** The Vitest migration is scoped entirely to the renderer layer (all current tests are renderer-side: stores, markdown parsing, search logic). This means:
+- The investment survives any future framework migration (Tauri, Electrobun, etc.)
+- Renderer tests would stay Vitest regardless of what wraps the frontend
+- See `docs/designs/framework-comparison-2026.md` for framework migration analysis
+
+---
+
 **Architecture:** Electron + React + TypeScript + MobX + Slate/Plate.js local-first markdown editing notes app
