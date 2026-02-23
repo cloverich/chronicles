@@ -6,7 +6,10 @@ set -e
 
 echo "Starting build process..."
 # Redirect verbose build logs to a temporary file to keep the agent context clean.
-BUILD_LOG=$(mktemp /tmp/chronicles-build.XXXXXX.log)
+# Using a more robust temp file creation
+BUILD_LOG=$(mktemp -t chronicles-build.XXXXXX)
+mv "$BUILD_LOG" "${BUILD_LOG}.log"
+BUILD_LOG="${BUILD_LOG}.log"
 
 if ! yarn build > "$BUILD_LOG" 2>&1; then
   echo "Error: Build failed. Last 20 lines of logs:"

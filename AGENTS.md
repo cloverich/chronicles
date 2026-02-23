@@ -24,3 +24,9 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [docs/search.md](docs/search.md): FTS implementation and query syntax. Read when modifying search.
 - [docs/indexer.md](docs/indexer.md): Background document indexing pipeline. Read when changing how documents are indexed.
 - [docs/bulk-operations.md](docs/bulk-operations.md): Batch import/export flows. Read when touching import or bulk edit logic.
+
+## Skills
+
+- [.claude/skills/local-install/SKILL.md](.claude/skills/local-install/SKILL.md): Automates building and installing the app locally on macOS.
+- [.claude/skills/skills-review/SKILL.md](.claude/skills/skills-review/SKILL.md): Reviews and validates multi-platform skill structure.
+- [docs/skills-authoring.md](docs/skills-authoring.md): Guide for creating and proxying skills for Claude, Gemini, and Codex.

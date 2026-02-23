@@ -9,7 +9,9 @@ This is a proxy skill. The source of truth for all instructions and scripts is l
 `.claude/skills/local-install/SKILL.md`
 
 ## Instructions
+
 Please read and follow the instructions in the source skill at `.claude/skills/local-install/SKILL.md`.
 
 ## Scripts
+
 The core automation script is located at `.claude/skills/local-install/scripts/install-build.sh`.
