@@ -24,6 +24,7 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [docs/search.md](docs/search.md): FTS implementation and query syntax. Read when modifying search.
 - [docs/indexer.md](docs/indexer.md): Background document indexing pipeline. Read when changing how documents are indexed.
 - [docs/bulk-operations.md](docs/bulk-operations.md): Batch import/export flows. Read when touching import or bulk edit logic.
+- [docs/testing.md](docs/testing.md): Current test infrastructure, what works, what's missing, and where things are headed.
 
 ## Skills
 
