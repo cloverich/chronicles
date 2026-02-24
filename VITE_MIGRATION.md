@@ -274,14 +274,22 @@ Start with the hybrid approach (Vite for renderer, esbuild for main/preload), th
 
 ## Follow-On: Vitest
 
-Once Vite owns the renderer bundle (Phase 1 complete), migrating to **Vitest** for renderer tests becomes trivial:
+Once Vite owns the renderer bundle (Phase 1 complete), migrating to **Vitest** becomes the natural next step. This is not optional — it's **required for the testing strategy** outlined in [docs/designs/testing-philosophy.md](docs/designs/testing-philosophy.md).
 
-- Vitest shares the Vite config (no separate transform setup)
-- Instant test re-runs via HMR
-- Browser mode for component testing
-- Much faster than Jest for component-heavy test suites
+### Why Vitest is Required
 
-**Key insight:** The Vitest migration is scoped entirely to the renderer layer (all current tests are renderer-side: stores, markdown parsing, search logic). This means:
+The editor (Plate/SlateJS) requires **real browser** testing — `contenteditable` and Slate's selection APIs are unreliable in jsdom. Vitest's browser mode (`@vitest/browser`, backed by Playwright) runs tests in real Chromium without needing the full Electron app. This is currently **blocking component tests** per [docs/testing.md](docs/testing.md).
+
+### Benefits
+
+- **Vitest shares the Vite config** (no separate transform setup)
+- **Instant test re-runs via HMR**
+- **Browser mode for editor component testing** (architecturally required)
+- **Much faster than Jest** for component-heavy test suites
+
+### Framework-Agnostic Investment
+
+The Vitest migration is scoped entirely to the renderer layer (all current tests are renderer-side: stores, markdown parsing, search logic). This means:
 - The investment survives any future framework migration (Tauri, Electrobun, etc.)
 - Renderer tests would stay Vitest regardless of what wraps the frontend
 - See `docs/designs/framework-comparison-2026.md` for framework migration analysis
