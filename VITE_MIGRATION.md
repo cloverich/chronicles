@@ -7,6 +7,7 @@ Evaluate migrating the renderer build from esbuild to Vite while keeping esbuild
 ## Current Setup Analysis
 
 The build system currently uses esbuild for all three bundles:
+
 - **Renderer** (`src/index.tsx` → `src/renderer.bundle.mjs`) - React app
 - **Preload** (`src/preload/index.ts` → `src/preload.bundle.mjs`) - IPC bridge
 - **Main** (`src/electron/index.ts` → `src/main.bundle.mjs`) - Electron main process
@@ -23,22 +24,26 @@ The build system currently uses esbuild for all three bundles:
 ### Major Benefits
 
 1. **Hot Module Replacement (HMR)**
+
    - Renderer changes reload instantly without restarting Electron
    - CSS changes apply immediately (~50ms vs current ~2-5 seconds)
    - React Fast Refresh preserves component state during development
 
 2. **Integrated CSS Processing**
+
    - No need to pre-compile Tailwind (remove prestart script)
    - PostCSS, CSS modules, imports all work out-of-box
    - Better source maps for CSS debugging
 
 3. **Superior Developer Experience**
+
    - Faster cold starts (pre-bundling with esbuild under the hood)
    - Better error overlay in browser
    - Source maps that actually work reliably
    - DevTools integration
 
 4. **Better Production Builds**
+
    - Advanced code-splitting and tree-shaking
    - Built-in asset optimization (images, fonts)
    - CSS extraction and minification
@@ -61,28 +66,30 @@ The build system currently uses esbuild for all three bundles:
 ### Phase 1: Add Vite for Renderer (Keep esbuild for main/preload)
 
 #### 1. Install Dependencies
+
 ```bash
 yarn add -D vite @vitejs/plugin-react vite-plugin-electron-renderer
 ```
 
 #### 2. Create `vite.config.ts`
+
 ```typescript
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
-import renderer from 'vite-plugin-electron-renderer';
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+import renderer from "vite-plugin-electron-renderer";
 
 export default defineConfig({
   plugins: [
     react(),
     renderer(), // Enables Node.js API in renderer if needed
   ],
-  root: 'src',
-  base: './',
+  root: "src",
+  base: "./",
   build: {
-    outDir: '../dist',
+    outDir: "../dist",
     emptyOutDir: false, // Don't delete main/preload bundles
     rollupOptions: {
-      input: 'src/index.html',
+      input: "src/index.html",
     },
   },
   server: {
@@ -90,25 +97,27 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': '/src',
+      "@": "/src",
     },
   },
   css: {
-    postcss: './postcss.config.js', // For Tailwind
+    postcss: "./postcss.config.js", // For Tailwind
   },
 });
 ```
 
 #### 3. Create `postcss.config.js` (for Tailwind v4)
+
 ```javascript
 export default {
   plugins: {
-    '@tailwindcss/postcss': {},
+    "@tailwindcss/postcss": {},
   },
 };
 ```
 
 #### 4. Update `src/index.html`
+
 ```html
 <!doctype html>
 <html>
@@ -127,18 +136,20 @@ export default {
 ```
 
 #### 5. Update `scripts/dev.mjs`
+
 - Start Vite dev server for renderer
 - Keep esbuild watchers for main and preload
 - Update startElectron to pass VITE_DEV_SERVER_URL env var
 - Remove watchRenderer() call
 
 Key changes:
+
 ```javascript
-import { createServer } from 'vite';
+import { createServer } from "vite";
 
 // Start Vite dev server for renderer
 const viteServer = await createServer({
-  configFile: './vite.config.ts',
+  configFile: "./vite.config.ts",
 });
 await viteServer.listen();
 
@@ -146,8 +157,8 @@ const VITE_DEV_SERVER_URL = `http://localhost:5173`;
 
 // Update startElectron to use Vite dev server
 function startElectron() {
-  eprocess = cp.spawn(`${electron}`, ['src/main.bundle.mjs'], {
-    stdio: 'inherit',
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
+    stdio: "inherit",
     env: {
       ...process.env,
       VITE_DEV_SERVER_URL, // Main process loads from this URL
@@ -161,6 +172,7 @@ watchPreload();
 ```
 
 #### 6. Update Main Process (`src/electron/index.ts`)
+
 ```typescript
 // In window creation:
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
@@ -173,17 +185,20 @@ if (isDev) {
   mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   mainWindow.webContents.openDevTools();
 } else {
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile("index.html");
 }
 ```
 
 #### 7. Update `build.sh`
+
 Replace:
+
 ```bash
 node ./scripts/production.js
 ```
 
 With:
+
 ```bash
 node ./scripts/build-main-preload.js  # esbuild for main/preload
 vite build                              # Vite for renderer
@@ -192,6 +207,7 @@ vite build                              # Vite for renderer
 Create new `scripts/build-main-preload.js` with just the main and preload builds from `scripts/production.js`.
 
 #### 8. Update `package.json` scripts
+
 ```json
 {
   "scripts": {
@@ -206,6 +222,7 @@ Create new `scripts/build-main-preload.js` with just the main and preload builds
 ### Phase 2: Optimize (Optional)
 
 #### A. Use `electron-vite` (opinionated framework)
+
 - Handles main/preload/renderer with Vite
 - Convention-based config
 - Built-in best practices
@@ -215,17 +232,19 @@ yarn add -D electron-vite
 ```
 
 #### B. Add Type Checking Plugin
+
 ```typescript
 // vite.config.ts
-import checker from 'vite-plugin-checker';
+import checker from "vite-plugin-checker";
 
 plugins: [
   react(),
   checker({ typescript: true }), // Type check during dev
-]
+];
 ```
 
 #### C. Code Splitting
+
 ```typescript
 build: {
   rollupOptions: {
@@ -245,6 +264,7 @@ build: {
 **Effort Level: Medium** (~4-8 hours)
 
 **Breakdown:**
+
 1. Install deps and create configs: 30 min
 2. Update dev.mjs to use Vite dev server: 1-2 hours
 3. Update main process window loading: 30 min
@@ -290,6 +310,7 @@ The editor (Plate/SlateJS) requires **real browser** testing — `contenteditabl
 ### Framework-Agnostic Investment
 
 The Vitest migration is scoped entirely to the renderer layer (all current tests are renderer-side: stores, markdown parsing, search logic). This means:
+
 - The investment survives any future framework migration (Tauri, Electrobun, etc.)
 - Renderer tests would stay Vitest regardless of what wraps the frontend
 - See `docs/designs/framework-comparison-2026.md` for framework migration analysis

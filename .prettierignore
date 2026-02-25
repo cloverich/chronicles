@@ -6,6 +6,9 @@ packaged
 *.bundle.*
 
 # Some of the changes prettier makes to md files differs from what
-# mdast-util-to-string does, making it unusable as a snapshot. 
+# mdast-util-to-string does, making it unusable as a snapshot.
 src/markdown/test-docs/*
-.claude/
+
+# Ignore .claude/ except for hooks which should be tracked
+.claude/*
+!.claude/hooks/

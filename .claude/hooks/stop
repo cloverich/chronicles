@@ -1,0 +1,9 @@
+#!/bin/bash
+# Claude stop hook - runs when Claude finishes a session
+# Automatically format staged files with prettier
+
+set -e
+
+# Run pretty-quick on staged files
+# This ensures all committed code is properly formatted
+yarn run pretty-quick --staged
