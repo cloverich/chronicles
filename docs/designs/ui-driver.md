@@ -31,21 +31,25 @@ This replaces the file-polling approach entirely.
 The app is conceptually simple. The surface is small and fully enumerable across four areas:
 
 **Search / Document Index**
+
 - Search input (tokens visible, editable)
 - Search results list (selectable)
 - Sidebar toggle
 - Settings navigation
 
 **Sidebar**
+
 - Journal list (known journals, selectable)
 - Tag list (selectable)
 - Create journal
 - Delete journal
 
 **Settings Page**
+
 - Settings fields (visible, updatable)
 
 **Editor**
+
 - Document title input
 - Tags input
 - Editor body (enter text, observe content)
@@ -75,7 +79,7 @@ The editor (Plate/SlateJS) is a special case. The accessibility tree shows text 
 Solution: expose a preload API that serializes the Slate model:
 
 ```ts
-window.chronicles.editor.getState() // returns serialized Slate value
+window.chronicles.editor.getState(); // returns serialized Slate value
 ```
 
 Called from Playwright via `page.evaluate(() => window.chronicles.editor.getState())`. Returns structured JSON — block types, children, marks, selection — directly to the test or LLM context. No file I/O needed.
@@ -98,15 +102,15 @@ Wiring: the editor exposes a ref or publishes state to a module-level store; the
 
 Failures have a clear home:
 
-| Symptom | Likely layer |
-|---|---|
-| Element not found | Selector config or app markup |
-| Wrong element found | Selector config |
-| Test logic incorrect | Test / LLM layer |
-| UI behavior broken | App code |
+| Symptom              | Likely layer                  |
+| -------------------- | ----------------------------- |
+| Element not found    | Selector config or app markup |
+| Wrong element found  | Selector config               |
+| Test logic incorrect | Test / LLM layer              |
+| UI behavior broken   | App code                      |
 
 ---
 
 ## What's Not Here
 
-Specific implementation plans — what to build in what order — live in `docs/plans/`. This document captures the *why* and *how the layers relate*, not the build sequence.
+Specific implementation plans — what to build in what order — live in `docs/plans/`. This document captures the _why_ and _how the layers relate_, not the build sequence.
