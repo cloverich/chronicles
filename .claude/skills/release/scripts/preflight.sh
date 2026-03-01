@@ -18,7 +18,7 @@ if [ "$BRANCH" != "master" ]; then
 fi
 
 # Up-to-date with origin
-git fetch origin master --quiet
+git fetch origin --quiet
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/master)
 if [ "$LOCAL" != "$REMOTE" ]; then
