@@ -39,7 +39,7 @@ src/markdown/        Markdown parsing + serialization
 ## Commits foramt
 
 ```
-type: lowercase imperative description
+(feat|fix|refactor|chore): lowercase imperative description
 
 - key feature / fix 1
 - key feature / fix 2
@@ -47,7 +47,7 @@ type: lowercase imperative description
 Justification or elaboration, but only when relevant
 ```
 
-Types: `feat`, `fix`, `refactor`, `chore`. No period, no scope. Bullet points communicate key changes, not dev practices (i.e. "added search by title", not "search by title to dropdown", "add docs for ^", "add spec for ^"...)
+Bullet points communicate key changes, not dev practices (i.e. "added search by title", not "search by title to dropdown", "add docs for ^", "add spec for ^"...)
 
 ## Conventions
 
