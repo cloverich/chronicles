@@ -23,6 +23,10 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
           root.style.setProperty("--font-heading", fonts.heading);
         }
 
+        if (fonts.title) {
+          root.style.setProperty("--font-title", fonts.title);
+        }
+
         if (fonts.heading2) {
           root.style.setProperty("--font-heading-2", fonts.heading2);
         }
@@ -79,10 +83,32 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       },
     );
 
-    // Cleanup both reactions
+    // Watch font-size preferences
+    const fontSizeDisposer = reaction(
+      () => toJS(preferences.fontSizes),
+      (fontSizes) => {
+        const root = document.documentElement;
+
+        if (fontSizes?.body) {
+          root.style.setProperty("--font-size-body", fontSizes.body);
+        }
+
+        if (fontSizes?.heading) {
+          root.style.setProperty("--font-size-heading", fontSizes.heading);
+        }
+
+        if (fontSizes?.title) {
+          root.style.setProperty("--font-size-title", fontSizes.title);
+        }
+      },
+      { fireImmediately: true },
+    );
+
+    // Cleanup all reactions
     return () => {
       fontDisposer();
       maxWidthDisposer();
+      fontSizeDisposer();
     };
   }, []);
 

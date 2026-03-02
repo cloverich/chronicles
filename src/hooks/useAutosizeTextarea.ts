@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export function useAutosizeTextarea(value: string) {
+export function useAutosizeTextarea(value: string, extraDeps: any[] = []) {
   const ref = React.useRef<HTMLTextAreaElement | null>(null);
 
   React.useLayoutEffect(() => {
@@ -9,7 +9,7 @@ export function useAutosizeTextarea(value: string) {
 
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
-  }, [value]);
+  }, [value, ...extraDeps]);
 
   return ref;
 }

@@ -18,7 +18,7 @@ export function DocumentItem(props: {
   });
 
   return (
-    <div key={doc.id} className="flex items-center justify-between">
+    <div key={doc.id} className="flex items-center justify-between space-y-0.5">
       <div className="flex items-center truncate">
         <div
           className="mr-2 min-w-0 cursor-pointer truncate font-sans decoration-1 hover:underline hover:underline-offset-4"

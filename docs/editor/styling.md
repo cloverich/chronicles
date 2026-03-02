@@ -7,15 +7,36 @@ Styling is managed through Tailwind CSS v4 classes on Plate.js element component
 - **`src/views/edit/editorv2/PlateContainer.tsx`**: Editor setup — maps Plate element types to React components via `usePlateEditor({ plugins, components })`
 - **`src/views/edit/editorv2/EditorLayout.tsx`**: Layout wrapper — flex column with `items-center` for centering
 - **`src/views/edit/editorv2/features/`**: Element components, each responsible for its own Tailwind styling
-- **`src/index.css`**: CSS custom properties (`--max-w-prose`, `--max-w-code`, fonts) and `@utility` definitions
+- **`src/index.css`**: CSS custom properties (widths, font families, font sizes) and `@utility` definitions
 - **`src/views/StyleWatcher.tsx`**: Syncs user preference values to CSS custom properties at runtime
+- **`src/views/preferences/index.tsx`**: Preferences UI — font family, font size, and max-width selectors
+- **`src/electron/settings.ts`**: `IPreferences` shape and defaults for all style-related preferences
+- **`src/hooks/stores/preferences.ts`**: MobX store; auto-saves preference changes with 1 s debounce
+
+## CSS Custom Properties
+
+All user-configurable style values are expressed as CSS custom properties defined in `src/index.css` (`:root`) and updated at runtime by `StyleWatcher`. Defaults below.
+
+### Width
+
+- `--max-w-prose` (`768px`): paragraphs, headings, blockquotes, lists
+- `--max-w-code` (`var(--max-w-prose)`): code blocks (independently configurable)
+- `--max-w-frontmatter` (`var(--max-w-prose)`): document title + front matter
+
+### Font family
+
+- `--font-body`, `--font-heading`, `--font-heading-2`, `--font-heading-3`, `--font-mono`
+- `--font-system-body`, `--font-system-heading` — UI chrome (sidebar, preferences)
+
+### Font size
+
+- `--font-size-body` (`1rem`): paragraphs (`ParagraphElement`)
+- `--font-size-heading` (`1.5rem`): H1 in editor content; H2/H3 scale via `calc()` in `HeadingElement`
+- `--font-size-title` (`1.5rem`): document title textarea in `FrontMatter`
+
+All three font-size vars are user-editable in **Preferences → Font Sizes**.
 
 ## Width & Centering Model
-
-Content uses a two-tier width system driven by CSS variables set via user preferences:
-
-- `--max-w-prose` (default `768px`): paragraphs, headings, blockquotes, lists
-- `--max-w-code` (default `var(--max-w-prose)`): code blocks (independently configurable)
 
 Centering is achieved via `items-center` on the `PlateContent` flex column. Each block element sets `w-full max-w-[var(--max-w-prose)]` (or `--max-w-code` for code). Breakout elements (images, galleries) omit `max-w` to fill the container.
 
@@ -51,15 +72,16 @@ export const BlockquoteElement = (props: PlateElementProps) => (
   />
 );
 
-// Variant-based element using cva
+// Variant-based element using cva; font-size from CSS var via inline style
 const headingVariants = cva("relative mb-1 max-w-[var(--max-w-prose)] w-full", {
   variants: {
     variant: {
-      h1: "mb-[0.5em] mt-[1.6em] font-heading font-medium text-2xl",
-      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 font-medium text-xl",
+      h1: "mb-[0.5em] mt-[1.6em] font-heading font-medium",
+      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 font-medium",
     },
   },
 });
+// style={{ fontSize: headingFontSizes[variant] }} — applied inline, not via Tailwind
 ```
 
 Libraries used: `class-variance-authority` (cva) for variants, `cn` from `src/lib/utils` for class merging.

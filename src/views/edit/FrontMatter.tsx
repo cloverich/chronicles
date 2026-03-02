@@ -6,6 +6,7 @@ import * as Popover from "../../components/Popover";
 import TagInput from "../../components/tag-input/TagInput";
 import { useAutosizeTextarea } from "../../hooks/useAutosizeTextarea";
 import { JournalResponse } from "../../hooks/useClient";
+import { usePreferences } from "../../hooks/usePreferences";
 import { useTags } from "../../hooks/useTags";
 import { TagTokenParser } from "../documents/search/parsers/tag";
 import { EditableDocument } from "./EditableDocument";
@@ -21,6 +22,7 @@ const FrontMatter = observer(
     const journalSelectorOpenState = D.useOpenState();
     const datePickerOpenState = D.useOpenState();
     const { tags: allTagsRaw } = useTags();
+    const preferences = usePreferences();
 
     // todo: cleanup
     const allTags = useMemo(() => {
@@ -46,7 +48,9 @@ const FrontMatter = observer(
     }
 
     // Auto-resize textarea to fit content
-    const titleRef = useAutosizeTextarea(document.title || "");
+    const titleRef = useAutosizeTextarea(document.title || "", [
+      preferences.fontSizes?.title,
+    ]);
 
     // Autofocus on mount
     React.useEffect(() => {
@@ -132,7 +136,13 @@ const FrontMatter = observer(
           <textarea
             name="title"
             ref={titleRef}
-            className="bg-background font-heading text-foreground min-h-6 w-full resize-none overflow-hidden border-none text-2xl font-medium focus:outline-hidden"
+            className="bg-background text-foreground w-full resize-none border-none font-medium focus:outline-hidden"
+            style={{
+              fontFamily: "var(--font-title)",
+              fontSize: "var(--font-size-title)",
+              lineHeight: 1.15,
+              minHeight: "calc(var(--font-size-title) * 1.15)",
+            }}
             onChange={(e: any) => {
               document.title = e.target.value;
             }}

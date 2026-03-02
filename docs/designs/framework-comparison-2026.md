@@ -143,7 +143,6 @@ Mature desktop framework (v1 shipped 2022, v2 stable Oct 2024) with Rust backend
 
 ---
 
-
 ---
 
 ## Package Management & Tooling (2026)
@@ -153,18 +152,21 @@ Mature desktop framework (v1 shipped 2022, v2 stable Oct 2024) with Rust backend
 **Context:** Chronicles uses a complex dependency tree (Plate.js, Remark, Radix) and sensitive native modules (`better-sqlite3`, `sharp`).
 
 **pnpm (The Recommendation):**
+
 - **Disk Efficiency:** Uses a content-addressable store to save space across projects.
 - **Strictness:** Non-flat `node_modules` prevents "phantom dependencies," which is critical when working with the large, fragmented trees of the Slate/Plate and Remark ecosystems.
 - **Stability:** Works perfectly with `electron-rebuild` and existing Node-API modules.
 - **Verdict:** The safest and most efficient path for Chronicles in 2026.
 
 **Bun (as Package Manager/Runtime):**
+
 - **Speed:** `bun install` is significantly faster than Yarn/pnpm.
 - **Runtime Risk:** Using the Bun runtime for the Main process risks breaking `better-sqlite3` and `sharp` due to ABI differences and missing Node-API shims.
 - **Windows Support:** Still trails macOS/Linux stability for production desktop apps.
 - **Verdict:** Excellent for one-off scripts or simple tools, but too risky as a primary runtime for a production Electron app with deep native dependencies.
 
 ---
+
 ## Migration Analysis for Chronicles
 
 ### Database Layer (Critical)

@@ -185,6 +185,16 @@ const PreferencesPane = observer((props: Props) => {
                     isSpecific={true}
                   />
                   <FontSelector
+                    label="Title"
+                    description="Document title (front matter)"
+                    value={preferences.fonts?.title || "Default (Heading)"}
+                    onChange={(font) => {
+                      preferences.fonts.title =
+                        font === "Default (Heading)" ? undefined : font;
+                    }}
+                    isSpecific={true}
+                  />
+                  <FontSelector
                     label="Body"
                     description="Interface and content text"
                     value={preferences.fonts?.body || "Mona Sans (bundled)"}
@@ -218,6 +228,41 @@ const PreferencesPane = observer((props: Props) => {
                     }
                     onChange={(font) => {
                       preferences.fonts.systemHeading = font;
+                    }}
+                  />
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="Font Sizes"
+                  sub="Accepts any CSS size value (e.g. 1rem, 18px, 1.5em)"
+                />
+                <div className="space-y-4">
+                  <WidthSelector
+                    label="Body"
+                    description="Paragraphs and inline text"
+                    value={preferences.fontSizes?.body || ""}
+                    placeholder="Default: 1rem"
+                    onChange={(e) => {
+                      preferences.fontSizes.body = e.target.value;
+                    }}
+                  />
+                  <WidthSelector
+                    label="Title"
+                    description="Document title (front matter)"
+                    value={preferences.fontSizes?.title || ""}
+                    placeholder="Default: 3rem"
+                    onChange={(e) => {
+                      preferences.fontSizes.title = e.target.value;
+                    }}
+                  />
+                  <WidthSelector
+                    label="Heading"
+                    description="H1 in content (H2, H3 scale proportionally)"
+                    value={preferences.fontSizes?.heading || ""}
+                    placeholder="Default: 1.5rem"
+                    onChange={(e) => {
+                      preferences.fontSizes.heading = e.target.value;
                     }}
                   />
                 </div>

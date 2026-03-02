@@ -6,15 +6,24 @@ import * as React from "react";
 const headingVariants = cva("relative mb-1 max-w-[var(--max-w-prose)] w-full", {
   variants: {
     variant: {
-      h1: "mb-[0.5em] mt-[1.6em] font-heading font-medium text-2xl",
-      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 font-medium text-xl",
-      h3: "mb-[0.5em] mt-[1em] font-heading-3 text-lg font-medium",
-      h4: "mt-[0.75em] font-heading-3 text-lg font-medium",
-      h5: "mt-[0.75em] text-lg font-heading-3 font-medium",
-      h6: "mt-[0.75em] text-base font-heading-3 font-medium",
+      h1: "mb-[0.5em] mt-[1.6em] font-heading font-medium",
+      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 font-medium",
+      h3: "mb-[0.5em] mt-[1em] font-heading-3 font-medium",
+      h4: "mt-[0.75em] font-heading-3 font-medium",
+      h5: "mt-[0.75em] font-heading-3 font-medium",
+      h6: "mt-[0.75em] font-heading-3 font-medium",
     },
   },
 });
+
+const headingFontSizes: Record<string, string> = {
+  h1: "var(--font-size-heading)",
+  h2: "calc(var(--font-size-heading) * 0.833)",
+  h3: "calc(var(--font-size-heading) * 0.75)",
+  h4: "calc(var(--font-size-heading) * 0.75)",
+  h5: "calc(var(--font-size-heading) * 0.75)",
+  h6: "calc(var(--font-size-heading) * 0.667)",
+};
 
 export function HeadingElement({
   variant = "h1",
@@ -24,6 +33,7 @@ export function HeadingElement({
     <PlateElement
       as={variant!}
       className={headingVariants({ variant })}
+      style={{ fontSize: headingFontSizes[variant!] }}
       {...props}
     >
       {props.children}

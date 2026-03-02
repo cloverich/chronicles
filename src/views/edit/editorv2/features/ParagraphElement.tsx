@@ -15,6 +15,7 @@ export const ParagraphElement = ({
         "mt-px mb-8 w-full max-w-[var(--max-w-prose)] px-0",
         className,
       )}
+      style={{ fontSize: "var(--font-size-body)" }}
     >
       {props.children}
     </PlateElement>

@@ -12,6 +12,7 @@ export interface IPreferences {
     heading?: string;
     heading2?: string;
     heading3?: string;
+    title?: string;
     body?: string;
     mono?: string;
     systemBody?: string;
@@ -21,6 +22,11 @@ export interface IPreferences {
     prose?: string;
     code?: string;
     frontmatter?: string;
+  };
+  fontSizes: {
+    body?: string;
+    heading?: string;
+    title?: string;
   };
 }
 
@@ -47,6 +53,11 @@ const defaults: IPreferences = {
   maxWidth: {
     prose: "768px",
     code: undefined,
+  },
+  fontSizes: {
+    body: "1rem",
+    heading: "1.5rem",
+    title: "3rem",
   },
 };
 

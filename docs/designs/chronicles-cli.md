@@ -50,12 +50,12 @@ The `IClient` backend currently lives in `src/preload/` and assumes an Electron 
 
 ### Electron-Specific Dependencies (Complete Inventory)
 
-| Dependency | Files | What it does | CLI replacement |
-|-----------|-------|-------------|----------------|
-| **`electron-store`** | `preferences.ts`, `files.ts`, `electron/settings.ts` | Settings storage (get/set/path). Used for `notesDir`, `databaseUrl`, `defaultJournal`. | `conf` package (drop-in API-compatible) or plain JSON file. Interface is simple: get, set, delete, path. |
-| **`contextBridge`** | `preload/index.ts` | Exposes client to Electron renderer via `window.chronicles` | Not needed. CLI imports `createClient` directly. |
-| **`ipcRenderer`** | `utils.electron.tsx`, `*.electron-test.ts` | File dialogs, dev tools, test signaling | Not needed. CLI uses path arguments. Test files use `node:test` directly. |
-| **`(file as any).path`** | `files.ts:217` | Electron-specific File object with `.path` property | CLI passes file paths directly, not File objects. |
+| Dependency               | Files                                                | What it does                                                                           | CLI replacement                                                                                          |
+| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **`electron-store`**     | `preferences.ts`, `files.ts`, `electron/settings.ts` | Settings storage (get/set/path). Used for `notesDir`, `databaseUrl`, `defaultJournal`. | `conf` package (drop-in API-compatible) or plain JSON file. Interface is simple: get, set, delete, path. |
+| **`contextBridge`**      | `preload/index.ts`                                   | Exposes client to Electron renderer via `window.chronicles`                            | Not needed. CLI imports `createClient` directly.                                                         |
+| **`ipcRenderer`**        | `utils.electron.tsx`, `*.electron-test.ts`           | File dialogs, dev tools, test signaling                                                | Not needed. CLI uses path arguments. Test files use `node:test` directly.                                |
+| **`(file as any).path`** | `files.ts:217`                                       | Electron-specific File object with `.path` property                                    | CLI passes file paths directly, not File objects.                                                        |
 
 ### What Already Works in Plain Node.js
 
@@ -80,6 +80,7 @@ The CLI and Electron app share the same SQLite database and the same `notesDir`.
 ### Success Criteria
 
 Phase 0 is done when:
+
 - `createClient()` can be called from a plain Node.js script (no Electron)
 - `client.journals.list()` returns data from the same database the Electron app uses
 - `client.indexer.index()` indexes the same `notesDir`
@@ -93,26 +94,26 @@ Mapped from the existing `IClient` interface. Commands use space-separated subco
 
 ### Phase 1 — Read-Only + Index
 
-| Command | IClient Method | Category |
-|---------|---------------|----------|
-| `chronicles journals list` | `journals.listWithCounts()` | read |
-| `chronicles docs search` | `documents.search()` | read |
-| `chronicles docs get <id>` | `documents.findById()` | read |
-| `chronicles tags list` | `tags.allWithCounts()` | read |
-| `chronicles index` | `indexer.index()` | write |
+| Command                    | IClient Method              | Category |
+| -------------------------- | --------------------------- | -------- |
+| `chronicles journals list` | `journals.listWithCounts()` | read     |
+| `chronicles docs search`   | `documents.search()`        | read     |
+| `chronicles docs get <id>` | `documents.findById()`      | read     |
+| `chronicles tags list`     | `tags.allWithCounts()`      | read     |
+| `chronicles index`         | `indexer.index()`           | write    |
 
 `index` is in Phase 1 because: (a) tests need it for fixture setup, and (b) it's the first thing you'd run after install.
 
 ### Phase 2 — Mutations
 
-| Command | IClient Method | Category |
-|---------|---------------|----------|
-| `chronicles docs create` | `documents.createDocument()` | write |
-| `chronicles docs update <id>` | `documents.updateDocument()` | write |
-| `chronicles docs delete <id>` | `documents.del()` | delete |
-| `chronicles journals create <name>` | `journals.create()` | write |
-| `chronicles journals rename <name> <new>` | `journals.rename()` | write |
-| `chronicles journals archive <name>` | `journals.archive()` | write |
+| Command                                   | IClient Method               | Category |
+| ----------------------------------------- | ---------------------------- | -------- |
+| `chronicles docs create`                  | `documents.createDocument()` | write    |
+| `chronicles docs update <id>`             | `documents.updateDocument()` | write    |
+| `chronicles docs delete <id>`             | `documents.del()`            | delete   |
+| `chronicles journals create <name>`       | `journals.create()`          | write    |
+| `chronicles journals rename <name> <new>` | `journals.rename()`          | write    |
+| `chronicles journals archive <name>`      | `journals.archive()`         | write    |
 
 ### Phase 3 — Access Profiles
 
@@ -120,18 +121,18 @@ No new commands. Profile enforcement wraps existing commands. See §5.
 
 ### Phase 4 — Import + Maintenance
 
-| Command | IClient Method | Category |
-|---------|---------------|----------|
-| `chronicles import <dir>` | `importer.import()` | write |
-| `chronicles config get <key>` | `preferences.get()` | read |
-| `chronicles config set <key> <value>` | `preferences.set()` | write |
+| Command                               | IClient Method      | Category |
+| ------------------------------------- | ------------------- | -------- |
+| `chronicles import <dir>`             | `importer.import()` | write    |
+| `chronicles config get <key>`         | `preferences.get()` | read     |
+| `chronicles config set <key> <value>` | `preferences.set()` | write    |
 
 ### Later (Separate Phases)
 
-| Command | Notes |
-|---------|-------|
+| Command                                   | Notes                                                      |
+| ----------------------------------------- | ---------------------------------------------------------- |
 | `chronicles bulk create` / `bulk process` | Complex multi-step workflow. Add when core CRUD is stable. |
-| Shell completions (bash, zsh, fish) | Nice-to-have polish. |
+| Shell completions (bash, zsh, fish)       | Nice-to-have polish.                                       |
 
 ### Not Exposed (Internal Only)
 
@@ -259,11 +260,11 @@ Aligned with [docs/cli-authoring.md](../cli-authoring.md): **Stdout for the Answ
 
 ### Modes
 
-| Mode | When | Behavior |
-|------|------|----------|
-| **TTY (human)** | `isatty(stdout)` is true, no `--json` | Pretty tables, colors, aligned columns |
-| **JSON (machine)** | `--json` flag or stdout is piped | One JSON object/array per command |
-| **Quiet** | `--quiet` flag | Exit code only, no stdout |
+| Mode               | When                                  | Behavior                               |
+| ------------------ | ------------------------------------- | -------------------------------------- |
+| **TTY (human)**    | `isatty(stdout)` is true, no `--json` | Pretty tables, colors, aligned columns |
+| **JSON (machine)** | `--json` flag or stdout is piped      | One JSON object/array per command      |
+| **Quiet**          | `--quiet` flag                        | Exit code only, no stdout              |
 
 ### TTY Table Examples
 
@@ -312,13 +313,13 @@ Index complete.  ← stderr
 
 ### Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | General error (with message on stderr) |
-| 2 | Usage error (bad args, missing required params) |
-| 3 | Permission denied (profile restriction) |
-| 4 | Not found (document, journal doesn't exist) |
+| Code | Meaning                                         |
+| ---- | ----------------------------------------------- |
+| 0    | Success                                         |
+| 1    | General error (with message on stderr)          |
+| 2    | Usage error (bad args, missing required params) |
+| 3    | Permission denied (profile restriction)         |
+| 4    | Not found (document, journal doesn't exist)     |
 
 ---
 
@@ -424,6 +425,7 @@ test/fixtures/
 ```
 
 **Setup per test run:**
+
 1. Copy fixture dir to a temp directory (tests don't mutate fixtures)
 2. Set `CHRONICLES_NOTES_DIR` to the temp dir
 3. Run `chronicles index` to build the SQLite database
@@ -432,21 +434,21 @@ test/fixtures/
 
 **What each fixture covers:**
 
-| Fixture | Tests |
-|---------|-------|
-| `empty/` | Empty results, no crashes, graceful "no journals found" |
-| `single/` | Simplest happy path — one journal, one doc |
-| `basic/` | Multi-journal, tag filtering, search, date filtering, cross-journal queries, profile denial |
+| Fixture   | Tests                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------- |
+| `empty/`  | Empty results, no crashes, graceful "no journals found"                                     |
+| `single/` | Simplest happy path — one journal, one doc                                                  |
+| `basic/`  | Multi-journal, tag filtering, search, date filtering, cross-journal queries, profile denial |
 
 ### Test Strategy Per Phase
 
-| Phase | What to test | How |
-|-------|-------------|-----|
-| **Phase 0** | `createClient()` works without Electron. Can list journals, index documents, search. | Integration tests only (no CLI binary yet). |
-| **Phase 1** | Read-only commands produce correct JSON against `basic/` fixture. Empty fixture returns empty arrays, not errors. `index` builds a queryable database. | Smoke tests + schema conformance. |
-| **Phase 2** | Mutations persist and are queryable. `docs create` then `docs get` returns the document. `docs delete` then `docs get` returns exit code 4. | Smoke tests against temp dirs (mutations modify state). |
-| **Phase 3** | Test the profile system only. Pick a few existing commands (e.g., one read, one write) and run them with profiles applied. Denied operations exit 3. Allowed operations unchanged. Deny-overrides-allow. Glob matching. | Targeted smoke tests + profile unit tests. |
-| **Phase 4** | Import creates documents findable by search. Config get/set persists values. | Smoke tests. |
+| Phase       | What to test                                                                                                                                                                                                            | How                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **Phase 0** | `createClient()` works without Electron. Can list journals, index documents, search.                                                                                                                                    | Integration tests only (no CLI binary yet).             |
+| **Phase 1** | Read-only commands produce correct JSON against `basic/` fixture. Empty fixture returns empty arrays, not errors. `index` builds a queryable database.                                                                  | Smoke tests + schema conformance.                       |
+| **Phase 2** | Mutations persist and are queryable. `docs create` then `docs get` returns the document. `docs delete` then `docs get` returns exit code 4.                                                                             | Smoke tests against temp dirs (mutations modify state). |
+| **Phase 3** | Test the profile system only. Pick a few existing commands (e.g., one read, one write) and run them with profiles applied. Denied operations exit 3. Allowed operations unchanged. Deny-overrides-allow. Glob matching. | Targeted smoke tests + profile unit tests.              |
+| **Phase 4** | Import creates documents findable by search. Config get/set persists values.                                                                                                                                            | Smoke tests.                                            |
 
 ### Relationship to Existing Infrastructure
 
@@ -465,13 +467,13 @@ This test suite is **fully independent** of the Vitest migration, Playwright E2E
 
 ## 10. Relationship to Existing Docs
 
-| Doc | Relationship |
-|-----|-------------|
-| [cli-authoring.md](../cli-authoring.md) | Principles this CLI must follow (stdout/stderr discipline, TTY detection, `--json`) |
+| Doc                                          | Relationship                                                                                 |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [cli-authoring.md](../cli-authoring.md)      | Principles this CLI must follow (stdout/stderr discipline, TTY detection, `--json`)          |
 | [cli-modernization.md](cli-modernization.md) | Internal tooling standards; `cli-guardian` and `cli-vibe-check` skills apply to this CLI too |
-| [architecture.md](../architecture.md) | Backend architecture that the CLI wraps |
-| [testing.md](../testing.md) | Existing test infrastructure (independent of CLI tests) |
-| [publishing-system.md](publishing-system.md) | Future: `chronicles publish` command could be added later |
+| [architecture.md](../architecture.md)        | Backend architecture that the CLI wraps                                                      |
+| [testing.md](../testing.md)                  | Existing test infrastructure (independent of CLI tests)                                      |
+| [publishing-system.md](publishing-system.md) | Future: `chronicles publish` command could be added later                                    |
 
 ---
 
@@ -479,12 +481,12 @@ This test suite is **fully independent** of the Vitest migration, Playwright E2E
 
 Obsidian released their CLI in Feb 2026. Key differences in approach:
 
-| Aspect | Obsidian CLI | Chronicles CLI |
-|--------|-------------|----------------|
-| **Scope** | Full GUI parity (100+ commands) | Focused on data access + search |
-| **Permission model** | None (all-or-nothing) | Per-journal access profiles |
-| **Output** | Silent by default | Structured (JSON/TTY) by default |
-| **LLM integration** | Not explicitly designed for it | First-class concern |
-| **TUI** | Built-in (no-arg mode) | Separate future feature |
+| Aspect               | Obsidian CLI                    | Chronicles CLI                   |
+| -------------------- | ------------------------------- | -------------------------------- |
+| **Scope**            | Full GUI parity (100+ commands) | Focused on data access + search  |
+| **Permission model** | None (all-or-nothing)           | Per-journal access profiles      |
+| **Output**           | Silent by default               | Structured (JSON/TTY) by default |
+| **LLM integration**  | Not explicitly designed for it  | First-class concern              |
+| **TUI**              | Built-in (no-arg mode)          | Separate future feature          |
 
 Chronicles' differentiator is the **permission-scoped, LLM-aware** approach. Obsidian went wide (100+ commands); Chronicles goes deep (fewer commands, but with access control and machine-first output).
