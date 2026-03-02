@@ -16,6 +16,7 @@ export const SearchInput = observer(() => {
       suggestions={searchTags}
       openOnEmptyFocus={true}
       searchOnSelect={false}
+      showToggle={true}
     />
   );
 });

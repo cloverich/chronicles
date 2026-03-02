@@ -1,4 +1,5 @@
 import { cva } from "class-variance-authority";
+import { ChevronDown } from "lucide-react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useMemo, useRef } from "react";
@@ -25,6 +26,13 @@ interface TagInputProps {
   hotkey?: string;
   /** List of suggestions for autocomplete */
   suggestions: Option[];
+  /**
+   * Show a chevron toggle button at the end of the input instead of auto-opening
+   * on focus. When set, the dropdown opens only by: (1) clicking the toggle button,
+   * or (2) typing into the input (typeahead). It does NOT open on focus or on token
+   * removal (backspace / × button).
+   */
+  showToggle?: boolean;
 }
 
 interface Option {
@@ -155,7 +163,8 @@ const TagInput = observer((props: TagInputProps) => {
           onChange={(e) => {
             runInAction(() => {
               store.query = e.target.value;
-              store.isOpen = true;
+              // showToggle: open only when actively typing; close when clearing
+              store.isOpen = props.showToggle ? !!e.target.value : true;
             });
           }}
           onBlur={() =>
@@ -203,9 +212,23 @@ const TagInput = observer((props: TagInputProps) => {
             }
           }}
           onFocus={() => {
-            store.isOpen = true;
+            if (!props.showToggle) store.isOpen = true;
           }}
         />
+        {props.showToggle && (
+          <button
+            className="text-muted-foreground hover:text-foreground shrink-0 px-1 transition-colors"
+            tabIndex={-1}
+            onMouseDown={(e) => {
+              e.preventDefault(); // keep input focused
+              runInAction(() => {
+                store.isOpen = !store.isOpen;
+              });
+            }}
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        )}
       </div>
       <div className="relative">
         {store.isDropdownOpen && (
@@ -320,7 +343,11 @@ const CloseableTag = ({ remove, children, ...rest }: PClosableTag) => {
   return (
     <Tag {...rest}>
       <span className="shrink overflow-hidden text-ellipsis">{children}</span>
-      <button className="ml-1 shrink-0" onClick={remove}>
+      <button
+        className="ml-1 shrink-0"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={remove}
+      >
         ×
       </button>
     </Tag>
