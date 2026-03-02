@@ -12,7 +12,7 @@ export const ParagraphElement = ({
     <PlateElement
       {...props}
       className={cn(
-        "mt-px mb-4 w-full max-w-[var(--max-w-prose)] px-0",
+        "mt-px mb-8 w-full max-w-[var(--max-w-prose)] px-0",
         className,
       )}
     >

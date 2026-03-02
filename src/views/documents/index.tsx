@@ -112,7 +112,7 @@ function DocumentsContainer() {
           <h2 className="font-heading text-accent-foreground mb-3 text-xl font-semibold">
             {group.label}
           </h2>
-          <div className="space-y-1">
+          <div className="space-y-0">
             {group.docs.map((doc) => (
               <DocumentItem key={doc.id} doc={doc} edit={edit} />
             ))}

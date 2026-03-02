@@ -11,12 +11,19 @@ import { PlateElement } from "platejs/react";
 
 import { cn } from "@/src/lib/utils";
 
-const listVariants = cva("m-0 py-1 ps-6 max-w-[var(--max-w-prose)] w-full", {
+const listVariants = cva("mt-0 py-1 ps-6 max-w-[var(--max-w-prose)] w-full", {
   variants: {
     variant: {
       ol: "list-decimal",
       ul: "list-disc [&_ul]:list-[circle] [&_ul_ul]:list-[square]",
     },
+    nested: {
+      true: "mb-0",
+      false: "mb-8",
+    },
+  },
+  defaultVariants: {
+    nested: false,
   },
 });
 
@@ -24,10 +31,11 @@ export function ListElement({
   variant,
   ...props
 }: PlateElementProps & VariantProps<typeof listVariants>) {
+  const nested = props.path != null && props.path.length > 1;
   return (
     <PlateElement
       as={variant!}
-      className={listVariants({ variant })}
+      className={listVariants({ variant, nested })}
       {...props}
     >
       {props.children}
@@ -44,10 +52,14 @@ export function NumberedListElement(props: PlateElementProps) {
 }
 
 export function TaskListElement(props: PlateElementProps) {
+  const nested = props.path != null && props.path.length > 1;
   return (
     <PlateElement
       as="ul"
-      className="m-0 w-full max-w-[var(--max-w-prose)] list-none! py-1 ps-6"
+      className={cn(
+        "mt-0 w-full max-w-[var(--max-w-prose)] list-none! py-1 ps-6",
+        nested ? "mb-0" : "mb-8",
+      )}
       {...props}
     >
       {props.children}
