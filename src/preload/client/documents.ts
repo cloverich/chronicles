@@ -293,6 +293,10 @@ export class DocumentsClient {
         .select("documents.*");
     }
 
+    if (q?.date) {
+      query = query.andWhereLike("createdAt", `${q.date}%`);
+    }
+
     // todo: test id, date, and unknown formats
     if (q?.before) {
       if (this.beforeTokenFormat(q.before) === "date") {

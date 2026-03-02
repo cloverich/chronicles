@@ -52,6 +52,7 @@ interface SearchQuery {
   journals: string[];
   titles?: string[];
   before?: string;
+  date?: string;
   tags?: string[];
   exclude?: {
     tags?: string[];
@@ -190,6 +191,9 @@ export class SearchStore {
       before = beforeToken.value as string;
     }
 
+    const dateToken = this.tokens.find((t) => t.type === "date");
+    const date = dateToken?.value as string | undefined;
+
     return {
       journals,
       tags,
@@ -197,6 +201,7 @@ export class SearchStore {
       titles,
       texts,
       before,
+      date,
     };
   };
 

@@ -61,6 +61,12 @@ export interface SearchRequest {
   before?: string;
 
   /**
+   * Filter documents to those created on a specific date (YYYY, YYYY-MM, or YYYY-MM-DD).
+   * Matched via prefix: documents where createdAt starts with this value.
+   */
+  date?: string;
+
+  /**
    * Search document body text
    */
   texts?: string[];
