@@ -33,6 +33,8 @@ RIGHT:  max-w-[var(--max-w-code)]          → resolves to CSS variable value
 
 **`@utility` classes must be detectable by the scanner.** Tailwind only emits `@utility` CSS when it finds the class name in source files. Dense single-line strings (like hljs syntax highlighting classes) can cause scanner misses. Arbitrary value syntax `[var(--foo)]` is more reliable since it generates inline.
 
+**Arbitrary variants (e.g. `[ul_&]:mb-0`) may not apply until a hard refresh or restart.** HMR does not always invalidate and rebuild the full Tailwind stylesheet when new utility classes appear for the first time in a session. If an arbitrary variant seems to have no effect, restart the dev server before debugging further.
+
 **CSS variable changes from preferences may require a restart.** `StyleWatcher` injects CSS custom properties (e.g. `--max-w-prose`) at runtime from electron settings. When a preference value changes, the electron store updates on disk but the renderer process may not re-read it until restart. Even if the React state updates, the dev server's HMR may have cached the initial layout before the new variable value was applied. If a width or layout preference change doesn't seem to take effect, restart the app before debugging further.
 
 ## Styling Patterns

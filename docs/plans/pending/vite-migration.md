@@ -16,7 +16,7 @@ The build system currently uses esbuild for all three bundles:
 
 1. **No HMR** - Every renderer change requires full Electron restart (scripts/dev.mjs:59-79)
 2. **CSS pre-compilation** - Tailwind must be compiled before starting (package.json:16)
-3. **Slow feedback loop** - Even small CSS changes trigger full restart
+3. **Slow feedback loop** - Even small CSS changes trigger full restart; new Tailwind utility classes (including arbitrary variants) require restart to take effect (see `docs/editor/styling.md`)
 4. **Type checking overhead** - Runs separately on each rebuild (scripts/dev.mjs:81-90)
 
 ## Why Vite for Renderer Makes Sense
