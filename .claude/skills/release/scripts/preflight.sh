@@ -26,6 +26,18 @@ if [ "$LOCAL" != "$REMOTE" ]; then
   exit 1
 fi
 
+# Lint check
+echo "==> Running lint..."
+LINT_LOG=$(mktemp /tmp/chronicles-lint-XXXXXX.log)
+if ! yarn lint > "$LINT_LOG" 2>&1; then
+  echo "Lint failed. Fix these issues before releasing:"
+  tail -n 20 "$LINT_LOG"
+  rm "$LINT_LOG"
+  exit 1
+fi
+rm "$LINT_LOG"
+echo "    Lint passed."
+
 # Last tag and suggested next version
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
 echo "Last release: $LAST_TAG"

@@ -20,4 +20,9 @@ icons/src/temp-icon.png
 # along-side src files, used during development
 *.bundle.*
 # eh, if its index.bundle.css, the ts import fails, shrug
-index-compiled.css.claude/worktrees/
+index-compiled.css
+src/index-compiled.css
+
+# claude code local files
+.claude/settings.local.json
+.claude/worktrees/

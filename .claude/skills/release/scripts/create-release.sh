@@ -18,10 +18,6 @@ if [ ! -f "$NOTES_FILE" ]; then
   exit 1
 fi
 
-echo "==> Tagging $VERSION"
-git tag "$VERSION"
-git push origin "$VERSION"
-
 echo "==> Building app (output suppressed; shown on failure)..."
 BUILD_LOG=$(mktemp /tmp/chronicles-build-XXXXXX.log)
 if ! yarn build > "$BUILD_LOG" 2>&1; then
@@ -32,6 +28,10 @@ if ! yarn build > "$BUILD_LOG" 2>&1; then
 fi
 rm "$BUILD_LOG"
 echo "    Build complete."
+
+echo "==> Tagging $VERSION"
+git tag "$VERSION"
+git push origin "$VERSION"
 
 echo "==> Locating .app bundle..."
 LATEST_APP=$(find packaged -name "*.app" -type d -maxdepth 3 | sort -V | tail -1)
