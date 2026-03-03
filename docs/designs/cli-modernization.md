@@ -58,12 +58,12 @@ A skill focused on the **Evaluation** of existing tools. It performs automated "
 
 Scripts audited against the Success Criteria above.
 
-| Script | Silence Test | Errors → stderr | Actionable Errors | TTY Aware | Vibe |
-|--------|:-----------:|:---------------:|:-----------------:|:---------:|:----:|
-| `build.sh` | ❌ | Partial | Partial | ❌ | **Noisy** |
-| `skills/local-install/scripts/install-build.sh` | ❌ | ❌ | Partial | ❌ | **Noisy** |
-| `skills/release/scripts/preflight.sh` | ✅ | ✅ | ✅ | ❌ | **Functional** |
-| `skills/release/scripts/create-release.sh` | ❌ | ✅ | Partial | ❌ | **Noisy** |
+| Script                                          | Silence Test | Errors → stderr | Actionable Errors | TTY Aware |      Vibe      |
+| ----------------------------------------------- | :----------: | :-------------: | :---------------: | :-------: | :------------: |
+| `build.sh`                                      |      ❌      |     Partial     |      Partial      |    ❌     |   **Noisy**    |
+| `skills/local-install/scripts/install-build.sh` |      ❌      |       ❌        |      Partial      |    ❌     |   **Noisy**    |
+| `skills/release/scripts/preflight.sh`           |      ✅      |       ✅        |        ✅         |    ❌     | **Functional** |
+| `skills/release/scripts/create-release.sh`      |      ❌      |       ✅        |      Partial      |    ❌     |   **Noisy**    |
 
 ### `build.sh` — Noisy
 
@@ -79,7 +79,7 @@ Every line of output — including the final success message and error messages 
 
 ### `preflight.sh` — Functional
 
-The cleanest of the four. Error cases all use `>&2` with explicit "Next Step" instructions ("Commit or stash changes first", "Run git pull first"). The stdout output *is* the answer — release metadata and commit list that the calling agent consumes directly. Passes the Silence Test on error (errors go to stderr). Passes on success conceptually (stdout carries useful data, not noise). No TTY awareness needed given the output is structured text for agent consumption. No actionable gaps identified.
+The cleanest of the four. Error cases all use `>&2` with explicit "Next Step" instructions ("Commit or stash changes first", "Run git pull first"). The stdout output _is_ the answer — release metadata and commit list that the calling agent consumes directly. Passes the Silence Test on error (errors go to stderr). Passes on success conceptually (stdout carries useful data, not noise). No TTY awareness needed given the output is structured text for agent consumption. No actionable gaps identified.
 
 ### `create-release.sh` — Noisy
 
