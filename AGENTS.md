@@ -31,4 +31,7 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [.claude/skills/local-install/SKILL.md](.claude/skills/local-install/SKILL.md): Automates building and installing the app locally on macOS.
 - [.claude/skills/release/SKILL.md](.claude/skills/release/SKILL.md): Creates a tagged GitHub draft release with signed DMG and AI-generated notes.
 - [.claude/skills/skills-review/SKILL.md](.claude/skills/skills-review/SKILL.md): Reviews and validates multi-platform skill structure.
+- [.claude/skills/design-to-issues/SKILL.md](.claude/skills/design-to-issues/SKILL.md): Creates a GitHub epic and child issues from a design document's implementation plan.
+- [.claude/skills/gh-create/SKILL.md](.claude/skills/gh-create/SKILL.md): Creates a single GitHub issue linked to a parent epic (designed for sub-agent delegation).
+- [.claude/skills/gh-implement/SKILL.md](.claude/skills/gh-implement/SKILL.md): Implements a GitHub issue with Sonnet, Opus reviews, escalates to WIP PR if needed.
 - [docs/skills-authoring.md](docs/skills-authoring.md): Guide for creating and proxying skills for Claude, Gemini, and Codex.

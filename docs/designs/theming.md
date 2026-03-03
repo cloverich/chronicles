@@ -136,3 +136,78 @@ If a theme file is deleted, corrupted, or invalid:
 
 - **Hardcoded Fallback:** The app must always have the standard Light/Dark themes available as a fail-safe.
 - **User Notification:** If a custom theme fails, the app should revert to a safe default and notify the user with a pointer to the theme manager (for humans) or the file location (for power users).
+
+## 8. Implementation Plan
+
+Ordered task list for converting into GitHub issues. Items marked **[DEFERRED]** are out of scope for the initial implementation but tracked here for future work.
+
+### Phase 1: Foundation
+
+- **1. Audit and document the full token inventory**
+  - Enumerate every CSS custom property in `src/index.css` across `:root` and `.dark` (~30 token/variant pairs)
+  - Classify each as "required" (theme must specify) vs "derivable" (can be computed from other tokens, e.g. `--card` defaults to `--background`)
+  - Document which tokens are light-only, dark-only, or shared (e.g. `--foreground-strong`, `--link`, `--accent-muted` only exist in `.dark` today)
+  - Output: updated doc or issue with the full inventory, derivation rules, and any tokens that should be added/removed
+
+- **2. Define the theme JSON schema and TypeScript interface**
+  - Depends on: #1 (token inventory)
+  - Define the `ThemeConfig` interface covering: `name`, `version`, `mode: 'light' | 'dark' | 'both'`, and all required color tokens in HSL or hex
+  - Themes declare whether they are light, dark, or both. If "both", the theme must provide values for both modes
+  - Derivation rules from #1 determine which fields are optional (with documented defaults)
+  - Include a `validate(theme: unknown): { valid: boolean; errors: string[] }` function that returns semantically meaningful error messages (e.g. "missing required token --background", "invalid color value for --primary: 'notacolor'") so that LLMs and users can iterate on theme files
+  - Output: `src/themes/schema.ts` with interface + validation function
+
+### Phase 2: Runtime plumbing
+
+- **3. Add theme storage and preferences wiring**
+  - Depends on: #2 (schema)
+  - Add a themes directory (default location TBD, e.g. `~/.chronicles/themes/` or within `settingsDir`)
+  - Bundle the current light and dark color sets as `system-light.theme.json` and `system-dark.theme.json` (or as hardcoded defaults in code — the point is they become `ThemeConfig` objects)
+  - Add `themeLightName` and `themeDarkName` fields to `IPreferences` — users can select different themes for light vs dark mode
+  - When `darkMode` is toggled, the active theme switches between the two selections
+
+- **4. Extend StyleWatcher to apply theme colors**
+  - Depends on: #3 (preferences wiring)
+  - Load the active `ThemeConfig` (resolved from preference name -> themes directory -> parsed JSON -> validated)
+  - Apply all color tokens to `document.documentElement.style` via `setProperty`, same pattern as fonts/widths
+  - On theme change (preference update or dark mode toggle), re-apply
+  - Fallback: if the selected theme fails validation, revert to the system default and surface an error to the user
+
+- **5. CSS cleanup: remove hardcoded color values from `src/index.css`**
+  - Depends on: #4 (StyleWatcher applies colors)
+  - Remove the hardcoded HSL values from `:root` and `.dark` in `src/index.css`
+  - Keep them only as the "System" theme definitions (either as JSON files or as in-code defaults)
+  - The CSS file should reference variables without providing fallback values (StyleWatcher is the source of truth)
+
+### Phase 3: Theme management
+
+- **6. Implement theme install/import flow**
+  - Depends on: #2 (schema + validation)
+  - Provide a way to "install" a theme: validate the file against the schema, copy it to the themes directory
+  - Surface validation errors clearly so users (or LLMs generating themes) can fix issues
+  - Can be a simple file-picker in preferences UI or a CLI/menu action — minimal UI is fine for v1
+
+- **7. Preferences UI: theme selection**
+  - Depends on: #3 (preferences wiring), #6 (install flow)
+  - Add theme selection to the preferences panel: list installed themes, allow picking one for light mode and one for dark mode
+  - Show the theme name and mode compatibility (`light`, `dark`, `both`)
+
+### Phase 4: Polish & deferred items
+
+- **8. [DEFERRED] FOUC mitigation**
+  - Investigate injecting critical theme variables (background, foreground) from main process into `index.html` before React mounts
+  - Requires main-process involvement in theme delivery — evaluate complexity vs. visual impact
+
+- **9. [DEFERRED] Per-journal contextual themes**
+  - Co-locate `journal.theme.json` in journal directories; override global theme when journal is active
+  - Requires path resolution across process boundary, file watching, precedence rules
+  - Revisit after global theming is stable
+
+- **10. [DEFERRED] Theme visualizer / preview**
+  - Swatch preview in preferences UI showing the active palette
+  - Useful for authoring, but not required when themes are edited as JSON files
+
+- **11. [DEFERRED] Cross-system theme conversion / generation**
+  - Provide a documented spec + prompt template so an LLM can convert themes from other systems (VS Code, iTerm, etc.) into Chronicles format
+  - The validation function from #2 is the key enabler — an LLM can iterate against it
+  - Evaluate after the schema is finalized and real themes have been authored
