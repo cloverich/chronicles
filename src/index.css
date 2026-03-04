@@ -48,6 +48,7 @@
     --font-size-body: 1rem;
     --font-size-heading: 1.5rem;
     --font-size-title: 3rem;
+    --font-size-code: calc(var(--font-size-body) * 0.875);
 
     --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
       "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
