@@ -33,8 +33,9 @@ All user-configurable style values are expressed as CSS custom properties define
 - `--font-size-body` (`1rem`): paragraphs (`ParagraphElement`)
 - `--font-size-heading` (`1.5rem`): H1 in editor content; H2/H3 scale via `calc()` in `HeadingElement`
 - `--font-size-title` (`1.5rem`): document title textarea in `FrontMatter`
+- `--font-size-code` (`calc(--font-size-body * 0.875)`): code blocks and inline code
 
-All three font-size vars are user-editable in **Preferences → Font Sizes**.
+The first three font-size vars are user-editable in **Preferences → Font Sizes**.
 
 ## Width & Centering Model
 
