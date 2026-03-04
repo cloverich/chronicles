@@ -1,5 +1,6 @@
 // In renderer process (web page).
 import { ipcRenderer } from "electron";
+import { importThemeFile } from "../themes/importer";
 
 // todo: Probably this should exposeInMainWorld a function
 // to do the inspect-element via middle click, then let the actual
@@ -32,3 +33,24 @@ export const openDialogSelectDir = async () => {
     });
   });
 };
+
+interface SelectFileResult {
+  error?: string;
+  value?: string;
+}
+
+export const selectThemeFile = async () => {
+  ipcRenderer.send("select-theme-file");
+
+  return new Promise<SelectFileResult>((resolve, reject) => {
+    ipcRenderer.once("theme-file-selected", (event, arg: SelectFileResult) => {
+      if (arg.error) {
+        reject(arg.error);
+      } else {
+        resolve({ value: arg.value });
+      }
+    });
+  });
+};
+
+export { importThemeFile };
