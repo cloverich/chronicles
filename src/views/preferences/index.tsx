@@ -20,6 +20,7 @@ import {
   SKIPPABLE_FILES,
   SKIPPABLE_PREFIXES,
 } from "../../preload/client/types";
+import { ThemeListEntry } from "../../themes/loader";
 import { Input } from "../documents/Input";
 
 interface Props {
@@ -37,6 +38,17 @@ const PreferencesPane = observer((props: Props) => {
     }),
   );
   const preferences = usePreferences();
+  const [availableThemes, setAvailableThemes] = React.useState<
+    ThemeListEntry[]
+  >([]);
+
+  React.useEffect(() => {
+    if (props.isOpen) {
+      const themesDir = `${preferences.settingsDir}/themes`;
+      const themes = window.chronicles.listAvailableThemes(themesDir);
+      setAvailableThemes(themes);
+    }
+  }, [props.isOpen, preferences.settingsDir]);
 
   async function selectNotesRoot() {
     store.loading = true;
@@ -144,10 +156,57 @@ const PreferencesPane = observer((props: Props) => {
 
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
-                    Theme
+                    Light Theme
                   </div>
                   <div className="text-muted-foreground mb-2 text-xs">
-                    <code>Default</code>
+                    <Select.Base
+                      value={preferences.themeLightName}
+                      onValueChange={(selected) =>
+                        (preferences.themeLightName = selected)
+                      }
+                    >
+                      <Select.Trigger className="max-w-[200px]">
+                        <Select.Value placeholder="Select light theme" />
+                      </Select.Trigger>
+                      <Select.Content>
+                        {availableThemes
+                          .filter(
+                            (t) => t.mode === "light" || t.mode === "both",
+                          )
+                          .map((t) => (
+                            <Select.Item key={t.name} value={t.name}>
+                              {t.name}
+                            </Select.Item>
+                          ))}
+                      </Select.Content>
+                    </Select.Base>
+                  </div>
+                </div>
+
+                <div className="my-4 flex justify-between">
+                  <div className="text-foreground-strong mb-2 font-medium">
+                    Dark Theme
+                  </div>
+                  <div className="text-muted-foreground mb-2 text-xs">
+                    <Select.Base
+                      value={preferences.themeDarkName}
+                      onValueChange={(selected) =>
+                        (preferences.themeDarkName = selected)
+                      }
+                    >
+                      <Select.Trigger className="max-w-[200px]">
+                        <Select.Value placeholder="Select dark theme" />
+                      </Select.Trigger>
+                      <Select.Content>
+                        {availableThemes
+                          .filter((t) => t.mode === "dark" || t.mode === "both")
+                          .map((t) => (
+                            <Select.Item key={t.name} value={t.name}>
+                              {t.name}
+                            </Select.Item>
+                          ))}
+                      </Select.Content>
+                    </Select.Base>
                   </div>
                 </div>
 
