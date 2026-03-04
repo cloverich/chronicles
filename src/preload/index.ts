@@ -3,6 +3,7 @@ import { getClient } from "./client";
 import "./utils.electron";
 import {
   importThemeFile,
+  listAvailableThemes,
   openDialogSelectDir,
   selectThemeFile,
 } from "./utils.electron";
@@ -12,6 +13,7 @@ contextBridge.exposeInMainWorld("chronicles", {
   openDialogSelectDir,
   selectThemeFile,
   importThemeFile,
+  listAvailableThemes,
 });
 
 declare global {
@@ -21,6 +23,7 @@ declare global {
       openDialogSelectDir: typeof openDialogSelectDir;
       selectThemeFile: typeof selectThemeFile;
       importThemeFile: typeof importThemeFile;
+      listAvailableThemes: typeof listAvailableThemes;
     };
   }
 }
