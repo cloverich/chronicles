@@ -11,7 +11,7 @@ import { PlateElement } from "platejs/react";
 
 import { cn } from "@/src/lib/utils";
 
-const listVariants = cva("mt-0 py-1 ps-6 max-w-[var(--max-w-prose)] w-full", {
+const listVariants = cva("mt-0 py-1 ps-6 max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-body)]", {
   variants: {
     variant: {
       ol: "list-decimal",
