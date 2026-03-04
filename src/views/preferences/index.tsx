@@ -59,6 +59,35 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
+  async function importTheme() {
+    store.loading = true;
+    try {
+      const result = await window.chronicles.selectThemeFile();
+      if (!result.value) {
+        store.loading = false;
+        return;
+      }
+
+      const themesDir = `${preferences.settingsDir}/themes`;
+      const importResult = await window.chronicles.importThemeFile(
+        result.value,
+        themesDir,
+      );
+
+      if (!importResult.success) {
+        const errorDetails = importResult.errors?.join("\n") ?? "Unknown error";
+        toast.error(`Theme import failed:\n${errorDetails}`);
+      } else {
+        toast.success(`Theme "${importResult.themeName}" installed`);
+      }
+    } catch (e) {
+      console.error("Error importing theme", e);
+      toast.error("Failed to import theme");
+    } finally {
+      store.loading = false;
+    }
+  }
+
   async function importDirectory() {
     store.loading = true;
     try {
@@ -120,6 +149,27 @@ const PreferencesPane = observer((props: Props) => {
                   <div className="text-muted-foreground mb-2 text-xs">
                     <code>Default</code>
                   </div>
+                </div>
+
+                <div className="my-4 flex justify-between">
+                  <div>
+                    <div className="text-foreground-strong mb-1 font-medium">
+                      Import Theme
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      Install a custom theme from a <code>.theme.json</code>{" "}
+                      file
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={importTheme}
+                    disabled={store.loading}
+                    loading={store.loading}
+                  >
+                    Import theme
+                  </Button>
                 </div>
 
                 <div className="my-4 flex justify-between">

@@ -273,6 +273,30 @@ ipcMain.on("select-directory", async (event, arg) => {
   });
 });
 
+ipcMain.on("select-theme-file", async (event, _arg) => {
+  if (!mainWindow) {
+    console.error(
+      "received request to open file picker but mainWindow is undefined",
+    );
+    return;
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openFile"],
+    filters: [{ name: "Theme files", extensions: ["json"] }],
+  });
+
+  const filepath = result.filePaths[0];
+
+  // user selected cancel
+  if (!filepath) {
+    event.reply("theme-file-selected", { value: null, error: null });
+    return;
+  }
+
+  event.reply("theme-file-selected", { value: filepath, error: null });
+});
+
 ipcMain.on("inspect-element", async (event, arg) => {
   if (!mainWindow) {
     console.error(
