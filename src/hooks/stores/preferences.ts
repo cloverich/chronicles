@@ -15,6 +15,8 @@ export class Preferences implements IPreferences {
   settingsDir!: string;
   onboarding!: "new" | "complete";
   darkMode!: "light" | "dark" | "system";
+  themeLightName!: string;
+  themeDarkName!: string;
   fonts!: {
     heading?: string;
     heading2?: string;
@@ -46,6 +48,8 @@ export class Preferences implements IPreferences {
       settingsDir: observable,
       onboarding: observable,
       darkMode: observable,
+      themeLightName: observable,
+      themeDarkName: observable,
       fonts: observable,
       maxWidth: observable,
       fontSizes: observable,
@@ -64,6 +68,8 @@ export class Preferences implements IPreferences {
         settingsDir: this.settingsDir,
         onboarding: this.onboarding,
         darkMode: this.darkMode,
+        themeLightName: this.themeLightName,
+        themeDarkName: this.themeDarkName,
         // todo: add test for fonts syncing with settings store
         fonts: toJS(this.fonts),
         maxWidth: toJS(this.maxWidth),

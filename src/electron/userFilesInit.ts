@@ -13,6 +13,12 @@ import { Settings } from "./settings.js";
 export function initUserFilesDir(settings: Settings, fallbackDir: string) {
   initDir(settings, "notesDir", path.join(fallbackDir, "/notes"));
   initDir(settings, "settingsDir", fallbackDir);
+
+  // Ensure the themes directory exists inside settingsDir.
+  // This is where user-installed theme files will be stored.
+  const resolvedSettingsDir = settings.get("settingsDir") || fallbackDir;
+  const themesDir = path.join(resolvedSettingsDir, "themes");
+  ensureDir(themesDir);
 }
 
 /**

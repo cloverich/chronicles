@@ -8,6 +8,10 @@ export interface IPreferences {
   settingsDir: string;
   onboarding: "new" | "complete";
   darkMode: "light" | "dark" | "system";
+  /** Name of the theme to use in light mode. Defaults to the built-in "System Light" theme. */
+  themeLightName: string;
+  /** Name of the theme to use in dark mode. Defaults to the built-in "System Dark" theme. */
+  themeDarkName: string;
   fonts: {
     heading?: string;
     heading2?: string;
@@ -38,6 +42,8 @@ const defaults: IPreferences = {
   settingsDir: "",
   onboarding: "new",
   darkMode: "system",
+  themeLightName: "System Light",
+  themeDarkName: "System Dark",
   fonts: {
     heading:
       '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
