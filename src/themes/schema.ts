@@ -154,7 +154,7 @@ export interface ThemeBothModes {
  * Canonical list of required token field names (camelCase).
  * Every ThemeColors object must supply all of these.
  */
-const REQUIRED_TOKENS: ReadonlyArray<keyof ThemeColorsRequired> = [
+export const REQUIRED_TOKENS: ReadonlyArray<keyof ThemeColorsRequired> = [
   "background",
   "foreground",
   "foregroundStrong",
@@ -183,7 +183,7 @@ const REQUIRED_TOKENS: ReadonlyArray<keyof ThemeColorsRequired> = [
  * Derivable token field names (camelCase). These are optional and validated
  * only when present.
  */
-const DERIVABLE_TOKENS: ReadonlyArray<keyof ThemeColorsDerivable> = [
+export const DERIVABLE_TOKENS: ReadonlyArray<keyof ThemeColorsDerivable> = [
   "card",
   "cardForeground",
   "popover",
@@ -207,9 +207,9 @@ const ALL_KNOWN_TOKENS = new Set<string>([
 
 /**
  * Map from camelCase field name to the CSS custom property name, for use in
- * human-readable error messages.
+ * human-readable error messages and runtime application of CSS custom properties.
  */
-const CSS_NAME: Record<string, string> = {
+export const CSS_NAME: Record<string, string> = {
   background: "--background",
   foreground: "--foreground",
   foregroundStrong: "--foreground-strong",
