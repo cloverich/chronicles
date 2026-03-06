@@ -297,6 +297,10 @@ ipcMain.on("select-theme-file", async (event, _arg) => {
   event.reply("theme-file-selected", { value: filepath, error: null });
 });
 
+ipcMain.on("open-path", (_event, dirPath: string) => {
+  shell.openPath(dirPath);
+});
+
 ipcMain.on("inspect-element", async (event, arg) => {
   if (!mainWindow) {
     console.error(

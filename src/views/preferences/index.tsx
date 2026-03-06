@@ -2,6 +2,7 @@ import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
 import { InputProps } from "react-day-picker";
+import { FolderOpen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Label, Select } from "../../components";
 import { Button } from "../../components/Button";
@@ -91,6 +92,7 @@ const PreferencesPane = observer((props: Props) => {
         toast.error(`Theme import failed:\n${errorDetails}`);
       } else {
         toast.success(`Theme "${importResult.themeName}" installed`);
+        refreshThemeList();
       }
     } catch (e) {
       console.error("Error importing theme", e);
@@ -98,6 +100,34 @@ const PreferencesPane = observer((props: Props) => {
     } finally {
       store.loading = false;
     }
+  }
+
+  function refreshThemeList() {
+    const themesDir = `${preferences.settingsDir}/themes`;
+    setAvailableThemes(window.chronicles.listAvailableThemes(themesDir));
+  }
+
+  function deleteTheme(name: string) {
+    const themesDir = `${preferences.settingsDir}/themes`;
+    const deleted = window.chronicles.deleteThemeByName(name, themesDir);
+    if (deleted) {
+      toast.success(`Theme "${name}" removed`);
+      // Reset to system default if the deleted theme was active
+      if (preferences.themeLightName === name) {
+        preferences.themeLightName = "System Light";
+      }
+      if (preferences.themeDarkName === name) {
+        preferences.themeDarkName = "System Dark";
+      }
+      refreshThemeList();
+    } else {
+      toast.error(`Could not remove theme "${name}"`);
+    }
+  }
+
+  function openThemesDir() {
+    const themesDir = `${preferences.settingsDir}/themes`;
+    window.chronicles.openPath(themesDir);
   }
 
   async function importDirectory() {
@@ -153,6 +183,34 @@ const PreferencesPane = observer((props: Props) => {
                   title="Appearance"
                   sub="Customize the look and feel of Chronicles"
                 />
+
+                <div className="my-4 flex justify-between">
+                  <div className="text-foreground-strong mb-2 font-medium">
+                    <Label.Base htmlFor=":r2g:-form-item">
+                      Appearance
+                    </Label.Base>
+                  </div>
+                  <div className="text-muted-foreground mb-2 text-xs">
+                    <Select.Base
+                      value={preferences.darkMode}
+                      onValueChange={(selected) =>
+                        (preferences.darkMode = selected as
+                          | "light"
+                          | "dark"
+                          | "system")
+                      }
+                    >
+                      <Select.Trigger className="max-w-[150px]">
+                        <Select.Value placeholder="Light / Dark" />
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Item value="light">Light</Select.Item>
+                        <Select.Item value="dark">Dark</Select.Item>
+                        <Select.Item value="system">System</Select.Item>
+                      </Select.Content>
+                    </Select.Base>
+                  </div>
+                </div>
 
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
@@ -231,32 +289,46 @@ const PreferencesPane = observer((props: Props) => {
                   </Button>
                 </div>
 
-                <div className="my-4 flex justify-between">
-                  <div className="text-foreground-strong mb-2 font-medium">
-                    <Label.Base htmlFor=":r2g:-form-item">
-                      Appearance
-                    </Label.Base>
+                {availableThemes.some((t) => !t.builtin) && (
+                  <div className="my-4">
+                    <div className="text-foreground-strong mb-2 font-medium">
+                      Installed Themes
+                    </div>
+                    <div className="space-y-1">
+                      {availableThemes
+                        .filter((t) => !t.builtin)
+                        .map((t) => (
+                          <div
+                            key={t.name}
+                            className="flex items-center justify-between rounded px-2 py-1.5 text-sm"
+                          >
+                            <span>
+                              {t.name}{" "}
+                              <span className="text-muted-foreground text-xs">
+                                ({t.mode})
+                              </span>
+                            </span>
+                            <button
+                              className="text-muted-foreground hover:text-destructive transition-colors"
+                              onClick={() => deleteTheme(t.name)}
+                              title={`Remove ${t.name}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                  <div className="text-muted-foreground mb-2 text-xs">
-                    <Select.Base
-                      value={preferences.darkMode}
-                      onValueChange={(selected) =>
-                        (preferences.darkMode = selected as
-                          | "light"
-                          | "dark"
-                          | "system")
-                      }
-                    >
-                      <Select.Trigger className="max-w-[150px]">
-                        <Select.Value placeholder="Light / Dark" />
-                      </Select.Trigger>
-                      <Select.Content>
-                        <Select.Item value="light">Light</Select.Item>
-                        <Select.Item value="dark">Dark</Select.Item>
-                        <Select.Item value="system">System</Select.Item>
-                      </Select.Content>
-                    </Select.Base>
-                  </div>
+                )}
+
+                <div className="my-4">
+                  <button
+                    className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
+                    onClick={openThemesDir}
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    <span>Open themes folder</span>
+                  </button>
                 </div>
               </Section>
               <Section>

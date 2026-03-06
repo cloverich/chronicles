@@ -2,9 +2,12 @@ import { contextBridge } from "electron";
 import { getClient } from "./client";
 import "./utils.electron";
 import {
+  deleteThemeByName,
   importThemeFile,
   listAvailableThemes,
+  loadThemeByName,
   openDialogSelectDir,
+  openPath,
   selectThemeFile,
 } from "./utils.electron";
 
@@ -14,6 +17,9 @@ contextBridge.exposeInMainWorld("chronicles", {
   selectThemeFile,
   importThemeFile,
   listAvailableThemes,
+  loadThemeByName,
+  openPath,
+  deleteThemeByName,
 });
 
 declare global {
@@ -24,6 +30,9 @@ declare global {
       selectThemeFile: typeof selectThemeFile;
       importThemeFile: typeof importThemeFile;
       listAvailableThemes: typeof listAvailableThemes;
+      loadThemeByName: typeof loadThemeByName;
+      openPath: typeof openPath;
+      deleteThemeByName: typeof deleteThemeByName;
     };
   }
 }

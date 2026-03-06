@@ -4,7 +4,6 @@ import React from "react";
 import { Preferences } from "../hooks/stores/preferences";
 import {
   resolveActiveThemeName,
-  resolveBuiltinTheme,
   systemDarkTheme,
   systemLightTheme,
 } from "../themes/builtins";
@@ -196,7 +195,8 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
         preferences.themeDarkName,
       );
 
-      let theme = resolveBuiltinTheme(themeName);
+      const themesDir = `${preferences.settingsDir}/themes`;
+      let theme = window.chronicles.loadThemeByName(themeName, themesDir);
 
       if (!theme) {
         console.error(

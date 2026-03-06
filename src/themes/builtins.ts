@@ -19,7 +19,7 @@ export const systemLightTheme: ThemeConfig = {
   mode: "light",
   colors: {
     // --- Required tokens ---
-    background: "hsl(0 0% 100%)",
+    background: "hsl(207, 28%, 92%)",
     foreground: "hsl(222.2 84% 4.9%)",
     // Not in :root; slightly darker than foreground for strong emphasis
     foregroundStrong: "hsl(222.2 84% 3%)",

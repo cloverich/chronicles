@@ -109,7 +109,7 @@ function DocumentsContainer() {
       </div>
       {groupedDocs.map((group) => (
         <div key={group.key} className="mb-8">
-          <h2 className="font-heading text-accent-foreground mb-3 text-xl font-semibold">
+          <h2 className="font-heading text-foreground-strong mb-3 text-xl font-semibold">
             {group.label}
           </h2>
           <div className="space-y-0">

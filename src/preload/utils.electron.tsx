@@ -1,7 +1,11 @@
 // In renderer process (web page).
 import { ipcRenderer } from "electron";
 import { importThemeFile } from "../themes/importer";
-import { listAvailableThemes } from "../themes/loader";
+import {
+  deleteThemeByName,
+  listAvailableThemes,
+  loadThemeByName,
+} from "../themes/loader";
 
 // todo: Probably this should exposeInMainWorld a function
 // to do the inspect-element via middle click, then let the actual
@@ -54,4 +58,13 @@ export const selectThemeFile = async () => {
   });
 };
 
-export { importThemeFile, listAvailableThemes };
+export const openPath = (dirPath: string) => {
+  ipcRenderer.send("open-path", dirPath);
+};
+
+export {
+  deleteThemeByName,
+  importThemeFile,
+  listAvailableThemes,
+  loadThemeByName,
+};

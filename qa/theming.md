@@ -95,7 +95,7 @@ Each section covers: what changed, what to verify in the app, and what should NO
 The new reaction in StyleWatcher watches `darkMode`, `themeLightName`, and `themeDarkName`. On any change (or initial mount), it:
 1. Resolves "system" → effective "light"/"dark" via `matchMedia`
 2. Picks the theme name via `resolveActiveThemeName()`
-3. Looks up the ThemeConfig via `resolveBuiltinTheme()`
+3. Loads the ThemeConfig via `window.chronicles.loadThemeByName()` — checks builtins first, then scans user themes directory
 4. Applies all color tokens via `document.documentElement.style.setProperty()`
 5. Falls back to the system default theme with `console.error` if the named theme is not found
 
@@ -150,3 +150,102 @@ Confirmed: there is a brief dark flash on startup. With CSS no longer providing 
 - [ ] No console errors on startup
 
 **Note:** Installed themes won't be selectable yet — that's #450 (theme selection UI). For now, just verify the file lands in the themes directory.
+
+---
+
+## Issue #450 — Preferences UI: theme selection
+
+**Files changed:**
+
+- `src/themes/loader.ts` (new) — `listAvailableThemes(themesDir)`: returns builtins + validated installed themes as `ThemeListEntry[]`
+- `src/preload/utils.electron.tsx` — Re-exports `listAvailableThemes`
+- `src/preload/index.ts` — Exposed `listAvailableThemes` on `window.chronicles`
+- `src/views/preferences/index.tsx` — Replaced static "Theme: Default" with Light Theme and Dark Theme dropdowns
+
+**What to verify:**
+
+- [ ] Settings → Appearance: "Light Theme" and "Dark Theme" dropdowns visible
+- [ ] Light Theme dropdown shows "System Light" (and any installed themes with mode `light` or `both`)
+- [ ] Dark Theme dropdown shows "System Dark" (and any installed themes with mode `dark` or `both`)
+- [ ] Change light theme selection → colors update immediately (no restart needed)
+- [ ] Change dark theme selection → toggle to dark mode → new theme is active
+- [ ] **End-to-end test:** Import a custom theme file (#449), close/reopen preferences, it appears in the dropdown, select it, colors change
+
+**Regression check:**
+
+- [ ] Dark mode toggle (Appearance dropdown) still works
+- [ ] Import Theme button still works
+- [ ] Font, font-size, max-width preferences unaffected
+
+**~~Known limitation~~ Fixed:**
+
+~~After importing a theme while the preferences panel is open, the new theme won't appear in the dropdowns until you close and reopen preferences.~~ Import now calls `refreshThemeList()` after success, so the dropdown updates immediately.
+
+---
+
+## QA round 1 — Bugfixes from Neofloss testing
+
+Testing with a custom dark theme (Neofloss) revealed several issues. All fixed in a single pass.
+
+### Bug: User-installed themes not applied
+
+**Root cause:** `StyleWatcher` called `resolveBuiltinTheme()` which only checked the hardcoded `BUILTIN_THEMES` map. User-installed themes were never loaded from disk — selecting one returned `undefined`, logged an error, and fell back to the system default.
+
+**Fix:** Added `loadThemeByName(name, themesDir)` to `src/themes/loader.ts` that checks builtins first, then scans the user themes directory. `StyleWatcher` now calls this via `window.chronicles.loadThemeByName()`.
+
+**Files changed:** `src/themes/loader.ts`, `src/preload/utils.electron.tsx`, `src/preload/index.ts`, `src/views/StyleWatcher.tsx`
+
+### Bug: Misuse of `text-accent-foreground` on non-accent surfaces
+
+**Root cause:** Several components used `text-accent-foreground` (designed for text on `bg-accent` surfaces) on `bg-secondary` or `bg-background` surfaces. With Neofloss, `accentForeground` is near-black `#1C1B1D` — invisible on dark backgrounds.
+
+**Fixes:**
+
+| Component | File | Was | Now |
+|---|---|---|---|
+| Titlebar | `src/titlebar/macos.tsx:14` | `text-accent-foreground` | `text-secondary-foreground` |
+| Date group headings | `src/views/documents/index.tsx:112` | `text-accent-foreground` | `text-foreground-strong` |
+| Search input text | `src/components/tag-input/TagInput.tsx:159` | `text-tag-foreground bg-background` | `text-inherit placeholder:text-muted-foreground bg-transparent` |
+| Search input container | `src/components/tag-input/TagInput.tsx:144` | `bg-background` | `bg-transparent` + `border-muted-foreground/30` |
+| Search dropdown label | `src/components/tag-input/TagInput.tsx:262` | `text-foreground` (didn't flip on hover) | `text-muted-foreground group-hover/item:text-inherit` |
+
+### Enhancement: Preferences UI improvements
+
+**Changes:**
+
+- **Reordered Appearance section:** Appearance (Light/Dark/System) now first, then Light Theme, Dark Theme, Import Theme
+- **Installed Themes list:** Custom themes shown with name, mode badge, and trash icon to delete. Deleting an active theme resets to system default.
+- **Open themes folder:** Clickable link at bottom of Appearance section opens themes directory in Finder (`shell.openPath` via IPC)
+- **Import live-refresh:** Theme list refreshes immediately after successful import (#453 fixed)
+
+**Files changed:** `src/views/preferences/index.tsx`, `src/themes/loader.ts` (added `deleteThemeByName`), `src/electron/index.ts` (added `open-path` IPC), `src/preload/utils.electron.tsx`, `src/preload/index.ts`
+
+**What to verify:**
+
+- [ ] Select a custom theme → colors apply immediately
+- [ ] Titlebar icons visible in both light and dark custom themes
+- [ ] Search input text and placeholder visible in titlebar
+- [ ] Search dropdown: unhovered labels are muted, hovered labels match accent foreground
+- [ ] Date group headings visible on page background
+- [ ] Settings → Appearance: order is Appearance, Light Theme, Dark Theme, Import Theme
+- [ ] Import a theme → it appears in the dropdown immediately
+- [ ] Installed themes list shows custom themes with delete button
+- [ ] Delete a theme → toast, removed from list, resets to system default if active
+- [ ] "Open themes folder" opens Finder to the themes directory
+- [ ] All above work correctly with System Light theme too (regression)
+
+---
+
+## Gaps and follow-ups
+
+### No CLI theme validation
+
+**Problem:** The `validate()` function lives in `src/themes/schema.ts` (TypeScript). There's no built `dist/` output for it and no `tsx` dev dependency. You cannot validate a theme file outside the running Electron app. This complicates theme authoring — the design doc envisions LLMs iterating against validation errors, but right now the only way to see errors is to import a bad file through the app UI.
+
+**Proposed solutions (ranked):**
+
+1. **`yarn validate-theme <path>`** — Add a script to `package.json` that runs a small wrapper. Most ergonomic. Requires either `tsx` as a devDep or a pre-built JS entrypoint for the schema module.
+2. **Standalone script via test runner** — `scripts/validate-theme.ts` run via `node --test` or `node --import tsx`. The project's test infra already handles TS imports, so this may work with zero new deps. Slightly less discoverable.
+3. **Test-based validation** — A test that globs for `*.theme.json` files and validates them. Works with existing infra but bad UX for interactive authoring.
+
+**Recommendation:** Option 2 first (zero new deps, immediate value), then wrap it as option 1 in `package.json` for discoverability. Tracked as a follow-up issue.
