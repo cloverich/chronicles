@@ -240,8 +240,9 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
 
       // Apply code syntax highlighting theme
       const codeTheme =
-        theme.codeTheme ??
-        (effectiveMode === "dark" ? DEFAULT_HLJS_DARK : DEFAULT_HLJS_LIGHT);
+        effectiveMode === "dark"
+          ? (preferences.codeThemeDark || DEFAULT_HLJS_DARK)
+          : (preferences.codeThemeLight || DEFAULT_HLJS_LIGHT);
       applyHljsTheme(codeTheme);
     }
 
@@ -251,6 +252,8 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
         darkMode: preferences.darkMode,
         themeLightName: preferences.themeLightName,
         themeDarkName: preferences.themeDarkName,
+        codeThemeLight: preferences.codeThemeLight,
+        codeThemeDark: preferences.codeThemeDark,
       }),
       () => applyActiveTheme(),
       { fireImmediately: true },

@@ -42,12 +42,14 @@ const PreferencesPane = observer((props: Props) => {
   const [availableThemes, setAvailableThemes] = React.useState<
     ThemeListEntry[]
   >([]);
+  const [hljsThemes, setHljsThemes] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (props.isOpen) {
       const themesDir = `${preferences.settingsDir}/themes`;
       const themes = window.chronicles.listAvailableThemes(themesDir);
       setAvailableThemes(themes);
+      setHljsThemes(window.chronicles.listHljsThemes());
     }
   }, [props.isOpen, preferences.settingsDir]);
 
@@ -263,6 +265,56 @@ const PreferencesPane = observer((props: Props) => {
                               {t.name}
                             </Select.Item>
                           ))}
+                      </Select.Content>
+                    </Select.Base>
+                  </div>
+                </div>
+
+                <div className="my-4 flex justify-between">
+                  <div className="text-foreground-strong mb-2 font-medium">
+                    Code Theme (Light)
+                  </div>
+                  <div className="text-muted-foreground mb-2 text-xs">
+                    <Select.Base
+                      value={preferences.codeThemeLight || "github"}
+                      onValueChange={(selected) =>
+                        (preferences.codeThemeLight = selected)
+                      }
+                    >
+                      <Select.Trigger className="max-w-[200px]">
+                        <Select.Value placeholder="Select code theme" />
+                      </Select.Trigger>
+                      <Select.Content className="max-h-[300px]">
+                        {hljsThemes.map((t) => (
+                          <Select.Item key={t} value={t}>
+                            {t}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Base>
+                  </div>
+                </div>
+
+                <div className="my-4 flex justify-between">
+                  <div className="text-foreground-strong mb-2 font-medium">
+                    Code Theme (Dark)
+                  </div>
+                  <div className="text-muted-foreground mb-2 text-xs">
+                    <Select.Base
+                      value={preferences.codeThemeDark || "github-dark"}
+                      onValueChange={(selected) =>
+                        (preferences.codeThemeDark = selected)
+                      }
+                    >
+                      <Select.Trigger className="max-w-[200px]">
+                        <Select.Value placeholder="Select code theme" />
+                      </Select.Trigger>
+                      <Select.Content className="max-h-[300px]">
+                        {hljsThemes.map((t) => (
+                          <Select.Item key={t} value={t}>
+                            {t}
+                          </Select.Item>
+                        ))}
                       </Select.Content>
                     </Select.Base>
                   </div>

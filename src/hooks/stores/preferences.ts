@@ -17,6 +17,8 @@ export class Preferences implements IPreferences {
   darkMode!: "light" | "dark" | "system";
   themeLightName!: string;
   themeDarkName!: string;
+  codeThemeLight!: string;
+  codeThemeDark!: string;
   fonts!: {
     heading?: string;
     heading2?: string;
@@ -50,6 +52,8 @@ export class Preferences implements IPreferences {
       darkMode: observable,
       themeLightName: observable,
       themeDarkName: observable,
+      codeThemeLight: observable,
+      codeThemeDark: observable,
       fonts: observable,
       maxWidth: observable,
       fontSizes: observable,
@@ -70,6 +74,8 @@ export class Preferences implements IPreferences {
         darkMode: this.darkMode,
         themeLightName: this.themeLightName,
         themeDarkName: this.themeDarkName,
+        codeThemeLight: this.codeThemeLight,
+        codeThemeDark: this.codeThemeDark,
         // todo: add test for fonts syncing with settings store
         fonts: toJS(this.fonts),
         maxWidth: toJS(this.maxWidth),

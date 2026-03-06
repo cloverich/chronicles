@@ -2,23 +2,29 @@ import fs from "fs";
 import path from "path";
 
 /**
- * Resolve the directory containing bundled highlight.js theme CSS files.
+ * Resolve the directory containing highlight.js theme CSS files.
  *
- * In development: reads from node_modules/highlight.js/styles/
- * In production: reads from dist/hljs-themes/ (copied by build.sh)
+ * Checks multiple candidate paths to work in both dev and production:
+ * - Dev: node_modules/highlight.js/styles/ relative to cwd (project root)
+ * - Production: hljs-themes/ relative to cwd (dist/ inside packaged app)
  */
 function resolveHljsDir(): string {
-  // Production: hljs-themes sits alongside the bundled app files
-  const prodDir = path.join(__dirname, "hljs-themes");
-  if (fs.existsSync(prodDir)) return prodDir;
+  const candidates = [
+    // Production: copied by build.sh into dist/hljs-themes/
+    path.join(process.cwd(), "hljs-themes"),
+    // Dev: read from node_modules
+    path.join(process.cwd(), "node_modules/highlight.js/styles"),
+  ];
 
-  // Development: read directly from node_modules
-  const devDir = path.resolve(__dirname, "../node_modules/highlight.js/styles");
-  if (fs.existsSync(devDir)) return devDir;
+  for (const dir of candidates) {
+    if (fs.existsSync(dir)) return dir;
+  }
 
-  throw new Error(
-    "highlight.js themes not found. Run yarn or build the app first.",
+  console.error(
+    "highlight.js themes not found. Checked:",
+    candidates.join(", "),
   );
+  return candidates[0]; // return first candidate so callers get undefined, not throw
 }
 
 /**
@@ -30,15 +36,12 @@ function resolveHljsDir(): string {
  */
 export function loadHljsThemeCSS(themeName: string): string | undefined {
   const dir = resolveHljsDir();
-  const filePath = path.join(dir, `${themeName}.min.css`);
 
-  // Fall back to non-minified in dev
-  const fallbackPath = path.join(dir, `${themeName}.css`);
-
-  for (const p of [filePath, fallbackPath]) {
+  for (const ext of [".min.css", ".css"]) {
+    const filePath = path.join(dir, `${themeName}${ext}`);
     try {
-      if (fs.existsSync(p)) {
-        return fs.readFileSync(p, "utf-8");
+      if (fs.existsSync(filePath)) {
+        return fs.readFileSync(filePath, "utf-8");
       }
     } catch {
       continue;
@@ -56,31 +59,24 @@ export function listHljsThemes(): string[] {
   const dir = resolveHljsDir();
   const themes: string[] = [];
 
-  try {
-    for (const file of fs.readdirSync(dir)) {
-      if (file.endsWith(".min.css")) {
-        themes.push(file.replace(".min.css", ""));
-      } else if (file.endsWith(".css") && !file.endsWith(".min.css")) {
-        const name = file.replace(".css", "");
-        if (!themes.includes(name)) themes.push(name);
-      }
-    }
-
-    // Scan base16 subdirectory
-    const base16Dir = path.join(dir, "base16");
-    if (fs.existsSync(base16Dir)) {
-      for (const file of fs.readdirSync(base16Dir)) {
+  function scanDir(scanPath: string, prefix: string) {
+    if (!fs.existsSync(scanPath)) return;
+    try {
+      for (const file of fs.readdirSync(scanPath)) {
         if (file.endsWith(".min.css")) {
-          themes.push(`base16/${file.replace(".min.css", "")}`);
-        } else if (file.endsWith(".css") && !file.endsWith(".min.css")) {
-          const name = `base16/${file.replace(".css", "")}`;
+          themes.push(`${prefix}${file.replace(".min.css", "")}`);
+        } else if (file.endsWith(".css")) {
+          const name = `${prefix}${file.replace(".css", "")}`;
           if (!themes.includes(name)) themes.push(name);
         }
       }
+    } catch {
+      // skip unreadable dirs
     }
-  } catch {
-    // Return whatever we found
   }
+
+  scanDir(dir, "");
+  scanDir(path.join(dir, "base16"), "base16/");
 
   return themes.sort();
 }

@@ -12,6 +12,10 @@ export interface IPreferences {
   themeLightName: string;
   /** Name of the theme to use in dark mode. Defaults to the built-in "System Dark" theme. */
   themeDarkName: string;
+  /** highlight.js theme name for code blocks in light mode. */
+  codeThemeLight: string;
+  /** highlight.js theme name for code blocks in dark mode. */
+  codeThemeDark: string;
   fonts: {
     heading?: string;
     heading2?: string;
@@ -44,6 +48,8 @@ const defaults: IPreferences = {
   darkMode: "system",
   themeLightName: "System Light",
   themeDarkName: "System Dark",
+  codeThemeLight: "github",
+  codeThemeDark: "github-dark",
   fonts: {
     heading:
       '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
