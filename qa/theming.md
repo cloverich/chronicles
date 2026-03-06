@@ -234,6 +234,10 @@ Testing with a custom dark theme (Neofloss) revealed several issues. All fixed i
 - [ ] "Open themes folder" opens Finder to the themes directory
 - [ ] All above work correctly with System Light theme too (regression)
 
+### Code syntax themes (hljs)
+
+Replaced hardcoded Tailwind hljs color classes with dynamically loaded highlight.js theme CSS. Code themes are selectable per-mode in Settings > Appearance. Infrastructure is complete but **syntax highlighting only applies to the first line** due to Plate's `code_line` collapse bug — see [#176](https://github.com/cloverich/chronicles/issues/176).
+
 ---
 
 ## Gaps and follow-ups

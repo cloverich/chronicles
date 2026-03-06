@@ -83,20 +83,11 @@ Code block syntax highlighting uses [highlight.js](https://highlightjs.org/) the
 
 **How it works:** Lowlight (highlight.js wrapper) tokenizes code and assigns `.hljs-*` CSS classes. StyleWatcher injects the active hljs theme's CSS into a `<style>` tag, which is swapped when the app theme changes.
 
-**Defaults:** `github` for light mode, `github-dark` for dark mode. Each theme file can override this with a `codeTheme` field:
+**Defaults:** `github` for light mode, `github-dark` for dark mode. Selectable in Settings > Appearance > Code Theme (Light/Dark).
 
-```json
-{
-  "name": "Neofloss",
-  "mode": "dark",
-  "codeTheme": "atom-one-dark",
-  "colors": { ... }
-}
-```
+**Build pipeline:** `scripts/bundle-hljs-themes.sh` copies minified CSS from `node_modules/highlight.js/styles/` into `dist/hljs-themes/` at build time. Dev reads from `node_modules` directly. Output is gitignored.
 
-**Build pipeline:** `scripts/bundle-hljs-themes.sh` copies minified CSS from `node_modules/highlight.js/styles/` into `dist/hljs-themes/` at build time. In development, themes are read directly from `node_modules`. The copied files are gitignored (`dist/` is in `.gitignore`).
-
-**Available themes:** Any highlight.js theme name works (e.g. `atom-one-dark`, `nord`, `github-dark`, `base16/monokai`). See `node_modules/highlight.js/styles/` for the full list.
+**Known limitation:** Syntax highlighting only applies to the first line of a code block due to Plate's `code_line` collapse bug ([#176](https://github.com/cloverich/chronicles/issues/176)). The theme infrastructure is complete — fixing #176 will make it work fully.
 
 ## Managing themes
 
