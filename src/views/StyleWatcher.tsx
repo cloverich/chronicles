@@ -36,6 +36,30 @@ const DERIVABLE_DEFAULTS: Record<string, keyof ThemeColors> = {
   tagSecondaryForeground: "secondaryForeground",
 };
 
+const HLJS_STYLE_ID = "chronicles-hljs-theme";
+const DEFAULT_HLJS_LIGHT = "github";
+const DEFAULT_HLJS_DARK = "github-dark";
+
+/**
+ * Inject or replace the highlight.js theme CSS in a <style> tag.
+ * The tag is identified by HLJS_STYLE_ID so it can be swapped on theme change.
+ */
+function applyHljsTheme(themeName: string): void {
+  const css = window.chronicles.loadHljsThemeCSS(themeName);
+  if (!css) {
+    console.warn(`StyleWatcher: hljs theme "${themeName}" not found`);
+    return;
+  }
+
+  let styleEl = document.getElementById(HLJS_STYLE_ID) as HTMLStyleElement;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = HLJS_STYLE_ID;
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = css;
+}
+
 /**
  * Apply all theme color tokens as CSS custom properties on the document root.
  * Required tokens are applied directly; derivable tokens fall back to their
@@ -213,6 +237,12 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       }
 
       applyThemeColors(colors);
+
+      // Apply code syntax highlighting theme
+      const codeTheme =
+        theme.codeTheme ??
+        (effectiveMode === "dark" ? DEFAULT_HLJS_DARK : DEFAULT_HLJS_LIGHT);
+      applyHljsTheme(codeTheme);
     }
 
     // Watch theme and darkMode preferences, apply colors immediately and on change

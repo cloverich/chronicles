@@ -1,5 +1,6 @@
 // In renderer process (web page).
 import { ipcRenderer } from "electron";
+import { listHljsThemes, loadHljsThemeCSS } from "../themes/hljs";
 import { importThemeFile } from "../themes/importer";
 import {
   deleteThemeByName,
@@ -66,5 +67,7 @@ export {
   deleteThemeByName,
   importThemeFile,
   listAvailableThemes,
+  listHljsThemes,
+  loadHljsThemeCSS,
   loadThemeByName,
 };

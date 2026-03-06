@@ -130,6 +130,8 @@ export interface ThemeSingleMode {
   mode: "light" | "dark";
   /** Color tokens for the theme's single mode. */
   colors: ThemeColors;
+  /** Optional highlight.js theme name for code blocks (e.g. "atom-one-dark", "github"). */
+  codeTheme?: string;
 }
 
 export interface ThemeBothModes {
@@ -144,6 +146,8 @@ export interface ThemeBothModes {
     light: ThemeColors;
     dark: ThemeColors;
   };
+  /** Optional highlight.js theme name for code blocks (e.g. "atom-one-dark", "github"). */
+  codeTheme?: string;
 }
 
 // ---------------------------------------------------------------------------

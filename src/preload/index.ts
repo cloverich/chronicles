@@ -5,6 +5,8 @@ import {
   deleteThemeByName,
   importThemeFile,
   listAvailableThemes,
+  listHljsThemes,
+  loadHljsThemeCSS,
   loadThemeByName,
   openDialogSelectDir,
   openPath,
@@ -20,6 +22,8 @@ contextBridge.exposeInMainWorld("chronicles", {
   loadThemeByName,
   openPath,
   deleteThemeByName,
+  listHljsThemes,
+  loadHljsThemeCSS,
 });
 
 declare global {
@@ -33,6 +37,8 @@ declare global {
       loadThemeByName: typeof loadThemeByName;
       openPath: typeof openPath;
       deleteThemeByName: typeof deleteThemeByName;
+      listHljsThemes: typeof listHljsThemes;
+      loadHljsThemeCSS: typeof loadHljsThemeCSS;
     };
   }
 }

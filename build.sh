@@ -63,6 +63,9 @@ node ./scripts/production.js
 # copy all bundled assets
 cp -r src/*.bundle.* dist/
 
+# copy highlight.js theme CSS for code block syntax highlighting
+./scripts/bundle-hljs-themes.sh dist/hljs-themes
+
 # copy package.json, required by electron to know how to start
 cp package.json dist/
 cp yarn.lock dist/
