@@ -5,7 +5,7 @@
 To rebuild context on the theming work, read these in order:
 
 1. **Epic:** `gh issue view 443` — checklist of done/remaining issues
-2. **QA doc:** [qa/theming.md](qa/theming.md) — every file changed, decisions made, known issues, gaps
+2. **QA doc:** [docs/qa/theming.md](docs/qa/theming.md) — every file changed, decisions made, known issues, gaps
 3. **Design doc:** [docs/designs/theming.md](docs/designs/theming.md) — full architecture and implementation plan
 
 Remove this section once the theming project is complete.

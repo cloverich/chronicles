@@ -93,6 +93,7 @@ Each section covers: what changed, what to verify in the app, and what should NO
 **How it works (for debugging):**
 
 The new reaction in StyleWatcher watches `darkMode`, `themeLightName`, and `themeDarkName`. On any change (or initial mount), it:
+
 1. Resolves "system" → effective "light"/"dark" via `matchMedia`
 2. Picks the theme name via `resolveActiveThemeName()`
 3. Loads the ThemeConfig via `window.chronicles.loadThemeByName()` — checks builtins first, then scans user themes directory
@@ -201,13 +202,13 @@ Testing with a custom dark theme (Neofloss) revealed several issues. All fixed i
 
 **Fixes:**
 
-| Component | File | Was | Now |
-|---|---|---|---|
-| Titlebar | `src/titlebar/macos.tsx:14` | `text-accent-foreground` | `text-secondary-foreground` |
-| Date group headings | `src/views/documents/index.tsx:112` | `text-accent-foreground` | `text-foreground-strong` |
-| Search input text | `src/components/tag-input/TagInput.tsx:159` | `text-tag-foreground bg-background` | `text-inherit placeholder:text-muted-foreground bg-transparent` |
-| Search input container | `src/components/tag-input/TagInput.tsx:144` | `bg-background` | `bg-transparent` + `border-muted-foreground/30` |
-| Search dropdown label | `src/components/tag-input/TagInput.tsx:262` | `text-foreground` (didn't flip on hover) | `text-muted-foreground group-hover/item:text-inherit` |
+| Component              | File                                        | Was                                      | Now                                                             |
+| ---------------------- | ------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| Titlebar               | `src/titlebar/macos.tsx:14`                 | `text-accent-foreground`                 | `text-secondary-foreground`                                     |
+| Date group headings    | `src/views/documents/index.tsx:112`         | `text-accent-foreground`                 | `text-foreground-strong`                                        |
+| Search input text      | `src/components/tag-input/TagInput.tsx:159` | `text-tag-foreground bg-background`      | `text-inherit placeholder:text-muted-foreground bg-transparent` |
+| Search input container | `src/components/tag-input/TagInput.tsx:144` | `bg-background`                          | `bg-transparent` + `border-muted-foreground/30`                 |
+| Search dropdown label  | `src/components/tag-input/TagInput.tsx:262` | `text-foreground` (didn't flip on hover) | `text-muted-foreground group-hover/item:text-inherit`           |
 
 ### Enhancement: Preferences UI improvements
 

@@ -21,7 +21,7 @@ Chronicles uses a token-based theming system. Color palettes are defined as JSON
 | `src/themes/schema.ts`       | `ThemeConfig` interface, token lists, `validate()` function         |
 | `src/themes/builtins.ts`     | System Light and System Dark theme definitions                      |
 | `src/themes/loader.ts`       | `listAvailableThemes()`, `loadThemeByName()`, `deleteThemeByName()` |
-| `src/themes/hljs.ts`         | `loadHljsThemeCSS()`, `listHljsThemes()` — code theme loading      |
+| `src/themes/hljs.ts`         | `loadHljsThemeCSS()`, `listHljsThemes()` — code theme loading       |
 | `src/themes/importer.ts`     | `importThemeFile()` — validate + copy to themes dir                 |
 | `src/views/StyleWatcher.tsx` | Runtime (mobx) application of theme colors as CSS custom properties |
 | `src/index.css`              | `@theme` block mapping CSS variables to Tailwind utilities          |
