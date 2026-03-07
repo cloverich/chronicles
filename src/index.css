@@ -45,6 +45,8 @@
     --max-w-code: var(--max-w-prose);
     --max-w-frontmatter: var(--max-w-prose);
 
+    --font-size-search: 16px;
+    --font-search-body: var(--font-system-body);
     --font-size-body: 1rem;
     --font-size-heading: 1.5rem;
     --font-size-title: 3rem;
@@ -89,6 +91,7 @@
   --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-strong: var(--foreground-strong);
   --color-link: var(--link);
   --color-link-hover: var(--link-hover);
 
@@ -150,6 +153,9 @@
     sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
     "Noto Color Emoji";
   --font-system-heading: var(--font-system-heading), ui-sans-serif, system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-search-body: var(--font-search-body), ui-sans-serif, system-ui,
     sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
     "Noto Color Emoji";
 

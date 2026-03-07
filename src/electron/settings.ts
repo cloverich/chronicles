@@ -25,6 +25,7 @@ export interface IPreferences {
     mono?: string;
     systemBody?: string;
     systemHeading?: string;
+    searchBody?: string;
   };
   maxWidth: {
     prose?: string;
@@ -32,6 +33,7 @@ export interface IPreferences {
     frontmatter?: string;
   };
   fontSizes: {
+    search?: string;
     body?: string;
     heading?: string;
     title?: string;
@@ -61,12 +63,14 @@ const defaults: IPreferences = {
       '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     systemHeading:
       '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+    searchBody: undefined, // defaults to systemBody
   },
   maxWidth: {
     prose: "768px",
     code: undefined,
   },
   fontSizes: {
+    search: "16px",
     body: "1rem",
     heading: "1.5rem",
     title: "3rem",

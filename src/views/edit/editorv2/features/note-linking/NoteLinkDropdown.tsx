@@ -4,7 +4,7 @@ import { PlateElement, type PlateElementProps } from "platejs/react";
 import { Transforms } from "slate";
 
 import { cn } from "../../../../../lib/utils";
-import { SearchItem, SearchStore } from "../../../../documents/SearchStore";
+import { SearchItem } from "../../../../documents/SearchStore";
 import { useFocusEditor } from "../../useFocusEditor";
 import {
   InlineCombobox,
@@ -14,7 +14,6 @@ import {
   InlineComboboxItem,
 } from "../combobox/InlineCombobox";
 import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
-import { NOTE_LINK } from "./createNoteLinkDropdownPlugin";
 
 type Option = Pick<INoteLinkElement, "noteId" | "title" | "journalName">;
 
@@ -71,26 +70,20 @@ export const NoteLinkDropdownElement = React.forwardRef<
   const { children, editor, element } = props as PlateElementProps;
   const focusEditor = useFocusEditor();
 
-  // Get the store from plugin options
-  const options =
-    (editor as any).getOptions?.({ key: NOTE_LINK }) ??
-    (editor as any).getOptions?.(NOTE_LINK) ??
-    {};
-  const store = (options as any).store as SearchStore;
-
-  if (!store) {
-    return (
-      <PlateElement as="span" ref={ref} {...props}>
-        {children}
-      </PlateElement>
-    );
-  }
-
   const [search, setSearch] = useState("");
+  const [results, setResults] = useState<SearchItem[]>([]);
 
   React.useEffect(() => {
-    // todo: leading debounce; build into the store itself
-    store.setSearch([`title:${search}`]);
+    // Search documents by title directly via window.chronicles, bypassing
+    // the shared SearchStore so the search page tokens/URL are not polluted.
+    if (!search) {
+      setResults([]);
+      return;
+    }
+    window.chronicles
+      .getClient()
+      .documents.search({ journals: [], titles: [search] })
+      .then((res) => setResults(res.data));
   }, [search]);
 
   return (
@@ -119,7 +112,7 @@ export const NoteLinkDropdownElement = React.forwardRef<
         <InlineComboboxContent className="my-1.5">
           <InlineComboboxEmpty>No results found</InlineComboboxEmpty>
 
-          {toOptions(store.docs).map((item) => (
+          {toOptions(results).map((item) => (
             <InlineComboboxItem
               key={item.noteId}
               onClick={() => insertNoteLink(editor, item, focusEditor)}

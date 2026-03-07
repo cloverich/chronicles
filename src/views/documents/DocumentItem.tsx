@@ -21,7 +21,11 @@ export function DocumentItem(props: {
     <div key={doc.id} className="flex items-center justify-between space-y-0.5">
       <div className="flex items-center truncate">
         <div
-          className="mr-2 min-w-0 cursor-pointer truncate font-sans decoration-1 hover:underline hover:underline-offset-4"
+          className="hover:text-accent mr-2 min-w-0 cursor-pointer truncate"
+          style={{
+            fontSize: "var(--font-size-search)",
+            fontFamily: "var(--font-search-body)",
+          }}
           onClick={() => edit(doc.id)}
         >
           {doc.title || "Untitled"}
@@ -31,7 +35,7 @@ export function DocumentItem(props: {
         </div>
       </div>
       <div
-        className="text-muted-foreground mr-2 shrink-0 cursor-pointer text-xs"
+        className="text-muted-foreground hover:text-accent mr-2 shrink-0 cursor-pointer text-xs"
         onClick={() => search.addToken(`in:${doc.journal}`)}
       >
         /{doc.journal.toUpperCase()}

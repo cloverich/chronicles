@@ -16,7 +16,6 @@ import {
 } from "platejs/react";
 import React from "react";
 import { JournalResponse } from "../../../hooks/useClient";
-import { useSearchStore } from "../../documents/SearchStore";
 import { EditableDocument } from "../EditableDocument";
 import { EditorMode } from "../EditorMode";
 import { EditorLayout } from "./EditorLayout";
@@ -103,7 +102,6 @@ interface Props {
 }
 
 export const PlateContainer = (props: Props) => {
-  const searchStore = useSearchStore()!;
   const editor = usePlateEditor({
     plugins: [
       createCodeBlockNormalizationPlugin,
@@ -259,11 +257,7 @@ export const PlateContainer = (props: Props) => {
       createVideoPlugin.withComponent(VideoElement),
       createImagePlugin.withComponent(ImageElement),
       createImageGalleryPlugin.withComponent(ImageGalleryElement),
-      createNoteLinkDropdownPlugin
-        .configure({
-          options: { store: searchStore },
-        })
-        .withComponent(NoteLinkDropdownElement),
+      createNoteLinkDropdownPlugin.withComponent(NoteLinkDropdownElement),
       createNoteLinkElementPlugin.withComponent(NoteLinkElement),
     ],
 

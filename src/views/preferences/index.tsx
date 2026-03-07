@@ -424,7 +424,7 @@ const PreferencesPane = observer((props: Props) => {
                   />
                   <FontSelector
                     label="Title"
-                    description="Document title (front matter)"
+                    description="Editor document title (front matter)"
                     value={preferences.fonts?.title || "Default (Heading)"}
                     onChange={(font) => {
                       preferences.fonts.title =
@@ -468,6 +468,16 @@ const PreferencesPane = observer((props: Props) => {
                       preferences.fonts.systemHeading = font;
                     }}
                   />
+                  <FontSelector
+                    label="Search Body"
+                    description="Note titles on the search page (defaults to System Body)"
+                    value={
+                      preferences.fonts?.searchBody || "Mona Sans (bundled)"
+                    }
+                    onChange={(font) => {
+                      preferences.fonts.searchBody = font;
+                    }}
+                  />
                 </div>
               </Section>
               <Section>
@@ -477,8 +487,17 @@ const PreferencesPane = observer((props: Props) => {
                 />
                 <div className="space-y-4">
                   <WidthSelector
+                    label="Search"
+                    description="Note titles and date headings on the search page"
+                    value={preferences.fontSizes?.search || ""}
+                    placeholder="Default: 16px"
+                    onChange={(e) => {
+                      preferences.fontSizes.search = e.target.value;
+                    }}
+                  />
+                  <WidthSelector
                     label="Body"
-                    description="Paragraphs and inline text"
+                    description="Editor paragraphs and inline text"
                     value={preferences.fontSizes?.body || ""}
                     placeholder="Default: 1rem"
                     onChange={(e) => {
@@ -487,7 +506,7 @@ const PreferencesPane = observer((props: Props) => {
                   />
                   <WidthSelector
                     label="Title"
-                    description="Document title (front matter)"
+                    description="Editor document title (front matter)"
                     value={preferences.fontSizes?.title || ""}
                     placeholder="Default: 3rem"
                     onChange={(e) => {
@@ -496,7 +515,7 @@ const PreferencesPane = observer((props: Props) => {
                   />
                   <WidthSelector
                     label="Heading"
-                    description="H1 in content (H2, H3 scale proportionally)"
+                    description="Editor H1 in content (H2, H3 scale proportionally)"
                     value={preferences.fontSizes?.heading || ""}
                     placeholder="Default: 1.5rem"
                     onChange={(e) => {

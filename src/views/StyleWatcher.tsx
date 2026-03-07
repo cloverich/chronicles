@@ -139,6 +139,10 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
         if (fonts.systemHeading) {
           root.style.setProperty("--font-system-heading", fonts.systemHeading);
         }
+
+        if (fonts.searchBody) {
+          root.style.setProperty("--font-search-body", fonts.searchBody);
+        }
       },
       {
         fireImmediately: true,
@@ -178,6 +182,10 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       (fontSizes) => {
         const root = document.documentElement;
 
+        if (fontSizes?.search) {
+          root.style.setProperty("--font-size-search", fontSizes.search);
+        }
+
         if (fontSizes?.body) {
           root.style.setProperty("--font-size-body", fontSizes.body);
         }
@@ -213,6 +221,10 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
      */
     function applyActiveTheme(): void {
       const effectiveMode = resolveEffectiveMode();
+      document.documentElement.classList.toggle(
+        "dark",
+        effectiveMode === "dark",
+      );
       const themeName = resolveActiveThemeName(
         effectiveMode,
         preferences.themeLightName,

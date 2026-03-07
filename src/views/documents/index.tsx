@@ -109,7 +109,10 @@ function DocumentsContainer() {
       </div>
       {groupedDocs.map((group) => (
         <div key={group.key} className="mb-8">
-          <h2 className="font-heading text-foreground-strong mb-3 text-xl font-semibold">
+          <h2
+            className="text-foreground-strong mb-3 font-semibold"
+            style={{ fontSize: "calc(var(--font-size-search) * 1.25)" }}
+          >
             {group.label}
           </h2>
           <div className="space-y-0">

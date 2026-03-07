@@ -28,6 +28,7 @@ export class Preferences implements IPreferences {
     mono?: string;
     systemBody?: string;
     systemHeading?: string;
+    searchBody?: string;
   };
   maxWidth!: {
     prose?: string;
@@ -35,6 +36,7 @@ export class Preferences implements IPreferences {
     frontmatter?: string;
   };
   fontSizes!: {
+    search?: string;
     body?: string;
     heading?: string;
     title?: string;

@@ -156,7 +156,8 @@ app.on("web-contents-created", (event, contents) => {
 // use a wider width in dev to support attached debugger, since it re-opens on changes
 // NOTE: In production this could be more sophisticated, remembering the users
 // last width while also doing some sanity checks in case they change screen
-const width = app.isPackaged ? 800 : 1400;
+// const width = app.isPackaged ? 768 : 1400;
+const width = 800;
 
 function createWindow() {
   // Create the browser window.
