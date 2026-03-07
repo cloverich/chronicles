@@ -59,15 +59,18 @@ export function listHljsThemes(): string[] {
   const dir = resolveHljsDir();
   const themes: string[] = [];
 
+  const seen = new Set<string>();
+
   function scanDir(scanPath: string, prefix: string) {
     if (!fs.existsSync(scanPath)) return;
     try {
       for (const file of fs.readdirSync(scanPath)) {
-        if (file.endsWith(".min.css")) {
-          themes.push(`${prefix}${file.replace(".min.css", "")}`);
-        } else if (file.endsWith(".css")) {
-          const name = `${prefix}${file.replace(".css", "")}`;
-          if (!themes.includes(name)) themes.push(name);
+        // Skip non-CSS and image files (e.g. brown-papersq.png)
+        if (!file.endsWith(".css")) continue;
+        const name = `${prefix}${file.replace(".min.css", "").replace(".css", "")}`;
+        if (!seen.has(name)) {
+          seen.add(name);
+          themes.push(name);
         }
       }
     } catch {
