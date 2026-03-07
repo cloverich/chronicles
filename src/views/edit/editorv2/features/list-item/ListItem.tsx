@@ -11,21 +11,24 @@ import { PlateElement } from "platejs/react";
 
 import { cn } from "@/src/lib/utils";
 
-const listVariants = cva("mt-0 py-1 ps-6 max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-body)]", {
-  variants: {
-    variant: {
-      ol: "list-decimal",
-      ul: "list-disc [&_ul]:list-[circle] [&_ul_ul]:list-[square]",
+const listVariants = cva(
+  "mt-0 py-1 ps-6 max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-body)]",
+  {
+    variants: {
+      variant: {
+        ol: "list-decimal",
+        ul: "list-disc [&_ul]:list-[circle] [&_ul_ul]:list-[square]",
+      },
+      nested: {
+        true: "mb-0",
+        false: "mb-8",
+      },
     },
-    nested: {
-      true: "mb-0",
-      false: "mb-8",
+    defaultVariants: {
+      nested: false,
     },
   },
-  defaultVariants: {
-    nested: false,
-  },
-});
+);
 
 export function ListElement({
   variant,

@@ -141,7 +141,7 @@ const TagInput = observer((props: TagInputProps) => {
   return (
     <div
       className={cn(
-        "bg-transparent drag-none flex max-w-full grow flex-col rounded-sm border border-muted-foreground/30 text-xs",
+        "drag-none border-muted-foreground/30 flex max-w-full grow flex-col rounded-sm border bg-transparent text-xs",
         props.ghost && "border-none",
       )}
       ref={containerRef}
@@ -156,7 +156,7 @@ const TagInput = observer((props: TagInputProps) => {
         ))}
         <input
           ref={inputRef}
-          className="text-inherit placeholder:text-muted-foreground bg-transparent w-0 min-w-8 shrink grow outline-hidden"
+          className="placeholder:text-muted-foreground w-0 min-w-8 shrink grow bg-transparent text-inherit outline-hidden"
           type="text"
           placeholder={props.tokens.length ? "" : props.placeholder}
           value={store.query}
@@ -259,7 +259,9 @@ const TagInput = observer((props: TagInputProps) => {
               >
                 <span>{tag.value}</span>
                 {tag.label && (
-                  <span className="text-muted-foreground group-hover/item:text-inherit">{tag.label}</span>
+                  <span className="text-muted-foreground group-hover/item:text-inherit">
+                    {tag.label}
+                  </span>
                 )}
               </div>
             ))}

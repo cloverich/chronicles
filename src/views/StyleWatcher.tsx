@@ -238,12 +238,13 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
 
       applyThemeColors(colors);
 
-      // Apply code syntax highlighting theme
-      const codeTheme =
-        effectiveMode === "dark"
-          ? (preferences.codeThemeDark || DEFAULT_HLJS_DARK)
-          : (preferences.codeThemeLight || DEFAULT_HLJS_LIGHT);
-      applyHljsTheme(codeTheme);
+      // Code syntax highlighting disabled until Plate's code_line collapse
+      // bug is fixed — see https://github.com/cloverich/chronicles/issues/176
+      // const codeTheme =
+      //   effectiveMode === "dark"
+      //     ? (preferences.codeThemeDark || DEFAULT_HLJS_DARK)
+      //     : (preferences.codeThemeLight || DEFAULT_HLJS_LIGHT);
+      // applyHljsTheme(codeTheme);
     }
 
     // Watch theme and darkMode preferences, apply colors immediately and on change
@@ -252,8 +253,9 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
         darkMode: preferences.darkMode,
         themeLightName: preferences.themeLightName,
         themeDarkName: preferences.themeDarkName,
-        codeThemeLight: preferences.codeThemeLight,
-        codeThemeDark: preferences.codeThemeDark,
+        // Uncomment when #176 is fixed:
+        // codeThemeLight: preferences.codeThemeLight,
+        // codeThemeDark: preferences.codeThemeDark,
       }),
       () => applyActiveTheme(),
       { fireImmediately: true },

@@ -136,10 +136,7 @@ export function loadThemeByName(
  * Delete a user-installed theme by name. Scans the themes directory for a
  * matching file and removes it. Returns true if a file was deleted.
  */
-export function deleteThemeByName(
-  name: string,
-  themesDir: string,
-): boolean {
+export function deleteThemeByName(name: string, themesDir: string): boolean {
   if (!fs.existsSync(themesDir)) return false;
 
   let files: string[];

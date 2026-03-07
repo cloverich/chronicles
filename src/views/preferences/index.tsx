@@ -1,8 +1,8 @@
+import { FolderOpen, Trash2 } from "lucide-react";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
 import { InputProps } from "react-day-picker";
-import { FolderOpen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Label, Select } from "../../components";
 import { Button } from "../../components/Button";
@@ -42,14 +42,16 @@ const PreferencesPane = observer((props: Props) => {
   const [availableThemes, setAvailableThemes] = React.useState<
     ThemeListEntry[]
   >([]);
-  const [hljsThemes, setHljsThemes] = React.useState<string[]>([]);
+  // Code theme selection disabled until #176 is fixed
+  // https://github.com/cloverich/chronicles/issues/176
+  // const [hljsThemes, setHljsThemes] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (props.isOpen) {
       const themesDir = `${preferences.settingsDir}/themes`;
       const themes = window.chronicles.listAvailableThemes(themesDir);
       setAvailableThemes(themes);
-      setHljsThemes(window.chronicles.listHljsThemes());
+      // setHljsThemes(window.chronicles.listHljsThemes());
     }
   }, [props.isOpen, preferences.settingsDir]);
 
@@ -270,6 +272,8 @@ const PreferencesPane = observer((props: Props) => {
                   </div>
                 </div>
 
+                {/* Code theme selection hidden until Plate's code_line collapse
+                    bug is fixed — see https://github.com/cloverich/chronicles/issues/176
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
                     Code Theme (Light)
@@ -319,6 +323,7 @@ const PreferencesPane = observer((props: Props) => {
                     </Select.Base>
                   </div>
                 </div>
+                */}
 
                 <div className="my-4 flex justify-between">
                   <div>
