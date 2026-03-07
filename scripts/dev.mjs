@@ -9,6 +9,7 @@ import lodash from "lodash";
 
 const startTracker = new Set();
 let didStart = false;
+let lastChange = null; // Track which bundle changed most recently
 
 // esbuild callbacks work as plugins; this one handles (re)starting the electron
 // process after the application bundles are built
@@ -23,12 +24,13 @@ function startElectronPlugin(name) {
         } else {
           console.log(`${name} bundle completed`);
           startTracker.add(name);
+          lastChange = name; // Track which bundle changed
         }
 
         if (startTracker.size !== 3) return;
 
         if (didStart) {
-          restartElectron();
+          handleBundleChange(lastChange);
         } else {
           didStart = true;
           startElectron();
@@ -36,6 +38,17 @@ function startElectronPlugin(name) {
       });
     },
   };
+}
+
+// Handle bundle changes with different strategies based on what changed
+function handleBundleChange(bundleName) {
+  if (bundleName === "renderer") {
+    reloadRenderer();
+  } else if (bundleName === "preload") {
+    recreateWindow();
+  } else if (bundleName === "main") {
+    restartElectron();
+  }
 }
 
 // For holding the spawned Electron main process, so it can
@@ -47,7 +60,7 @@ function startElectron() {
   console.log("starting electron");
   checkTypes();
   eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
-    stdio: "inherit",
+    stdio: ["pipe", "inherit", "inherit"], // stdin as pipe for sending commands
   });
 
   eprocess.on("error", (error) => {
@@ -56,20 +69,32 @@ function startElectron() {
   });
 }
 
-// Re-start the main process
-// todo: This works, but is heavy-handed since it fully re-starts the process each time.
-// Ideally renderer code would hot-reload, or merely refresh and load from a dev-server
-// instead or restarting electron
+// Send command to reload renderer without restarting
+const reloadRenderer = lodash.debounce(() => {
+  if (eprocess && eprocess.stdin) {
+    console.log("[DEV] Reloading renderer (no restart)...");
+    checkTypes();
+    eprocess.stdin.write("reload-renderer\n");
+  }
+}, 200);
+
+// Send command to recreate window (for preload changes)
+const recreateWindow = lodash.debounce(() => {
+  if (eprocess && eprocess.stdin) {
+    console.log("[DEV] Recreating window for preload changes...");
+    checkTypes();
+    eprocess.stdin.write("recreate-window\n");
+  }
+}, 200);
+
+// Re-start the main process (for main process changes)
 const restartElectron = lodash.debounce(function startElectron() {
   if (eprocess) eprocess.kill("SIGTERM");
 
-  // todo: This was a quick hack to get type errors to show up in console. Re-write this as a
-  // plugin that checks the relevant types (renderer, preload) and fails the build (and, ideally,
-  // is incremental or something, rather than a fresh sub-process)
   checkTypes();
-  console.log("restarting electron");
+  console.log("[DEV] Restarting electron (main process changed)...");
   eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
-    stdio: "inherit",
+    stdio: ["pipe", "inherit", "inherit"], // stdin as pipe for sending commands
   });
 
   eprocess.on("error", (error) => {
