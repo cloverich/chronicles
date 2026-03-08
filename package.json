@@ -27,7 +27,7 @@
     "@moritzrs/mdast-util-ofm-wikilink": "^0.0.1",
     "@moritzrs/micromark-extension-ofm-tag": "^0.0.1",
     "@moritzrs/micromark-extension-ofm-wikilink": "^0.0.1",
-    "ajv": "^8.6.2",
+    "ajv": "^8.18.0",
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^12.5.0",
     "electron-store": "^10.1.0",
