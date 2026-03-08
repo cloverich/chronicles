@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { Button } from "../../../components/Button";
 import { Dialog } from "../../../components/Dialog";
-import * as Select from "../../../components/Select";
 import { useBulkOperationsStore } from "../../../hooks/useBulkOperations";
 import { useJournals } from "../../../hooks/useJournals";
 import { SearchStore } from "../SearchStore";
@@ -63,23 +62,22 @@ export const ChangeJournalModal = observer(
           <label className="mb-2 block text-sm font-medium">
             Destination journal
           </label>
-          <Select.Base
+          <select
+            className="border-muted-foreground/30 bg-background text-foreground w-full rounded-md border px-2 py-1 text-sm"
             value={selectedJournal || ""}
-            onValueChange={(value) => setSelectedJournal(value || null)}
+            onChange={(e) => setSelectedJournal(e.target.value || null)}
           >
-            <Select.Trigger className="w-full">
-              <Select.Value placeholder="Select a journal..." />
-            </Select.Trigger>
-            <Select.Content>
-              {journalsStore.journals
-                .filter((j) => !j.archived)
-                .map((journal) => (
-                  <Select.Item key={journal.name} value={journal.name}>
-                    {journal.name}
-                  </Select.Item>
-                ))}
-            </Select.Content>
-          </Select.Base>
+            <option value="" disabled>
+              Select a journal...
+            </option>
+            {journalsStore.journals
+              .filter((j) => !j.archived)
+              .map((journal) => (
+                <option key={journal.name} value={journal.name}>
+                  {journal.name}
+                </option>
+              ))}
+          </select>
         </div>
       </Dialog>
     );

@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
 import { InputProps } from "react-day-picker";
 import { toast } from "sonner";
-import { Label, Select } from "../../components";
+import { Label } from "../../components";
 import { Button } from "../../components/Button";
 import {
   DialogRoot as Dialog,
@@ -191,86 +191,61 @@ const PreferencesPane = observer((props: Props) => {
 
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
-                    <Label.Base htmlFor=":r2g:-form-item">
-                      Appearance
-                    </Label.Base>
+                    <Label.Base>Appearance</Label.Base>
                   </div>
-                  <div className="text-muted-foreground mb-2 text-xs">
-                    <Select.Base
-                      value={preferences.darkMode}
-                      onValueChange={(selected) =>
-                        (preferences.darkMode = selected as
-                          | "light"
-                          | "dark"
-                          | "system")
-                      }
-                    >
-                      <Select.Trigger className="max-w-[150px]">
-                        <Select.Value placeholder="Light / Dark" />
-                      </Select.Trigger>
-                      <Select.Content>
-                        <Select.Item value="light">Light</Select.Item>
-                        <Select.Item value="dark">Dark</Select.Item>
-                        <Select.Item value="system">System</Select.Item>
-                      </Select.Content>
-                    </Select.Base>
-                  </div>
+                  <NativeSelect
+                    value={preferences.darkMode}
+                    onChange={(e) =>
+                      (preferences.darkMode = e.target.value as
+                        | "light"
+                        | "dark"
+                        | "system")
+                    }
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">System</option>
+                  </NativeSelect>
                 </div>
 
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
                     Light Theme
                   </div>
-                  <div className="text-muted-foreground mb-2 text-xs">
-                    <Select.Base
-                      value={preferences.themeLightName}
-                      onValueChange={(selected) =>
-                        (preferences.themeLightName = selected)
-                      }
-                    >
-                      <Select.Trigger className="max-w-[200px]">
-                        <Select.Value placeholder="Select light theme" />
-                      </Select.Trigger>
-                      <Select.Content>
-                        {availableThemes
-                          .filter(
-                            (t) => t.mode === "light" || t.mode === "both",
-                          )
-                          .map((t) => (
-                            <Select.Item key={t.name} value={t.name}>
-                              {t.name}
-                            </Select.Item>
-                          ))}
-                      </Select.Content>
-                    </Select.Base>
-                  </div>
+                  <NativeSelect
+                    value={preferences.themeLightName}
+                    onChange={(e) =>
+                      (preferences.themeLightName = e.target.value)
+                    }
+                  >
+                    {availableThemes
+                      .filter((t) => t.mode === "light" || t.mode === "both")
+                      .map((t) => (
+                        <option key={t.name} value={t.name}>
+                          {t.name}
+                        </option>
+                      ))}
+                  </NativeSelect>
                 </div>
 
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
                     Dark Theme
                   </div>
-                  <div className="text-muted-foreground mb-2 text-xs">
-                    <Select.Base
-                      value={preferences.themeDarkName}
-                      onValueChange={(selected) =>
-                        (preferences.themeDarkName = selected)
-                      }
-                    >
-                      <Select.Trigger className="max-w-[200px]">
-                        <Select.Value placeholder="Select dark theme" />
-                      </Select.Trigger>
-                      <Select.Content>
-                        {availableThemes
-                          .filter((t) => t.mode === "dark" || t.mode === "both")
-                          .map((t) => (
-                            <Select.Item key={t.name} value={t.name}>
-                              {t.name}
-                            </Select.Item>
-                          ))}
-                      </Select.Content>
-                    </Select.Base>
-                  </div>
+                  <NativeSelect
+                    value={preferences.themeDarkName}
+                    onChange={(e) =>
+                      (preferences.themeDarkName = e.target.value)
+                    }
+                  >
+                    {availableThemes
+                      .filter((t) => t.mode === "dark" || t.mode === "both")
+                      .map((t) => (
+                        <option key={t.name} value={t.name}>
+                          {t.name}
+                        </option>
+                      ))}
+                  </NativeSelect>
                 </div>
 
                 {/* Code theme selection hidden until Plate's code_line collapse
@@ -279,50 +254,32 @@ const PreferencesPane = observer((props: Props) => {
                   <div className="text-foreground-strong mb-2 font-medium">
                     Code Theme (Light)
                   </div>
-                  <div className="text-muted-foreground mb-2 text-xs">
-                    <Select.Base
-                      value={preferences.codeThemeLight || "github"}
-                      onValueChange={(selected) =>
-                        (preferences.codeThemeLight = selected)
-                      }
-                    >
-                      <Select.Trigger className="max-w-[200px]">
-                        <Select.Value placeholder="Select code theme" />
-                      </Select.Trigger>
-                      <Select.Content className="max-h-[300px]">
-                        {hljsThemes.map((t) => (
-                          <Select.Item key={t} value={t}>
-                            {t}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Base>
-                  </div>
+                  <NativeSelect
+                    value={preferences.codeThemeLight || "github"}
+                    onChange={(e) =>
+                      (preferences.codeThemeLight = e.target.value)
+                    }
+                  >
+                    {hljsThemes.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </NativeSelect>
                 </div>
 
                 <div className="my-4 flex justify-between">
                   <div className="text-foreground-strong mb-2 font-medium">
                     Code Theme (Dark)
                   </div>
-                  <div className="text-muted-foreground mb-2 text-xs">
-                    <Select.Base
-                      value={preferences.codeThemeDark || "github-dark"}
-                      onValueChange={(selected) =>
-                        (preferences.codeThemeDark = selected)
-                      }
-                    >
-                      <Select.Trigger className="max-w-[200px]">
-                        <Select.Value placeholder="Select code theme" />
-                      </Select.Trigger>
-                      <Select.Content className="max-h-[300px]">
-                        {hljsThemes.map((t) => (
-                          <Select.Item key={t} value={t}>
-                            {t}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Base>
-                  </div>
+                  <NativeSelect
+                    value={preferences.codeThemeDark || "github-dark"}
+                    onChange={(e) =>
+                      (preferences.codeThemeDark = e.target.value)
+                    }
+                  >
+                    {hljsThemes.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </NativeSelect>
                 </div>
                 */}
 
@@ -647,35 +604,23 @@ const PreferencesPane = observer((props: Props) => {
                 </details>
 
                 <div className="my-6 flex max-w-[500px] flex-col space-y-2">
-                  <Label.Base
-                    className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    htmlFor=":r2g:-form-item"
-                  >
+                  <Label.Base className="text-sm leading-none font-medium">
                     Import Type
                   </Label.Base>
-                  <p
-                    id=":r2g:-form-item-description"
-                    className="text-muted-foreground text-[0.8rem]"
-                  >
+                  <p className="text-muted-foreground text-[0.8rem]">
                     Whether to use the Notion specific parser, which checks for
                     ids in titles and pseudo-front matter in content.
                   </p>
-                  <Select.Base
+                  <NativeSelect
+                    className="w-[200px]"
                     value={store.sourceType}
-                    onValueChange={(selected) =>
-                      (store.sourceType = selected as SourceType)
+                    onChange={(e) =>
+                      (store.sourceType = e.target.value as SourceType)
                     }
                   >
-                    <Select.Trigger style={{ width: "200px" }}>
-                      <Select.Value placeholder="Choose import type" />
-                    </Select.Trigger>
-                    <Select.Content>
-                      <Select.Item value={SourceType.Notion}>
-                        Notion
-                      </Select.Item>
-                      <Select.Item value={SourceType.Other}>Other</Select.Item>
-                    </Select.Content>
-                  </Select.Base>
+                    <option value={SourceType.Notion}>Notion</option>
+                    <option value={SourceType.Other}>Other</option>
+                  </NativeSelect>
                 </div>
                 <div className="mt-4 flex">
                   {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
@@ -846,7 +791,8 @@ function FontSelector({
     Object.entries(FONT_STACK_MAP).find(([_, stack]) => stack === value)?.[0] ||
     value;
 
-  const handleChange = (selectedDisplayName: string) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedDisplayName = e.target.value;
     // Convert display name to actual font stack
     const actualFontStack =
       FONT_STACK_MAP[selectedDisplayName] || selectedDisplayName;
@@ -859,26 +805,13 @@ function FontSelector({
         <Label.Base className="text-sm font-medium">{label}</Label.Base>
         <p className="text-muted-foreground text-xs">{description}</p>
       </div>
-      <Select.Base value={displayValue} onValueChange={handleChange}>
-        <Select.Trigger className="max-w-[250px]">
-          <Select.Value />
-        </Select.Trigger>
-        <Select.Content className="max-h-[300px]">
-          {options.map((font) => (
-            <Select.Item
-              key={font}
-              value={font}
-              style={{
-                fontFamily: font.startsWith("Default")
-                  ? "inherit"
-                  : FONT_STACK_MAP[font] || font,
-              }}
-            >
-              {font}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Base>
+      <NativeSelect value={displayValue} onChange={handleChange}>
+        {options.map((font) => (
+          <option key={font} value={font}>
+            {font}
+          </option>
+        ))}
+      </NativeSelect>
     </div>
   );
 }
@@ -899,6 +832,18 @@ function WidthSelector({
       </div>
       <Input className="max-w-[250px]" {...rest} />
     </div>
+  );
+}
+
+function NativeSelect(
+  props: React.SelectHTMLAttributes<HTMLSelectElement> & { className?: string },
+) {
+  const { className = "", ...rest } = props;
+  return (
+    <select
+      className={`border-muted-foreground/30 bg-background text-foreground self-center rounded-md border px-2 py-1 text-sm ${className}`}
+      {...rest}
+    />
   );
 }
 
