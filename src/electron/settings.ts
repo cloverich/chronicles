@@ -1,4 +1,5 @@
 import Store from "electron-store";
+import { APPEARANCE_DEFAULTS } from "./appearance-defaults";
 
 export interface IPreferences {
   databaseUrl: string;
@@ -47,34 +48,7 @@ const defaults: IPreferences = {
   notesDir: "",
   settingsDir: "",
   onboarding: "new",
-  darkMode: "system",
-  themeLightName: "System Light",
-  themeDarkName: "System Dark",
-  codeThemeLight: "github",
-  codeThemeDark: "github-dark",
-  fonts: {
-    heading:
-      '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    heading2: undefined, // defaults to heading
-    heading3: undefined, // defaults to heading
-    body: '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    mono: '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
-    systemBody:
-      '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    systemHeading:
-      '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    searchBody: undefined, // defaults to systemBody
-  },
-  maxWidth: {
-    prose: "768px",
-    code: undefined,
-  },
-  fontSizes: {
-    search: "16px",
-    body: "1rem",
-    heading: "1.5rem",
-    title: "3rem",
-  },
+  ...APPEARANCE_DEFAULTS,
 };
 
 // NOTE: Factory supports tests; application code should use the default export

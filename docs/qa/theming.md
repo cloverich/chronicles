@@ -241,6 +241,13 @@ Replaced hardcoded Tailwind hljs color classes with dynamically loaded highlight
 
 ---
 
+## Reset appearance to defaults
+
+- [ ] Use "Reset to defaults" button at the bottom of the appearance sections in Settings — should reset all appearance preferences (themes, fonts, font sizes, max widths) to defaults
+- [ ] Default values defined in `src/electron/appearance-defaults.ts`
+
+---
+
 ## Gaps and follow-ups
 
 ### No CLI theme validation

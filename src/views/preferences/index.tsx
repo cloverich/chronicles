@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../components/Dialog";
+import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
 import useClient from "../../hooks/useClient";
 import { useIndexerStore } from "../../hooks/useIndexerStore";
 import { usePreferences } from "../../hooks/usePreferences";
@@ -561,6 +562,27 @@ const PreferencesPane = observer((props: Props) => {
                       />
                     </div>
                   </div>
+                </div>
+              </Section>
+              <Section>
+                <div className="flex items-center justify-between">
+                  <SectionTitle
+                    title="Reset appearance"
+                    sub="Reset all appearance settings to Chronicles defaults (themes, fonts, font sizes, max widths)"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      Object.assign(
+                        preferences,
+                        structuredClone(APPEARANCE_DEFAULTS),
+                      );
+                      toast.success("Appearance settings reset to defaults");
+                    }}
+                  >
+                    Reset to defaults
+                  </Button>
                 </div>
               </Section>
               <Section>
