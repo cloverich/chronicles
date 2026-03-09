@@ -43,6 +43,7 @@ const PreferencesPane = observer((props: Props) => {
   const [availableThemes, setAvailableThemes] = React.useState<
     ThemeListEntry[]
   >([]);
+  const [availableFonts, setAvailableFonts] = React.useState<string[]>([]);
   // Code theme selection disabled until #176 is fixed
   // https://github.com/cloverich/chronicles/issues/176
   // const [hljsThemes, setHljsThemes] = React.useState<string[]>([]);
@@ -52,6 +53,10 @@ const PreferencesPane = observer((props: Props) => {
       const themesDir = `${preferences.settingsDir}/themes`;
       const themes = window.chronicles.listAvailableThemes(themesDir);
       setAvailableThemes(themes);
+
+      const fontsDir = `${preferences.settingsDir}/fonts`;
+      const installedFonts = window.chronicles.listInstalledFonts(fontsDir);
+      setAvailableFonts(installedFonts);
       // setHljsThemes(window.chronicles.listHljsThemes());
     }
   }, [props.isOpen, preferences.settingsDir]);
@@ -133,6 +138,11 @@ const PreferencesPane = observer((props: Props) => {
   function openThemesDir() {
     const themesDir = `${preferences.settingsDir}/themes`;
     window.chronicles.openPath(themesDir);
+  }
+
+  function openFontsDir() {
+    const fontsDir = `${preferences.settingsDir}/fonts`;
+    window.chronicles.openPath(fontsDir);
   }
 
   async function importDirectory() {
@@ -337,13 +347,10 @@ const PreferencesPane = observer((props: Props) => {
                 )}
 
                 <div className="my-4">
-                  <button
-                    className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
-                    onClick={openThemesDir}
-                  >
+                  <Button variant="ghost" size="sm" onClick={openThemesDir}>
                     <FolderOpen className="h-3.5 w-3.5" />
                     <span>Open themes folder</span>
-                  </button>
+                  </Button>
                 </div>
               </Section>
               <Section>
@@ -357,6 +364,7 @@ const PreferencesPane = observer((props: Props) => {
                     label="Heading"
                     description="Hubot Sans (bundled) - Main headings and titles"
                     value={preferences.fonts?.heading || "Hubot Sans (bundled)"}
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.heading = font;
                     }}
@@ -365,6 +373,7 @@ const PreferencesPane = observer((props: Props) => {
                   <FontSelector
                     label="Heading 2"
                     value={preferences.fonts?.heading2 || "Default (Heading)"}
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.heading2 =
                         font === "Default (Heading)" ? undefined : font;
@@ -374,6 +383,7 @@ const PreferencesPane = observer((props: Props) => {
                   <FontSelector
                     label="Heading 3"
                     value={preferences.fonts?.heading3 || "Default (Heading)"}
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.heading3 =
                         font === "Default (Heading)" ? undefined : font;
@@ -384,6 +394,7 @@ const PreferencesPane = observer((props: Props) => {
                     label="Title"
                     description="Editor document title (front matter)"
                     value={preferences.fonts?.title || "Default (Heading)"}
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.title =
                         font === "Default (Heading)" ? undefined : font;
@@ -394,6 +405,7 @@ const PreferencesPane = observer((props: Props) => {
                     label="Body"
                     description="Interface and content text"
                     value={preferences.fonts?.body || "Mona Sans (bundled)"}
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.body = font;
                     }}
@@ -402,6 +414,7 @@ const PreferencesPane = observer((props: Props) => {
                     label="Mono"
                     description="Code blocks and dates"
                     value={preferences.fonts?.mono || "IBM Plex Mono (bundled)"}
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.mono = font;
                     }}
@@ -412,6 +425,7 @@ const PreferencesPane = observer((props: Props) => {
                     value={
                       preferences.fonts?.systemBody || "Mona Sans (bundled)"
                     }
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.systemBody = font;
                     }}
@@ -422,6 +436,7 @@ const PreferencesPane = observer((props: Props) => {
                     value={
                       preferences.fonts?.systemHeading || "Hubot Sans (bundled)"
                     }
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.systemHeading = font;
                     }}
@@ -432,10 +447,18 @@ const PreferencesPane = observer((props: Props) => {
                     value={
                       preferences.fonts?.searchBody || "Mona Sans (bundled)"
                     }
+                    options={availableFonts}
                     onChange={(font) => {
                       preferences.fonts.searchBody = font;
                     }}
                   />
+                </div>
+
+                <div className="my-4">
+                  <Button variant="ghost" size="sm" onClick={openFontsDir}>
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    <span>Open fonts folder</span>
+                  </Button>
                 </div>
               </Section>
               <Section>
@@ -727,37 +750,15 @@ function Section(props: PropsWithChildren<any>) {
   );
 }
 
-const BASE_FONT_OPTIONS = [
-  "sans-serif",
-  "serif",
-  "monospace",
+const BUNDLED_FONT_OPTIONS = [
   "Hubot Sans (bundled)",
   "Mona Sans (bundled)",
   "IBM Plex Mono (bundled)",
-  "Arial, sans-serif",
-  "Helvetica, sans-serif",
-  "Times New Roman, serif",
-  "Georgia, serif",
-  "Verdana, sans-serif",
-  "Tahoma, sans-serif",
-  "Trebuchet MS, sans-serif",
-  "Impact, sans-serif",
-  "Palatino, serif",
-  "Garamond, serif",
-  "Monaco, monospace",
-  "Consolas, monospace",
-  "Courier New, monospace",
-  "Lucida Console, monospace",
-  "SF Mono, monospace",
-  "Menlo, monospace",
-  "Fira Code, monospace",
-  "Source Code Pro, monospace",
 ];
 
-const SPECIFIC_FONT_OPTIONS = ["Default (Heading)", ...BASE_FONT_OPTIONS];
+const GENERIC_FONT_OPTIONS = ["sans-serif", "serif", "monospace"];
 
-// Map display names to actual font stacks
-const FONT_STACK_MAP: Record<string, string> = {
+const FONT_OPTION_VALUES: Record<string, string> = {
   "sans-serif":
     'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   serif: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
@@ -771,32 +772,70 @@ const FONT_STACK_MAP: Record<string, string> = {
     '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
 };
 
+const FONT_VALUE_TO_OPTION = new Map(
+  Object.entries(FONT_OPTION_VALUES).map(([option, storedValue]) => [
+    storedValue,
+    option,
+  ]),
+);
+
+function decodeLegacyCustomFontValue(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "string") {
+        return parsed.trim();
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function getStoredFontValue(option: string): string {
+  return FONT_OPTION_VALUES[option] ?? option;
+}
+
+function getDisplayFontValue(value: string): string {
+  const trimmed = value.trim();
+
+  return (
+    FONT_VALUE_TO_OPTION.get(trimmed) ??
+    decodeLegacyCustomFontValue(trimmed) ??
+    trimmed
+  );
+}
+
 function FontSelector({
   label,
   description,
   value,
   onChange,
+  options,
   isSpecific = false,
 }: {
   label: string;
   description?: string;
   value: string;
   onChange: (font: string) => void;
+  options: string[];
   isSpecific?: boolean;
 }) {
-  const options = isSpecific ? SPECIFIC_FONT_OPTIONS : BASE_FONT_OPTIONS;
+  const allOptions = [
+    ...(isSpecific ? ["Default (Heading)"] : []),
+    ...BUNDLED_FONT_OPTIONS,
+    ...options,
+    ...GENERIC_FONT_OPTIONS,
+  ];
 
-  // Convert actual font stack back to display name for the UI
-  const displayValue =
-    Object.entries(FONT_STACK_MAP).find(([_, stack]) => stack === value)?.[0] ||
-    value;
+  const dedupedOptions = Array.from(new Set(allOptions));
+  const displayValue = getDisplayFontValue(value);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedDisplayName = e.target.value;
-    // Convert display name to actual font stack
-    const actualFontStack =
-      FONT_STACK_MAP[selectedDisplayName] || selectedDisplayName;
-    onChange(actualFontStack);
+    onChange(getStoredFontValue(e.target.value));
   };
 
   return (
@@ -806,7 +845,7 @@ function FontSelector({
         <p className="text-muted-foreground text-xs">{description}</p>
       </div>
       <NativeSelect value={displayValue} onChange={handleChange}>
-        {options.map((font) => (
+        {dedupedOptions.map((font) => (
           <option key={font} value={font}>
             {font}
           </option>

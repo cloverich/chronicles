@@ -19,6 +19,10 @@ export function initUserFilesDir(settings: Settings, fallbackDir: string) {
   const resolvedSettingsDir = settings.get("settingsDir") || fallbackDir;
   const themesDir = path.join(resolvedSettingsDir, "themes");
   ensureDir(themesDir);
+
+  // Same for user installed fonts directory.
+  const fontsDir = path.join(resolvedSettingsDir, "fonts");
+  ensureDir(fontsDir);
 }
 
 /**

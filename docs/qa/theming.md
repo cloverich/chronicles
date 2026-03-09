@@ -235,6 +235,31 @@ Testing with a custom dark theme (Neofloss) revealed several issues. All fixed i
 - [ ] "Open themes folder" opens Finder to the themes directory
 - [ ] All above work correctly with System Light theme too (regression)
 
+### Enhancement: Custom fonts
+
+**Changes:**
+
+- User-installed fonts are discovered from `<settingsDir>/fonts/<Family Name>/`
+- A cached `<settingsDir>/fonts/fonts.css` file is generated from those font files
+- On launch, the app loads the cached stylesheet immediately and refreshes it in the background if the directory contents changed
+- Settings → Fonts lists installed families alongside bundled and generic options
+
+**What to verify:**
+
+- [ ] Add a custom font family under `<settingsDir>/fonts/` with supported files (`.woff2`, `.ttf`, `.otf`) directly inside the family folder
+- [ ] Restart the app
+- [ ] Settings → Fonts: the custom family appears in the dropdowns
+- [ ] Select the custom family for a visible slot (for example Body or Heading) — the selection sticks and the UI updates to use that font
+- [ ] Check `<settingsDir>/fonts/fonts.css` on disk — it contains an `@font-face` entry for the installed family
+- [ ] If you add/remove/rename font files manually, relaunch the app and confirm `fonts.css` updates to match
+
+**Regression check:**
+
+- [ ] Bundled font selections still work
+- [ ] Generic font selections still work
+- [ ] "Default (Heading)" still works for Heading 2 / Heading 3 / Title
+- [ ] "Open fonts folder" opens Finder to the fonts directory
+
 ### Code syntax themes (hljs)
 
 Replaced hardcoded Tailwind hljs color classes with dynamically loaded highlight.js theme CSS. Code themes are selectable per-mode in Settings > Appearance. Infrastructure is complete but **syntax highlighting only applies to the first line** due to Plate's `code_line` collapse bug — see [#176](https://github.com/cloverich/chronicles/issues/176).

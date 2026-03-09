@@ -3,13 +3,16 @@ import { getClient } from "./client";
 import "./utils.electron";
 import {
   deleteThemeByName,
+  getInstalledFontsStylesheetHref,
   importThemeFile,
   listAvailableThemes,
   listHljsThemes,
+  listInstalledFonts,
   loadHljsThemeCSS,
   loadThemeByName,
   openDialogSelectDir,
   openPath,
+  refreshInstalledFontsCache,
   selectThemeFile,
 } from "./utils.electron";
 
@@ -20,6 +23,9 @@ contextBridge.exposeInMainWorld("chronicles", {
   importThemeFile,
   listAvailableThemes,
   loadThemeByName,
+  listInstalledFonts,
+  getInstalledFontsStylesheetHref,
+  refreshInstalledFontsCache,
   openPath,
   deleteThemeByName,
   listHljsThemes,
@@ -35,6 +41,9 @@ declare global {
       importThemeFile: typeof importThemeFile;
       listAvailableThemes: typeof listAvailableThemes;
       loadThemeByName: typeof loadThemeByName;
+      listInstalledFonts: typeof listInstalledFonts;
+      getInstalledFontsStylesheetHref: typeof getInstalledFontsStylesheetHref;
+      refreshInstalledFontsCache: typeof refreshInstalledFontsCache;
       openPath: typeof openPath;
       deleteThemeByName: typeof deleteThemeByName;
       listHljsThemes: typeof listHljsThemes;

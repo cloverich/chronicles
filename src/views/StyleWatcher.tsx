@@ -39,6 +39,7 @@ const DERIVABLE_DEFAULTS: Record<string, keyof ThemeColors> = {
 const HLJS_STYLE_ID = "chronicles-hljs-theme";
 const DEFAULT_HLJS_LIGHT = "github";
 const DEFAULT_HLJS_DARK = "github-dark";
+const CUSTOM_FONT_LINK_ID = "chronicles-custom-fonts";
 
 /**
  * Inject or replace the highlight.js theme CSS in a <style> tag.
@@ -58,6 +59,28 @@ function applyHljsTheme(themeName: string): void {
     document.head.appendChild(styleEl);
   }
   styleEl.textContent = css;
+}
+
+function applyCustomFontsStylesheet(href: string | null): void {
+  let linkEl = document.getElementById(
+    CUSTOM_FONT_LINK_ID,
+  ) as HTMLLinkElement | null;
+
+  if (!href) {
+    linkEl?.remove();
+    return;
+  }
+
+  if (!linkEl) {
+    linkEl = document.createElement("link");
+    linkEl.id = CUSTOM_FONT_LINK_ID;
+    linkEl.rel = "stylesheet";
+    document.head.appendChild(linkEl);
+  }
+
+  if (linkEl.href !== href) {
+    linkEl.href = href;
+  }
 }
 
 /**
@@ -102,6 +125,21 @@ function applyThemeColors(colors: ThemeColors): void {
  */
 export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
   React.useEffect(() => {
+    const fontsDir = `${preferences.settingsDir}/fonts`;
+    applyCustomFontsStylesheet(
+      window.chronicles.getInstalledFontsStylesheetHref(fontsDir),
+    );
+
+    const refreshFontsCache = window.setTimeout(() => {
+      const result = window.chronicles.refreshInstalledFontsCache(fontsDir);
+      if (result.changed) {
+        applyCustomFontsStylesheet(result.href);
+        console.info(
+          `StyleWatcher: refreshed custom font cache at "${fontsDir}"`,
+        );
+      }
+    }, 0);
+
     // Watch font preferences
     const fontDisposer = reaction(
       () => toJS(preferences.fonts),
@@ -284,6 +322,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
 
     // Cleanup all reactions and listeners
     return () => {
+      window.clearTimeout(refreshFontsCache);
       fontDisposer();
       maxWidthDisposer();
       fontSizeDisposer();
