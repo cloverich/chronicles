@@ -4,6 +4,8 @@
 
 Evaluate migrating the renderer build from esbuild to Vite while keeping esbuild for main/preload processes.
 
+**Strategic Context:** This migration is a framework-agnostic foundational layer that supports the current Electron app and the future **Custom Swift + WebView (Hybrid)** roadmap (see `docs/designs/framework-comparison-2026.md`).
+
 ## Current Setup Analysis
 
 The build system currently uses esbuild for all three bundles:

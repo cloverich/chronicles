@@ -8,6 +8,8 @@
 
 These are project phases, not app version numbers. The CLI ships bundled into Chronicles. It may be split into a standalone package later if there's demand, but the default is: one repo, one app, new entry point.
 
+**Note on Long-term Architecture:** See `docs/designs/framework-comparison-2026.md` for the roadmap beyond Electron, including the potential pivot to a Custom Swift + WebView (Hybrid) approach.
+
 1. **Phase 0: Extract backend from Electron** — Make `IClient` instantiable as plain Node.js, without Electron. This is the prerequisite that de-risks everything else. (See §2)
 2. **Phase 1: Read-only CLI + index** — 4 read commands + `index`. zod schemas, `--json`, TTY tables. Smoke tests against fixture directories.
 3. **Phase 2: Mutations** — create/update/delete for docs and journals. Full access (no profiles yet).

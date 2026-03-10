@@ -7,9 +7,13 @@
 
 ## Executive Summary
 
-**Recommendation for Chronicles:** Stay on Electron near-term, improve DX via Vite/Vitest migrations (see `VITE_MIGRATION.md`). Tauri is the credible alternative if mobile (iOS/Android) becomes a requirement; Electrobun is too early to plan around.
+**Recommendation for Chronicles (Updated March 2026):**
 
-**Key Finding:** The Vitest migration should proceed independently of any framework decision — it's scoped to the renderer layer and survives any future migration.
+1. **Immediate:** Stay on Electron but prioritize **Vite + Vitest migration** (framework-agnostic foundational layer).
+2. **Editor Pivot:** Begin planning transition from Slate/Plate to **Lexical** (required for iOS reliability and deep editor control).
+3. **Long-term:** Research and prototype a **Custom Swift + WebView (Hybrid)** approach as the primary alternative to Electron for macOS/iOS-first focus.
+
+**Key Finding:** The Vite/Vitest migration is the critical path. It provides the HMR and browser-based testing infrastructure needed for both the current Electron app and any future WebView-based native shell.
 
 ---
 
@@ -33,6 +37,37 @@
 ---
 
 ## Framework Deep Dive
+
+### Custom Swift + WebView (Hybrid)
+
+**What It Is:**
+A native macOS/iOS application using a SwiftUI/AppKit shell (for sidebar, menus, and window management) with an embedded `WKWebView` (WebKit) specifically for the editor core.
+
+**Strategic Fit:**
+
+- **macOS/iOS First:** Allows for "trivial" integration with system services (Spotlight, Widgets, Share Sheet, native Menu Bar).
+- **Performance:** Native Swift backend for indexing and file I/O; high-performance SQLite via `GRDB`.
+- **Portability:** The Lexical-based editor core remains 100% web-compatible for a future browser version.
+
+**Technical Highlights:**
+
+- **Startup/RAM:** <100ms startup, 30-50MB RAM (orders of magnitude better than Electron).
+- **IPC:** Custom bridge using `WKScriptMessageHandler` (JS to Swift) and `evaluateJavaScript` (Swift to JS).
+- **Database:** Native SQLite (GRDB) in the Swift layer, exposed to the WebView via the IPC bridge.
+
+**Limitations:**
+
+- **Apple Only:** Abandoning Windows/Linux support (or requiring a separate C#/.NET bridge for those platforms).
+- **Bridge Boilerplate:** Manual synchronization between Swift and TypeScript logic.
+- **WebKit Dependency:** Tied to the user's OS-level WebKit version (the "Evergreen" Safari problem).
+
+**For Chronicles:**
+
+- **The "Chef's Kiss" Path:** This approach offers the highest possible polish for Apple users.
+- **Lexical is a Prerequisite:** Slate/Plate is notoriously difficult to stabilize in iOS WebViews; Lexical is designed for this environment.
+- **Vite is a Prerequisite:** Development inside a `WKWebView` requires a fast HMR server (Vite) to maintain a tight feedback loop.
+
+---
 
 ### Electrobun
 
