@@ -1,4 +1,12 @@
-import { BrowserWindow, app, dialog, ipcMain, protocol, shell } from "electron";
+import {
+  BrowserWindow,
+  app,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  protocol,
+  shell,
+} from "electron";
 import contextMenu from "electron-context-menu";
 import fs from "fs";
 import path from "path";
@@ -296,6 +304,10 @@ ipcMain.on("select-theme-file", async (event, _arg) => {
   }
 
   event.reply("theme-file-selected", { value: filepath, error: null });
+});
+
+ipcMain.on("set-native-theme", (event, theme: "light" | "dark" | "system") => {
+  nativeTheme.themeSource = theme;
 });
 
 ipcMain.on("open-path", (_event, dirPath: string) => {

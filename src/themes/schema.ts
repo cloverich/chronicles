@@ -128,6 +128,12 @@ export interface ThemeSingleMode {
   version: string;
   /** The display mode this theme targets. */
   mode: "light" | "dark";
+  /**
+   * The inherent brightness of the theme. Used to hint the OS/Electron to
+   * use appropriate native elements (scrollbars, menus, etc).
+   * If omitted, defaults to the value of `mode`.
+   */
+  inherentMode?: "light" | "dark";
   /** Color tokens for the theme's single mode. */
   colors: ThemeColors;
   /** Optional highlight.js theme name for code blocks (e.g. "atom-one-dark", "github"). */
@@ -141,6 +147,11 @@ export interface ThemeBothModes {
   version: string;
   /** Indicates this theme supplies values for both light and dark modes. */
   mode: "both";
+  /**
+   * The inherent brightness of the theme. Since this theme supports both,
+   * this hint is typically not used, but can be provided.
+   */
+  inherentMode?: "light" | "dark";
   /** Color tokens for both modes. */
   colors: {
     light: ThemeColors;
@@ -404,6 +415,15 @@ export function validate(theme: unknown): { valid: boolean; errors: string[] } {
   }
 
   const mode = t.mode as ValidMode;
+
+  // 4b. inherentMode: optional light/dark string.
+  if (t.inherentMode !== undefined) {
+    if (!["light", "dark"].includes(t.inherentMode as string)) {
+      errors.push(
+        `theme.inherentMode must be "light" or "dark", got: ${JSON.stringify(t.inherentMode)}`,
+      );
+    }
+  }
 
   // 5. colors: structure depends on mode.
   if (mode === "both") {
