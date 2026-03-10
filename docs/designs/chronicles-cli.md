@@ -15,6 +15,7 @@ These are project phases, not app version numbers. The CLI ships bundled into Ch
 3. **Phase 2: Mutations** — create/update/delete for docs and journals. Full access (no profiles yet).
 4. **Phase 3: Access profiles** — Per-journal read/write permissions. Re-run existing smoke tests with profiles applied.
 5. **Phase 4: Import + maintenance** — `import`, `config get/set`, shell completions.
+6. **Phase 5: Advanced Sandboxing & Auditability** — Layered OS-level sandboxing and mutation auditing. (See §11)
 
 MCP is a natural fast-follow (see §7) but is out of scope for this design.
 
@@ -468,11 +469,11 @@ Chronicles' actual use cases are: macOS desktop app, iOS mobile app, and a CLI f
 
 ### Language evaluation
 
-| Language | CLI | macOS app | iOS app | Cross-platform CLI | Verdict |
-|----------|-----|-----------|---------|---------------------|---------|
-| **Swift** | Swift Argument Parser | SwiftUI | SwiftUI | Linux yes, Windows rough | Best fit for the product |
-| **Go** | Excellent (cobra, etc.) | No native GUI | gomobile (FFI, second-class) | Excellent | Great CLI, wrong app story |
-| **Rust** | Good (clap) | No native GUI, but Tauri | Tauri (experimental mobile) | Excellent | Hedge if Tauri matures |
+| Language  | CLI                     | macOS app                | iOS app                      | Cross-platform CLI       | Verdict                    |
+| --------- | ----------------------- | ------------------------ | ---------------------------- | ------------------------ | -------------------------- |
+| **Swift** | Swift Argument Parser   | SwiftUI                  | SwiftUI                      | Linux yes, Windows rough | Best fit for the product   |
+| **Go**    | Excellent (cobra, etc.) | No native GUI            | gomobile (FFI, second-class) | Excellent                | Great CLI, wrong app story |
+| **Rust**  | Good (clap)             | No native GUI, but Tauri | Tauri (experimental mobile)  | Excellent                | Hedge if Tauri matures     |
 
 **Swift is the likely choice.** One language across CLI, macOS, and iOS. Swift Package Manager supports multi-target natively:
 
@@ -499,13 +500,13 @@ The Node phase is not throwaway — it produces durable artifacts:
 
 Given the rewrite plan, the Node CLI scope narrows to Phases 0–2. Phase 3 (access profiles) and Phase 4 (import/maintenance) should be implemented directly in the target language.
 
-| Phase | Build in Node? | Rationale |
-|-------|---------------|-----------|
-| Phase 0: Extract backend | Yes | Forces discovery of the real API surface |
-| Phase 1: Read-only + index | Yes | Immediately useful for LLM access |
-| Phase 2: Mutations | Yes | Completes the API surface, proves the schema |
-| Phase 3: Access profiles | No — defer to rewrite | Enforcement logic is better written once in the target language |
-| Phase 4: Import + maintenance | No — defer to rewrite | Low urgency, not needed for the contract |
+| Phase                         | Build in Node?        | Rationale                                                       |
+| ----------------------------- | --------------------- | --------------------------------------------------------------- |
+| Phase 0: Extract backend      | Yes                   | Forces discovery of the real API surface                        |
+| Phase 1: Read-only + index    | Yes                   | Immediately useful for LLM access                               |
+| Phase 2: Mutations            | Yes                   | Completes the API surface, proves the schema                    |
+| Phase 3: Access profiles      | No — defer to rewrite | Enforcement logic is better written once in the target language |
+| Phase 4: Import + maintenance | No — defer to rewrite | Low urgency, not needed for the contract                        |
 
 Phase 0 should be minimal — thin shim to make `IClient` callable from plain Node.js, not a beautiful abstraction. It exists to learn the surface, not to last.
 
@@ -520,7 +521,26 @@ Phase 0 should be minimal — thin shim to make `IClient` callable from plain No
 
 ---
 
-## 11. Relationship to Existing Docs
+## 11. Security & Sandboxing (Future Research)
+
+> **Phase 5.** A layered defense approach for LLM agents.
+
+While Phase 3 (Access Profiles) provides application-level permissions, advanced security for LLM agents is an evolving field. The goal for Chronicles is to provide a high-quality CLI first, then layer on deeper security as the community establishes best practices.
+
+### Community & Industry Lead
+
+We are closely tracking community discussions (e.g., [Hacker News: Agent Safehouse](https://news.ycombinator.com/item?id=47301085)) and similar research into local agent safety. The Chronicles CLI will follow the lead of these community-driven standards.
+
+### Layered Defense Strategy
+
+1.  **OS-Level Sandboxing (External):** Users are encouraged to run the Chronicles CLI within OS-native sandboxes (e.g., macOS `sandbox-exec`). The CLI should be "sandbox-friendly," requiring only documented access to `notesDir` and `~/.config/chronicles`.
+2.  **Access Profiles (Internal):** Application-level scoping (Phase 3) ensures that even if an agent is prompt-injected, it cannot see or modify journals outside its allowed scope.
+3.  **Taint-Aware Sessions:** Future research into a "tainted" mode where the CLI becomes strictly read-only after an agent has read untrusted or external data.
+4.  **Mutation Auditing:** Every create, update, or delete operation performed via the CLI should be tagged in the database with the `profile_name` and `timestamp`. This ensures full accountability and "rollback-ability" for agent-driven changes.
+
+---
+
+## 12. Relationship to Existing Docs
 
 | Doc                                          | Relationship                                                                                 |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
