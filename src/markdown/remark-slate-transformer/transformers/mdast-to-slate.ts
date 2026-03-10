@@ -17,21 +17,19 @@ import {
   ELEMENT_LINK,
   ELEMENT_OL,
   ELEMENT_UL,
-} from "../../../views/edit/plate-types";
+} from "../../plate-types.js";
 
 import {
   createImageGalleryElement,
   SlateImageGallery,
-} from "../../../views/edit/editorv2/features/images";
-import {
   createImage,
   Image,
   Video,
-} from "../../../views/edit/editorv2/features/images/toMdast";
+} from "../../image-gallery.js";
 import {
   SlateNoteLink,
   toSlateNoteLink,
-} from "../../../views/edit/editorv2/features/note-linking/toMdast";
+} from "../../note-linking.js";
 
 export type Decoration = {
   [key in (

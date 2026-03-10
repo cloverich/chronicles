@@ -1,10 +1,10 @@
-import Store from "electron-store";
 import { IPreferences } from "../../electron/settings";
+import { ISettingsStore } from "./settings-interface";
 
 export type IPreferencesClient = PreferencesClient;
 
 export class PreferencesClient {
-  constructor(private settings: Store<IPreferences>) {
+  constructor(private settings: ISettingsStore<IPreferences>) {
     this.settings = settings;
   }
 
@@ -34,7 +34,9 @@ export class PreferencesClient {
 
   setMultiple = async (prefs: Partial<IPreferences>): Promise<void> => {
     this.settings.set(prefs);
-    document.documentElement.dispatchEvent(new Event("settingsUpdated"));
+    if (typeof document !== "undefined") {
+      document.documentElement.dispatchEvent(new Event("settingsUpdated"));
+    }
   };
 
   set = async <T extends keyof IPreferences>(
@@ -48,6 +50,8 @@ export class PreferencesClient {
     // todo: wire Preferences mobx store through settings.onDidAnyChange,
     // maybe we can ditch this store entirely and just use interface and
     // ....
-    document.documentElement.dispatchEvent(new Event("settingsUpdated"));
+    if (typeof document !== "undefined") {
+      document.documentElement.dispatchEvent(new Event("settingsUpdated"));
+    }
   };
 }

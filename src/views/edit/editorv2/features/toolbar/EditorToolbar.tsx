@@ -17,7 +17,7 @@ import {
   MARK_ITALIC,
   MARK_STRIKETHROUGH,
   MARK_UNDERLINE,
-} from "../../../plate-types";
+} from "../../../../markdown/plate-types";
 import { Toolbar, ToolbarButton, ToolbarGroup } from "../../components/Toolbar";
 import { TooltipProvider } from "../../components/Tooltip";
 import { ChangeBlockDropdown } from "./ChangeBlockDropdown";

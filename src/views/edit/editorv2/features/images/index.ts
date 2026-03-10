@@ -1,12 +1,3 @@
-export {
-  ELEMENT_IMAGE_GALLERY,
-  IImageGalleryElement,
-  ImageGalleryElement,
-} from "./ImageGalleryElement";
-
+export * from "./ImageGalleryElement.tsx";
 export { createImageGalleryPlugin } from "./createImageGalleryElementPlugin";
-export {
-  SlateImageGallery,
-  createImageGalleryElement,
-  createImagesFromImageGallery,
-} from "./toMdast";
+export * from "./toMdast";

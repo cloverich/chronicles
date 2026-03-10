@@ -6,19 +6,18 @@ import { Button } from "../../../../../components/Button";
 import * as Dialog from "../../../../../components/Dialog";
 import { Icons } from "../../../../../components/icons";
 import { ImageDisplay } from "./ImageDisplay";
+import {
+  ELEMENT_IMAGE_GALLERY,
+  IImageGalleryElement as IImageGalleryElementBase,
+  ImageMetadata,
+} from "../../../../../markdown/image-gallery";
 
-export const ELEMENT_IMAGE_GALLERY = "imageGalleryElement";
+export { ELEMENT_IMAGE_GALLERY };
+export type { ImageMetadata };
 
-type ImageMetadata = {
-  alt: string;
-  url: string; // "../_attachments/03duel8ega71y7iucmf6uv4zg.png"
-  title: string;
-};
-
-export interface IImageGalleryElement extends TElement {
-  images: ImageMetadata[];
-  type: typeof ELEMENT_IMAGE_GALLERY;
-}
+export interface IImageGalleryElement
+  extends IImageGalleryElementBase,
+    TElement {}
 
 /**
  * When multiple images appear consecutively in the document, they are grouped

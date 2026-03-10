@@ -1,6 +1,6 @@
 import { createPlatePlugin } from "platejs/react";
 import { Path } from "slate";
-import { ELEMENT_PARAGRAPH } from "../../../plate-types";
+import { ELEMENT_PARAGRAPH } from "../../../../markdown/plate-types";
 
 /**
  * Allows Enter (without Shift) to exit code block and create a paragraph

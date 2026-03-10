@@ -14,21 +14,18 @@ import {
   ELEMENT_LIC,
   ELEMENT_OL,
   ELEMENT_UL,
-} from "../../../views/edit/plate-types";
+} from "../../plate-types.js";
 
 import {
   createImagesFromImageGallery,
   ELEMENT_IMAGE_GALLERY,
-} from "../../../views/edit/editorv2/features/images";
-
-import {
   Image,
   Video,
-} from "../../../views/edit/editorv2/features/images/toMdast";
+} from "../../image-gallery.js";
 import {
-  createLinkFromNoteLinkFactory,
+  toMdastLinkFactory as createLinkFromNoteLinkFactory,
   ELEMENT_NOTE_LINK,
-} from "../../../views/edit/editorv2/features/note-linking";
+} from "../../note-linking.js";
 
 // NOTE: Changed these, they were just mirroring mdasts' before
 // which doesn't make sense

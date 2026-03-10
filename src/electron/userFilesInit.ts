@@ -1,6 +1,7 @@
 import path from "path";
 import { ensureDir } from "./ensureDir.js";
-import { Settings } from "./settings.js";
+import { IPreferences } from "./settings.js";
+import { ISettingsStore } from "../preload/client/settings-interface.js";
 
 /**
  * Validate user file directories, creating them if they do not exist
@@ -10,13 +11,16 @@ import { Settings } from "./settings.js";
  *  on MacOS: ~/Library/Application Support/Chronicles
  * @returns void
  */
-export function initUserFilesDir(settings: Settings, fallbackDir: string) {
+export function initUserFilesDir(
+  settings: ISettingsStore<IPreferences>,
+  fallbackDir: string,
+) {
   initDir(settings, "notesDir", path.join(fallbackDir, "/notes"));
   initDir(settings, "settingsDir", fallbackDir);
 
   // Ensure the themes directory exists inside settingsDir.
   // This is where user-installed theme files will be stored.
-  const resolvedSettingsDir = settings.get("settingsDir") || fallbackDir;
+  const resolvedSettingsDir = (settings.get("settingsDir") as string) || fallbackDir;
   const themesDir = path.join(resolvedSettingsDir, "themes");
   ensureDir(themesDir);
 
@@ -34,11 +38,11 @@ export function initUserFilesDir(settings: Settings, fallbackDir: string) {
  *  if it does not exist; will be set in settings afterwards
  */
 function initDir(
-  settings: Settings,
+  settings: ISettingsStore<IPreferences>,
   settingsKey: "notesDir" | "settingsDir",
   fallbackPath: string,
 ) {
-  let assetsPath = settings.get(settingsKey);
+  let assetsPath = settings.get(settingsKey) as string;
 
   try {
     ensureDir(assetsPath);

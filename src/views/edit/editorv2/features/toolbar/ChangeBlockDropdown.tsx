@@ -15,7 +15,7 @@ import {
   ELEMENT_OL,
   ELEMENT_PARAGRAPH,
   ELEMENT_UL,
-} from "../../../plate-types";
+} from "../../../../markdown/plate-types";
 
 import {
   DropdownMenu,

@@ -1,5 +1,5 @@
 import Knex from "knex";
-import { Settings } from "../../electron/settings";
+import { IPreferences } from "../../electron/settings";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { FilesClient } from "./files";
@@ -9,9 +9,10 @@ import { JournalsClient } from "./journals";
 import { PreferencesClient } from "./preferences";
 import { TagsClient } from "./tags";
 import { IClient } from "./types";
+import { ISettingsStore } from "./settings-interface";
 
 interface ClientFactoryParams {
-  store: Settings;
+  store: ISettingsStore<IPreferences>;
 }
 
 /**

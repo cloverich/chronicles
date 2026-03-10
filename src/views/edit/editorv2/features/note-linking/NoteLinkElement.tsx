@@ -2,15 +2,10 @@ import { PlateElement, useElement } from "platejs/react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-import { BaseElement } from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-
-export const ELEMENT_NOTE_LINK = "noteLinkElement";
-
-export interface INoteLinkElement extends BaseElement {
-  title: string;
-  noteId: string;
-  journalName: string;
-}
+import {
+  ELEMENT_NOTE_LINK,
+  INoteLinkElement,
+} from "../../../../../markdown/note-linking";
 
 export const NoteLinkElement = React.forwardRef<
   React.ElementRef<typeof PlateElement>,

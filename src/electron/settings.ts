@@ -41,7 +41,7 @@ export interface IPreferences {
   };
 }
 
-const defaults: IPreferences = {
+export const defaults: IPreferences = {
   databaseUrl: "",
   defaultJournal: null,
   archivedJournals: {},
@@ -55,6 +55,7 @@ const defaults: IPreferences = {
 export const createSettings = (settingsDir?: string) => {
   return new Store<IPreferences>({
     name: "settings",
+    projectName: "Chronicles",
     defaults,
     clearInvalidConfig: true,
     ...(settingsDir ? { cwd: settingsDir } : {}),

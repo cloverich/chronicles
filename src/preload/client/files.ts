@@ -1,14 +1,7 @@
-import Store from "electron-store";
-
-import fs from "fs";
-import path from "path";
-import sharp from "sharp";
-import { mkdirp } from "../utils/fs-utils";
-const { readFile, writeFile, access, stat } = fs.promises;
-
 import { IPreferences } from "../../electron/settings";
 import { NotFoundError } from "../errors";
 import { createId } from "./util";
+import { ISettingsStore } from "./settings-interface";
 
 interface UploadResponse {
   filename: string;
@@ -76,7 +69,7 @@ export interface UploadImageResult {
 }
 
 export class FilesClient {
-  constructor(private settings: Store<IPreferences>) {}
+  constructor(private settings: ISettingsStore<IPreferences>) {}
 
   /**
    * The uploadImage option on plate's createImagesPlugin.

@@ -1,7 +1,8 @@
 import path from "path";
 import migrate from "./migrations/index.js";
-import { Settings } from "./settings.js";
+import { IPreferences } from "./settings.js";
 import { initUserFilesDir } from "./userFilesInit.js";
+import { ISettingsStore } from "../preload/client/settings-interface.js";
 
 /**
  * Initializes the application environment: user files directories and database.
@@ -11,7 +12,7 @@ import { initUserFilesDir } from "./userFilesInit.js";
  * @returns {{ databaseUrl: string, notesDir: string }}
  */
 export function initAppEnvironment(
-  settings: Settings,
+  settings: ISettingsStore<IPreferences>,
   fallbackDir: string,
   databaseUrl?: string,
 ) {
@@ -19,14 +20,14 @@ export function initAppEnvironment(
   initUserFilesDir(settings, fallbackDir);
 
   // 2. Determine notesDir from settings (set by initUserFilesDir)
-  const notesDir = settings.get("notesDir");
+  const notesDir = settings.get("notesDir") as string;
 
   // 3. Set up the database URL in settings
   let dbUrl = databaseUrl;
   if (!dbUrl) {
     dbUrl = path.join(fallbackDir, "chronicles.db");
   }
-  if (settings.get("databaseUrl") !== dbUrl) {
+  if ((settings.get("databaseUrl") as string) !== dbUrl) {
     settings.set("databaseUrl", dbUrl);
   }
 

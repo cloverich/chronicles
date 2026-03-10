@@ -13,7 +13,7 @@ import {
   type PlateLeafProps,
 } from "platejs/react";
 
-import { CODE_BLOCK_LANGUAGES } from "../../../plate-types";
+import { CODE_BLOCK_LANGUAGES } from "../../../../markdown/plate-types";
 
 // import {
 //   Command,
