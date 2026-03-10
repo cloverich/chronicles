@@ -8,10 +8,13 @@ import {
   toJS,
 } from "mobx";
 import { toast } from "sonner";
-import { IClient } from "../../hooks/useClient";
+import type { IClient } from "../../hooks/useClient";
 import { slateToMdast, slateToString, stringToSlate } from "../../markdown";
 import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import { FrontMatter, GetDocumentResponse } from "../../preload/client/types";
+import type {
+  FrontMatter,
+  GetDocumentResponse,
+} from "../../preload/client/types";
 
 function isExistingDocument(
   doc: GetDocumentResponse,

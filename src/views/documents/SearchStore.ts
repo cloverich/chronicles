@@ -10,7 +10,7 @@ import { createContext, useContext } from "react";
 
 import { IndexerStore } from "../../hooks/stores/indexer";
 import { JournalsStore } from "../../hooks/stores/journals";
-import { IClient } from "../../hooks/useClient";
+import type { IClient } from "../../hooks/useClient";
 import { SearchParser } from "./SearchParser";
 import { SearchToken } from "./search/tokens";
 

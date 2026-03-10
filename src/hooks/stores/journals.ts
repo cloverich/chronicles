@@ -1,6 +1,6 @@
 import { computed, makeObservable, observable } from "mobx";
 import { JournalWithCount } from "../../preload/client/journals";
-import { IClient, JournalResponse } from "../useClient";
+import type { IClient, JournalResponse } from "../useClient";
 
 export class JournalsStore {
   loading: boolean = true;

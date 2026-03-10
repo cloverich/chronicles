@@ -54,28 +54,44 @@ app.whenReady().then(() => {
  * @param {string} chroniclesUrl The "chronicles://" URL to convert
  */
 function validateChroniclesUrl(chroniclesUrl: string) {
-  // NOTE: chroniclesUrl SHOULD start with chronicles://../_attachments/<filename>
-  // NOTE: UI should also validate this, to tell user how to fix (if it comes up)
-  if (!chroniclesUrl?.startsWith("chronicles://../_attachments")) {
+  let baseDir: string | null = null;
+  let relativePath: string | null = null;
+
+  if (chroniclesUrl?.startsWith("chronicles://../_attachments/")) {
+    const notesDir = settings.get("notesDir");
+    if (!notesDir) {
+      console.error(
+        "[validateChroniclesUrl]: notesDir is not set - unable to load image",
+      );
+      return null;
+    }
+
+    baseDir = path.join(notesDir, "_attachments");
+    relativePath = decodeURI(
+      chroniclesUrl.slice("chronicles://../_attachments/".length),
+    );
+  } else if (chroniclesUrl?.startsWith("chronicles://../_settings/fonts/")) {
+    const settingsDir = settings.get("settingsDir");
+    if (!settingsDir) {
+      console.error(
+        "[validateChroniclesUrl]: settingsDir is not set - unable to load font",
+      );
+      return null;
+    }
+
+    baseDir = path.join(settingsDir, "fonts");
+    relativePath = decodeURI(
+      chroniclesUrl.slice("chronicles://../_settings/fonts/".length),
+    );
+  } else {
     console.warn(
-      "[validateChroniclesUrl]: chronicles:// file handler blocking access to file outside of _attachments directory",
+      "[validateChroniclesUrl]: chronicles:// file handler blocked unsupported path:",
+      chroniclesUrl,
     );
     return null;
   }
 
-  // strip chronicles:// - so we can treat as a file path
-  // strip ../ - we prepend the root directory (notesDir) to make absolute path
-  const url = decodeURI(chroniclesUrl.slice("chronicles://../".length));
-  const notesDir = settings.get("notesDir");
-  if (!notesDir) {
-    console.error(
-      "[validateChroniclesUrl]: notesDir is not set - unable to load image",
-    );
-    return null;
-  }
-
-  const baseDir = path.join(notesDir);
-  const absPath = path.join(baseDir, url);
+  const absPath = path.join(baseDir, relativePath);
   const normalizedPath = path.normalize(absPath);
 
   if (!isPathWithinDirectory(normalizedPath, baseDir)) {
@@ -167,6 +183,22 @@ app.on("web-contents-created", (event, contents) => {
 // const width = app.isPackaged ? 768 : 1400;
 const width = 800;
 
+function getDevContentSecurityPolicy(viteDevServerUrl: string) {
+  const devServerUrl = new URL(viteDevServerUrl);
+  const devServerOrigin = devServerUrl.origin;
+  const devServerWsOrigin = `${devServerUrl.protocol === "https:" ? "wss" : "ws"}://${devServerUrl.host}`;
+
+  return (
+    `default-src 'self' ${devServerOrigin}; ` +
+    `script-src 'self' 'unsafe-inline' ${devServerOrigin}; ` +
+    `style-src 'self' 'unsafe-inline' ${devServerOrigin}; ` +
+    `img-src 'self' chronicles://* data: ${devServerOrigin}; ` +
+    `media-src chronicles://* https:; ` +
+    `font-src 'self' chronicles://* ${devServerOrigin}; ` +
+    `connect-src 'self' chronicles://* https: ${devServerWsOrigin} ${devServerOrigin};`
+  );
+}
+
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -187,7 +219,22 @@ function createWindow() {
     },
   });
 
-  mainWindow.loadFile("index.html");
+  if (process.env.VITE_DEV_SERVER_URL) {
+    const devCsp = getDevContentSecurityPolicy(process.env.VITE_DEV_SERVER_URL);
+    mainWindow.webContents.session.webRequest.onHeadersReceived(
+      (details, callback) => {
+        callback({
+          responseHeaders: {
+            ...details.responseHeaders,
+            "Content-Security-Policy": [devCsp],
+          },
+        });
+      },
+    );
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+  } else {
+    mainWindow.loadFile("index.html");
+  }
   mainWindow.once("ready-to-show", () => {
     if (!process.env.HEADLESS) {
       mainWindow?.show();

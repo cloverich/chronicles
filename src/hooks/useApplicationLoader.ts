@@ -1,6 +1,7 @@
 import React from "react";
 import { BulkOperationsStore } from "./stores/BulkOperationsStore";
-import { ApplicationStore, IApplicationState } from "./stores/application";
+import type { IApplicationState } from "./stores/application";
+import { ApplicationStore } from "./stores/application";
 import { IndexerStore } from "./stores/indexer";
 import { JournalsStore } from "./stores/journals";
 import useClient from "./useClient";

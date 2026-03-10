@@ -1,12 +1,12 @@
 export {
   ELEMENT_IMAGE_GALLERY,
-  IImageGalleryElement,
   ImageGalleryElement,
 } from "./ImageGalleryElement";
+export type { IImageGalleryElement } from "./ImageGalleryElement";
 
 export { createImageGalleryPlugin } from "./createImageGalleryElementPlugin";
 export {
-  SlateImageGallery,
   createImageGalleryElement,
   createImagesFromImageGallery,
 } from "./toMdast";
+export type { SlateImageGallery } from "./toMdast";

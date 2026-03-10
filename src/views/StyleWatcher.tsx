@@ -40,7 +40,7 @@ const DERIVABLE_DEFAULTS: Record<string, keyof ThemeColors> = {
 const HLJS_STYLE_ID = "chronicles-hljs-theme";
 const DEFAULT_HLJS_LIGHT = "github";
 const DEFAULT_HLJS_DARK = "github-dark";
-const CUSTOM_FONT_LINK_ID = "chronicles-custom-fonts";
+const CUSTOM_FONT_STYLE_ID = "chronicles-custom-fonts";
 
 /**
  * Inject or replace the highlight.js theme CSS in a <style> tag.
@@ -62,25 +62,24 @@ function applyHljsTheme(themeName: string): void {
   styleEl.textContent = css;
 }
 
-function applyCustomFontsStylesheet(href: string | null): void {
-  let linkEl = document.getElementById(
-    CUSTOM_FONT_LINK_ID,
-  ) as HTMLLinkElement | null;
+function applyCustomFontsStylesheet(css: string | null): void {
+  let styleEl = document.getElementById(
+    CUSTOM_FONT_STYLE_ID,
+  ) as HTMLStyleElement | null;
 
-  if (!href) {
-    linkEl?.remove();
+  if (!css) {
+    styleEl?.remove();
     return;
   }
 
-  if (!linkEl) {
-    linkEl = document.createElement("link");
-    linkEl.id = CUSTOM_FONT_LINK_ID;
-    linkEl.rel = "stylesheet";
-    document.head.appendChild(linkEl);
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = CUSTOM_FONT_STYLE_ID;
+    document.head.appendChild(styleEl);
   }
 
-  if (linkEl.href !== href) {
-    linkEl.href = href;
+  if (styleEl.textContent !== css) {
+    styleEl.textContent = css;
   }
 }
 
@@ -127,14 +126,13 @@ function applyThemeColors(colors: ThemeColors): void {
 export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
   React.useEffect(() => {
     const fontsDir = `${preferences.settingsDir}/fonts`;
-    applyCustomFontsStylesheet(
-      window.chronicles.getInstalledFontsStylesheetHref(fontsDir),
-    );
+    const initialFonts = window.chronicles.refreshInstalledFontsCache(fontsDir);
+    applyCustomFontsStylesheet(initialFonts.css);
 
     const refreshFontsCache = window.setTimeout(() => {
       const result = window.chronicles.refreshInstalledFontsCache(fontsDir);
       if (result.changed) {
-        applyCustomFontsStylesheet(result.href);
+        applyCustomFontsStylesheet(result.css);
         console.info(
           `StyleWatcher: refreshed custom font cache at "${fontsDir}"`,
         );
@@ -326,6 +324,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
     // Cleanup all reactions and listeners
     return () => {
       window.clearTimeout(refreshFontsCache);
+      applyCustomFontsStylesheet(null);
       fontDisposer();
       maxWidthDisposer();
       fontSizeDisposer();

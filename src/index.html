@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <title>Chronicles</title>
-    <link href="renderer.bundle.css" rel="stylesheet" />
     <meta
       http-equiv="Content-Security-Policy"
       content="
@@ -12,7 +11,7 @@
       style-src 'self' 'unsafe-inline';
       img-src 'self' chronicles://* data:;
       media-src chronicles://* https:;
-      font-src 'self';
+      font-src 'self' chronicles://*;
       connect-src 'self' chronicles://* https:;
     "
     />
@@ -21,6 +20,6 @@
   <!-- Body background color attempts to hide the flash of white on load - flash of black is _slightly_ less jarring -->
   <body style="background-color: #1c1d22">
     <main id="app"></main>
-    <script type="module" src="renderer.bundle.mjs"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

@@ -5,6 +5,7 @@ import { pathToFileURL } from "url";
 const SUPPORTED_FONT_EXTENSIONS = new Set([".ttf", ".otf", ".woff2"]);
 const VARIABLE_FONT_FAMILIES = new Set(["Mona Sans", "Hubot Sans"]);
 const FONT_CSS_FILENAME = "fonts.css";
+const CHRONICLES_SETTINGS_FONTS_PREFIX = "chronicles://../_settings/fonts";
 
 interface FontFaceAttributes {
   fontStyle: "normal" | "italic";
@@ -76,6 +77,15 @@ function readFileSafe(filePath: string): string | null {
   }
 }
 
+function toChroniclesSettingsFontUrl(
+  fontsDir: string,
+  filePath: string,
+): string {
+  const relativePath = path.relative(fontsDir, filePath);
+  const normalizedPath = relativePath.split(path.sep).join("/");
+  return `${CHRONICLES_SETTINGS_FONTS_PREFIX}/${encodeURI(normalizedPath)}`;
+}
+
 /**
  * List user-installed font families from `<settingsDir>/fonts`.
  * Family names are folder names, sorted alphabetically.
@@ -116,7 +126,7 @@ export function buildFontsCSSFile(fontsDir: string): string {
       }
 
       const attributes = getFontFaceAttributes(familyName, fileName);
-      const fontUrl = pathToFileURL(filePath).href;
+      const fontUrl = toChroniclesSettingsFontUrl(fontsDir, filePath);
       const format = getFormatFromExtension(filePath);
 
       fontFaceRules.push(`@font-face {
@@ -160,6 +170,7 @@ export function getFontsCSSStylesheetHref(fontsDir: string): string | null {
 
 export interface RefreshInstalledFontsCacheResult {
   changed: boolean;
+  css: string | null;
   href: string | null;
 }
 
@@ -177,15 +188,16 @@ export function refreshFontsCSSFile(
   if (!nextCss) {
     if (previousCss !== null) {
       fs.rmSync(cssPath, { force: true });
-      return { changed: true, href: null };
+      return { changed: true, css: null, href: null };
     }
 
-    return { changed: false, href: null };
+    return { changed: false, css: null, href: null };
   }
 
   if (previousCss === nextCss) {
     return {
       changed: false,
+      css: nextCss,
       href: getFontsCSSStylesheetHref(fontsDir),
     };
   }
@@ -193,6 +205,7 @@ export function refreshFontsCSSFile(
   fs.writeFileSync(cssPath, nextCss, "utf8");
   return {
     changed: true,
+    css: nextCss,
     href: getFontsCSSStylesheetHref(fontsDir),
   };
 }

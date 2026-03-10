@@ -2,10 +2,13 @@ import cp from "child_process";
 import electron from "electron";
 import esbuild from "esbuild";
 import lodash from "lodash";
+import { createServer } from "vite";
 
-// Builds and watches the application for development
-// Bundles the renderer, preload, and main processes, and
-// starts Electron, then watches for changes
+const vite = await createServer({ configFile: "./vite.config.ts" });
+await vite.listen();
+const VITE_DEV_SERVER_URL =
+  vite.resolvedUrls?.local[0] ?? "http://localhost:5173";
+console.log(`Vite dev server running at ${VITE_DEV_SERVER_URL}`);
 
 const startTracker = new Set();
 let didStart = false;
@@ -25,7 +28,7 @@ function startElectronPlugin(name) {
           startTracker.add(name);
         }
 
-        if (startTracker.size !== 3) return;
+        if (startTracker.size !== 2) return;
 
         if (didStart) {
           restartElectron();
@@ -48,6 +51,7 @@ function startElectron() {
   checkTypes();
   eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
     stdio: "inherit",
+    env: { ...process.env, VITE_DEV_SERVER_URL },
   });
 
   eprocess.on("error", (error) => {
@@ -70,6 +74,7 @@ const restartElectron = lodash.debounce(function startElectron() {
   console.log("restarting electron");
   eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
     stdio: "inherit",
+    env: { ...process.env, VITE_DEV_SERVER_URL },
   });
 
   eprocess.on("error", (error) => {
@@ -88,27 +93,6 @@ const checkTypes = lodash.debounce(function checkTypes() {
     process.exit(1);
   });
 }, 200);
-
-async function watchRenderer() {
-  const ctxRenderer = await esbuild.context({
-    entryPoints: ["src/index.tsx"],
-    outfile: "src/renderer.bundle.mjs",
-    bundle: true,
-    platform: "browser",
-    format: "esm",
-    plugins: [startElectronPlugin("renderer")],
-    sourcemap: true,
-    loader: {
-      ".woff2": "file",
-      ".woff": "file",
-      ".ttf": "file",
-      ".otf": "file",
-    },
-    assetNames: "assets/fonts/[name]-[hash]",
-  });
-
-  await ctxRenderer.watch();
-}
 
 async function watchPreload() {
   const ctxPreload = await esbuild.context({
@@ -139,6 +123,5 @@ async function watchMain() {
   await ctxMain.watch();
 }
 
-watchMain();
-watchPreload();
-watchRenderer();
+await watchMain();
+await watchPreload();
