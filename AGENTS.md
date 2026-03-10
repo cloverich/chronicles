@@ -1,6 +1,8 @@
 # AGENTS.md
 
-## Active project: Theming (#443)
+## Active Projects
+
+### Theming (#443)
 
 To rebuild context on the theming work, read these in order:
 
@@ -9,6 +11,14 @@ To rebuild context on the theming work, read these in order:
 3. **Design doc:** [docs/designs/theming.md](docs/designs/theming.md) — full architecture and implementation plan
 
 Remove this section once the theming project is complete.
+
+### Vite Migration (Renderer)
+
+Migrate the renderer bundle from esbuild to Vite for HMR, integrated Tailwind, and Vitest enablement. Main/preload stay on esbuild.
+
+- **Plan:** [docs/plans/pending/vite-migration.md](docs/plans/pending/vite-migration.md) — implementation steps, acceptance criteria, risks
+
+Remove this section once the migration is complete.
 
 ---
 

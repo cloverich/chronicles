@@ -458,16 +458,69 @@ This test suite is **fully independent** of the Vitest migration, Playwright E2E
 
 ---
 
-## 9. Open Questions
+## 9. Native Rewrite Strategy
 
-- **Invocation (resolved):** `package.json` `bin` field pointing to `dist/cli.js` with a `#!/usr/bin/env node` shebang. After `yarn link`, this gives a real `chronicles` command in `$PATH`. Standard Node.js CLI pattern (same as `prettier`, `eslint`, `tsc`). Standalone native binary (`bun build --compile`, Go/Rust rewrite) is a future optimization if startup time or distribution matters.
-- **Content via stdin:** For `docs create`, should content come from stdin, `--file`, or `--content`? Probably all three, with stdin as the default.
-- **Attachment handling:** The `files` client handles image upload/processing. In CLI context, probably `chronicles attach <file> --doc <id>` as a separate command.
-- **Config bootstrap:** First run needs `notesDir` and `databaseUrl`. If the Electron app has been run, settings already exist. If not, interactive setup in TTY, error with instructions in pipe mode.
+The Node.js CLI (Phases 0–2) is a stepping stone. The backend will be rewritten in a native language, likely Swift.
+
+### Why rewrite?
+
+Chronicles' actual use cases are: macOS desktop app, iOS mobile app, and a CLI for LLM integration. Electron serves the first today but blocks the second entirely. A native backend shared across all three targets is the end state.
+
+### Language evaluation
+
+| Language | CLI | macOS app | iOS app | Cross-platform CLI | Verdict |
+|----------|-----|-----------|---------|---------------------|---------|
+| **Swift** | Swift Argument Parser | SwiftUI | SwiftUI | Linux yes, Windows rough | Best fit for the product |
+| **Go** | Excellent (cobra, etc.) | No native GUI | gomobile (FFI, second-class) | Excellent | Great CLI, wrong app story |
+| **Rust** | Good (clap) | No native GUI, but Tauri | Tauri (experimental mobile) | Excellent | Hedge if Tauri matures |
+
+**Swift is the likely choice.** One language across CLI, macOS, and iOS. Swift Package Manager supports multi-target natively:
+
+```
+ChroniclesCore/     ← Swift package: SQLite, indexing, search, file ops
+ChroniclesCLI/      ← Swift Argument Parser, imports Core
+ChroniclesMacOS/    ← SwiftUI, imports Core
+ChroniclesIOS/      ← SwiftUI, imports Core
+```
+
+**Cross-platform note:** Swift compiles on Linux — the CLI and core library are not Apple-only. Only SwiftUI (the GUI layer) is. A non-Apple GUI would be a separate frontend against the same core. Linux distribution requires the Swift runtime or a statically-linked binary.
+
+### What the Node CLI provides to the rewrite
+
+The Node phase is not throwaway — it produces durable artifacts:
+
+- **Command taxonomy and UX** — the `chronicles <domain> <verb>` surface, validated by use
+- **Output schemas** — JSON shapes, exit codes, TTY table formats (zod → Swift Codable / Go structs trivially)
+- **Smoke tests** — language-agnostic (spawn binary, check stdout/exit codes). Point them at the new binary.
+- **Test fixtures** — the markdown directories
+- **Access profile config format** — `access.yml` design (implement in the target language, not Node)
+
+### Revised Node CLI scope
+
+Given the rewrite plan, the Node CLI scope narrows to Phases 0–2. Phase 3 (access profiles) and Phase 4 (import/maintenance) should be implemented directly in the target language.
+
+| Phase | Build in Node? | Rationale |
+|-------|---------------|-----------|
+| Phase 0: Extract backend | Yes | Forces discovery of the real API surface |
+| Phase 1: Read-only + index | Yes | Immediately useful for LLM access |
+| Phase 2: Mutations | Yes | Completes the API surface, proves the schema |
+| Phase 3: Access profiles | No — defer to rewrite | Enforcement logic is better written once in the target language |
+| Phase 4: Import + maintenance | No — defer to rewrite | Low urgency, not needed for the contract |
+
+Phase 0 should be minimal — thin shim to make `IClient` callable from plain Node.js, not a beautiful abstraction. It exists to learn the surface, not to last.
 
 ---
 
-## 10. Relationship to Existing Docs
+## 10. Open Questions (Updated)
+
+- **Content via stdin:** For `docs create`, should content come from stdin, `--file`, or `--content`? Probably all three, with stdin as the default.
+- **Attachment handling:** The `files` client handles image upload/processing. In CLI context, probably `chronicles attach <file> --doc <id>` as a separate command.
+- **Config bootstrap:** First run needs `notesDir` and `databaseUrl`. If the Electron app has been run, settings already exist. If not, interactive setup in TTY, error with instructions in pipe mode.
+- **Rewrite timing:** When to start the Swift rewrite — after Phase 2 is stable, or in parallel? Likely after, so the smoke tests exist first.
+
+---
+
+## 11. Relationship to Existing Docs
 
 | Doc                                          | Relationship                                                                                 |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------- |

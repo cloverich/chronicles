@@ -1,124 +1,84 @@
-# Evaluate and Migrate Renderer to Vite
+# Migrate Renderer to Vite
 
-## Overview
+## Goals
 
-Evaluate migrating the renderer build from esbuild to Vite while keeping esbuild for main/preload processes.
+This migration exists to solve specific developer experience problems, not to modernize for its own sake.
 
-**Strategic Context:** This migration is a framework-agnostic foundational layer that supports the current Electron app and the future **Custom Swift + WebView (Hybrid)** roadmap (see `docs/designs/framework-comparison-2026.md`).
+1. **Enable Vitest.** Vitest shares the Vite config and is required for the testing strategy in [testing-philosophy.md](../designs/testing-philosophy.md). The editor (Plate/SlateJS) needs real browser testing (`@vitest/browser`), which is currently blocked. Vite for the renderer is the prerequisite. See [Follow-On: Vitest](#follow-on-vitest) below.
+2. **HMR for the renderer.** Today, every renderer change — including a single CSS class addition — triggers a full Electron restart (~2-5 seconds). Vite's dev server gives instant feedback via Hot Module Replacement. React Fast Refresh preserves component state. This is the primary goal.
+3. **Eliminate Tailwind pre-compilation.** The `prestart` script runs `tailwindcss` CLI before every `yarn start`. New Tailwind utility classes (including arbitrary variants) don't take effect until restart. With Vite, PostCSS processes Tailwind on-demand — no pre-step, no restart for new classes.
 
-## Current Setup Analysis
+## Non-Goals
 
-The build system currently uses esbuild for all three bundles:
+- **Do NOT use `electron-vite`.** It's tempting (handles all three bundles), but the backend may migrate out of Node.js/Electron entirely (see [framework-comparison-2026.md](../designs/framework-comparison-2026.md)). Coupling all bundles to Vite creates unnecessary migration surface. Keep esbuild for main/preload.
+- **Do NOT use `vite-plugin-electron-renderer`.** The renderer doesn't use Node.js APIs — context isolation is on, all Node access goes through the preload bridge.
+- **Do NOT add code splitting.** This is a local desktop app, not a web app. Load everything upfront. No `manualChunks`, no lazy routes.
+- **Do NOT unconditionally open DevTools in dev mode.** The existing behavior (`Cmd+Shift+I` or right-click → Inspect) is fine.
 
-- **Renderer** (`src/index.tsx` → `src/renderer.bundle.mjs`) - React app
-- **Preload** (`src/preload/index.ts` → `src/preload.bundle.mjs`) - IPC bridge
-- **Main** (`src/electron/index.ts` → `src/main.bundle.mjs`) - Electron main process
+## Current State
 
-### Current Pain Points
+The build system uses esbuild for all three bundles:
 
-1. **No HMR** - Every renderer change requires full Electron restart (scripts/dev.mjs:59-79)
-2. **CSS pre-compilation** - Tailwind must be compiled before starting (package.json:16)
-3. **Slow feedback loop** - Even small CSS changes trigger full restart; new Tailwind utility classes (including arbitrary variants) require restart to take effect (see `docs/editor/styling.md`)
-4. **Type checking overhead** - Runs separately on each rebuild (scripts/dev.mjs:81-90)
+- **Renderer** (`src/index.tsx` → `src/renderer.bundle.mjs`) — React app, browser platform
+- **Preload** (`src/preload/index.ts` → `src/preload.bundle.mjs`) — IPC bridge, Node platform
+- **Main** (`src/electron/index.ts` → `src/main.bundle.mjs`) — Electron main process, Node platform
 
-## Why Vite for Renderer Makes Sense
+`scripts/dev.mjs` runs 3 esbuild watchers and waits for all 3 to complete before starting Electron. Any change to any bundle restarts the entire process. `prestart` runs `tailwindcss -i ./src/index.css -o ./src/index-compiled.css` before dev. The renderer imports `index-compiled.css`.
 
-### Major Benefits
+`scripts/production.js` builds all 3 bundles for production. `build.sh` orchestrates the full production build: compile, copy to `dist/`, install deps, package.
 
-1. **Hot Module Replacement (HMR)**
+---
 
-   - Renderer changes reload instantly without restarting Electron
-   - CSS changes apply immediately (~50ms vs current ~2-5 seconds)
-   - React Fast Refresh preserves component state during development
+## Implementation Steps
 
-2. **Integrated CSS Processing**
+> **This section is the reference anchor for implementation work.**
 
-   - No need to pre-compile Tailwind (remove prestart script)
-   - PostCSS, CSS modules, imports all work out-of-box
-   - Better source maps for CSS debugging
+Migrate only the **renderer** bundle to Vite. Main and preload stay on esbuild.
 
-3. **Superior Developer Experience**
-
-   - Faster cold starts (pre-bundling with esbuild under the hood)
-   - Better error overlay in browser
-   - Source maps that actually work reliably
-   - DevTools integration
-
-4. **Better Production Builds**
-
-   - Advanced code-splitting and tree-shaking
-   - Built-in asset optimization (images, fonts)
-   - CSS extraction and minification
-   - Modern/legacy bundle generation
-
-5. **Ecosystem & Future-Proofing**
-   - De facto standard for React development in 2025
-   - Rich plugin ecosystem (React, Tailwind, TypeScript all first-class)
-   - Active development and community support
-
-### Why Keep esbuild for Main/Preload
-
-- **Speed** - esbuild is still fastest for simple Node.js bundling
-- **Simplicity** - Main/preload don't need dev servers or HMR
-- **Native modules** - Better handling of better-sqlite3, sharp, etc.
-- **No overhead** - Minimal config, minimal bundle size
-
-## Migration Plan
-
-### Phase 1: Add Vite for Renderer (Keep esbuild for main/preload)
-
-#### 1. Install Dependencies
+### Step 1: Install dependencies
 
 ```bash
-yarn add -D vite @vitejs/plugin-react vite-plugin-electron-renderer
+yarn add -D vite @vitejs/plugin-react @tailwindcss/postcss
 ```
 
-#### 2. Create `vite.config.ts`
+- `@tailwindcss/postcss` replaces the standalone `@tailwindcss/cli` used in `prestart`. The existing `tailwindcss` package stays (peer dep).
+
+### Step 2: Create `vite.config.ts` (project root)
 
 ```typescript
+import tailwindcss from "@tailwindcss/postcss";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import renderer from "vite-plugin-electron-renderer";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    renderer(), // Enables Node.js API in renderer if needed
-  ],
   root: "src",
   base: "./",
-  build: {
-    outDir: "../dist",
-    emptyOutDir: false, // Don't delete main/preload bundles
-    rollupOptions: {
-      input: "src/index.html",
+  plugins: [react()],
+  css: {
+    postcss: {
+      plugins: [tailwindcss()],
     },
   },
   server: {
     port: 5173,
   },
-  resolve: {
-    alias: {
-      "@": "/src",
+  build: {
+    outDir: "../dist/renderer",
+    emptyOutDir: true,
+    rollupOptions: {
+      input: "src/index.html",
     },
-  },
-  css: {
-    postcss: "./postcss.config.js", // For Tailwind
   },
 });
 ```
 
-#### 3. Create `postcss.config.js` (for Tailwind v4)
+- `root: "src"` — so `index.html` and `index.tsx` resolve relative to `src/`.
+- PostCSS config is inline (no separate `postcss.config.js`).
+- Build output goes to `dist/renderer/` — separate from main/preload bundles.
 
-```javascript
-export default {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
-};
-```
+### Step 3: Update `src/index.html`
 
-#### 4. Update `src/index.html`
+Remove esbuild bundle references. Add Vite entry point. Keep the production CSP unchanged — dev CSP is handled in the main process (Step 5).
 
 ```html
 <!doctype html>
@@ -126,181 +86,362 @@ export default {
   <head>
     <meta charset="UTF-8" />
     <title>Chronicles</title>
-    <!-- Remove pre-compiled CSS, Vite will inject -->
-    <meta http-equiv="Content-Security-Policy" content="..." />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' chronicles://* data:;
+      media-src chronicles://* https:;
+      font-src 'self';
+      connect-src 'self' chronicles://* https:;
+    "
+    />
   </head>
   <body style="background-color: #1c1d22">
     <main id="app"></main>
-    <!-- Vite handles this automatically in dev, bundles for prod -->
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
 ```
 
-#### 5. Update `scripts/dev.mjs`
+Changes from current: removed `<link href="renderer.bundle.css">`, replaced `<script src="renderer.bundle.mjs">` with `<script src="./index.tsx">`. Vite injects CSS via the JS entry point.
 
-- Start Vite dev server for renderer
-- Keep esbuild watchers for main and preload
-- Update startElectron to pass VITE_DEV_SERVER_URL env var
-- Remove watchRenderer() call
-
-Key changes:
-
-```javascript
-import { createServer } from "vite";
-
-// Start Vite dev server for renderer
-const viteServer = await createServer({
-  configFile: "./vite.config.ts",
-});
-await viteServer.listen();
-
-const VITE_DEV_SERVER_URL = `http://localhost:5173`;
-
-// Update startElectron to use Vite dev server
-function startElectron() {
-  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      VITE_DEV_SERVER_URL, // Main process loads from this URL
-    },
-  });
-}
-
-watchMain();
-watchPreload();
-// Remove watchRenderer() - Vite handles this
-```
-
-#### 6. Update Main Process (`src/electron/index.ts`)
+### Step 4: Update `src/index.tsx` CSS import
 
 ```typescript
-// In window creation:
-const isDev = !!process.env.VITE_DEV_SERVER_URL;
+// Before:
+import "./index-compiled.css"; // generated by tailwindcss; see package.jsons scripts
 
-mainWindow = new BrowserWindow({
-  // ... existing config
-});
+// After:
+import "./index.css"; // Vite + @tailwindcss/postcss processes this on-demand
+```
 
-if (isDev) {
+This eliminates the `prestart` Tailwind compilation step.
+
+### Step 5: Update `src/electron/index.ts` — dual-mode window loading
+
+In `createWindow()` (around line 182), replace `mainWindow.loadFile("index.html")` with:
+
+```typescript
+if (process.env.VITE_DEV_SERVER_URL) {
+  // Dev: override CSP to allow Vite HMR (WebSocket + inline scripts)
+  mainWindow.webContents.session.webRequest.onHeadersReceived(
+    (details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          "Content-Security-Policy": [
+            "default-src 'self' http://localhost:5173; " +
+              "script-src 'self' 'unsafe-inline' http://localhost:5173; " +
+              "style-src 'self' 'unsafe-inline' http://localhost:5173; " +
+              "img-src 'self' chronicles://* data: http://localhost:5173; " +
+              "media-src chronicles://* https:; " +
+              "font-src 'self' http://localhost:5173; " +
+              "connect-src 'self' chronicles://* https: ws://localhost:5173 http://localhost:5173;",
+          ],
+        },
+      });
+    },
+  );
   mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
-  mainWindow.webContents.openDevTools();
 } else {
+  // Production: load bundled HTML from disk
   mainWindow.loadFile("index.html");
 }
 ```
 
-#### 7. Update `build.sh`
+The CSP override is needed because Vite's dev server uses WebSockets for HMR and injects inline scripts, which the production CSP blocks.
 
-Replace:
+### Step 6: Rewrite `scripts/dev.mjs`
+
+Replace the current file. The new version:
+
+1. Starts the Vite dev server for the renderer
+2. Keeps esbuild watchers for main and preload (2 watchers, not 3)
+3. Starts Electron once main + preload are ready (no longer waits for renderer)
+4. Passes `VITE_DEV_SERVER_URL` env var to Electron
+
+Key structural changes:
+
+- `startTracker` only tracks 2 bundles: `"main"` and `"preload"` (was 3)
+- Remove `watchRenderer()` entirely
+- Start Vite dev server before esbuild watchers
+- Electron spawned with `VITE_DEV_SERVER_URL` in env
+
+```javascript
+import cp from "child_process";
+import electron from "electron";
+import esbuild from "esbuild";
+import lodash from "lodash";
+import { createServer } from "vite";
+
+// --- Vite dev server for renderer ---
+const vite = await createServer({ configFile: "./vite.config.ts" });
+await vite.listen();
+const VITE_DEV_SERVER_URL = `http://localhost:${vite.config.server.port}`;
+console.log(`Vite dev server running at ${VITE_DEV_SERVER_URL}`);
+
+// --- esbuild for main + preload ---
+const startTracker = new Set();
+let didStart = false;
+let eprocess;
+
+function startElectronPlugin(name) {
+  return {
+    name: "(Re)start Electron",
+    setup(build) {
+      build.onEnd((result) => {
+        if (result.errors.length) {
+          console.error(`${name} bundle completed with errors`, result.errors);
+        } else {
+          console.log(`${name} bundle completed`);
+          startTracker.add(name);
+        }
+        if (startTracker.size !== 2) return; // main + preload
+        if (didStart) {
+          restartElectron();
+        } else {
+          didStart = true;
+          startElectron();
+        }
+      });
+    },
+  };
+}
+
+function startElectron() {
+  console.log("starting electron");
+  checkTypes();
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
+    stdio: "inherit",
+    env: { ...process.env, VITE_DEV_SERVER_URL },
+  });
+  eprocess.on("error", (error) => {
+    console.error("electron error", error, error.message);
+    process.exit(1);
+  });
+}
+
+const restartElectron = lodash.debounce(function () {
+  if (eprocess) eprocess.kill("SIGTERM");
+  checkTypes();
+  console.log("restarting electron");
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
+    stdio: "inherit",
+    env: { ...process.env, VITE_DEV_SERVER_URL },
+  });
+  eprocess.on("error", (error) => {
+    console.error("electron error", error, error.message);
+    process.exit(1);
+  });
+}, 200);
+
+const checkTypes = lodash.debounce(function () {
+  const typesProcess = cp.spawn("yarn", ["tsc", "--noEmit"], {
+    stdio: "inherit",
+  });
+  typesProcess.on("error", (error) => {
+    console.error("types error", error, error.message);
+    process.exit(1);
+  });
+}, 200);
+
+// Preload watcher
+const ctxPreload = await esbuild.context({
+  entryPoints: ["src/preload/index.ts"],
+  outfile: "src/preload.bundle.mjs",
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
+  plugins: [startElectronPlugin("preload")],
+  sourcemap: true,
+});
+await ctxPreload.watch();
+
+// Main watcher
+const ctxMain = await esbuild.context({
+  entryPoints: ["src/electron/index.ts"],
+  outfile: "src/main.bundle.mjs",
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  external: ["electron", "electron-store", "better-sqlite3"],
+  plugins: [startElectronPlugin("main")],
+});
+await ctxMain.watch();
+```
+
+#### STOP: Dev mode acceptance check
+
+After completing Steps 1-6, verify:
+
+1. **`yarn start` launches the app.** The Electron window opens and the UI renders. No blank screen, no crash.
+2. **No renderer console errors.** Open DevTools (`Cmd+Shift+I`) and check the console. CSP violations, missing fonts, or failed `chronicles://` requests are blockers.
+3. **`yarn lint` passes.** No type errors introduced.
+4. **Fonts render correctly.** Mona Sans (body text), IBM Plex Mono (code blocks) should be visually correct.
+5. **`chronicles://` protocol works.** Open a note that has an image attachment — it should load.
+
+If the app starts and renders correctly, the core migration is done. Proceed to Steps 7-10 for the production build.
+
+HMR verification (nice-to-have at this stage, not a blocker):
+
+- Edit a React component → changes appear without Electron restart
+- Add a new Tailwind class → it appears without restart
+
+---
+
+### Step 7: Create `scripts/build-main-preload.js`
+
+Extract the main and preload builds from `scripts/production.js`:
+
+```javascript
+import esbuild from "esbuild";
+
+function afterBuild(name) {
+  return {
+    name: `after-build-${name}`,
+    setup(build) {
+      build.onEnd((result) => {
+        if (result.errors.length) {
+          console.error(`${name} bundle completed with errors`, result.errors);
+          process.exit(1);
+        } else {
+          console.log(`${name} bundle completed`);
+        }
+      });
+    },
+  };
+}
+
+await esbuild.build({
+  entryPoints: ["src/preload/index.ts"],
+  outfile: "src/preload.bundle.mjs",
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
+  plugins: [afterBuild("preload")],
+});
+
+await esbuild.build({
+  entryPoints: ["src/electron/index.ts"],
+  outfile: "src/main.bundle.mjs",
+  bundle: true,
+  format: "esm",
+  platform: "node",
+  external: ["electron", "electron-store", "better-sqlite3"],
+  plugins: [afterBuild("main")],
+});
+```
+
+### Step 8: Update `build.sh`
+
+Replace the renderer build step. Key changes:
+
+1. Replace `node ./scripts/production.js` with `node ./scripts/build-main-preload.js` + `npx vite build`
+2. **Remove** the `cp src/index.html dist/index.html` line — Vite generates production `index.html` with hashed asset references
+3. Copy Vite renderer output from `dist/renderer/` into `dist/` root
+
+In `build.sh`, replace:
 
 ```bash
+# compile ui files to dist
 node ./scripts/production.js
+
+# copy all bundled assets
+cp -r src/*.bundle.* dist/
 ```
 
 With:
 
 ```bash
-node ./scripts/build-main-preload.js  # esbuild for main/preload
-vite build                              # Vite for renderer
+# Build main + preload (esbuild)
+node ./scripts/build-main-preload.js
+
+# Build renderer (Vite) → outputs to dist/renderer/
+npx vite build
+
+# Copy main/preload bundles to dist
+cp src/main.bundle.mjs dist/
+cp src/preload.bundle.mjs dist/
+
+# Flatten Vite renderer output into dist root
+cp -r dist/renderer/* dist/
+rm -rf dist/renderer
 ```
 
-Create new `scripts/build-main-preload.js` with just the main and preload builds from `scripts/production.js`.
+Also remove the earlier `cp src/index.html dist/index.html` line.
 
-#### 8. Update `package.json` scripts
+### Step 9: Update `package.json` scripts
+
+- **Remove `prestart`** entirely (or set to empty string) — Tailwind is now processed by Vite/PostCSS.
+- **Remove `tailwindcss` from `prebuild`** — Vite handles it in the build step. New `prebuild`:
 
 ```json
-{
-  "scripts": {
-    "start": "node ./scripts/dev.mjs",
-    "prestart": "", // Remove Tailwind pre-compilation
-    "build": "./build.sh",
-    "prebuild": "yarn lint && node ./scripts/icons.js"
-  }
-}
+"prebuild": "yarn run lint && node ./scripts/icons.js"
 ```
 
-### Phase 2: Optimize (Optional)
+### Step 10: Clean up obsolete files
 
-#### A. Use `electron-vite` (opinionated framework)
+- **Delete** `scripts/production.js` — replaced by `scripts/build-main-preload.js` + `vite build`
+- **Delete** `src/index-compiled.css` — no longer generated or used
+- **Remove** `@tailwindcss/cli` from `devDependencies` — replaced by `@tailwindcss/postcss`
 
-- Handles main/preload/renderer with Vite
-- Convention-based config
-- Built-in best practices
+#### STOP: Production build acceptance check
 
-```bash
-yarn add -D electron-vite
-```
+After completing Steps 7-10, verify:
 
-#### B. Add Type Checking Plugin
+1. **`yarn build` completes without errors.** The `dist/` directory should contain `index.html`, `main.bundle.mjs`, `preload.bundle.mjs`, JS/CSS assets from Vite, and `hljs-themes/`.
+2. **`dist/index.html` references hashed assets** (e.g., `assets/index-abc123.js`), NOT `renderer.bundle.mjs` or `index.tsx`.
+3. **Renderer bundle size is reported.** After `npx vite build`, Vite prints a table of output files and sizes. Record the total renderer JS + CSS size for baseline tracking. (This isn't an optimization target — it's a canary. If it suddenly jumps by several MB in the future, something went wrong.)
+4. **Packaged app launches.** Run `/local-install` or equivalent and confirm the app starts from the production build.
 
-```typescript
-// vite.config.ts
-import checker from "vite-plugin-checker";
+---
 
-plugins: [
-  react(),
-  checker({ typescript: true }), // Type check during dev
-];
-```
+## Optimize (follow-on, not part of initial migration)
 
-#### C. Code Splitting
+These are worth doing after the migration is stable, but are not blockers:
 
-```typescript
-build: {
-  rollupOptions: {
-    output: {
-      manualChunks: {
-        'slate': ['slate', 'slate-react', 'slate-history'],
-        'plate': [/^@platejs/],
-        'radix': [/^@radix-ui/],
-      },
-    },
-  },
-}
-```
+- **Source maps** — Vite generates source maps by default in dev. For production, add `build.sourcemap: true` to `vite.config.ts` if needed for debugging. Consider `'hidden'` source maps (generated but not referenced in output) for production.
+- **Type checking plugin** — `vite-plugin-checker` runs TypeScript checking during dev without blocking HMR. Would replace the current `checkTypes()` debounced subprocess.
+- **Bundle analysis** — `rollup-plugin-visualizer` can generate a treemap of what's in the renderer bundle. Useful if the bundle size canary ever fires.
 
-## Migration Complexity
+---
 
-**Effort Level: Medium** (~4-8 hours)
+## Risks & Gotchas
 
-**Breakdown:**
+### CSP in dev mode
 
-1. Install deps and create configs: 30 min
-2. Update dev.mjs to use Vite dev server: 1-2 hours
-3. Update main process window loading: 30 min
-4. Update build.sh and production scripts: 1 hour
-5. Testing and debugging: 2-4 hours (CSP issues, path issues, etc.)
+Vite's dev server uses WebSockets for HMR and injects inline scripts. The production CSP (`script-src 'self'`) blocks this. Solution: override CSP in main process when `VITE_DEV_SERVER_URL` is set (Step 5).
 
-## Risks & Considerations
+### Font paths
 
-- **Content Security Policy** - May need to adjust CSP for Vite dev server
-- **Path resolution** - Electron protocol handlers might need updates
-- **Native modules** - Should be fine (they're in main/preload), but test sharp/better-sqlite3
-- **CSS imports** - Font loading paths might need adjustment
+Fonts are referenced via relative `url()` in `fonts.css` → `index.css`. Vite resolves these relative to the CSS file's location. Since `root: "src"` and fonts are in `src/assets/fonts/`, the existing paths (`./assets/fonts/...`) should work. The esbuild font loaders (`.woff2`, `.woff`, `.ttf`, `.otf`) in `dev.mjs` are no longer needed — Vite handles static assets natively.
 
-## Files to Examine
+### `chronicles://` protocol in dev
 
-- `src/electron/index.ts` - Window creation logic
-- `src/preload/client/types.ts` - Ensure types still work
-- Any custom protocol handlers for `chronicles://`
+The protocol handler registers in the main process regardless of dev/prod. When loading from Vite's dev server, `<img src="chronicles://...">` requests should still be intercepted by Electron's custom protocol handler regardless of page origin. **Test this.**
 
-## Recommendation
+### hljs themes
 
-**Proceed with Phase 1** - The development experience improvement alone justifies the migration. HMR will make CSS/React development 10x faster, and we'll be on modern tooling with better community support.
+Loaded at runtime via dynamic `<link>` injection, not via the build. `bundle-hljs-themes.sh` copies them to `dist/hljs-themes/` during `build.sh` — unchanged. In dev, they load from `node_modules/highlight.js/styles/` — verify this path works when serving from Vite.
 
-Start with the hybrid approach (Vite for renderer, esbuild for main/preload), then consider electron-vite later if you want full Vite for all processes.
+### Build output structure
+
+Vite outputs to `dist/renderer/` which gets flattened into `dist/`. Main/preload bundles still go to `src/*.bundle.mjs` and are copied manually. This is slightly awkward but avoids changing the packaging step (`package.js`).
 
 ---
 
 ## Follow-On: Vitest
 
-Once Vite owns the renderer bundle (Phase 1 complete), migrating to **Vitest** becomes the natural next step. This is not optional — it's **required for the testing strategy** outlined in [docs/designs/testing-philosophy.md](docs/designs/testing-philosophy.md).
+Once Vite owns the renderer bundle, migrating to **Vitest** becomes the natural next step. This is **required for the testing strategy** outlined in [testing-philosophy.md](../designs/testing-philosophy.md).
 
 ### Why Vitest is Required
 
-The editor (Plate/SlateJS) requires **real browser** testing — `contenteditable` and Slate's selection APIs are unreliable in jsdom. Vitest's browser mode (`@vitest/browser`, backed by Playwright) runs tests in real Chromium without needing the full Electron app. This is currently **blocking component tests** per [docs/testing.md](docs/testing.md).
+The editor (Plate/SlateJS) requires **real browser** testing — `contenteditable` and Slate's selection APIs are unreliable in jsdom. Vitest's browser mode (`@vitest/browser`, backed by Playwright) runs tests in real Chromium without needing the full Electron app. This is currently **blocking component tests** per [testing.md](../testing.md).
 
 ### Benefits
 
@@ -311,11 +452,7 @@ The editor (Plate/SlateJS) requires **real browser** testing — `contenteditabl
 
 ### Framework-Agnostic Investment
 
-The Vitest migration is scoped entirely to the renderer layer (all current tests are renderer-side: stores, markdown parsing, search logic). This means:
-
-- The investment survives any future framework migration (Tauri, Electrobun, etc.)
-- Renderer tests would stay Vitest regardless of what wraps the frontend
-- See `docs/designs/framework-comparison-2026.md` for framework migration analysis
+The Vitest migration is scoped entirely to the renderer layer (all current tests are renderer-side: stores, markdown parsing, search logic). The investment survives any future framework migration (Tauri, Electrobun, etc.) — renderer tests stay Vitest regardless of what wraps the frontend. See [framework-comparison-2026.md](../designs/framework-comparison-2026.md).
 
 ---
 
