@@ -14,6 +14,7 @@ import {
   openPath,
   refreshInstalledFontsCache,
   selectThemeFile,
+  setNativeTheme,
 } from "./utils.electron";
 
 contextBridge.exposeInMainWorld("chronicles", {
@@ -27,6 +28,7 @@ contextBridge.exposeInMainWorld("chronicles", {
   getInstalledFontsStylesheetHref,
   refreshInstalledFontsCache,
   openPath,
+  setNativeTheme,
   deleteThemeByName,
   listHljsThemes,
   loadHljsThemeCSS,
@@ -45,6 +47,7 @@ declare global {
       getInstalledFontsStylesheetHref: typeof getInstalledFontsStylesheetHref;
       refreshInstalledFontsCache: typeof refreshInstalledFontsCache;
       openPath: typeof openPath;
+      setNativeTheme: typeof setNativeTheme;
       deleteThemeByName: typeof deleteThemeByName;
       listHljsThemes: typeof listHljsThemes;
       loadHljsThemeCSS: typeof loadHljsThemeCSS;

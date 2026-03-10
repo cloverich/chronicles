@@ -288,6 +288,14 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
 
       applyThemeColors(colors);
 
+      // Track in localStorage, so the initial app load (before React hydration) can use it
+      localStorage.setItem("darkMode", preferences.darkMode);
+
+      // Set native theme for Electron (scrollbars, menus, etc)
+      // Use inherentMode if provided, otherwise fallback to the effective mode
+      const nativeTheme = theme.inherentMode || effectiveMode;
+      window.chronicles.setNativeTheme(nativeTheme);
+
       // Code syntax highlighting disabled until Plate's code_line collapse
       // bug is fixed — see https://github.com/cloverich/chronicles/issues/176
       // const codeTheme =

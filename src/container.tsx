@@ -10,7 +10,6 @@ import { useAppLoader } from "./hooks/useApplicationLoader";
 import { ApplicationContext } from "./hooks/useApplicationStore";
 import Titlebar from "./titlebar/macos";
 import { StyleWatcher } from "./views/StyleWatcher";
-import { ThemeWatcher } from "./views/ThemeWatcher";
 import DocumentCreator from "./views/create";
 import Documents from "./views/documents";
 import { SearchProvider } from "./views/documents/SearchProvider";
@@ -65,7 +64,6 @@ export default observer(function Container() {
   // app relies on this being true.
   return (
     <ApplicationContext.Provider value={applicationStore}>
-      <ThemeWatcher preferences={applicationStore.preferences} />
       <StyleWatcher preferences={applicationStore.preferences} />
       <Layout>
         <Preferences

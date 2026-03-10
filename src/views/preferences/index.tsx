@@ -314,14 +314,14 @@ const PreferencesPane = observer((props: Props) => {
                   </Button>
                 </div>
 
-                {availableThemes.some((t) => !t.builtin) && (
+                {availableThemes.some((t) => !t.builtin && !t.bundled) && (
                   <div className="my-4">
                     <div className="text-foreground-strong mb-2 font-medium">
                       Installed Themes
                     </div>
                     <div className="space-y-1">
                       {availableThemes
-                        .filter((t) => !t.builtin)
+                        .filter((t) => !t.builtin && !t.bundled)
                         .map((t) => (
                           <div
                             key={t.name}

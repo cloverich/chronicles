@@ -1,33 +1,51 @@
 import fs from "fs";
 import path from "path";
 import { BUILTIN_THEMES } from "./builtins";
+import { BUNDLED_THEMES } from "./bundled";
 import { ThemeConfig, validate } from "./schema";
 
 export interface ThemeListEntry {
   name: string;
   mode: "light" | "dark" | "both";
+  inherentMode?: "light" | "dark";
   builtin: boolean;
+  bundled: boolean;
 }
 
 /**
- * List all available themes: built-ins plus any valid installed themes.
+ * List all available themes: built-ins plus bundled JSON themes plus any
+ * valid installed themes.
  *
- * 1. Starts with the built-in themes from BUILTIN_THEMES.
- * 2. Reads all `.json` files from `themesDir`.
- * 3. Parses and validates each file with `validate()`.
- * 4. Returns the combined list, skipping invalid files (logs a warning).
- * 5. If `themesDir` doesn't exist, returns only builtins.
+ * 1. Starts with the built-in themes from BUILTIN_THEMES (System themes).
+ * 2. Adds bundled themes from BUNDLED_THEMES (Built-in but JSON-based).
+ * 3. Reads all `.json` files from `themesDir`.
+ * 4. Parses and validates each file with `validate()`.
+ * 5. Returns the combined list, skipping invalid files (logs a warning).
+ * 6. If `themesDir` doesn't exist, returns only builtins and bundled.
  *
  * @param themesDir Absolute path to the user themes directory.
  */
 export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
+  // 1. System built-ins
   const entries: ThemeListEntry[] = Object.values(BUILTIN_THEMES).map(
     (theme) => ({
       name: theme.name,
       mode: theme.mode,
       builtin: true,
+      bundled: false,
     }),
   );
+
+  // 2. Bundled JSON themes
+  for (const theme of Object.values(BUNDLED_THEMES)) {
+    entries.push({
+      name: theme.name,
+      mode: theme.mode,
+      inherentMode: theme.inherentMode,
+      builtin: false,
+      bundled: true,
+    });
+  }
 
   if (!fs.existsSync(themesDir)) {
     return entries;
@@ -79,11 +97,17 @@ export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
       continue;
     }
 
-    const theme = parsed as { name: string; mode: "light" | "dark" | "both" };
+    const theme = parsed as {
+      name: string;
+      mode: "light" | "dark" | "both";
+      inherentMode?: "light" | "dark";
+    };
     entries.push({
       name: theme.name,
       mode: theme.mode,
+      inherentMode: theme.inherentMode,
       builtin: false,
+      bundled: false,
     });
   }
 
@@ -91,16 +115,22 @@ export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
 }
 
 /**
- * Load a theme by name — checks builtins first, then scans the themes directory.
+ * Load a theme by name — checks system builtins first, then bundled JSON,
+ * then scans the user themes directory.
  * Returns the full ThemeConfig or undefined if not found / invalid.
  */
 export function loadThemeByName(
   name: string,
   themesDir: string,
 ): ThemeConfig | undefined {
-  // Check builtins first
+  // Check system builtins first
   if (BUILTIN_THEMES[name]) {
     return BUILTIN_THEMES[name];
+  }
+
+  // Check bundled JSON themes
+  if (BUNDLED_THEMES[name]) {
+    return BUNDLED_THEMES[name];
   }
 
   // Scan user themes directory

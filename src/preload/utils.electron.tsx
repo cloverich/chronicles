@@ -68,6 +68,10 @@ export const openPath = (dirPath: string) => {
   ipcRenderer.send("open-path", dirPath);
 };
 
+export const setNativeTheme = (theme: "light" | "dark" | "system") => {
+  ipcRenderer.send("set-native-theme", theme);
+};
+
 export {
   deleteThemeByName,
   getFontsCSSStylesheetHref as getInstalledFontsStylesheetHref,
