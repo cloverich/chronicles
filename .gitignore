@@ -24,5 +24,8 @@ index-compiled.css
 src/index-compiled.css
 
 # claude code local files
+# todo: What is best practice for worktrees? Should they be in the repo?
 .claude/settings.local.json
 .claude/worktrees/
+.gemini/worktrees/
+.codex/worktrees/

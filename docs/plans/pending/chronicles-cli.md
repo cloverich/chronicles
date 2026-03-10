@@ -88,17 +88,26 @@ import migrate from "../electron/migrations/index.js";
 function getDefaultUserDataDir(): string {
   // Match Electron's app.getPath('userData') for "Chronicles"
   if (process.platform === "darwin") {
-    return path.join(os.homedir(), "Library", "Application Support", "Chronicles");
+    return path.join(
+      os.homedir(),
+      "Library",
+      "Application Support",
+      "Chronicles",
+    );
   }
   if (process.platform === "win32") {
     return path.join(process.env.APPDATA || os.homedir(), "Chronicles");
   }
   // Linux / fallback: XDG_CONFIG_HOME
-  return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"), "chronicles");
+  return path.join(
+    process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"),
+    "chronicles",
+  );
 }
 
 export function bootstrapCli() {
-  const userDataDir = process.env.CHRONICLES_USER_DATA || getDefaultUserDataDir();
+  const userDataDir =
+    process.env.CHRONICLES_USER_DATA || getDefaultUserDataDir();
   const settingsDir = process.env.CHRONICLES_SETTINGS_DIR || userDataDir;
 
   const store = new Conf<IPreferences>({
@@ -109,7 +118,8 @@ export function bootstrapCli() {
 
   // Resolve notesDir and databaseUrl (same logic as initAppEnvironment)
   const notesDir = store.get("notesDir") || path.join(userDataDir, "notes");
-  const databaseUrl = store.get("databaseUrl") || path.join(userDataDir, "chronicles.db");
+  const databaseUrl =
+    store.get("databaseUrl") || path.join(userDataDir, "chronicles.db");
 
   // Ensure dirs exist, run migrations
   // Reuse initUserFilesDir and migrate from electron/ — they have no Electron deps
@@ -120,6 +130,7 @@ export function bootstrapCli() {
 ```
 
 Key decisions:
+
 - **Shared settings location.** The CLI reads/writes the same `settings.json` the Electron app uses. Env vars (`CHRONICLES_USER_DATA`, `CHRONICLES_SETTINGS_DIR`) override for testing or independent use.
 - **`initUserFilesDir` and `migrate` are reusable.** They import `fs`, `path`, and `knex` — no Electron. Import them directly.
 - **`IPreferences` defaults** — extract the defaults object from `src/electron/settings.ts` into a shared location (or import it; the file's only Electron dep is the `electron-store` import at the top, and we only need the type + defaults).
@@ -200,6 +211,7 @@ The CLI binary is separate from the Electron app bundle. It can be linked locall
 Each command follows the same pattern: parse args → call IClient method → format output.
 
 **`chronicles journals list`**
+
 ```
 Options: --json, --include-archived
 Maps to: client.journals.listWithCounts()
@@ -207,6 +219,7 @@ Output: table (NAME, DOCS, ARCHIVED, CREATED) or JSON array
 ```
 
 **`chronicles docs search`**
+
 ```
 Options: --query <text>, --journal <name>, --tags <t1,t2>, --before <date>, --limit <n>, --json
 Maps to: client.documents.search({ texts, journals, tags, before, limit })
@@ -214,6 +227,7 @@ Output: table (ID, TITLE, JOURNAL, DATE, TAGS) or JSON array
 ```
 
 **`chronicles docs get <id>`**
+
 ```
 Options: --json
 Maps to: client.documents.findById({ id })
@@ -223,6 +237,7 @@ Exit code 4 if not found
 ```
 
 **`chronicles tags list`**
+
 ```
 Options: --json
 Maps to: client.tags.allWithCounts()
@@ -230,6 +245,7 @@ Output: table (TAG, COUNT) or JSON array
 ```
 
 **`chronicles index`**
+
 ```
 Options: --full (force full reindex)
 Maps to: client.indexer.index(full)
@@ -273,6 +289,7 @@ describe("journals list", () => {
 **Fixture setup:** Before test suite runs, copy `test/fixtures/basic/` to a temp dir, point `CHRONICLES_USER_DATA` at it, run `chronicles index`. Tear down after.
 
 **What to test per command:**
+
 - Valid input → expected JSON shape, exit 0
 - Empty results → empty array, exit 0 (not an error)
 - Not found (`docs get <bad-id>`) → exit 4
@@ -288,6 +305,7 @@ describe("journals list", () => {
 #### Step 2.1: Implement mutation commands
 
 **`chronicles docs create`**
+
 ```
 Options: --journal <name> (required), --title <title>, --tags <t1,t2>
 Content source (priority order):
@@ -300,6 +318,7 @@ Output: JSON { id, journal, path } or "Created <id>" on TTY
 ```
 
 **`chronicles docs update <id>`**
+
 ```
 Options: --title <title>, --tags <t1,t2>, --content/--file/stdin (same as create)
 Maps to: client.documents.updateDocument({ id, journal, content, frontMatter })
@@ -308,6 +327,7 @@ Exit code 4 if not found
 ```
 
 **`chronicles docs delete <id>`**
+
 ```
 Options: --journal <name> (required, or discover from DB)
 Maps to: client.documents.del(id, journal)
@@ -315,17 +335,20 @@ Exit code 4 if not found
 ```
 
 **`chronicles journals create <name>`**
+
 ```
 Maps to: client.journals.create({ name })
 ```
 
 **`chronicles journals rename <name> <new-name>`**
+
 ```
 Maps to: client.journals.rename(journal, newName)
 Exit code 4 if journal not found
 ```
 
 **`chronicles journals archive <name>`**
+
 ```
 Maps to: client.journals.archive(name)
 ```
@@ -335,7 +358,10 @@ Maps to: client.journals.archive(name)
 Create `src/cli/input.ts` — a shared helper for `docs create` and `docs update`:
 
 ```typescript
-export async function readContent(opts: { content?: string; file?: string }): Promise<string> {
+export async function readContent(opts: {
+  content?: string;
+  file?: string;
+}): Promise<string> {
   if (opts.content) return opts.content;
   if (opts.file) return fs.promises.readFile(opts.file, "utf-8");
   if (!process.stdin.isTTY) {
@@ -356,22 +382,47 @@ Mutation tests run against temp dirs (they modify state). Pattern: create → ve
 describe("docs create → get → delete round-trip", () => {
   it("creates a doc, retrieves it, deletes it", () => {
     // Create
-    const created = JSON.parse(execFileSync("node", [
-      CLI, "docs", "create", "--journal", "work", "--title", "Test", "--content", "Hello", "--json"
-    ], { env }).toString());
+    const created = JSON.parse(
+      execFileSync(
+        "node",
+        [
+          CLI,
+          "docs",
+          "create",
+          "--journal",
+          "work",
+          "--title",
+          "Test",
+          "--content",
+          "Hello",
+          "--json",
+        ],
+        { env },
+      ).toString(),
+    );
     assert(created.id);
 
     // Get
-    const doc = JSON.parse(execFileSync("node", [
-      CLI, "docs", "get", created.id, "--json"
-    ], { env }).toString());
+    const doc = JSON.parse(
+      execFileSync("node", [CLI, "docs", "get", created.id, "--json"], {
+        env,
+      }).toString(),
+    );
     assert.equal(doc.title, "Test");
 
     // Delete
-    execFileSync("node", [CLI, "docs", "delete", created.id, "--journal", "work"], { env });
+    execFileSync(
+      "node",
+      [CLI, "docs", "delete", created.id, "--journal", "work"],
+      { env },
+    );
 
     // Verify gone
-    const result = spawnSync("node", [CLI, "docs", "get", created.id, "--json"], { env });
+    const result = spawnSync(
+      "node",
+      [CLI, "docs", "get", created.id, "--json"],
+      { env },
+    );
     assert.equal(result.status, 4);
   });
 });
@@ -384,6 +435,7 @@ describe("docs create → get → delete round-trip", () => {
 ## File Inventory
 
 New files:
+
 ```
 src/cli/
   index.ts              # Entry point, Commander setup
@@ -410,6 +462,7 @@ test/fixtures/
 ```
 
 Modified files:
+
 ```
 src/preload/client/settings-interface.ts  # New: ISettingsStore interface
 src/preload/client/preferences.ts         # Use ISettingsStore, guard DOM events
