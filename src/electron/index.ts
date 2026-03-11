@@ -173,7 +173,7 @@ function createWindow() {
     backgroundColor: "#121212", // todo: match theme
     show: false, // hide until ready to avoid flash of white screen
     width,
-    height: 600,
+    height: 800,
 
     // Hides the default (empty) window title
     titleBarStyle: "hidden",
@@ -308,6 +308,8 @@ ipcMain.on("select-theme-file", async (event, _arg) => {
 
 ipcMain.on("set-native-theme", (event, theme: "light" | "dark" | "system") => {
   nativeTheme.themeSource = theme;
+  // Return whether dark colors should be used (needed for synchronous "system" mode resolution)
+  event.returnValue = nativeTheme.shouldUseDarkColors;
 });
 
 ipcMain.on("open-path", (_event, dirPath: string) => {

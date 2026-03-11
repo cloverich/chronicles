@@ -240,25 +240,17 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
     );
 
     /**
-     * Resolve the effective color mode from preferences, applying OS preference
-     * when darkMode is "system".
-     */
-    function resolveEffectiveMode(): "light" | "dark" {
-      const darkMode = preferences.darkMode;
-      if (darkMode === "system") {
-        return window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-      }
-      return darkMode;
-    }
-
-    /**
      * Resolve and apply the active theme colors for the current effective mode.
      * Falls back to the built-in system theme if the selected theme is not found.
      */
     function applyActiveTheme(): void {
-      const effectiveMode = resolveEffectiveMode();
+      // Set native theme and get OS dark mode preference in one synchronous call.
+      // This avoids relying on matchMedia, which doesn't update synchronously
+      // when nativeTheme.themeSource changes.
+      const shouldUseDark = window.chronicles.setNativeTheme(
+        preferences.darkMode,
+      );
+      const effectiveMode = shouldUseDark ? "dark" : "light";
       document.documentElement.classList.toggle(
         "dark",
         effectiveMode === "dark",
@@ -291,10 +283,12 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       // Track in localStorage, so the initial app load (before React hydration) can use it
       localStorage.setItem("darkMode", preferences.darkMode);
 
-      // Set native theme for Electron (scrollbars, menus, etc)
-      // Use inherentMode if provided, otherwise fallback to the effective mode
-      const nativeTheme = theme.inherentMode || effectiveMode;
-      window.chronicles.setNativeTheme(nativeTheme);
+      // If the theme declares an inherentMode that differs from the effective mode,
+      // override native UI to match (e.g., a dark-feeling theme used in light mode).
+      // Skip for "system" — we already set it at the top and want OS tracking.
+      if (preferences.darkMode !== "system" && theme.inherentMode) {
+        window.chronicles.setNativeTheme(theme.inherentMode);
+      }
 
       // Code syntax highlighting disabled until Plate's code_line collapse
       // bug is fixed — see https://github.com/cloverich/chronicles/issues/176

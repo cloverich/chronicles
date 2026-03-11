@@ -68,8 +68,12 @@ export const openPath = (dirPath: string) => {
   ipcRenderer.send("open-path", dirPath);
 };
 
-export const setNativeTheme = (theme: "light" | "dark" | "system") => {
-  ipcRenderer.send("set-native-theme", theme);
+/**
+ * Set Electron's native theme and return whether dark colors should be used.
+ * Synchronous so the renderer can immediately resolve "system" mode.
+ */
+export const setNativeTheme = (theme: "light" | "dark" | "system"): boolean => {
+  return ipcRenderer.sendSync("set-native-theme", theme);
 };
 
 export {

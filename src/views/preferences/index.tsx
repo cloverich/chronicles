@@ -51,8 +51,14 @@ const PreferencesPane = observer((props: Props) => {
   React.useEffect(() => {
     if (props.isOpen) {
       const themesDir = `${preferences.settingsDir}/themes`;
-      const themes = window.chronicles.listAvailableThemes(themesDir);
+      const { themes, overrides } =
+        window.chronicles.listAvailableThemes(themesDir);
       setAvailableThemes(themes);
+      if (overrides.length > 0) {
+        toast.info(
+          `Your installed theme "${overrides.join('", "')}" overrides a bundled theme with the same name`,
+        );
+      }
 
       const fontsDir = `${preferences.settingsDir}/fonts`;
       const installedFonts = window.chronicles.listInstalledFonts(fontsDir);
@@ -114,7 +120,7 @@ const PreferencesPane = observer((props: Props) => {
 
   function refreshThemeList() {
     const themesDir = `${preferences.settingsDir}/themes`;
-    setAvailableThemes(window.chronicles.listAvailableThemes(themesDir));
+    setAvailableThemes(window.chronicles.listAvailableThemes(themesDir).themes);
   }
 
   function deleteTheme(name: string) {

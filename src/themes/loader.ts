@@ -12,6 +12,12 @@ export interface ThemeListEntry {
   bundled: boolean;
 }
 
+export interface ThemeListResult {
+  themes: ThemeListEntry[];
+  /** Names of bundled themes overridden by user-installed themes */
+  overrides: string[];
+}
+
 /**
  * List all available themes: built-ins plus bundled JSON themes plus any
  * valid installed themes.
@@ -25,7 +31,9 @@ export interface ThemeListEntry {
  *
  * @param themesDir Absolute path to the user themes directory.
  */
-export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
+export function listAvailableThemes(themesDir: string): ThemeListResult {
+  const overrides: string[] = [];
+
   // 1. System built-ins
   const entries: ThemeListEntry[] = Object.values(BUILTIN_THEMES).map(
     (theme) => ({
@@ -48,7 +56,7 @@ export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
   }
 
   if (!fs.existsSync(themesDir)) {
-    return entries;
+    return { themes: entries, overrides };
   }
 
   let files: string[];
@@ -59,7 +67,7 @@ export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
       `listAvailableThemes: could not read themes directory "${themesDir}":`,
       err,
     );
-    return entries;
+    return { themes: entries, overrides };
   }
 
   for (const file of files) {
@@ -102,22 +110,38 @@ export function listAvailableThemes(themesDir: string): ThemeListEntry[] {
       mode: "light" | "dark" | "both";
       inherentMode?: "light" | "dark";
     };
-    entries.push({
-      name: theme.name,
-      mode: theme.mode,
-      inherentMode: theme.inherentMode,
-      builtin: false,
-      bundled: false,
-    });
+
+    // User-installed theme with same name as a bundled theme: user wins
+    const bundledIdx = entries.findIndex(
+      (e) => e.bundled && e.name === theme.name,
+    );
+    if (bundledIdx !== -1) {
+      overrides.push(theme.name);
+      entries[bundledIdx] = {
+        name: theme.name,
+        mode: theme.mode,
+        inherentMode: theme.inherentMode,
+        builtin: false,
+        bundled: false,
+      };
+    } else {
+      entries.push({
+        name: theme.name,
+        mode: theme.mode,
+        inherentMode: theme.inherentMode,
+        builtin: false,
+        bundled: false,
+      });
+    }
   }
 
-  return entries;
+  return { themes: entries, overrides };
 }
 
 /**
- * Load a theme by name — checks system builtins first, then bundled JSON,
- * then scans the user themes directory.
- * Returns the full ThemeConfig or undefined if not found / invalid.
+ * Load a theme by name — checks system builtins first, then user-installed
+ * themes, then bundled JSON. User themes win over bundled themes of the
+ * same name. Returns the full ThemeConfig or undefined if not found / invalid.
  */
 export function loadThemeByName(
   name: string,
@@ -128,12 +152,22 @@ export function loadThemeByName(
     return BUILTIN_THEMES[name];
   }
 
+  // Scan user themes directory (checked before bundled so user themes win)
+  const userTheme = loadUserTheme(name, themesDir);
+  if (userTheme) return userTheme;
+
   // Check bundled JSON themes
   if (BUNDLED_THEMES[name]) {
     return BUNDLED_THEMES[name];
   }
 
-  // Scan user themes directory
+  return undefined;
+}
+
+function loadUserTheme(
+  name: string,
+  themesDir: string,
+): ThemeConfig | undefined {
   if (!fs.existsSync(themesDir)) return undefined;
 
   let files: string[];
