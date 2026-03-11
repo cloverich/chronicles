@@ -34,6 +34,7 @@ const DERIVABLE_DEFAULTS: Record<string, keyof ThemeColors> = {
   accentTertiaryForeground: "accentForeground",
   tagSecondary: "secondary",
   tagSecondaryForeground: "secondaryForeground",
+  interactiveHover: "accent",
 };
 
 const HLJS_STYLE_ID = "chronicles-hljs-theme";

@@ -25,6 +25,13 @@ root.render(
         theme={theme as Preferences["darkMode"]}
         duration={3000}
         position="bottom-right"
+        style={
+          {
+            "--normal-bg": "var(--background)",
+            "--normal-text": "var(--foreground)",
+            "--normal-border": "var(--border)",
+          } as React.CSSProperties
+        }
         toastOptions={{
           classNames: {
             toast:

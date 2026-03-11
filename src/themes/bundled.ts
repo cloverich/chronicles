@@ -1,5 +1,6 @@
+import kaybDark from "./bundled/kayb-dark.theme.json";
+import kayb from "./bundled/kayb.theme.json";
 import neofloss from "./bundled/neofloss.theme.json";
-import warmPaper from "./bundled/warm-paper.theme.json";
 import { ThemeConfig } from "./schema";
 
 /**
@@ -7,6 +8,7 @@ import { ThemeConfig } from "./schema";
  * These are NOT the core "System" themes, but are available by default.
  */
 export const BUNDLED_THEMES: Record<string, ThemeConfig> = {
-  [warmPaper.name]: warmPaper as ThemeConfig,
+  [kayb.name]: kayb as ThemeConfig,
+  [kaybDark.name]: kaybDark as ThemeConfig,
   [neofloss.name]: neofloss as ThemeConfig,
 };

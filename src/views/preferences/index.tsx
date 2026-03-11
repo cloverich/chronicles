@@ -736,7 +736,7 @@ const PreferencesPane = observer((props: Props) => {
 });
 
 function Separator() {
-  return <hr className="my-8 h-px border-0 bg-gray-200 dark:bg-gray-700" />;
+  return <hr className="bg-border my-8 h-px border-0" />;
 }
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
@@ -750,7 +750,7 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
 
 function Section(props: PropsWithChildren<any>) {
   return (
-    <div className="mt-4 mb-10 border-b border-gray-200 pb-8 dark:border-gray-700">
+    <div className="border-border mt-4 mb-10 border-b pb-8">
       {props.children}
     </div>
   );
