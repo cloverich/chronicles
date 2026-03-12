@@ -12,14 +12,6 @@ To rebuild context on the theming work, read these in order:
 
 Remove this section once the theming project is complete.
 
-### Vite Migration (Renderer)
-
-Migrate the renderer bundle from esbuild to Vite for HMR, integrated Tailwind, and Vitest enablement. Main/preload stay on esbuild.
-
-- **Plan:** [docs/plans/pending/vite-migration.md](docs/plans/pending/vite-migration.md) — implementation steps, acceptance criteria, risks
-
-Remove this section once the migration is complete.
-
 ---
 
 Chronicles — local-first, markdown-based journaling app. Electron + React/TypeScript.
