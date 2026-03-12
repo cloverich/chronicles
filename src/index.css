@@ -118,6 +118,12 @@
 
   --color-tagg: var(--tag);
   --color-tagg-foreground: var(--tag-foreground);
+  --color-tagg-border: var(--tag-border);
+
+  --color-tagg-secondary: var(--tag-secondary);
+  --color-tagg-secondary-foreground: var(--tag-secondary-foreground);
+  --color-tagg-secondary-border: var(--tag-secondary-border);
+
   --color-tagg-muted: var(--tag-muted);
   --color-tagg-muted-foreground: var(--tag-muted-foreground);
 

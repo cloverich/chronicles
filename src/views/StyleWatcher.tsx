@@ -34,6 +34,8 @@ const DERIVABLE_DEFAULTS: Record<string, keyof ThemeColors> = {
   accentTertiaryForeground: "accentForeground",
   tagSecondary: "secondary",
   tagSecondaryForeground: "secondaryForeground",
+  tagBorder: "border",
+  tagSecondaryBorder: "border",
   interactiveHover: "accent",
 };
 

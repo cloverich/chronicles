@@ -43,6 +43,7 @@ export default function DebugDropdown({
     <DropdownMenu modal={false} {...openState}>
       <DropdownMenuTrigger asChild>
         <ToolbarButton
+          variant="minimal"
           isDropdown
           pressed={openState.open}
           tooltip="Change editor debug mode"

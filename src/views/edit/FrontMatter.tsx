@@ -88,7 +88,7 @@ const FrontMatter = observer(
       return (
         <D.DropdownMenu modal={false} {...journalSelectorOpenState}>
           <D.DropdownMenuTrigger asChild>
-            <span className="border-accent cursor-pointer border-b">
+            <span className="border-primary cursor-pointer border-b">
               {getName(document.journal)}
             </span>
           </D.DropdownMenuTrigger>
@@ -111,7 +111,7 @@ const FrontMatter = observer(
       return (
         <Popover.Popover {...datePickerOpenState}>
           <Popover.PopoverTrigger>
-            <span className="border-accent cursor-pointer border-b">
+            <span className="border-primary cursor-pointer border-b">
               {document.createdAt.slice(0, 10)}
             </span>
           </Popover.PopoverTrigger>

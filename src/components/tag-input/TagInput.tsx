@@ -217,7 +217,7 @@ const TagInput = observer((props: TagInputProps) => {
         />
         {props.showToggle && (
           <button
-            className="text-secondary-foreground/60 hover:text-secondary-foreground shrink-0 px-1 transition-colors"
+            className="text-secondary-foreground/60 hover:text-accent-tertiary shrink-0 px-1 transition-colors"
             tabIndex={-1}
             onMouseDown={(e) => {
               e.preventDefault(); // keep input focused
@@ -283,10 +283,11 @@ const tagVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-tagg text-tagg-foreground",
+        default: "border-tagg-border bg-tagg text-tagg-foreground",
         // todo: bg-accent just happens to be muted rn; in the future
         // likely need a bg-accent-muted or similar
-        muted: "border-default bg-muted text-muted-foreground",
+        muted:
+          "border-tagg-secondary-border bg-tagg-secondary text-tagg-secondary-foreground",
       },
       size: {
         default: "", //"h-10 px-4 py-2",

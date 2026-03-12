@@ -153,6 +153,7 @@ const MenuToggle = React.memo(
     return (
       <DropdownMenuTrigger asChild>
         <ToolbarButton
+          variant="minimal"
           isDropdown
           pressed={openState.open}
           tooltip="Change type"
