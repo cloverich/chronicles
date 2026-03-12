@@ -217,7 +217,7 @@ const TagInput = observer((props: TagInputProps) => {
         />
         {props.showToggle && (
           <button
-            className="text-muted-foreground hover:text-foreground shrink-0 px-1 transition-colors"
+            className="text-secondary-foreground/60 hover:text-secondary-foreground shrink-0 px-1 transition-colors"
             tabIndex={-1}
             onMouseDown={(e) => {
               e.preventDefault(); // keep input focused
@@ -259,7 +259,7 @@ const TagInput = observer((props: TagInputProps) => {
               >
                 <span>{tag.value}</span>
                 {tag.label && (
-                  <span className="text-muted-foreground group-hover/item:text-inherit">
+                  <span className="text-secondary-foreground/60 group-hover/item:text-inherit">
                     {tag.label}
                   </span>
                 )}

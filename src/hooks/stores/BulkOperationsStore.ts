@@ -1,7 +1,7 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 import { toast } from "sonner";
-import { IBulkOperationsClient } from "../../preload/client/bulk-operations";
-import { SearchRequest } from "../../preload/client/types";
+import type { IBulkOperationsClient } from "../../preload/client/bulk-operations";
+import type { SearchRequest } from "../../preload/client/types";
 
 export type OperationStatus = "idle" | "processing" | "completed" | "error";
 

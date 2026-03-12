@@ -50,18 +50,25 @@ fi
 echo "Copying electron folder"
 mkdir -p dist/electron
 cp -r src/electron dist
-cp src/index.html dist/index.html
 
 # Delete any previously generated bundles
 # In case we were changing names or something like that.
 rm -rf src/*.bundle.*
 
 
-# compile ui files to dist
-node ./scripts/production.js
+# Build main + preload (esbuild)
+node ./scripts/build-main-preload.js
 
-# copy all bundled assets
-cp -r src/*.bundle.* dist/
+# Build renderer (Vite) -> outputs to dist/renderer/
+npx vite build
+
+# Copy main/preload bundles to dist
+cp src/main.bundle.mjs dist/
+cp src/preload.bundle.mjs dist/
+
+# Flatten Vite renderer output into dist root
+cp -r dist/renderer/* dist/
+rm -rf dist/renderer
 
 # copy highlight.js theme CSS for code block syntax highlighting
 ./scripts/bundle-hljs-themes.sh dist/hljs-themes

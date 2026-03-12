@@ -121,6 +121,8 @@
   --color-tagg-muted: var(--tag-muted);
   --color-tagg-muted-foreground: var(--tag-muted-foreground);
 
+  --color-interactive-hover: var(--interactive-hover);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
 
@@ -183,7 +185,7 @@
 @layer utilities {
   ::selection {
     background-color: var(--accent-secondary);
-    color: var(--accent-foreground);
+    color: var(--accent-secondary-foreground);
   }
 
   /**

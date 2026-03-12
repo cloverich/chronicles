@@ -15,7 +15,8 @@ const variants = cva(
   {
     variants: {
       variant: {
-        ghost: "hover:bg-accent active:text-muted border border-transparent",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground active:text-muted-foreground border border-transparent",
         // hover:border hover:border-accent-foreground
       },
       size: {

@@ -13,7 +13,8 @@ import {
   InlineComboboxInput,
   InlineComboboxItem,
 } from "../combobox/InlineCombobox";
-import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
+import type { INoteLinkElement } from "./NoteLinkElement";
+import { ELEMENT_NOTE_LINK } from "./NoteLinkElement";
 
 type Option = Pick<INoteLinkElement, "noteId" | "title" | "journalName">;
 

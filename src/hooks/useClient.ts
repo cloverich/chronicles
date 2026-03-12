@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
-import { IClient } from "../preload/client/types";
+import type { IClient } from "../preload/client/types";
 
-export {
+export type {
   IClient,
   JournalResponse,
   SearchResponse,

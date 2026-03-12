@@ -1,6 +1,6 @@
 import { makeObservable, observable, reaction, toJS } from "mobx";
-import { IPreferences } from "../../electron/settings";
-import { IClient } from "../../preload/client/types";
+import type { IPreferences } from "../../electron/settings";
+import type { IClient } from "../../preload/client/types";
 
 export class Preferences implements IPreferences {
   client: IClient["preferences"];

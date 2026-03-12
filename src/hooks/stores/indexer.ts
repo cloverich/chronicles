@@ -1,7 +1,7 @@
 import { makeObservable, observable } from "mobx";
 import { toast } from "sonner";
-import { IClient } from "../useClient";
-import { IJournalStore } from "./journals";
+import type { IClient } from "../useClient";
+import type { IJournalStore } from "./journals";
 
 export class IndexerStore {
   isIndexing: boolean = false;

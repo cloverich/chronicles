@@ -3,7 +3,8 @@ import {
   BaseElement,
   SlateNode,
 } from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import { ELEMENT_NOTE_LINK, INoteLinkElement } from "./NoteLinkElement";
+import type { INoteLinkElement } from "./NoteLinkElement";
+import { ELEMENT_NOTE_LINK } from "./NoteLinkElement";
 
 /**
  * Convert a NoteLinkElement to a standard MDAST link (i.e. Slate -> MDAST).

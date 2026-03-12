@@ -4,10 +4,8 @@ import {
   BaseElement,
   toUndefined,
 } from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import {
-  ELEMENT_IMAGE_GALLERY,
-  IImageGalleryElement,
-} from "./ImageGalleryElement";
+import type { IImageGalleryElement } from "./ImageGalleryElement";
+import { ELEMENT_IMAGE_GALLERY } from "./ImageGalleryElement";
 
 /**
  * Convert a Slate ImageGroupElement to an mdast list of images.

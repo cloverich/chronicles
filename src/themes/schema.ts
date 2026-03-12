@@ -102,6 +102,8 @@ export interface ThemeColorsDerivable {
   tagSecondary?: string;
   /** Text on secondary tag chips. Default: same as `secondaryForeground`. CSS: --tag-secondary-foreground */
   tagSecondaryForeground?: string;
+  /** Hover color for interactive text (links, clickable items). Default: same as `accent`. CSS: --interactive-hover */
+  interactiveHover?: string;
 }
 
 /**
@@ -210,6 +212,7 @@ export const DERIVABLE_TOKENS: ReadonlyArray<keyof ThemeColorsDerivable> = [
   "accentTertiaryForeground",
   "tagSecondary",
   "tagSecondaryForeground",
+  "interactiveHover",
 ];
 
 /**
@@ -258,6 +261,7 @@ export const CSS_NAME: Record<string, string> = {
   accentTertiaryForeground: "--accent-tertiary-foreground",
   tagSecondary: "--tag-secondary",
   tagSecondaryForeground: "--tag-secondary-foreground",
+  interactiveHover: "--interactive-hover",
 };
 
 /**

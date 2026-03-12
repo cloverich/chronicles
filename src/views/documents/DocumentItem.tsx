@@ -21,7 +21,7 @@ export function DocumentItem(props: {
     <div key={doc.id} className="flex items-center justify-between space-y-0.5">
       <div className="flex items-center truncate">
         <div
-          className="hover:text-accent mr-2 min-w-0 cursor-pointer truncate"
+          className="hover:text-interactive-hover mr-2 min-w-0 cursor-pointer truncate"
           style={{
             fontSize: "var(--font-size-search)",
             fontFamily: "var(--font-search-body)",
@@ -35,7 +35,7 @@ export function DocumentItem(props: {
         </div>
       </div>
       <div
-        className="text-muted-foreground hover:text-accent mr-2 shrink-0 cursor-pointer text-xs"
+        className="text-muted-foreground hover:text-interactive-hover mr-2 shrink-0 cursor-pointer text-xs"
         onClick={() => search.addToken(`in:${doc.journal}`)}
       >
         /{doc.journal.toUpperCase()}

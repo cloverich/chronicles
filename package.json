@@ -13,8 +13,7 @@
     "lint:prettier:write": "prettier . --write",
     "lint:types:check": "tsc --noEmit --skipLibCheck",
     "postinstall": "yarn run electron-rebuild",
-    "prestart": "tailwindcss -i ./src/index.css -o ./src/index-compiled.css",
-    "prebuild": "yarn run lint && tailwindcss -i ./src/index.css -o ./src/index-compiled.css && node ./scripts/icons.js",
+    "prebuild": "yarn run lint && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
     "pretest": "node ./scripts/test.mjs",
     "test": "node --test 'src/**/*.test.bundle.mjs'",
@@ -58,7 +57,8 @@
     "@radix-ui/react-toolbar": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@radix-ui/react-visually-hidden": "^1.1.0",
-    "@tailwindcss/cli": "^4.1.18",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@vitejs/plugin-react": "^4.3.4",
     "@types/better-sqlite3": "^5.4.0",
     "@types/chai": "^4.3.11",
     "@types/lodash": "^4.17.0",
@@ -110,6 +110,7 @@
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.3.3",
+    "vite": "^5.4.19",
     "yaml": "^2.5.1"
   },
   "resolutions": {
