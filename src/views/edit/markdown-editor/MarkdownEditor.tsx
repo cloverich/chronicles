@@ -55,6 +55,7 @@ const MarkdownEditor = observer(
           <IconButton
             aria-label="Back to documents"
             icon="chevron-left"
+            variant="minimal"
             className="drag-none mr-4"
             onClick={goBack}
           />

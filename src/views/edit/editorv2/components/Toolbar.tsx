@@ -43,6 +43,8 @@ const toolbarButtonVariants = cva(
           "hover:bg-slate-50 hover:border-slate-400 hover:border hover:text-accent-foreground aria-checked:text-accent-foreground ", //border-1  border-transparent bg-transparent
         outline:
           "bg-transparent hover:bg-accent hover:text-accent-foreground hover:aria-checked:text-accent-foreground aria-checked:text-accent",
+        minimal:
+          "bg-transparent hover:bg-transparent hover:text-accent-tertiary active:opacity-70 border border-transparent aria-checked:text-accent-tertiary",
       },
       size: {
         default: "h-7 p-1.5",

@@ -58,16 +58,19 @@ export function EditorToolbar({
             <ToolbarGroup className="drag-none">
               <MarkToolbarButton
                 size="inherit"
+                variant="minimal"
                 tooltip="Bold (⌘+B)"
                 nodeType={MARK_BOLD}
                 icon="bold"
               />
               <MarkToolbarButton
+                variant="minimal"
                 tooltip="Italic (⌘+I)"
                 nodeType={MARK_ITALIC}
                 icon="italic"
               />
               <MarkToolbarButton
+                variant="minimal"
                 tooltip="Underline (⌘+U)"
                 nodeType={MARK_UNDERLINE}
                 icon="underline"
@@ -75,23 +78,26 @@ export function EditorToolbar({
 
               <>
                 <MarkToolbarButton
+                  variant="minimal"
                   tooltip="Strikethrough (⌘+⇧+M)"
                   nodeType={MARK_STRIKETHROUGH}
                   icon="strikethrough"
                 />
                 <MarkToolbarButton
+                  variant="minimal"
                   tooltip="Code (⌘+E)"
                   nodeType={MARK_CODE}
                   icon="code"
                 />
               </>
-              <LinkToolbarButton />
+              <LinkToolbarButton variant="minimal" />
             </ToolbarGroup>
 
             <ToolbarGroup className="drag-none">
               <DropdownMenu modal={false} {...openState}>
                 <DropdownMenuTrigger asChild>
                   <ToolbarButton
+                    variant="minimal"
                     isDropdown
                     pressed={openState.open}
                     tooltip="Change editor mode"
