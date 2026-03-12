@@ -77,13 +77,13 @@ export const NoteLinkDropdownElement = React.forwardRef<
   React.useEffect(() => {
     // Search documents by title directly via window.chronicles, bypassing
     // the shared SearchStore so the search page tokens/URL are not polluted.
-    if (!search) {
-      setResults([]);
-      return;
-    }
+    // When no search text, show 10 most recent documents as default.
+    const query = search
+      ? { journals: [], titles: [search] }
+      : { journals: [], limit: 10 };
     window.chronicles
       .getClient()
-      .documents.search({ journals: [], titles: [search] })
+      .documents.search(query)
       .then((res) => setResults(res.data));
   }, [search]);
 
@@ -119,7 +119,7 @@ export const NoteLinkDropdownElement = React.forwardRef<
               onClick={() => insertNoteLink(editor, item, focusEditor)}
               value={item.title}
             >
-              {item.title}
+              <span className="min-w-0 truncate">{item.title}</span>
             </InlineComboboxItem>
           ))}
         </InlineComboboxContent>
