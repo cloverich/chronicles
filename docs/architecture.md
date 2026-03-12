@@ -4,23 +4,23 @@ Chronicles is a local-first, markdown-based journaling app built with Electron +
 
 ## Technology Stack
 
-| Layer     | Technology                       |
-| --------- | -------------------------------- |
-| Framework | Electron (main + renderer)       |
-| Editor    | Slate.js / Plate                 |
-| State     | MobX                             |
-| Bundler   | esbuild                          |
-| Styling   | Tailwind CSS v4, Radix UI        |
-| Database  | better-sqlite3 + Knex migrations |
-| Markdown  | micromark, MDAST, unified/remark |
+| Layer     | Technology                              |
+| --------- | --------------------------------------- |
+| Framework | Electron (main + renderer)              |
+| Editor    | Slate.js / Plate                        |
+| State     | MobX                                    |
+| Bundler   | Vite (renderer), esbuild (main/preload) |
+| Styling   | Tailwind CSS v4, Radix UI               |
+| Database  | better-sqlite3 + Knex migrations        |
+| Markdown  | micromark, MDAST, unified/remark        |
 
 ## Process Model
 
 Electron runs three bundles:
 
-1. **Main** (`src/electron/index.js` -> `src/main.bundle.js`) — file system, database, native OS
+1. **Main** (`src/electron/index.ts` -> `src/main.bundle.mjs`) — file system, database, native OS
 2. **Preload** (`src/preload/index.ts` -> `src/preload.bundle.mjs`) — IPC bridge, `window.chronicles` API
-3. **Renderer** (`src/index.tsx` -> `src/renderer.bundle.mjs`) — React application (sandboxed)
+3. **Renderer** (`src/index.tsx` -> Vite-managed `dist/index.html` + hashed assets in `dist/assets/`) — React application (sandboxed)
 
 Communication flows through `src/preload/`; shared types live in `src/preload/client/types.ts`.
 

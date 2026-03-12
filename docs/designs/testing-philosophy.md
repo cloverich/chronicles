@@ -4,15 +4,17 @@
 
 Test at the layer where the thing actually lives. Most of Chronicles is a standard React app that happens to run inside Electron. Electron is only load-bearing in the main process and preload — the renderer is plain React/TypeScript with a mockable client interface. Don't pay Electron-level overhead to test React-level concerns.
 
+When testing renderer code, prefer rendering the real component tree with real context providers. Mock at the client or request boundary first, not at arbitrary child-component boundaries. Avoid mocking React components, hooks, or stores when a fake client, fake preload response, or provider fixture can drive the same behavior more honestly.
+
 ## Layers
 
 ### 1. Pure Logic — Vitest (Node)
 
-Parsers, markdown pipeline, search query, date utilities, stores with no DOM dependency. Fast, no browser. This is what `node:test` currently covers, poorly.
+Parsers, markdown pipeline, search query, date utilities, stores with no DOM dependency. Fast, no browser. This is what the current `node:test` suite covers today, and what should move to Vitest first.
 
 ### 2. React Components — Vitest (Browser Mode)
 
-Components mounted with mock or fixture data. `window.chronicles` is an interface — mock it. This covers view logic, component behavior, and crucially the editor.
+Components mounted with fixture data and real providers. `window.chronicles` is an interface — mock it at that boundary when needed. This covers view logic, component behavior, and crucially the editor.
 
 The editor (Plate/SlateJS) requires a **real browser**, not jsdom — `contenteditable` and Slate's selection APIs are unreliable in jsdom. Vitest's browser mode (`@vitest/browser`, backed by Playwright) runs tests in real Chromium without needing the full Electron app.
 
@@ -30,9 +32,11 @@ See [docs/designs/ui-driver.md](ui-driver.md) for the detailed design of this la
 
 **Screenshot-driven LLM testing** — too expensive per step. Semantic snapshots + `page.evaluate()` for editor state is the approach. Details in the ui-driver design.
 
+**Deep tree mocking as the default testing style** — low-value tests that mock away layout, stores, and child components usually stop testing the real UI. If a test needs several component mocks to become manageable, the preferred move is to raise the seam to providers and fake the client/preload boundary instead.
+
 ## Current State
 
-The `node:test` + esbuild pipeline is being replaced with Vitest. Until then, component and browser-mode tests are blocked. See [docs/testing.md](../testing.md) for the current state of what exists.
+The renderer migration to Vite is complete. The remaining testing migration is replacing the current `node:test` + esbuild pipeline with Vitest, then adding browser-mode coverage for editor and component behavior. See [docs/testing.md](../testing.md) for the current state of what exists.
 
 ## Workstreams
 

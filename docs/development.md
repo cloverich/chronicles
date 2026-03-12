@@ -4,7 +4,9 @@
 yarn                              # install
 yarn run electron-rebuild --force # rebuild native deps (after Electron/Node change)
 HEADLESS=true yarn start          # dev mode; renderer logs in terminal as [RENDERER]
-yarn test                         # node --test, files: *.test.ts -> *.test.bundle.mjs
+yarn test                         # vitest renderer tests (*.vitest.ts / *.vitest.tsx)
+yarn test:node                    # legacy node:test suite, files: *.test.ts -> *.test.bundle.mjs
+yarn test:electron                # legacy Electron-runner suite for *.electron-test.ts
 yarn lint                         # prettier + tsc --noEmit
 yarn run lint:prettier:write      # autofix formatting
 yarn run lint:types:check         # type-check only
