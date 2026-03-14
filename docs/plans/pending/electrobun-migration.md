@@ -98,15 +98,28 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 **Goal:** IClient runs under Bun with no Electron dependencies, validated by unit tests. No Electrobun required — this is pure Bun + IClient work, and also lays the foundation for the CLI.
 
+**Library changes (all in `src/preload/client/` + `src/electron/settings.ts`):**
+
+| Library | File(s) | What it does | Action |
+|---------|---------|--------------|--------|
+| `better-sqlite3` | `factory.ts`, `migrations/index.ts` | DB driver | → `bun:sqlite` |
+| `knex` | `factory.ts` | Query builder | → keep if compat, else raw SQL |
+| `electron-store` | `files.ts`, `preferences.ts`, `settings.ts` | Typed JSON settings file | → custom JSON r/w (own it, zero new deps — API surface is tiny) |
+| `sharp` | `files.ts` (2 call sites) | EXIF auto-rotate, resize to 1600px, convert to webp | → remove. Already has a fallback: if sharp throws, writes original bytes. Just always take the fallback. |
+
+`electron-context-menu`, `@electron/packager`, `electron` itself — main-process only, not touched until Phase 5+.
+
+Everything else (`uuidv7`, `uuid25`, `luxon`, `lodash`, `ajv`, `mkdirp`) is Bun-compatible as-is.
+
 **Steps:**
 
-1. Swap `better-sqlite3` → `bun:sqlite` (resolve the knex question)
-2. Replace `electron-store` with a simple JSON settings store
-3. Stub `sharp` — save images as-is
-4. Verify `fs`, `path`, `crypto` usage is Bun-compatible
-5. Write `bun test` unit tests that exercise IClient directly: migrations, journals, documents, tags, FTS5 search
+1. Swap `better-sqlite3` → `bun:sqlite` in `factory.ts` and `migrations/index.ts`
+2. Test knex compat — if it works, done; if not, replace with raw SQL
+3. Replace `electron-store` with a small JSON settings wrapper (`settings-store.ts`)
+4. Remove `sharp` from `files.ts` — delete the sharp path, keep the fallback write
+5. Write `bun test` unit tests: migrations, journals, documents, tags, FTS5 search
 
-**Deliverable:** `bun test` passes against a real notesDir; `bun run src/cli/smoke.ts` calls `createClient()` and lists journals
+**Deliverable:** `bun test` passes; `bun run src/cli/smoke.ts` calls `createClient()` and lists journals
 
 **Validation:** Tests are the validation. No window, no webview, no Electrobun.
 
@@ -157,66 +170,9 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 ---
 
-### Phase 2: Database Layer
+### Phases 2 & 3: ~~Database Layer~~ / ~~Backend Services~~
 
-**Goal:** `bun:sqlite` replaces `better-sqlite3`, all queries work.
-
-**Steps:**
-
-1. Create a `bun:sqlite`-compatible adapter or wrapper
-2. Assess knex compatibility with `bun:sqlite`:
-   - If knex works: swap the driver config
-   - If knex doesn't work: replace knex queries with raw SQL (there aren't that many — journals, documents, tags, indexer, importer, bulk ops)
-3. Port the 3 migrations to work with `bun:sqlite`
-4. Verify FTS5 works with `bun:sqlite` (it should — it's a SQLite extension)
-
-**Deliverable:** All database operations work on `bun:sqlite`
-
-**Validation:**
-
-- Migrations run successfully on a fresh database
-- Can insert and query journals, documents, tags
-- FTS5 search returns correct results
-- Existing test fixtures (if any) pass
-- Performance sanity check: index a real notesDir, verify query times
-
-**Docs needed:** `bun:sqlite` API reference
-
-**Key risk:** Knex compatibility. If knex's `better-sqlite3` dialect doesn't work with `bun:sqlite`, we have two options:
-
-- Write a thin adapter that makes `bun:sqlite` look like `better-sqlite3` to knex
-- Drop knex and use raw SQL (the query surface is small enough)
-
----
-
-### Phase 3: Backend Services on Bun
-
-**Goal:** All IClient services work in Bun runtime (no Electron dependencies).
-
-**Steps:**
-
-1. Replace `electron-store` with a simple JSON settings store:
-   - Same interface: `get(key)`, `set(key, value)`, `delete(key)`, `path`
-   - Read/write a JSON file in the settings directory
-   - This was already planned for the CLI extraction (Phase 0 of CLI plan)
-2. Handle `sharp`:
-   - **Option A (recommended initially):** Stub it — save uploaded images as-is (no resize/webp conversion). This unblocks the migration. Media handling is already problematic.
-   - **Option B:** Use `sharp` on Bun if it works (it may — sharp has prebuilt binaries)
-   - **Option C:** Replace with a Bun-native image library if one exists
-   - **Option D:** Shell out to system tools (`sips` on macOS) for basic resize/convert
-3. Port `FilesClient` — pure `fs` operations, should work on Bun as-is
-4. Port `PreferencesClient` — remove `document.dispatchEvent` calls (browser-only), use the new settings store
-5. Verify all other clients work (journals, documents, tags, indexer, importer, bulkOperations)
-
-**Deliverable:** `createClient()` works in Bun with no Electron dependencies
-
-**Validation:**
-
-- Write a smoke script: `bun run src/cli/smoke.ts` that calls `createClient()` and lists journals
-- All client methods callable and returning data
-- Image upload works (even if just saving raw bytes without processing)
-
-**Docs needed:** Bun Node.js compatibility (for `fs`, `path`, `crypto`, `Buffer`, `stream` usage)
+Absorbed into Phase -1. See above.
 
 ---
 
@@ -346,13 +302,13 @@ Each phase should have a runnable check the agent can execute:
 
 ## Decisions Made
 
-1. **Sharp:** Stub it. Save uploaded images as-is (no resize/webp conversion). Unblocks migration, fix media handling later.
+1. **Sharp:** Remove it. The existing fallback (write original bytes) stays. No resize, no webp conversion. Re-add proper image processing later as a standalone improvement.
 2. **Coexistence:** Cut over immediately. Replace Electron entry points with Electrobun, no parallel maintenance.
 3. **Bundler:** Keep Vite for the renderer. Proven, working, has Vitest. One migration at a time.
 
 ## Open Questions
 
-1. **Knex + bun:sqlite:** Does knex work with bun:sqlite? This determines whether Phase 2 is "swap a config line" or "rewrite all queries." Need to test early.
+1. **Knex + bun:sqlite:** Does knex work with bun:sqlite? Determines whether Phase -1 is "swap a config line" or "rewrite queries." Will be resolved during Phase -1.
 
 2. **`chronicles://` protocol:** ~~How does Electrobun handle custom URL schemes / local file serving in webviews?~~ **Resolved:** There is no `registerFileProtocol` equivalent. `urlSchemes` in `electrobun.config.ts` is deep-link only (external app-launch URLs). The solution is RPC + data URLs: images are fetched via RPC and displayed as `data:` URLs (Lexical controls rendering); fonts are fetched via RPC at startup and injected as `<style>` blocks with base64 `@font-face` data. See `docs/vendor/electrobun/browser-view-window.md` for details.
 
@@ -365,8 +321,7 @@ Each phase should have a runnable check the agent can execute:
 | Knex doesn't work with bun:sqlite              | Medium     | Medium | Write thin adapter or drop knex (small query surface)                     |
 | Electrobun webview quirks (WebKit vs Chromium) | Medium     | High   | Test early in Phase 1; CSS/JS differences may need fixes                  |
 | Electrobun missing APIs we need                | Low-Medium | High   | Check docs thoroughly before starting; fallback to Swift if critical gaps |
-| sharp doesn't work on Bun                      | High       | Low    | Stub it; media handling is already problematic                            |
-| Bun Node.js compat gaps                        | Low        | Medium | Most code is standard Node.js (fs, path, crypto); test in Phase 3         |
+| Bun Node.js compat gaps                        | Low        | Medium | Most code is standard Node.js (fs, path, crypto); validated in Phase -1   |
 | Electrobun is immature (v1.0, tiny ecosystem)  | Known      | High   | This is the accepted bet; Swift is the fallback                           |
 
 ---
@@ -376,26 +331,27 @@ Each phase should have a runnable check the agent can execute:
 ### New files
 
 ```
-src/electrobun/           # New main process entry
-  main.ts                 # Electrobun app bootstrap
-  rpc-handlers.ts         # RPC handler definitions
-  settings-store.ts       # JSON-based settings (replaces electron-store)
+# Phase -1
+src/electron/settings-store.ts    # JSON-based settings (replaces electron-store; neutral location, used by both CLI and desktop)
+src/preload/client/sqlite-bun.ts  # bun:sqlite adapter (only if knex needs it)
 
-src/preload/client/
-  sqlite-bun.ts           # bun:sqlite adapter (if knex needs it)
-
-docs/vendor/
-  electrobun/             # Fetched documentation
-  bun/                    # bun:sqlite docs
+# Phase 0+
+src/electrobun/
+  main.ts                         # Electrobun app bootstrap
+  rpc-handlers.ts                 # RPC handler definitions
 ```
 
 ### Modified files
 
 ```
-src/preload/client/factory.ts     # Swap DB driver
+# Phase -1
+src/preload/client/factory.ts     # Swap DB driver (better-sqlite3 → bun:sqlite)
+src/preload/client/files.ts       # Remove sharp, keep fallback write
 src/preload/client/preferences.ts # Use new settings store
-src/preload/client/files.ts       # Handle sharp replacement
+src/electron/settings.ts          # Use new settings store
 src/electron/migrations/index.ts  # Port to bun:sqlite
+
+# Phase 0+
 vite.config.ts                    # May need adjustments for Electrobun dev
 package.json                      # New deps, new scripts
 ```
