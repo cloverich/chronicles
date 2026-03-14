@@ -100,12 +100,12 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 **Library changes (all in `src/preload/client/` + `src/electron/settings.ts`):**
 
-| Library | File(s) | What it does | Action |
-|---------|---------|--------------|--------|
-| `better-sqlite3` | `factory.ts`, `migrations/index.ts` | DB driver | → `bun:sqlite` |
-| `knex` | `factory.ts` | Query builder | → keep if compat, else raw SQL |
-| `electron-store` | `files.ts`, `preferences.ts`, `settings.ts` | Typed JSON settings file | → custom JSON r/w (own it, zero new deps — API surface is tiny) |
-| `sharp` | `files.ts` (2 call sites) | EXIF auto-rotate, resize to 1600px, convert to webp | → remove. Already has a fallback: if sharp throws, writes original bytes. Just always take the fallback. |
+| Library          | File(s)                                     | What it does                                        | Action                                                                                                   |
+| ---------------- | ------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `better-sqlite3` | `factory.ts`, `migrations/index.ts`         | DB driver                                           | → `bun:sqlite`                                                                                           |
+| `knex`           | `factory.ts`                                | Query builder                                       | → keep if compat, else raw SQL                                                                           |
+| `electron-store` | `files.ts`, `preferences.ts`, `settings.ts` | Typed JSON settings file                            | → custom JSON r/w (own it, zero new deps — API surface is tiny)                                          |
+| `sharp`          | `files.ts` (2 call sites)                   | EXIF auto-rotate, resize to 1600px, convert to webp | → remove. Already has a fallback: if sharp throws, writes original bytes. Just always take the fallback. |
 
 `electron-context-menu`, `@electron/packager`, `electron` itself — main-process only, not touched until Phase 5+.
 
@@ -271,16 +271,16 @@ The renderer currently calls `window.chronicles.foo()`. If we expose the same sh
 
 ### Context each agent needs per phase
 
-| Phase          | Essential context files                                                                                            |
-| -------------- | ------------------------------------------------------------------------------------------------------------------ |
-| -1 (IClient)   | `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts`, `bun:sqlite` docs |
-| 0 (Scaffold)   | Electrobun getting started docs, project structure docs                                                            |
-| 1 (Renderer)   | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                    |
-| 2 (Database)   | Already done in Phase -1                                                                                           |
-| 3 (Backend)    | Already done in Phase -1                                                                                           |
-| 4 (IPC/RPC)    | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                |
-| 5 (Native)     | `src/electron/index.ts`, Electrobun native API docs                                                                |
-| 6 (Build)      | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                         |
+| Phase        | Essential context files                                                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| -1 (IClient) | `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts`, `bun:sqlite` docs |
+| 0 (Scaffold) | Electrobun getting started docs, project structure docs                                                              |
+| 1 (Renderer) | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                      |
+| 2 (Database) | Already done in Phase -1                                                                                             |
+| 3 (Backend)  | Already done in Phase -1                                                                                             |
+| 4 (IPC/RPC)  | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                  |
+| 5 (Native)   | `src/electron/index.ts`, Electrobun native API docs                                                                  |
+| 6 (Build)    | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                           |
 
 ### Validation feedback loops
 
