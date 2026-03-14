@@ -26,7 +26,7 @@ const win = new BrowserWindow({
   },
   url: "views://main/index.html",         // Load URL on startup
   html: null,                             // OR inline HTML string
-  preload: null,                          // Preload script path (usually not needed with RPC)
+  preload: null,                          // Raw JS string injected before page scripts. No isolated context, no Node access — RPC fills that role.
   renderer: "native",                     // "native" (system WebView) | "cef" (Chromium)
   rpc: myRPC,                             // Typed RPC (see rpc.md)
   titleBarStyle: "hiddenInset",           // "default" | "hidden" | "hiddenInset"
@@ -202,7 +202,8 @@ This replaces Electron's `protocol.registerFileProtocol("chronicles", ...)`.
 | `win.loadURL(url)` | `win.webview.loadURL(url)` |
 | `win.webContents.openDevTools()` | `win.webview.openDevTools()` |
 | `win.on("close", ...)` | `win.on("close", ...)` — same! |
-| `protocol.registerFileProtocol("chronicles", ...)` | Custom URL scheme or RPC-based file serving |
+| `protocol.registerFileProtocol("chronicles", ...)` | RPC + data URLs (no protocol handler equivalent) |
 | `contextBridge.exposeInMainWorld(...)` | Replaced entirely by typed RPC |
 | `ipcMain.handle(...)` | Replaced by `BrowserView.defineRPC` handlers |
 | `ipcRenderer.invoke(...)` | Replaced by `view.rpc.request.*()` |
+| Electron preload (Node context, `contextBridge`) | No equivalent — RPC fills this role. Electrobun `preload` is plain JS injected into the page, no process boundary. |
