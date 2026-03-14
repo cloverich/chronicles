@@ -94,6 +94,26 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 ## Migration Phases
 
+### Phase -1: IClient on Bun (Current Milestone)
+
+**Goal:** IClient runs under Bun with no Electron dependencies, validated by unit tests. No Electrobun required — this is pure Bun + IClient work, and also lays the foundation for the CLI.
+
+**Steps:**
+
+1. Swap `better-sqlite3` → `bun:sqlite` (resolve the knex question)
+2. Replace `electron-store` with a simple JSON settings store
+3. Stub `sharp` — save images as-is
+4. Verify `fs`, `path`, `crypto` usage is Bun-compatible
+5. Write `bun test` unit tests that exercise IClient directly: migrations, journals, documents, tags, FTS5 search
+
+**Deliverable:** `bun test` passes against a real notesDir; `bun run src/cli/smoke.ts` calls `createClient()` and lists journals
+
+**Validation:** Tests are the validation. No window, no webview, no Electrobun.
+
+**Resolves open question:** Knex + bun:sqlite compatibility (the highest-risk unknown).
+
+---
+
 ### Phase 0: Scaffold & Hello World
 
 **Goal:** Electrobun project boots and shows a webview with static content.
@@ -295,31 +315,30 @@ The renderer currently calls `window.chronicles.foo()`. If we expose the same sh
 
 ### Context each agent needs per phase
 
-| Phase        | Essential context files                                                                                            |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| 0 (Scaffold) | Electrobun getting started docs, project structure docs                                                            |
-| 1 (Renderer) | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                    |
-| 2 (Database) | `src/electron/migrations/index.ts`, `src/preload/client/factory.ts`, representative query files, `bun:sqlite` docs |
-| 3 (Backend)  | `src/preload/client/` (all files), `src/electron/settings.ts`, `src/preload/client/files.ts`                       |
-| 4 (IPC/RPC)  | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                |
-| 5 (Native)   | `src/electron/index.ts`, Electrobun native API docs                                                                |
-| 6 (Build)    | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                         |
+| Phase          | Essential context files                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| -1 (IClient)   | `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts`, `bun:sqlite` docs |
+| 0 (Scaffold)   | Electrobun getting started docs, project structure docs                                                            |
+| 1 (Renderer)   | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                    |
+| 2 (Database)   | Already done in Phase -1                                                                                           |
+| 3 (Backend)    | Already done in Phase -1                                                                                           |
+| 4 (IPC/RPC)    | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                |
+| 5 (Native)     | `src/electron/index.ts`, Electrobun native API docs                                                                |
+| 6 (Build)      | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                         |
 
 ### Validation feedback loops
 
 Each phase should have a runnable check the agent can execute:
 
+- **Phase -1:** `bun test` unit tests against IClient directly; no Electrobun needed
 - **Phase 0-1:** `bun run dev:electrobun` → screenshot/accessibility check
-- **Phase 2:** Smoke script that queries the database
-- **Phase 3:** Smoke script that exercises all IClient methods
 - **Phase 4:** Launch app, run through a manual checklist (or simple automation)
 - **Phase 5-6:** Manual QA against a checklist
 
 ### Parallel work opportunities
 
-- Phase 2 (database) and Phase 0-1 (scaffold + renderer) can be done in parallel by different agents
-- Phase 3 (backend services) depends on Phase 2
-- Phase 4 (IPC) depends on Phases 1 + 3
+- Phase -1 (IClient on Bun) and Phase 0-1 (scaffold + renderer) can be done in parallel by different agents
+- Phase 4 (IPC/RPC) depends on Phase -1 + Phase 1
 - Phase 5 (native) depends on Phase 4
 - Phase 6 (build) depends on Phase 5
 
