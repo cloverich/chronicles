@@ -335,7 +335,7 @@ Each phase should have a runnable check the agent can execute:
 
 1. **Knex + bun:sqlite:** Does knex work with bun:sqlite? This determines whether Phase 2 is "swap a config line" or "rewrite all queries." Need to test early.
 
-2. **`chronicles://` protocol:** How does Electrobun handle custom URL schemes / local file serving in webviews? This affects how attachments and fonts display. Critical for Phase 4.
+2. **`chronicles://` protocol:** ~~How does Electrobun handle custom URL schemes / local file serving in webviews?~~ **Resolved:** There is no `registerFileProtocol` equivalent. `urlSchemes` in `electrobun.config.ts` is deep-link only (external app-launch URLs). The solution is RPC + data URLs: images are fetched via RPC and displayed as `data:` URLs (Lexical controls rendering); fonts are fetched via RPC at startup and injected as `<style>` blocks with base64 `@font-face` data. See `docs/vendor/electrobun/browser-view-window.md` for details.
 
 ---
 

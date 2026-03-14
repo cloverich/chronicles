@@ -183,12 +183,12 @@ BrowserView.defineRPC<Schema>(config): RPC   // Define bun-side RPC handlers
 |--------|-----|---------|
 | `views://` | Serve bundled views from app bundle | `views://main/index.html` |
 | `http://localhost:PORT` | Dev server (Vite etc.) | `http://localhost:5173` |
-| Custom schemes | Defined in `electrobun.config.ts` `urlSchemes` | `chronicles://...` |
 
-**Note on `chronicles://` protocol:** Electrobun's built-in `views://` scheme serves files from the build output. For serving arbitrary files from the user's filesystem (attachments, fonts), you'll likely need to either:
-1. Serve them via an RPC request that returns file contents (base64 or blob)
-2. Use a custom URL scheme (if Electrobun supports registering them — check `urlSchemes` in config)
-3. Copy files into the views bundle at build time
+**Note on `chronicles://` protocol:** There is **no `registerFileProtocol` equivalent in Electrobun**. The `urlSchemes` config option is for deep linking only (opening the app from an external `myapp://` URL) — it does not intercept resource loads from within the webview.
+
+For serving arbitrary files from the user's filesystem (attachments, fonts), the approach is RPC-based:
+1. **Images** — The renderer calls an RPC method, receives the file as base64, and sets the `src` as a `data:` URL. Works naturally since Lexical/React controls image rendering.
+2. **Fonts** — On startup, call an RPC method to fetch each font file as base64, then inject a `<style>` block with `@font-face` rules using `data:` URLs. This replaces the current `getInstalledFontsStylesheetHref()` → `<link>` approach.
 
 This replaces Electron's `protocol.registerFileProtocol("chronicles", ...)`.
 
