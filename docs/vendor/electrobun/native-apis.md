@@ -15,8 +15,8 @@ import { Utils } from "electrobun/bun";
 
 // Open file/folder picker
 const paths = await Utils.openFileDialog({
-  startingFolder: "~/",              // initial directory
-  allowedFileTypes: "*",             // e.g. "json,txt" or "*"
+  startingFolder: "~/", // initial directory
+  allowedFileTypes: "*", // e.g. "json,txt" or "*"
   canChooseFiles: true,
   canChooseDirectory: true,
   allowsMultipleSelection: true,
@@ -43,13 +43,13 @@ const [filePath] = await Utils.openFileDialog({
 
 ```typescript
 const { response } = await Utils.showMessageBox({
-  type: "question",             // "info" | "warning" | "error" | "question"
+  type: "question", // "info" | "warning" | "error" | "question"
   title: "Confirm Delete",
   message: "Delete this journal?",
   detail: "This action cannot be undone.",
   buttons: ["Delete", "Cancel"],
-  defaultId: 1,                 // focused button index
-  cancelId: 1,                  // button triggered by Escape
+  defaultId: 1, // focused button index
+  cancelId: 1, // button triggered by Escape
 });
 // response: 0-based index of clicked button (0 = Delete, 1 = Cancel)
 ```
@@ -63,8 +63,8 @@ import { Utils } from "electrobun/bun";
 
 // Open a file or folder with the default app (Finder, PDF reader, etc.)
 // Electron equivalent: shell.openPath()
-Utils.openPath("/Users/me/Documents");          // opens folder in Finder
-Utils.openPath("/Users/me/report.pdf");          // opens with default PDF app
+Utils.openPath("/Users/me/Documents"); // opens folder in Finder
+Utils.openPath("/Users/me/report.pdf"); // opens with default PDF app
 
 // Open URL in default browser
 // Electron equivalent: shell.openExternal()
@@ -114,10 +114,7 @@ ApplicationMenu.setApplicationMenu([
   },
   {
     label: "View",
-    submenu: [
-      { role: "reload" },
-      { role: "toggleDevTools" },
-    ],
+    submenu: [{ role: "reload" }, { role: "toggleDevTools" }],
   },
 ]);
 
@@ -138,14 +135,14 @@ type MenuItemConfig =
   | {
       type?: "normal";
       label?: string;
-      action?: string;           // custom action identifier
-      role?: string;             // system role: "quit", "copy", "paste", etc.
-      data?: unknown;            // arbitrary data passed back in click event
+      action?: string; // custom action identifier
+      role?: string; // system role: "quit", "copy", "paste", etc.
+      data?: unknown; // arbitrary data passed back in click event
       submenu?: MenuItemConfig[];
       enabled?: boolean;
       checked?: boolean;
       hidden?: boolean;
-      accelerator?: string;      // e.g. "Cmd+," or "Ctrl+Shift+I"
+      accelerator?: string; // e.g. "Cmd+," or "Ctrl+Shift+I"
       tooltip?: string;
     };
 ```
@@ -187,21 +184,21 @@ ContextMenu.on("context-menu-clicked", (event) => {
 import { PATHS } from "electrobun/bun";
 
 // Standard OS directories
-PATHS.paths.home          // /Users/username
-PATHS.paths.appData       // ~/Library/Application Support (macOS)
-PATHS.paths.config        // ~/Library/Application Support (macOS)
-PATHS.paths.cache         // ~/Library/Caches (macOS)
-PATHS.paths.temp          // /var/folders/.../T/
-PATHS.paths.logs          // ~/Library/Logs (macOS)
-PATHS.paths.documents     // ~/Documents
-PATHS.paths.downloads     // ~/Downloads
-PATHS.paths.desktop       // ~/Desktop
-PATHS.paths.pictures      // ~/Pictures
+PATHS.paths.home; // /Users/username
+PATHS.paths.appData; // ~/Library/Application Support (macOS)
+PATHS.paths.config; // ~/Library/Application Support (macOS)
+PATHS.paths.cache; // ~/Library/Caches (macOS)
+PATHS.paths.temp; // /var/folders/.../T/
+PATHS.paths.logs; // ~/Library/Logs (macOS)
+PATHS.paths.documents; // ~/Documents
+PATHS.paths.downloads; // ~/Downloads
+PATHS.paths.desktop; // ~/Desktop
+PATHS.paths.pictures; // ~/Pictures
 
 // App-scoped directories (uses app identifier + channel from version.json)
-PATHS.paths.userData      // ~/Library/Application Support/{identifier}/{channel}
-PATHS.paths.userCache     // ~/Library/Caches/{identifier}/{channel}
-PATHS.paths.userLogs      // ~/Library/Logs/{identifier}/{channel}
+PATHS.paths.userData; // ~/Library/Application Support/{identifier}/{channel}
+PATHS.paths.userCache; // ~/Library/Caches/{identifier}/{channel}
+PATHS.paths.userLogs; // ~/Library/Logs/{identifier}/{channel}
 ```
 
 ---
@@ -215,6 +212,7 @@ Electrobun does not have a direct `nativeTheme` API like Electron. Dark mode det
 3. **System events**: Listen for `prefers-color-scheme` change events in the webview
 
 For the `setNativeTheme` equivalent (forcing light/dark/system), there is no direct API in Electrobun v1.x. Options:
+
 - Use CSS variables driven by a class on `<html>` that the app manages
 - The webview can read and respond to `prefers-color-scheme` automatically via CSS
 
@@ -230,7 +228,7 @@ import { Utils } from "electrobun/bun";
 Utils.showNotification({
   title: "Sync Complete",
   body: "All notes synced successfully",
-  subtitle: "Chronicles",          // shown between title and body on macOS
+  subtitle: "Chronicles", // shown between title and body on macOS
   silent: false,
 });
 ```
@@ -247,7 +245,7 @@ const text = Utils.clipboardReadText();
 Utils.clipboardWriteText("hello");
 
 // Image (PNG)
-const pngData = Utils.clipboardReadImage();  // Uint8Array | null
+const pngData = Utils.clipboardReadImage(); // Uint8Array | null
 Utils.clipboardWriteImage(pngUint8Array);
 
 // Clear
@@ -286,15 +284,15 @@ import { GlobalShortcut } from "electrobun/bun";
 
 ## Electron → Electrobun Migration Reference
 
-| Electron API | Electrobun Equivalent |
-|---|---|
-| `dialog.showOpenDialog({ properties: ["openDirectory"] })` | `Utils.openFileDialog({ canChooseDirectory: true, canChooseFiles: false })` |
-| `dialog.showOpenDialog({ properties: ["openFile"], filters: [{extensions: ["json"]}] })` | `Utils.openFileDialog({ allowedFileTypes: "json", canChooseDirectory: false })` |
-| `shell.openPath(path)` | `Utils.openPath(path)` |
-| `shell.openExternal(url)` | `Utils.openExternal(url)` |
-| `nativeTheme.themeSource = "dark"` | No direct equivalent — manage via CSS/class in renderer |
-| `nativeTheme.shouldUseDarkColors` | `window.matchMedia("(prefers-color-scheme: dark)").matches` in webview |
-| `app.quit()` | `Utils.quit()` |
-| `Menu.buildFromTemplate(template)` + `Menu.setApplicationMenu(menu)` | `ApplicationMenu.setApplicationMenu(items)` |
-| `electron-context-menu` package | `ContextMenu.showContextMenu(items)` + RPC call from webview |
-| `electron-store` | Roll your own JSON store: `Bun.file(path).json()` / `Bun.write(path, JSON.stringify(data))` |
+| Electron API                                                                             | Electrobun Equivalent                                                                       |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `dialog.showOpenDialog({ properties: ["openDirectory"] })`                               | `Utils.openFileDialog({ canChooseDirectory: true, canChooseFiles: false })`                 |
+| `dialog.showOpenDialog({ properties: ["openFile"], filters: [{extensions: ["json"]}] })` | `Utils.openFileDialog({ allowedFileTypes: "json", canChooseDirectory: false })`             |
+| `shell.openPath(path)`                                                                   | `Utils.openPath(path)`                                                                      |
+| `shell.openExternal(url)`                                                                | `Utils.openExternal(url)`                                                                   |
+| `nativeTheme.themeSource = "dark"`                                                       | No direct equivalent — manage via CSS/class in renderer                                     |
+| `nativeTheme.shouldUseDarkColors`                                                        | `window.matchMedia("(prefers-color-scheme: dark)").matches` in webview                      |
+| `app.quit()`                                                                             | `Utils.quit()`                                                                              |
+| `Menu.buildFromTemplate(template)` + `Menu.setApplicationMenu(menu)`                     | `ApplicationMenu.setApplicationMenu(items)`                                                 |
+| `electron-context-menu` package                                                          | `ContextMenu.showContextMenu(items)` + RPC call from webview                                |
+| `electron-store`                                                                         | Roll your own JSON store: `Bun.file(path).json()` / `Bun.write(path, JSON.stringify(data))` |

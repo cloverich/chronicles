@@ -9,6 +9,7 @@
 Electrobun is a complete solution-in-a-box for building, updating, and shipping ultra fast, tiny, and cross-platform desktop applications written in TypeScript. Under the hood it uses [Bun](https://bun.sh) to execute the main process and to bundle webview TypeScript, with native bindings written in Zig.
 
 **Project goals:**
+
 - Write TypeScript for the main process and webviews without thinking about it
 - Isolation between main and webview processes with fast, typed, easy-to-implement RPC
 - Small self-extracting app bundles ~12MB (when using system webview)
@@ -56,20 +57,20 @@ import type { ElectrobunConfig } from "electrobun";
 export default {
   app: {
     name: "My App",
-    identifier: "com.example.myapp",   // reverse-DNS bundle ID
+    identifier: "com.example.myapp", // reverse-DNS bundle ID
     version: "1.0.0",
-    urlSchemes: [],                     // custom URL schemes (optional)
+    urlSchemes: [], // custom URL schemes (optional)
   },
   runtime: {
-    exitOnLastWindowClosed: true,       // default: true
+    exitOnLastWindowClosed: true, // default: true
   },
   build: {
     bun: {
-      entrypoint: "src/bun/index.ts",  // main process entry
+      entrypoint: "src/bun/index.ts", // main process entry
     },
     views: {
       // Each key becomes a named view bundle
-      "main": {
+      main: {
         entrypoint: "src/views/main/index.ts",
       },
     },
@@ -97,9 +98,9 @@ import { BrowserWindow } from "electrobun/bun";
 const win = new BrowserWindow({
   title: "My App",
   frame: { x: 100, y: 100, width: 1200, height: 800 },
-  url: "views://main/index.html",    // production: serves from bundled views
+  url: "views://main/index.html", // production: serves from bundled views
   // url: "http://localhost:5173",   // dev: point at Vite dev server
-  titleBarStyle: "hiddenInset",      // macOS: transparent titlebar with inset traffic lights
+  titleBarStyle: "hiddenInset", // macOS: transparent titlebar with inset traffic lights
 });
 ```
 
@@ -117,9 +118,9 @@ const electroview = new Electroview({ rpc: undefined });
 
 ## Dev vs Production URLs
 
-| Environment | URL pattern |
-|-------------|-------------|
-| Development | `http://localhost:5173` (Vite dev server) |
+| Environment | URL pattern                                                     |
+| ----------- | --------------------------------------------------------------- |
+| Development | `http://localhost:5173` (Vite dev server)                       |
 | Production  | `views://main/index.html` (bundled assets served by Electrobun) |
 
 The `views://` scheme serves files from the built `views/` directory inside the app bundle.
@@ -141,24 +142,24 @@ bun run dev
 
 ## Platform Support
 
-| OS | Status |
-|----|--------|
-| macOS 14+ | Official |
-| Windows 11+ | Official |
-| Ubuntu 22.04+ | Official |
+| OS                                  | Status    |
+| ----------------------------------- | --------- |
+| macOS 14+                           | Official  |
+| Windows 11+                         | Official  |
+| Ubuntu 22.04+                       | Official  |
 | Other Linux (GTK3 + WebKit2GTK 4.1) | Community |
 
 ## Key Differences from Electron
 
-| | Electron | Electrobun |
-|--|----------|------------|
-| Runtime | Node.js | Bun |
-| Bundle size | ~100MB | ~12MB |
-| Startup time | 1-2s | <50ms |
-| Webview | Bundled Chromium | System WebView (WebKit on macOS) |
-| IPC | contextBridge + ipcMain/ipcRenderer | Typed RPC (see rpc.md) |
-| SQLite | better-sqlite3 (native module) | bun:sqlite (built-in) |
-| Native modules | npm (with rebuild) | Bun-compatible npm packages |
+|                | Electron                            | Electrobun                       |
+| -------------- | ----------------------------------- | -------------------------------- |
+| Runtime        | Node.js                             | Bun                              |
+| Bundle size    | ~100MB                              | ~12MB                            |
+| Startup time   | 1-2s                                | <50ms                            |
+| Webview        | Bundled Chromium                    | System WebView (WebKit on macOS) |
+| IPC            | contextBridge + ipcMain/ipcRenderer | Typed RPC (see rpc.md)           |
+| SQLite         | better-sqlite3 (native module)      | bun:sqlite (built-in)            |
+| Native modules | npm (with rebuild)                  | Bun-compatible npm packages      |
 
 ## Important: System WebView
 

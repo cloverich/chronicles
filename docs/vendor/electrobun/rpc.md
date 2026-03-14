@@ -21,6 +21,7 @@ BrowserView.defineRPC()  ←→  Electroview.defineRPC()
 ```
 
 Both sides share a **schema type** that defines:
+
 - `bun`: handlers that execute in the Bun process (callable from webview)
 - `webview`: handlers that execute in the webview (callable from Bun)
 
@@ -41,7 +42,7 @@ export type AppRPC = ElectrobunRPCSchema & {
       };
       openFolderDialog: {
         params?: undefined;
-        response: string | null;  // selected path or null
+        response: string | null; // selected path or null
       };
     };
     messages: {
@@ -80,7 +81,10 @@ const rpc = BrowserView.defineRPC<AppRPC>({
     requests: {
       getJournals: async ({ userId }) => {
         // runs in bun process — can use bun:sqlite, fs, etc.
-        return await db.query("SELECT id, name FROM journals WHERE user_id = ?", [userId]);
+        return await db.query(
+          "SELECT id, name FROM journals WHERE user_id = ?",
+          [userId],
+        );
       },
       openFolderDialog: async () => {
         const [path] = await Utils.openFileDialog({
@@ -108,7 +112,7 @@ const win = new BrowserWindow({
 });
 
 // Call webview-side methods from bun
-win.webview.rpc.request.ping().then(result => {
+win.webview.rpc.request.ping().then((result) => {
   console.log(result); // "pong"
 });
 
@@ -148,12 +152,12 @@ view.rpc.send.logEvent({ event: "page-load" });
 
 ## Messages vs Requests
 
-| | Requests | Messages |
-|--|----------|----------|
-| Direction | Bidirectional | One-way |
-| Return value | `Promise<response>` | `void` |
-| Use for | Queries, operations needing a result | Notifications, events |
-| Timeout | Yes (default 1000ms, configurable) | No |
+|              | Requests                             | Messages              |
+| ------------ | ------------------------------------ | --------------------- |
+| Direction    | Bidirectional                        | One-way               |
+| Return value | `Promise<response>`                  | `void`                |
+| Use for      | Queries, operations needing a result | Notifications, events |
+| Timeout      | Yes (default 1000ms, configurable)   | No                    |
 
 ## BrowserView.defineRPC vs BrowserWindow RPC
 
@@ -178,7 +182,7 @@ When `sandbox: true` is set on `BrowserWindow` or `BrowserView`, **RPC is disabl
 ```typescript
 const win = new BrowserWindow({
   url: "https://untrusted-site.com",
-  sandbox: true,  // disables all RPC
+  sandbox: true, // disables all RPC
 });
 ```
 
@@ -189,7 +193,7 @@ const win = new BrowserWindow({
 interface ElectrobunRPCSchema {
   bun: {
     requests: { [method: string]: { params: unknown; response: unknown } };
-    messages: { [event: string]: unknown };  // payload type
+    messages: { [event: string]: unknown }; // payload type
   };
   webview: {
     requests: { [method: string]: { params: unknown; response: unknown } };
@@ -208,7 +212,9 @@ The existing `window.chronicles` API in Chronicles is implemented via Electron's
 // src/views/main/chronicles-shim.ts
 // (runs in webview, called during app init)
 
-export function installChroniclesShim(rpc: ReturnType<typeof Electroview.defineRPC>) {
+export function installChroniclesShim(
+  rpc: ReturnType<typeof Electroview.defineRPC>,
+) {
   const view = new Electroview({ rpc });
 
   window.chronicles = {
@@ -246,7 +252,7 @@ Thrown errors in handlers propagate back as rejected promises on the caller side
 requests: {
   getJournals: async () => {
     throw new Error("Database not initialized");
-  }
+  };
 }
 
 // webview side — receives rejection

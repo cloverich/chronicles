@@ -19,30 +19,32 @@ In most apps you'll use `BrowserWindow` directly. `BrowserView` is exposed for a
 import { BrowserWindow } from "electrobun/bun";
 
 const win = new BrowserWindow({
-  title: "Chronicles",                    // Window title bar text
+  title: "Chronicles", // Window title bar text
   frame: {
-    x: 100, y: 100,                       // Initial position
-    width: 1200, height: 800,             // Initial size
+    x: 100,
+    y: 100, // Initial position
+    width: 1200,
+    height: 800, // Initial size
   },
-  url: "views://main/index.html",         // Load URL on startup
-  html: null,                             // OR inline HTML string
-  preload: null,                          // Raw JS string injected before page scripts. No isolated context, no Node access — RPC fills that role.
-  renderer: "native",                     // "native" (system WebView) | "cef" (Chromium)
-  rpc: myRPC,                             // Typed RPC (see rpc.md)
-  titleBarStyle: "hiddenInset",           // "default" | "hidden" | "hiddenInset"
-  transparent: false,                     // Transparent window background
-  hidden: false,                          // Start hidden
-  navigationRules: null,                  // JSON navigation whitelist
-  sandbox: false,                         // Disable RPC, untrusted content only
+  url: "views://main/index.html", // Load URL on startup
+  html: null, // OR inline HTML string
+  preload: null, // Raw JS string injected before page scripts. No isolated context, no Node access — RPC fills that role.
+  renderer: "native", // "native" (system WebView) | "cef" (Chromium)
+  rpc: myRPC, // Typed RPC (see rpc.md)
+  titleBarStyle: "hiddenInset", // "default" | "hidden" | "hiddenInset"
+  transparent: false, // Transparent window background
+  hidden: false, // Start hidden
+  navigationRules: null, // JSON navigation whitelist
+  sandbox: false, // Disable RPC, untrusted content only
 });
 ```
 
 ### titleBarStyle Options (macOS)
 
-| Value | Description |
-|-------|-------------|
-| `"default"` | Normal titlebar with native window controls |
-| `"hidden"` | No titlebar, no native window controls (fully custom chrome) |
+| Value           | Description                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `"default"`     | Normal titlebar with native window controls                                                    |
+| `"hidden"`      | No titlebar, no native window controls (fully custom chrome)                                   |
 | `"hiddenInset"` | Transparent titlebar with inset native controls (traffic lights visible, content fills window) |
 
 Chronicles currently uses `hiddenInset` equivalent in Electron.
@@ -96,8 +98,8 @@ BrowserWindow.getById(id: number): BrowserWindow | undefined
 
 ```typescript
 // Call webview-side RPC methods from bun
-win.webview.rpc.request.someWebviewMethod(params)
-win.webview.rpc.send.someWebviewMessage(payload)
+win.webview.rpc.request.someWebviewMethod(params);
+win.webview.rpc.send.someWebviewMessage(payload);
 ```
 
 ---
@@ -113,15 +115,15 @@ import { BrowserView } from "electrobun/bun";
 
 const view = new BrowserView({
   url: "views://main/index.html",
-  html: null,                    // OR inline HTML
+  html: null, // OR inline HTML
   preload: null,
-  renderer: "native",            // "native" | "cef"
-  partition: null,               // Session partition name for cookie/storage isolation
+  renderer: "native", // "native" | "cef"
+  partition: null, // Session partition name for cookie/storage isolation
   frame: { x: 0, y: 0, width: 1200, height: 800 },
   rpc: myRPC,
-  hostWebviewId: undefined,      // Parent webview ID (for OOPIFs)
-  autoResize: true,              // Auto-resize with window
-  windowId: win.id,             // Window to attach to
+  hostWebviewId: undefined, // Parent webview ID (for OOPIFs)
+  autoResize: true, // Auto-resize with window
+  windowId: win.id, // Window to attach to
   navigationRules: null,
   sandbox: false,
   startTransparent: false,
@@ -179,14 +181,15 @@ BrowserView.defineRPC<Schema>(config): RPC   // Define bun-side RPC handlers
 
 ## URL Schemes
 
-| Scheme | Use | Example |
-|--------|-----|---------|
-| `views://` | Serve bundled views from app bundle | `views://main/index.html` |
-| `http://localhost:PORT` | Dev server (Vite etc.) | `http://localhost:5173` |
+| Scheme                  | Use                                 | Example                   |
+| ----------------------- | ----------------------------------- | ------------------------- |
+| `views://`              | Serve bundled views from app bundle | `views://main/index.html` |
+| `http://localhost:PORT` | Dev server (Vite etc.)              | `http://localhost:5173`   |
 
 **Note on `chronicles://` protocol:** There is **no `registerFileProtocol` equivalent in Electrobun**. The `urlSchemes` config option is for deep linking only (opening the app from an external `myapp://` URL) — it does not intercept resource loads from within the webview.
 
 For serving arbitrary files from the user's filesystem (attachments, fonts), the approach is RPC-based:
+
 1. **Images** — The renderer calls an RPC method, receives the file as base64, and sets the `src` as a `data:` URL. Works naturally since Lexical/React controls image rendering.
 2. **Fonts** — On startup, call an RPC method to fetch each font file as base64, then inject a `<style>` block with `@font-face` rules using `data:` URLs. This replaces the current `getInstalledFontsStylesheetHref()` → `<link>` approach.
 
@@ -196,14 +199,14 @@ This replaces Electron's `protocol.registerFileProtocol("chronicles", ...)`.
 
 ## Electron → Electrobun Migration Reference
 
-| Electron | Electrobun |
-|----------|------------|
-| `new BrowserWindow({ titleBarStyle: "hiddenInset" })` | `new BrowserWindow({ titleBarStyle: "hiddenInset" })` — same! |
-| `win.loadURL(url)` | `win.webview.loadURL(url)` |
-| `win.webContents.openDevTools()` | `win.webview.openDevTools()` |
-| `win.on("close", ...)` | `win.on("close", ...)` — same! |
-| `protocol.registerFileProtocol("chronicles", ...)` | RPC + data URLs (no protocol handler equivalent) |
-| `contextBridge.exposeInMainWorld(...)` | Replaced entirely by typed RPC |
-| `ipcMain.handle(...)` | Replaced by `BrowserView.defineRPC` handlers |
-| `ipcRenderer.invoke(...)` | Replaced by `view.rpc.request.*()` |
-| Electron preload (Node context, `contextBridge`) | No equivalent — RPC fills this role. Electrobun `preload` is plain JS injected into the page, no process boundary. |
+| Electron                                              | Electrobun                                                                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `new BrowserWindow({ titleBarStyle: "hiddenInset" })` | `new BrowserWindow({ titleBarStyle: "hiddenInset" })` — same!                                                      |
+| `win.loadURL(url)`                                    | `win.webview.loadURL(url)`                                                                                         |
+| `win.webContents.openDevTools()`                      | `win.webview.openDevTools()`                                                                                       |
+| `win.on("close", ...)`                                | `win.on("close", ...)` — same!                                                                                     |
+| `protocol.registerFileProtocol("chronicles", ...)`    | RPC + data URLs (no protocol handler equivalent)                                                                   |
+| `contextBridge.exposeInMainWorld(...)`                | Replaced entirely by typed RPC                                                                                     |
+| `ipcMain.handle(...)`                                 | Replaced by `BrowserView.defineRPC` handlers                                                                       |
+| `ipcRenderer.invoke(...)`                             | Replaced by `view.rpc.request.*()`                                                                                 |
+| Electron preload (Node context, `contextBridge`)      | No equivalent — RPC fills this role. Electrobun `preload` is plain JS injected into the page, no process boundary. |
