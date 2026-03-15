@@ -38,6 +38,7 @@ src/bun-client/
 ```
 
 Shared (unchanged):
+
 - `src/preload/client/types.ts` — `IClient`, all request/response types
 - `src/preload/client/util.ts` — `createId`, `checkId`
 
@@ -56,14 +57,14 @@ the v2 client type and widen `IClient` to accept both. Decide at Phase 1.
 
 ## Stack
 
-| Concern | Choice | Notes |
-|---|---|---|
-| DB runtime | `bun:sqlite` | Built into Bun, no native rebuild |
-| Query layer | Drizzle ORM (`drizzle-orm/bun-sqlite`) | Only tool with native first-party bun:sqlite support |
-| Migrations | `drizzle-kit` | Generates SQL files, applies programmatically |
-| Settings | Custom JSON r/w (`settings-store.ts`) | Replaces `electron-store`; tiny API surface |
-| Images | No-op / passthrough | Drop `sharp`; existing fallback always writes original bytes |
-| Test runner | `bun test` | Built-in, fast, no config needed |
+| Concern     | Choice                                 | Notes                                                        |
+| ----------- | -------------------------------------- | ------------------------------------------------------------ |
+| DB runtime  | `bun:sqlite`                           | Built into Bun, no native rebuild                            |
+| Query layer | Drizzle ORM (`drizzle-orm/bun-sqlite`) | Only tool with native first-party bun:sqlite support         |
+| Migrations  | `drizzle-kit`                          | Generates SQL files, applies programmatically                |
+| Settings    | Custom JSON r/w (`settings-store.ts`)  | Replaces `electron-store`; tiny API surface                  |
+| Images      | No-op / passthrough                    | Drop `sharp`; existing fallback always writes original bytes |
+| Test runner | `bun test`                             | Built-in, fast, no config needed                             |
 
 ---
 
@@ -74,6 +75,7 @@ the v2 client type and widen `IClient` to accept both. Decide at Phase 1.
 **Goal:** Prove Drizzle + bun:sqlite works end-to-end. No application logic yet.
 
 **Steps:**
+
 1. `bun add drizzle-orm` / `bun add -D drizzle-kit`
 2. Create `src/bun-client/schema.ts` — Drizzle table definitions for `journals`, `documents`, `documents_fts`, `tags` (transcribed from the existing SQL migration files)
 3. Run `bunx drizzle-kit generate` → `src/bun-client/migrations/`
@@ -81,6 +83,7 @@ the v2 client type and widen `IClient` to accept both. Decide at Phase 1.
 5. Write first test
 
 **Test (`src/bun-client/factory.test.ts`):**
+
 ```ts
 import { test, expect } from "bun:test";
 import { createClient } from "./factory";
@@ -103,6 +106,7 @@ test("migrations run and tables exist", async () => {
 passes the same API contract as `PreferencesClient`.
 
 **Steps:**
+
 1. Create `src/bun-client/settings-store.ts` — reads/writes a JSON file, supports
    dotted-path `get`/`set`/`delete` (e.g. `set("archivedJournals.foo", true)`)
 2. Create `src/bun-client/preferences.ts` — wraps the store, same shape as existing
@@ -110,6 +114,7 @@ passes the same API contract as `PreferencesClient`.
 3. Wire into `factory.ts`
 
 **Test (`src/bun-client/preferences.test.ts`):**
+
 ```ts
 test("get/set/delete round-trips", async () => { ... });
 test("nested dotted-path set works", async () => { ... });
@@ -127,11 +132,13 @@ test("returns defaults when key missing", async () => { ... });
 **Context files:** `src/preload/client/journals.ts`, `src/preload/client/journals.electron-test.ts`
 
 **Steps:**
+
 1. Port `journals.ts` to Drizzle queries (replace `this.knex("journals").select(...)` with `db.select().from(journalsTable)` etc.)
 2. Filesystem calls (`files.createFolder`, `files.renameFolder`, `files.removeFolder`) stay — `IFilesClient` is unchanged
 3. Port the existing `journals.electron-test.ts` assertions to `bun test` syntax
 
 **Test (`src/bun-client/journals.test.ts`):**
+
 - Create journal → appears in list
 - Rename journal → old name gone, new name present, documents updated
 - Archive/unarchive → `archived` flag toggles
@@ -149,11 +156,13 @@ test("returns defaults when key missing", async () => { ... });
 **Context files:** `src/preload/client/documents.ts`
 
 **Steps:**
+
 1. Port create/get/update/delete/list to Drizzle
 2. `frontMatter` is stored as a JSON string — same as today
 3. Skip FTS indexing writes for now (stubs that no-op)
 
 **Test (`src/bun-client/documents.test.ts`):**
+
 - Create doc → retrievable by id
 - Update doc → content and frontMatter change
 - Delete doc → not retrievable
@@ -171,11 +180,13 @@ test("returns defaults when key missing", async () => { ... });
 **Context files:** `src/preload/client/search.electron-test.ts`, `docs/search.md`
 
 **Steps:**
+
 1. Add FTS5 write path to `documents.ts` (populate `documents_fts` on create/update/delete)
 2. Port the search query builder (text, tags, date, journal filter, exclusions) — this is the most complex query in the codebase; read `docs/search.md` first
 3. Port `search.electron-test.ts` assertions
 
 **Test (`src/bun-client/search.test.ts`):**
+
 - Text search finds matching docs
 - Tag filter includes/excludes correctly
 - Date prefix filter (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`) works
@@ -194,11 +205,13 @@ test("returns defaults when key missing", async () => { ... });
 **Context files:** `src/preload/client/indexer.ts`, `src/preload/client/indexer.electron-test.ts`, `docs/indexer.md`
 
 **Steps:**
+
 1. Port `IndexerClient` to use the new `journals` and `documents` clients
 2. Incremental sync: `getSyncMeta` + mtime/size/contentHash comparison to skip unchanged files
 3. Create a temp directory with markdown files in tests (no Electron, just `fs`)
 
 **Test (`src/bun-client/indexer.test.ts`):**
+
 - Index a directory of `.md` files → all appear in DB
 - Re-index unchanged files → no re-processing (check call count or timestamp unchanged)
 - Modify a file → re-index picks up the change
@@ -216,10 +229,12 @@ test("returns defaults when key missing", async () => { ... });
 **Context files:** `src/preload/client/bulk-operations.ts`, `src/preload/client/bulk-operations.electron-test.ts`, `docs/bulk-operations.md`
 
 **Steps:**
+
 1. Port `BulkOperationsClient` to use the new journals/documents clients
 2. Port existing test assertions
 
 **Test (`src/bun-client/bulk-operations.test.ts`):**
+
 - Bulk tag add/remove → reflected in search results
 - Bulk delete → documents removed from DB
 - Export produces expected file structure
@@ -234,16 +249,21 @@ test("returns defaults when key missing", async () => { ... });
 test the migration plan originally specified.
 
 **Steps:**
+
 1. Complete `factory.ts` to wire all modules together
 2. Create `src/bun-client/smoke.ts`:
    ```ts
-   const client = await createClient({ dbPath: process.env.DB_PATH!, notesDir: process.env.NOTES_DIR! });
+   const client = await createClient({
+     dbPath: process.env.DB_PATH!,
+     notesDir: process.env.NOTES_DIR!,
+   });
    const journals = await client.journals.list();
    console.log("journals:", journals);
    ```
 3. Run against a real notes directory
 
 **Validation:**
+
 ```bash
 DB_PATH=/tmp/test.db NOTES_DIR=/tmp/notes bun run src/bun-client/smoke.ts
 # → prints journal list (empty [] is fine)
@@ -268,12 +288,14 @@ lossy, and whether the behavior is correct before porting it.
 **Context files:** `src/preload/client/importer.ts`, `src/preload/client/importer/frontmatter.test.ts`
 
 **Steps:**
+
 1. Read and understand the existing importer fully
 2. Identify any format transformation edge cases worth testing explicitly
 3. Port to use the new documents/journals clients
 4. Port or expand existing frontmatter tests
 
 **Test (`src/bun-client/importer.test.ts`):**
+
 - TBD after manual review — test cases should reflect the actual behavior
 
 **Validation:** `bun test src/bun-client/` — all tests green.

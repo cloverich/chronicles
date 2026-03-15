@@ -103,6 +103,7 @@ and also lays the foundation for the future CLI.
 **Full plan:** [docs/plans/active/bun-client.md](../../plans/active/bun-client.md)
 
 **Key decisions already resolved:**
+
 - **Knex is not viable.** No bun:sqlite dialect exists (tracking issue open since March 2024, no PR). Using **Drizzle ORM** (`drizzle-orm/bun-sqlite`) instead — the only tool with native first-party bun:sqlite support.
 - **Built parallel, not in-place.** New code lives in `src/bun-client/`. `src/preload/client/` is untouched until this phase is complete and Phase 2 is ready to wire it in.
 - **`electron-store`** → custom `settings-store.ts` (zero deps, JSON r/w)
@@ -258,14 +259,14 @@ The renderer currently calls `window.chronicles.foo()`. If we expose the same sh
 
 ### Context each agent needs per phase
 
-| Phase      | Essential context files                                                                                                                                       |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 (IClient) | `docs/plans/active/bun-client.md`, `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts` |
-| 2 (Scaffold) | Electrobun getting started docs, project structure docs                                                                                                      |
-| 3 (Renderer) | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                                                             |
-| 4 (IPC/RPC)  | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                                                          |
-| 5 (Native)   | `src/electron/index.ts`, Electrobun native API docs                                                                                                          |
-| 6 (Build)    | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                                                                   |
+| Phase        | Essential context files                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 (IClient)  | `docs/plans/active/bun-client.md`, `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts` |
+| 2 (Scaffold) | Electrobun getting started docs, project structure docs                                                                              |
+| 3 (Renderer) | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                                      |
+| 4 (IPC/RPC)  | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                                  |
+| 5 (Native)   | `src/electron/index.ts`, Electrobun native API docs                                                                                  |
+| 6 (Build)    | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                                           |
 
 ### Validation feedback loops
 
