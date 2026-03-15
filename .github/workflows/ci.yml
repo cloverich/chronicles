@@ -10,22 +10,19 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.x
-      - run: yarn install
-      - run: yarn run lint:prettier:check
-      - run: yarn run lint:types:check
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --ignore-scripts
+      - run: bunx prettier@3.2.4 . --check
+      - run: bunx tsc@5.3.3 --noEmit --skipLibCheck
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: yarn install
+      - run: bun install --ignore-scripts
       - name: Run tests
-        run: yarn run test
+        run: bun run test

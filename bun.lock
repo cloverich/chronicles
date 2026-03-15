@@ -47,7 +47,6 @@
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
         "@types/better-sqlite3": "^5.4.0",
-        "@types/bun": "^1.3.10",
         "@types/chai": "^4.3.11",
         "@types/lodash": "^4.17.0",
         "@types/luxon": "^2.4.0",
@@ -84,7 +83,6 @@
         "prettier": "3.2.4",
         "prettier-plugin-organize-imports": "^4.0.0",
         "prettier-plugin-tailwindcss": "^0.7.2",
-        "pretty-quick": "^4.2.2",
         "react": "^18.2.0",
         "react-day-picker": "^8.10.0",
         "react-dom": "^18.2.0",
@@ -375,8 +373,6 @@
 
     "@pkgjs/parseargs": ["@pkgjs/parseargs@https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz", {}],
 
-    "@pkgr/core": ["@pkgr/core@0.2.9", "", {}, "sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA=="],
-
     "@platejs/autoformat": ["@platejs/autoformat@52.0.11", "", { "dependencies": { "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" } }, "sha512-5/pLa0uAOrN/jfwpEWEhk/5G9wmSD12EnBnVDP0lB2tuosOzyMCH0rNylMYwgLFACNO7goLw7ka6tvjJ1ErxtQ=="],
 
     "@platejs/basic-nodes": ["@platejs/basic-nodes@52.0.11", "", { "dependencies": { "react-compiler-runtime": "^1.0.0" } }, "sha512-vvjSybGRdY/dZoQKUItX7Jou0W0VdLYA7C9OtqTKL9DD5DuRTp4+/7WZTFgS255ZH4lodxfUCsFNRkeIzzm8EQ=="],
@@ -582,8 +578,6 @@
     "@types/babel__traverse": ["@types/babel__traverse@7.28.0", "", { "dependencies": { "@babel/types": "^7.28.2" } }, "sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q=="],
 
     "@types/better-sqlite3": ["@types/better-sqlite3@https://registry.npmjs.org/@types/better-sqlite3/-/better-sqlite3-5.4.0.tgz", { "dependencies": { "@types/integer": "*" } }],
-
-    "@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
 
     "@types/cacheable-request": ["@types/cacheable-request@https://registry.npmjs.org/@types/cacheable-request/-/cacheable-request-6.0.2.tgz", { "dependencies": { "@types/http-cache-semantics": "*", "@types/keyv": "*", "@types/node": "*", "@types/responselike": "*" } }],
 
@@ -997,8 +991,6 @@
 
     "ieee754": ["ieee754@https://registry.npmjs.org/ieee754/-/ieee754-1.1.13.tgz", {}],
 
-    "ignore": ["ignore@7.0.5", "", {}, "sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg=="],
-
     "immer": ["immer@https://registry.npmjs.org/immer/-/immer-10.0.3.tgz", {}],
 
     "imurmurhash": ["imurmurhash@https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz", {}],
@@ -1255,8 +1247,6 @@
 
     "mobx-react-lite": ["mobx-react-lite@https://registry.npmjs.org/mobx-react-lite/-/mobx-react-lite-3.4.3.tgz", {}],
 
-    "mri": ["mri@1.2.0", "", {}, "sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA=="],
-
     "ms": ["ms@https://registry.npmjs.org/ms/-/ms-2.1.3.tgz", {}],
 
     "mutative": ["mutative@https://registry.npmjs.org/mutative/-/mutative-1.1.0.tgz", {}],
@@ -1358,8 +1348,6 @@
     "prettier-plugin-tailwindcss": ["prettier-plugin-tailwindcss@0.7.2", "", {}, "sha512-LkphyK3Fw+q2HdMOoiEHWf93fNtYJwfamoKPl7UwtjFQdei/iIBoX11G6j706FzN3ymX9mPVi97qIY8328vdnA=="],
 
     "pretty-format": ["pretty-format@27.5.1", "", { "dependencies": { "ansi-regex": "^5.0.1", "ansi-styles": "^5.0.0", "react-is": "^17.0.1" } }, "sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ=="],
-
-    "pretty-quick": ["pretty-quick@4.2.2", "", { "dependencies": { "@pkgr/core": "^0.2.7", "ignore": "^7.0.5", "mri": "^1.2.0", "picocolors": "^1.1.1", "picomatch": "^4.0.2", "tinyexec": "^0.3.2", "tslib": "^2.8.1" }, "bin": { "pretty-quick": "lib/cli.mjs" } }, "sha512-uAh96tBW1SsD34VhhDmWuEmqbpfYc/B3j++5MC/6b3Cb8Ow7NJsvKFhg0eoGu2xXX+o9RkahkTK6sUdd8E7g5w=="],
 
     "proc-log": ["proc-log@https://registry.npmjs.org/proc-log/-/proc-log-5.0.0.tgz", {}],
 
@@ -1577,7 +1565,7 @@
 
     "tinybench": ["tinybench@2.9.0", "", {}, "sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg=="],
 
-    "tinyexec": ["tinyexec@0.3.2", "", {}, "sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA=="],
+    "tinyexec": ["tinyexec@1.0.2", "", {}, "sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg=="],
 
     "tinyglobby": ["tinyglobby@https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.3" } }],
 
@@ -1593,7 +1581,7 @@
 
     "tr46": ["tr46@6.0.0", "", { "dependencies": { "punycode": "^2.3.1" } }, "sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw=="],
 
-    "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+    "tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
 
     "tunnel-agent": ["tunnel-agent@https://registry.npmjs.org/tunnel-agent/-/tunnel-agent-0.6.0.tgz", { "dependencies": { "safe-buffer": "^5.0.1" } }],
 
@@ -1762,6 +1750,12 @@
     "@electron/universal/minimatch": ["minimatch@https://registry.npmjs.org/minimatch/-/minimatch-9.0.3.tgz", { "dependencies": { "brace-expansion": "^2.0.1" } }],
 
     "@electron/windows-sign/debug": ["debug@https://registry.npmjs.org/debug/-/debug-4.3.4.tgz", { "dependencies": { "ms": "2.1.2" } }],
+
+    "@emnapi/core/tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
+    "@emnapi/runtime/tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
+    "@emnapi/wasi-threads/tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
     "@esbuild-kit/core-utils/esbuild": ["esbuild@0.18.20", "", { "optionalDependencies": { "@esbuild/android-arm": "0.18.20", "@esbuild/android-arm64": "0.18.20", "@esbuild/android-x64": "0.18.20", "@esbuild/darwin-arm64": "0.18.20", "@esbuild/darwin-x64": "0.18.20", "@esbuild/freebsd-arm64": "0.18.20", "@esbuild/freebsd-x64": "0.18.20", "@esbuild/linux-arm": "0.18.20", "@esbuild/linux-arm64": "0.18.20", "@esbuild/linux-ia32": "0.18.20", "@esbuild/linux-loong64": "0.18.20", "@esbuild/linux-mips64el": "0.18.20", "@esbuild/linux-ppc64": "0.18.20", "@esbuild/linux-riscv64": "0.18.20", "@esbuild/linux-s390x": "0.18.20", "@esbuild/linux-x64": "0.18.20", "@esbuild/netbsd-x64": "0.18.20", "@esbuild/openbsd-x64": "0.18.20", "@esbuild/sunos-x64": "0.18.20", "@esbuild/win32-arm64": "0.18.20", "@esbuild/win32-ia32": "0.18.20", "@esbuild/win32-x64": "0.18.20" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA=="],
 
@@ -1963,6 +1957,8 @@
 
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/runtime": ["@emnapi/runtime@1.8.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-mehfKSMWjjNol8659Z8KxEMrdSJDDot5SXMq00dM8BN4o+CLNXQ0xH2V7EchNHV4RmbZLmmPdEaXZc5H2FXmDg=="],
 
+    "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
     "@tailwindcss/postcss/tailwindcss": ["tailwindcss@4.2.1", "", {}, "sha512-/tBrSQ36vCleJkAOsy9kbNTgaxvGbyOamC30PRePTQe/o1MFwEKHQk4Cn7BNGaPtjp+PuUrByJehM1hgxfq4sw=="],
 
     "@testing-library/dom/@babel/runtime": ["@babel/runtime@7.28.6", "", {}, "sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA=="],
@@ -1972,6 +1968,8 @@
     "@testing-library/jest-dom/dom-accessibility-api": ["dom-accessibility-api@0.6.3", "", {}, "sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w=="],
 
     "@testing-library/react/@babel/runtime": ["@babel/runtime@7.28.6", "", {}, "sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA=="],
+
+    "@tybys/wasm-util/tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
     "@types/cacheable-request/@types/node": ["@types/node@https://registry.npmjs.org/@types/node/-/node-14.17.21.tgz", {}],
 
@@ -1992,8 +1990,6 @@
     "@vitest/expect/@types/chai": ["@types/chai@5.2.3", "", { "dependencies": { "@types/deep-eql": "*", "assertion-error": "^2.0.1" } }, "sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA=="],
 
     "@vitest/expect/chai": ["chai@6.2.2", "", {}, "sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg=="],
-
-    "aria-hidden/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
 
     "bun-types/@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 
@@ -2147,12 +2143,6 @@
 
     "prebuild-install/node-abi": ["node-abi@https://registry.npmjs.org/node-abi/-/node-abi-3.54.0.tgz", { "dependencies": { "semver": "^7.3.5" } }],
 
-    "react-remove-scroll/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
-    "react-remove-scroll-bar/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
-    "react-style-singleton/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
     "read-binary-file-arch/debug": ["debug@https://registry.npmjs.org/debug/-/debug-4.3.4.tgz", { "dependencies": { "ms": "2.1.2" } }],
 
     "rechoir/resolve": ["resolve@https://registry.npmjs.org/resolve/-/resolve-1.22.0.tgz", { "dependencies": { "is-core-module": "^2.8.1", "path-parse": "^1.0.7", "supports-preserve-symlinks-flag": "^1.0.0" } }],
@@ -2181,13 +2171,7 @@
 
     "update-browserslist-db/escalade": ["escalade@3.2.0", "", {}, "sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA=="],
 
-    "use-callback-ref/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
-    "use-sidecar/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
     "vite/esbuild": ["esbuild@0.21.5", "", { "optionalDependencies": { "@esbuild/aix-ppc64": "0.21.5", "@esbuild/android-arm": "0.21.5", "@esbuild/android-arm64": "0.21.5", "@esbuild/android-x64": "0.21.5", "@esbuild/darwin-arm64": "0.21.5", "@esbuild/darwin-x64": "0.21.5", "@esbuild/freebsd-arm64": "0.21.5", "@esbuild/freebsd-x64": "0.21.5", "@esbuild/linux-arm": "0.21.5", "@esbuild/linux-arm64": "0.21.5", "@esbuild/linux-ia32": "0.21.5", "@esbuild/linux-loong64": "0.21.5", "@esbuild/linux-mips64el": "0.21.5", "@esbuild/linux-ppc64": "0.21.5", "@esbuild/linux-riscv64": "0.21.5", "@esbuild/linux-s390x": "0.21.5", "@esbuild/linux-x64": "0.21.5", "@esbuild/netbsd-x64": "0.21.5", "@esbuild/openbsd-x64": "0.21.5", "@esbuild/sunos-x64": "0.21.5", "@esbuild/win32-arm64": "0.21.5", "@esbuild/win32-ia32": "0.21.5", "@esbuild/win32-x64": "0.21.5" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw=="],
-
-    "vitest/tinyexec": ["tinyexec@1.0.2", "", {}, "sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg=="],
 
     "vitest/vite": ["vite@7.3.1", "", { "dependencies": { "esbuild": "^0.27.0", "fdir": "^6.5.0", "picomatch": "^4.0.3", "postcss": "^8.5.6", "rollup": "^4.43.0", "tinyglobby": "^0.2.15" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "bin": { "vite": "bin/vite.js" } }, "sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA=="],
 
@@ -2323,6 +2307,8 @@
 
     "@isaacs/cliui/wrap-ansi/ansi-styles": ["ansi-styles@https://registry.npmjs.org/ansi-styles/-/ansi-styles-6.2.1.tgz", {}],
 
+    "@napi-rs/wasm-runtime/@emnapi/core/tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
     "@radix-ui/react-arrow/@radix-ui/react-primitive/@radix-ui/react-slot": ["@radix-ui/react-slot@https://registry.npmjs.org/@radix-ui/react-slot/-/react-slot-1.2.3.tgz", { "dependencies": { "@radix-ui/react-compose-refs": "1.1.2" } }],
 
     "@radix-ui/react-dismissable-layer/@radix-ui/react-primitive/@radix-ui/react-slot": ["@radix-ui/react-slot@https://registry.npmjs.org/@radix-ui/react-slot/-/react-slot-1.2.3.tgz", { "dependencies": { "@radix-ui/react-compose-refs": "1.1.2" } }],
@@ -2379,13 +2365,9 @@
 
     "@radix-ui/react-menu/@radix-ui/react-presence/@radix-ui/react-use-layout-effect": ["@radix-ui/react-use-layout-effect@https://registry.npmjs.org/@radix-ui/react-use-layout-effect/-/react-use-layout-effect-1.1.0.tgz", {}],
 
-    "@radix-ui/react-menu/aria-hidden/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
     "@radix-ui/react-menu/react-remove-scroll/react-remove-scroll-bar": ["react-remove-scroll-bar@https://registry.npmjs.org/react-remove-scroll-bar/-/react-remove-scroll-bar-2.3.6.tgz", { "dependencies": { "react-style-singleton": "^2.2.1", "tslib": "^2.0.0" } }],
 
     "@radix-ui/react-menu/react-remove-scroll/react-style-singleton": ["react-style-singleton@https://registry.npmjs.org/react-style-singleton/-/react-style-singleton-2.2.1.tgz", { "dependencies": { "get-nonce": "^1.0.0", "invariant": "^2.2.4", "tslib": "^2.0.0" } }],
-
-    "@radix-ui/react-menu/react-remove-scroll/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
 
     "@radix-ui/react-menu/react-remove-scroll/use-callback-ref": ["use-callback-ref@https://registry.npmjs.org/use-callback-ref/-/use-callback-ref-1.3.1.tgz", { "dependencies": { "tslib": "^2.0.0" } }],
 
@@ -2647,13 +2629,9 @@
 
     "@radix-ui/react-dropdown-menu/@radix-ui/react-menu/@radix-ui/react-presence/@radix-ui/react-use-layout-effect": ["@radix-ui/react-use-layout-effect@https://registry.npmjs.org/@radix-ui/react-use-layout-effect/-/react-use-layout-effect-1.0.1.tgz", { "dependencies": { "@babel/runtime": "^7.13.10" } }],
 
-    "@radix-ui/react-dropdown-menu/@radix-ui/react-menu/aria-hidden/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
-
     "@radix-ui/react-dropdown-menu/@radix-ui/react-menu/react-remove-scroll/react-remove-scroll-bar": ["react-remove-scroll-bar@https://registry.npmjs.org/react-remove-scroll-bar/-/react-remove-scroll-bar-2.3.4.tgz", { "dependencies": { "react-style-singleton": "^2.2.1", "tslib": "^2.0.0" } }],
 
     "@radix-ui/react-dropdown-menu/@radix-ui/react-menu/react-remove-scroll/react-style-singleton": ["react-style-singleton@https://registry.npmjs.org/react-style-singleton/-/react-style-singleton-2.2.1.tgz", { "dependencies": { "get-nonce": "^1.0.0", "invariant": "^2.2.4", "tslib": "^2.0.0" } }],
-
-    "@radix-ui/react-dropdown-menu/@radix-ui/react-menu/react-remove-scroll/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
 
     "@radix-ui/react-dropdown-menu/@radix-ui/react-menu/react-remove-scroll/use-callback-ref": ["use-callback-ref@https://registry.npmjs.org/use-callback-ref/-/use-callback-ref-1.3.1.tgz", { "dependencies": { "tslib": "^2.0.0" } }],
 
