@@ -5,11 +5,8 @@ import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import type {
-  IClient,
-  SearchRequest,
-  SearchResponse,
-} from "../../hooks/useClient";
+import type { IClient, SearchResponse } from "../../hooks/useClient";
+import type { SearchRequest } from "../../preload/client/types";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 import Documents from "./index";
 
@@ -121,7 +118,7 @@ function createSearchStore({
     applicationStore.journals,
     vi.fn(),
     [],
-    { lastIndexTime: 0 },
+    { lastIndexTime: null },
   );
 
   runInAction(() => {
