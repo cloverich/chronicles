@@ -99,7 +99,9 @@ with a workspace setup. For now, single `package.json` is simpler.
 
 ---
 
-### Phase 2 — Settings store
+### Phase 2 — Settings store ✅
+
+**Status:** Complete.
 
 **Goal:** `electron-store` replaced with a plain JSON implementation that
 passes the same API contract as `PreferencesClient`.
@@ -120,31 +122,31 @@ test("nested dotted-path set works", async () => { ... });
 test("returns defaults when key missing", async () => { ... });
 ```
 
-**Validation:** `bun test src/bun-client/preferences.test.ts` — green.
+**What was done:**
+
+- `src/bun-client/settings-store.ts` — `SettingsStore<T>` with dotted-path `get`/`set`/`delete`, deep-merge defaults, JSON persistence
+- `src/bun-client/preferences.ts` — `PreferencesClient` wrapping the store, same API surface as the Electron version minus `document.dispatchEvent`
+- Wired into `factory.ts`: `createClient()` now accepts optional `settingsPath` (defaults to `<notesDir>/settings.json`) and returns `preferences: PreferencesClient` on `BunClient`
+- `src/bun-client/preferences.test.ts` — 7 tests covering round-trips, dotted-path, defaults, `setMultiple`, `replace`, and settings file location
+
+**Validation:** `bun test src/bun-client/` — green (12/12 pass).
 
 ---
 
-### Phase 3 — Journals CRUD
+### Phase 3 — Journals CRUD ✅
+
+**Status:** Complete.
 
 **Goal:** `journals.ts` — full create/list/rename/remove/archive/unarchive.
 
-**Context files:** `src/preload/client/journals.ts`, `src/preload/client/journals.electron-test.ts`
+**What was done:**
 
-**Steps:**
+- `src/bun-client/files.ts` — `BunFilesClient` implementing `IJournalFolderOps` (`createFolder`, `renameFolder`, `removeFolder`) using plain `fs` + `notesDir`
+- `src/bun-client/journals.ts` — `JournalsClient` ported to Drizzle; archived state stored in preferences (same as original); `validateJournalName` inlined (avoids importing electron-dependent preload code)
+- Wired into `factory.ts`: `BunClient` now exposes `journals: JournalsClient`
+- `src/bun-client/journals.test.ts` — 10 tests covering all acceptance criteria
 
-1. Port `journals.ts` to Drizzle queries (replace `this.knex("journals").select(...)` with `db.select().from(journalsTable)` etc.)
-2. Filesystem calls (`files.createFolder`, `files.renameFolder`, `files.removeFolder`) stay — `IFilesClient` is unchanged
-3. Port the existing `journals.electron-test.ts` assertions to `bun test` syntax
-
-**Test (`src/bun-client/journals.test.ts`):**
-
-- Create journal → appears in list
-- Rename journal → old name gone, new name present, documents updated
-- Archive/unarchive → `archived` flag toggles
-- Remove journal → gone; attempting to remove last journal throws
-- Name validation: empty, too long, path-traversal, `_attachments` all throw
-
-**Validation:** `bun test src/bun-client/journals.test.ts` — green.
+**Validation:** `bun test src/bun-client/` — green (22/22 pass).
 
 ---
 
