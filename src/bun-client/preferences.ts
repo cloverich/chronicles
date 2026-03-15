@@ -1,5 +1,6 @@
+import Conf from "conf";
+
 import { APPEARANCE_DEFAULTS } from "../electron/appearance-defaults";
-import { SettingsStore } from "./settings-store";
 
 /**
  * Re-declared here (from src/electron/settings.ts) to avoid importing
@@ -53,19 +54,21 @@ export const PREFERENCES_DEFAULTS: IPreferences = {
 
 /**
  * Bun-client replacement for PreferencesClient (was electron-store backed).
- * Same API surface, minus browser-only dispatchEvent calls.
+ * Backed by `conf` (the same library that backs electron-store), which handles
+ * prototype-pollution-safe dotted-path access and atomic writes.
+ * Same API surface as the Electron version, minus browser-only dispatchEvent calls.
  */
 export class PreferencesClient {
-  constructor(private store: SettingsStore<IPreferences>) {}
+  constructor(private conf: Conf<IPreferences>) {}
 
-  settingsPath = (): string => this.store.path;
+  settingsPath = (): string => this.conf.path;
 
   all = async (_key?: keyof IPreferences): Promise<IPreferences> => {
-    return this.store.store as IPreferences;
+    return this.conf.store as IPreferences;
   };
 
   get = async (key: keyof IPreferences): Promise<any> => {
-    return this.store.get(key);
+    return this.conf.get(key);
   };
 
   /**
@@ -74,15 +77,15 @@ export class PreferencesClient {
   delete = async <T extends keyof IPreferences>(
     key: T | string,
   ): Promise<void> => {
-    this.store.delete(key as T);
+    this.conf.delete(key as T);
   };
 
   replace = async (prefs: IPreferences): Promise<void> => {
-    this.store.set(prefs);
+    this.conf.store = prefs;
   };
 
   setMultiple = async (prefs: Partial<IPreferences>): Promise<void> => {
-    this.store.set(prefs);
+    this.conf.set(prefs as IPreferences);
     // Note: no document.dispatchEvent — not a browser environment
   };
 
@@ -90,7 +93,7 @@ export class PreferencesClient {
     key: T | string,
     value: any,
   ): Promise<void> => {
-    this.store.set(key as string, value);
+    this.conf.set(key as string, value);
     // Note: no document.dispatchEvent — not a browser environment
   };
 }

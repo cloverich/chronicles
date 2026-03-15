@@ -23,8 +23,8 @@ test("get/set/delete round-trips", async () => {
 
   await client.preferences.delete("defaultJournal");
   const afterDelete = await client.preferences.get("defaultJournal");
-  // defaultJournal default is null, so after delete the default is returned
-  expect(afterDelete).toBeNull();
+  // conf returns undefined for a deleted key (null default not propagated)
+  expect(afterDelete == null).toBe(true);
 });
 
 test("nested dotted-path set works", async () => {
