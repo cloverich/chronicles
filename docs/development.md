@@ -7,9 +7,8 @@ HEADLESS=true yarn start          # dev mode; renderer logs in terminal as [REND
 yarn test                         # vitest renderer tests (*.vitest.ts / *.vitest.tsx)
 yarn test:node                    # legacy node:test suite, files: *.test.ts -> *.test.bundle.mjs
 yarn test:electron                # legacy Electron-runner suite for *.electron-test.ts
-yarn lint                         # prettier + tsc --noEmit
-yarn run lint:prettier:write      # autofix formatting
-yarn run lint:types:check         # type-check only
+bun run lint                      # prettier (autofix) + tsc --noEmit; matches CI exactly
+bun run lint:check                # same but prettier in check mode (no writes)
 yarn build                        # production build (electron-packager)
 ```
 
@@ -18,7 +17,7 @@ yarn build                        # production build (electron-packager)
 1. Evaluate task or issue (`gh issue view <n>`)
 2. Write code
 3. `HEADLESS=true yarn start` to verify
-4. `yarn lint && yarn test`
+4. `bun run lint && bun run test`
 5. Commit
 
 ## Key Directories
