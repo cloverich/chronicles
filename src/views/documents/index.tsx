@@ -132,17 +132,16 @@ function Pagination(props: { store: SearchStore }) {
   const nextButton = (() => {
     if (props.store.hasNext) {
       return (
-        <a
+        <button
+          type="button"
           style={{ marginLeft: "8px" }}
-          href=""
           onClick={() => {
             props.store.next();
             window.scrollTo(0, 0);
-            return false;
           }}
         >
           Next
-        </a>
+        </button>
       );
     }
   })();
@@ -150,17 +149,16 @@ function Pagination(props: { store: SearchStore }) {
   const prevButton = (() => {
     if (props.store.hasPrev) {
       return (
-        <a
+        <button
+          type="button"
           style={{ marginLeft: "8px" }}
-          href=""
           onClick={() => {
             props.store.prev();
             window.scrollTo(0, 0);
-            return false;
           }}
         >
           Prev
-        </a>
+        </button>
       );
     }
   })();
