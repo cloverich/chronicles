@@ -1,13 +1,9 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { runInAction } from "mobx";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
+import type { IClient, SearchRequest, SearchResponse } from "../../hooks/useClient";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
@@ -28,14 +24,21 @@ const baseDocs = [
   },
 ];
 
+type SearchClientError = Error | { message: string; code?: string };
+
 function createClient({
   searchDocs = [],
   searchError = null,
 }: {
   searchDocs?: typeof baseDocs;
-  searchError?: string | null;
+  searchError?: SearchClientError | null;
 } = {}) {
-  return {
+  const search = vi.fn<(q?: SearchRequest) => Promise<SearchResponse>>(async () => {
+    if (searchError) throw searchError;
+    return { data: [...searchDocs] };
+  });
+
+  const client = {
     preferences: {
       get: vi.fn(async () => "work"),
       set: vi.fn(),
@@ -50,19 +53,18 @@ function createClient({
       remove: vi.fn(),
     },
     documents: {
-      search: vi.fn(async () => {
-        if (searchError) throw new Error(searchError);
-        return { data: [...searchDocs] };
-      }),
+      search,
       searchCount: vi.fn(async () => searchDocs.length),
       deindexJournal: vi.fn(),
     },
-  } as any;
+  };
+
+  return client as unknown as Pick<IClient, "preferences" | "journals" | "documents">;
 }
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
   const journals = new JournalsStore(
-    createClient(),
+    createClient() as IClient,
     [
       {
         name: "work",
@@ -101,11 +103,12 @@ function createSearchStore({
   error?: string | null;
   nextId?: string | null;
   lastIds?: Array<string | undefined>;
-  searchError?: string | null;
+  searchError?: SearchClientError | null;
 } = {}) {
   const applicationStore = createApplicationStore();
+  const client = createClient({ searchDocs: docs, searchError });
   const searchStore = new SearchStore(
-    createClient({ searchDocs: docs, searchError }),
+    client as IClient,
     applicationStore.journals,
     vi.fn(),
     [],
@@ -121,7 +124,7 @@ function createSearchStore({
     searchStore.lastIds = lastIds;
   });
 
-  return { searchStore, applicationStore };
+  return { searchStore, applicationStore, client };
 }
 
 function renderDocuments({
@@ -160,7 +163,7 @@ describe("Documents surface", () => {
   it("renders the empty state when no journals exist", () => {
     const { searchStore } = createSearchStore();
     const applicationStore = createApplicationStore({
-      journals: new JournalsStore(createClient(), [], ""),
+      journals: new JournalsStore(createClient() as IClient, [], ""),
     });
 
     renderDocuments({ searchStore, applicationStore });
@@ -182,7 +185,7 @@ describe("Documents surface", () => {
     expect(screen.getByText(/\[2 DOCS FOUND\]/i)).toBeInTheDocument();
     expect(screen.getByText("First note")).toBeInTheDocument();
     expect(screen.getByText("Second note")).toBeInTheDocument();
-    expect(screen.getAllByText("/WORK")).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /\/work/i })).toHaveLength(2);
   });
 
   it("adds an in: token when a journal chip is clicked", async () => {
@@ -193,17 +196,17 @@ describe("Documents surface", () => {
 
     renderDocuments({ searchStore, applicationStore });
 
-    fireEvent.click(screen.getByText("/WORK"));
+    fireEvent.click(screen.getByRole("button", { name: /\/work/i }));
 
     await waitFor(() => {
       expect(searchStore.searchTokens).toContain("in:work");
     });
   });
 
-  it("renders search error state", async () => {
-    const { searchStore, applicationStore } = createSearchStore({
+  it("renders search error state from a client search failure", async () => {
+    const { searchStore, applicationStore, client } = createSearchStore({
       loading: true,
-      searchError: "boom",
+      searchError: new Error("boom"),
     });
 
     renderDocuments({ searchStore, applicationStore });
@@ -213,9 +216,11 @@ describe("Documents surface", () => {
       expect(alert).toHaveTextContent("Search failed");
       expect(alert).toHaveTextContent("boom");
     });
+
+    expect(client.documents.search).toHaveBeenCalled();
   });
 
-  it("invokes pagination behavior and scrolls to top", async () => {
+  it("invokes pagination behavior and scrolls to top", () => {
     const { searchStore, applicationStore } = createSearchStore({
       count: 1,
       docs: [baseDocs[0]],
