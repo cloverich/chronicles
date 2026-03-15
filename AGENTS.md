@@ -2,15 +2,10 @@
 
 ## Active Projects
 
-### Theming (#443)
-
-To rebuild context on the theming work, read these in order:
-
-1. **Epic:** `gh issue view 443` — checklist of done/remaining issues
-2. **QA doc:** [docs/qa/theming.md](docs/qa/theming.md) — every file changed, decisions made, known issues, gaps
-3. **Design doc:** [docs/designs/theming.md](docs/designs/theming.md) — full architecture and implementation plan
-
-Remove this section once the theming project is complete.
+- [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (Phase 1 of Electrobun migration)
+- [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration phases 2-6
+- [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
+- [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)
 
 ---
 
