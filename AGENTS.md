@@ -17,8 +17,8 @@ See [docs/development.md](docs/development.md) for all commands, workflow, direc
 
 ```bash
 HEADLESS=true yarn start    # run
-yarn test                   # test
-yarn lint                   # lint
+bun run test                # test
+bun run lint                # lint (pinned prettier + tsc, matches CI exactly)
 ```
 
 ## Docs
