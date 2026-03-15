@@ -56,14 +56,12 @@ CREATE TABLE "bulk_operation_items" (
 ### Processing Flow
 
 1. **Create Operation**: Accepts a search request and operation parameters
-
    - Executes the search to find matching documents
    - Validates operation type and required parameters
    - Creates operation record and items in a transaction
    - Returns operation ID
 
 2. **Process Operation**: Iterates through pending items
-
    - Marks operation as 'running'
    - Uses `documents.updateDocument()` for each item (ensures consistency with single-document edits)
    - Records success/error status for each item

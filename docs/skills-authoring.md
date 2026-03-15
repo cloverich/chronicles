@@ -13,7 +13,6 @@ To avoid duplication and maintain consistency across different AI agents, we use
 ## Creating a New Skill
 
 1.  **Define the Skill in Claude**:
-
     - Create a directory in `.claude/skills/<skill-name>/`.
     - Create `SKILL.md` with full instructions and YAML frontmatter.
     - Add any supporting scripts to `.claude/skills/<skill-name>/scripts/`.

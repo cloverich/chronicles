@@ -49,7 +49,6 @@ EditorContainer          flex h-screen flex-col overflow-hidden
 2. In `PlateContainer.tsx`, the `PlateContent` already has `w-full`. No change needed.
 
 3. Update prose-width elements to self-center:
-
    - **ParagraphElement.tsx**: Change `min-w-prose mt-px mb-4 max-w-prose px-0` to `mt-px mb-4 max-w-prose w-full px-0` (drop `min-w-prose`, add `w-full`). The `mx-auto` is not needed if the parent flex has `items-center`, but `w-full` ensures it stretches up to `max-w-prose`.
    - **BlockquoteElement.tsx**: Add `w-full` to existing classes.
    - **HeadingElement.tsx**: Add `max-w-prose w-full` to the base cva class string (`"relative mb-1"` -> `"relative mb-1 max-w-prose w-full"`).

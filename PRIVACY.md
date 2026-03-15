@@ -21,17 +21,14 @@ This privacy policy explains how your data is handled when using the **Chronicle
 ### **Planned and Future Opt-In Features**
 
 1. **Auto-Update (Planned)**
-
    - When enabled, the app may periodically check for updates by reaching out to a trusted server.
    - No identifiable data is sent, only version-related metadata (e.g., installed version vs. available version).
 
 2. **Crash Reporting (Planned)**
-
    - If implemented, crash reports will be sent only with your explicit consent.
    - Reports may include error logs, system information (OS version, app version), and other non-personal information necessary to diagnose the issue.
 
 3. **Geolocation in Notes (Planned)**
-
    - If enabled, the app may request access to your location for embedding location metadata in a note.
    - This feature will always be opt-in, and you will be prompted before any location access.
 

@@ -37,13 +37,11 @@ Maintain a public repository (e.g., `chronicles-app/releases`) containing:
 To protect the source code from being cribbed by LLMs or humans, we evaluate the following:
 
 - **Option A: `javascript-obfuscator` (Variable/String Transformation)**
-
   - _How:_ Renames variables, encrypts strings, and adds dead-code injection.
   - _Pros:_ Easy to integrate into the esbuild pipeline; effectively poisons the code for LLM analysis.
   - _Cons:_ Can slightly increase bundle size and impact runtime performance if set too aggressively.
 
 - **Option B: `Bytenode` (V8 Bytecode Compilation)**
-
   - _How:_ Compiles JavaScript into V8 bytecode files (`.jsc`) which are then loaded by Electron.
   - _Pros:_ High level of protection; the actual JS source is never present in the `.asar`. Extremely difficult to reverse-engineer.
   - _Cons:_ Makes debugging in production harder; requires specific loading logic in the main/preload processes.
@@ -99,13 +97,11 @@ If choosing Strategy B (LemonSqueezy), the following pattern is proposed to prev
 The app needs to know it is running on an authorized machine without "spying" on the user or blocking their ability to tinker.
 
 - **Option A: Hard Hardware Binding (IOPlatformUUID)**
-
   - _Mechanism:_ Read the macOS `IOPlatformUUID` or a combination of serial numbers.
   - _Privacy:_ **Low.** This is a persistent, unique identifier that can be tied back to a physical machine across different software.
   - _Control:_ High prevention of license sharing.
 
 - **Option B: Privacy-Preserving Hashed Fingerprint (Salted SHA-256)**
-
   - _Mechanism:_ Concatenate `(IOPlatformUUID + App-Specific-Salt)` and hash it. Only the hash is ever sent to the server.
   - _Privacy:_ **Medium.** The original hardware ID is never transmitted. The server only sees an opaque string that it can't use to identify the machine in any other context.
   - _Control:_ Good balance; prevents key sharing while protecting machine identity.
