@@ -13,8 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --ignore-scripts
-      - run: ./node_modules/.bin/prettier . --check
-      - run: ./node_modules/.bin/tsc --noEmit --skipLibCheck
+      - run: bunx prettier@3.2.4 . --check
+      - run: bunx tsc@5.3.3 --noEmit --skipLibCheck
   test:
     runs-on: ubuntu-latest
     steps:
