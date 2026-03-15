@@ -94,40 +94,27 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 ## Migration Phases
 
-### Phase -1: IClient on Bun (Current Milestone)
+### Phase 1: IClient on Bun (Current Milestone)
 
-**Goal:** IClient runs under Bun with no Electron dependencies, validated by unit tests. No Electrobun required — this is pure Bun + IClient work, and also lays the foundation for the CLI.
+**Goal:** A v2 `IClient` implementation runs under Bun with no Electron
+dependencies, validated by unit tests. No Electrobun required — pure Bun work,
+and also lays the foundation for the future CLI.
 
-**Library changes (all in `src/preload/client/` + `src/electron/settings.ts`):**
+**Full plan:** [docs/plans/active/bun-client.md](../../plans/active/bun-client.md)
 
-| Library          | File(s)                                     | What it does                                        | Action                                                                                                   |
-| ---------------- | ------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `better-sqlite3` | `factory.ts`, `migrations/index.ts`         | DB driver                                           | → `bun:sqlite`                                                                                           |
-| `knex`           | `factory.ts`                                | Query builder                                       | → keep if compat, else raw SQL                                                                           |
-| `electron-store` | `files.ts`, `preferences.ts`, `settings.ts` | Typed JSON settings file                            | → custom JSON r/w (own it, zero new deps — API surface is tiny)                                          |
-| `sharp`          | `files.ts` (2 call sites)                   | EXIF auto-rotate, resize to 1600px, convert to webp | → remove. Already has a fallback: if sharp throws, writes original bytes. Just always take the fallback. |
+**Key decisions already resolved:**
+- **Knex is not viable.** No bun:sqlite dialect exists (tracking issue open since March 2024, no PR). Using **Drizzle ORM** (`drizzle-orm/bun-sqlite`) instead — the only tool with native first-party bun:sqlite support.
+- **Built parallel, not in-place.** New code lives in `src/bun-client/`. `src/preload/client/` is untouched until this phase is complete and Phase 2 is ready to wire it in.
+- **`electron-store`** → custom `settings-store.ts` (zero deps, JSON r/w)
+- **`sharp`** → dropped. Existing fallback (write original bytes) always runs.
 
-`electron-context-menu`, `@electron/packager`, `electron` itself — main-process only, not touched until Phase 5+.
-
-Everything else (`uuidv7`, `uuid25`, `luxon`, `lodash`, `ajv`, `mkdirp`) is Bun-compatible as-is.
-
-**Steps:**
-
-1. Swap `better-sqlite3` → `bun:sqlite` in `factory.ts` and `migrations/index.ts`
-2. Test knex compat — if it works, done; if not, replace with raw SQL
-3. Replace `electron-store` with a small JSON settings wrapper (`settings-store.ts`)
-4. Remove `sharp` from `files.ts` — delete the sharp path, keep the fallback write
-5. Write `bun test` unit tests: migrations, journals, documents, tags, FTS5 search
-
-**Deliverable:** `bun test` passes; `bun run src/cli/smoke.ts` calls `createClient()` and lists journals
+**Deliverable:** `bun test src/bun-client/` all green; `bun run src/bun-client/smoke.ts` calls `createClient()` and lists journals.
 
 **Validation:** Tests are the validation. No window, no webview, no Electrobun.
 
-**Resolves open question:** Knex + bun:sqlite compatibility (the highest-risk unknown).
-
 ---
 
-### Phase 0: Scaffold & Hello World
+### Phase 2: Scaffold & Hello World
 
 **Goal:** Electrobun project boots and shows a webview with static content.
 
@@ -146,7 +133,7 @@ Everything else (`uuidv7`, `uuid25`, `luxon`, `lodash`, `ajv`, `mkdirp`) is Bun-
 
 ---
 
-### Phase 1: Load the Renderer
+### Phase 3: Load the Renderer
 
 **Goal:** The Vite-built UI renders in the Electrobun webview.
 
@@ -170,13 +157,13 @@ Everything else (`uuidv7`, `uuid25`, `luxon`, `lodash`, `ajv`, `mkdirp`) is Bun-
 
 ---
 
-### Phases 2 & 3: ~~Database Layer~~ / ~~Backend Services~~
+### ~~Phases (old 2 & 3): Database Layer / Backend Services~~
 
-Absorbed into Phase -1. See above.
+Absorbed into Phase 1. See above.
 
 ---
 
-### Phase 4: IPC/RPC Bridge
+### Phase 4: IPC/RPC Bridge (depends on Phase 1 + Phase 3)
 
 **Goal:** The renderer communicates with the Bun backend via Electrobun's typed RPC.
 
@@ -271,30 +258,28 @@ The renderer currently calls `window.chronicles.foo()`. If we expose the same sh
 
 ### Context each agent needs per phase
 
-| Phase        | Essential context files                                                                                              |
-| ------------ | -------------------------------------------------------------------------------------------------------------------- |
-| -1 (IClient) | `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts`, `bun:sqlite` docs |
-| 0 (Scaffold) | Electrobun getting started docs, project structure docs                                                              |
-| 1 (Renderer) | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                      |
-| 2 (Database) | Already done in Phase -1                                                                                             |
-| 3 (Backend)  | Already done in Phase -1                                                                                             |
-| 4 (IPC/RPC)  | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                  |
-| 5 (Native)   | `src/electron/index.ts`, Electrobun native API docs                                                                  |
-| 6 (Build)    | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                           |
+| Phase      | Essential context files                                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 (IClient) | `docs/plans/active/bun-client.md`, `src/preload/client/` (all files), `src/electron/migrations/index.ts`, `src/electron/settings.ts` |
+| 2 (Scaffold) | Electrobun getting started docs, project structure docs                                                                                                      |
+| 3 (Renderer) | `vite.config.ts`, `src/index.html`, Electrobun BrowserView docs                                                                                             |
+| 4 (IPC/RPC)  | `src/preload/index.ts`, Electrobun RPC docs, `src/views/StyleWatcher.tsx`, `src/hooks/useClient.ts`                                                          |
+| 5 (Native)   | `src/electron/index.ts`, Electrobun native API docs                                                                                                          |
+| 6 (Build)    | `scripts/build.sh`, `scripts/build-main-preload.js`, Electrobun build docs                                                                                   |
 
 ### Validation feedback loops
 
 Each phase should have a runnable check the agent can execute:
 
-- **Phase -1:** `bun test` unit tests against IClient directly; no Electrobun needed
-- **Phase 0-1:** `bun run dev:electrobun` → screenshot/accessibility check
+- **Phase 1:** `bun test src/bun-client/` — all green; no Electrobun needed
+- **Phase 2-3:** `bun run dev:electrobun` → screenshot/accessibility check
 - **Phase 4:** Launch app, run through a manual checklist (or simple automation)
 - **Phase 5-6:** Manual QA against a checklist
 
 ### Parallel work opportunities
 
-- Phase -1 (IClient on Bun) and Phase 0-1 (scaffold + renderer) can be done in parallel by different agents
-- Phase 4 (IPC/RPC) depends on Phase -1 + Phase 1
+- Phase 1 (IClient on Bun) and Phases 2-3 (scaffold + renderer) can be done in parallel by different agents
+- Phase 4 (IPC/RPC) depends on Phase 1 + Phase 3
 - Phase 5 (native) depends on Phase 4
 - Phase 6 (build) depends on Phase 5
 
@@ -331,29 +316,36 @@ Each phase should have a runnable check the agent can execute:
 ### New files
 
 ```
-# Phase -1
-src/electron/settings-store.ts    # JSON-based settings (replaces electron-store; neutral location, used by both CLI and desktop)
-src/preload/client/sqlite-bun.ts  # bun:sqlite adapter (only if knex needs it)
+# Phase 1 (bun-client — parallel to existing src/preload/client/)
+src/bun-client/
+  schema.ts           # Drizzle table definitions
+  migrations/         # drizzle-kit generated SQL
+  factory.ts          # createClient() → IClient
+  settings-store.ts   # JSON r/w (replaces electron-store)
+  preferences.ts
+  journals.ts
+  documents.ts
+  tags.ts
+  indexer.ts
+  importer.ts
+  bulk-operations.ts
+  smoke.ts
 
-# Phase 0+
+# Phase 2+
 src/electrobun/
-  main.ts                         # Electrobun app bootstrap
-  rpc-handlers.ts                 # RPC handler definitions
+  main.ts             # Electrobun app bootstrap
+  rpc-handlers.ts     # RPC handler definitions
 ```
 
 ### Modified files
 
 ```
-# Phase -1
-src/preload/client/factory.ts     # Swap DB driver (better-sqlite3 → bun:sqlite)
-src/preload/client/files.ts       # Remove sharp, keep fallback write
-src/preload/client/preferences.ts # Use new settings store
-src/electron/settings.ts          # Use new settings store
-src/electron/migrations/index.ts  # Port to bun:sqlite
+# Phase 1 — untouched (parallel approach; old client stays intact)
+# src/preload/client/ — no changes until Phase 4 cutover
 
-# Phase 0+
-vite.config.ts                    # May need adjustments for Electrobun dev
-package.json                      # New deps, new scripts
+# Phase 2+
+vite.config.ts   # May need adjustments for Electrobun dev
+package.json     # New deps, new scripts
 ```
 
 ### Unchanged (the whole point)

@@ -2,6 +2,30 @@
 
 ## Active Projects
 
+### Bun Client (Phase 1 of Electrobun migration)
+
+Building a v2 `IClient` in `src/bun-client/` that runs under Bun with no
+Electron dependencies. Parallel to the existing `src/preload/client/` — the
+Electron app is untouched throughout. Validated by `bun test`.
+
+**Plan:** [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md)
+
+Stack: `bun:sqlite` + Drizzle ORM, custom settings store (no electron-store), sharp dropped.
+
+### Electrobun Migration
+
+Full migration from Electron to Electrobun (Bun + system WebView). Bun Client
+(above) is Phase 1. Phases 2-6 follow once Phase 1 tests are green.
+
+**Plan:** [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md)
+
+### Vitest / Renderer Tests
+
+Incremental renderer test coverage using Vitest + jsdom. Tests live alongside
+source files as `*.test.ts`.
+
+**Plan:** [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md)
+
 ### Theming (#443)
 
 To rebuild context on the theming work, read these in order:
