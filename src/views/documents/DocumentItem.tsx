@@ -35,8 +35,16 @@ export function DocumentItem(props: {
         </div>
       </div>
       <div
+        role="button"
+        tabIndex={0}
         className="text-muted-foreground hover:text-interactive-hover mr-2 shrink-0 cursor-pointer text-xs"
         onClick={() => search.addToken(`in:${doc.journal}`)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            search.addToken(`in:${doc.journal}`);
+          }
+        }}
       >
         /{doc.journal.toUpperCase()}
       </div>
