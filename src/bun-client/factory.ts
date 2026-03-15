@@ -3,11 +3,11 @@ import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import path from "path";
 import { fileURLToPath } from "url";
-import * as schema from "./schema";
-import { PreferencesClient, PREFERENCES_DEFAULTS } from "./preferences";
-import { SettingsStore } from "./settings-store";
-import { JournalsClient } from "./journals";
 import { BunFilesClient } from "./files";
+import { JournalsClient } from "./journals";
+import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
+import * as schema from "./schema";
+import { SettingsStore } from "./settings-store";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

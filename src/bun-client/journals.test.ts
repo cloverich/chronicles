@@ -103,7 +103,5 @@ test("name validation: _attachments throws", async () => {
 });
 
 test("name validation: path-traversal throws", async () => {
-  await expect(
-    client.journals.create({ name: "../escape" }),
-  ).rejects.toThrow();
+  await expect(client.journals.create({ name: "../escape" })).rejects.toThrow();
 });

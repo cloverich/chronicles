@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["bun-types"],
-    "noEmit": true,
+    "noEmit": true
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.ts"]
 }

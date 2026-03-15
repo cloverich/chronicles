@@ -13,10 +13,7 @@ export class SettingsStore<T extends Record<string, any>> {
   private data: Record<string, any>;
   private defaults: Partial<T>;
 
-  constructor(opts: {
-    filePath: string;
-    defaults?: Partial<T>;
-  }) {
+  constructor(opts: { filePath: string; defaults?: Partial<T> }) {
     this.filePath = opts.filePath;
     this.defaults = opts.defaults ?? {};
     this.data = this.load();

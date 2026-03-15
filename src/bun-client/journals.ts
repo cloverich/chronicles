@@ -2,10 +2,13 @@ import { eq } from "drizzle-orm";
 import { type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import path from "path";
 
-import type { IPreferencesClient } from "./preferences";
 import type { IJournalFolderOps } from "./files";
+import type { IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
-import { journals as journalsTable, documents as documentsTable } from "./schema";
+import {
+  documents as documentsTable,
+  journals as journalsTable,
+} from "./schema";
 
 export type JournalResponse = {
   name: string;
@@ -147,9 +150,7 @@ export class JournalsClient {
 
     await this.files.removeFolder(journal);
     await this.preferences.delete(`archivedJournals.${journal}`);
-    await this.db
-      .delete(journalsTable)
-      .where(eq(journalsTable.name, journal));
+    await this.db.delete(journalsTable).where(eq(journalsTable.name, journal));
 
     return this.list();
   };
