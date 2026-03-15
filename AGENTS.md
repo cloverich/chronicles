@@ -2,39 +2,10 @@
 
 ## Active Projects
 
-### Bun Client (Phase 1 of Electrobun migration)
-
-Building a v2 `IClient` in `src/bun-client/` that runs under Bun with no
-Electron dependencies. Parallel to the existing `src/preload/client/` — the
-Electron app is untouched throughout. Validated by `bun test`.
-
-**Plan:** [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md)
-
-Stack: `bun:sqlite` + Drizzle ORM, custom settings store (no electron-store), sharp dropped.
-
-### Electrobun Migration
-
-Full migration from Electron to Electrobun (Bun + system WebView). Bun Client
-(above) is Phase 1. Phases 2-6 follow once Phase 1 tests are green.
-
-**Plan:** [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md)
-
-### Vitest / Renderer Tests
-
-Incremental renderer test coverage using Vitest + jsdom. Tests live alongside
-source files as `*.test.ts`.
-
-**Plan:** [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md)
-
-### Theming (#443)
-
-To rebuild context on the theming work, read these in order:
-
-1. **Epic:** `gh issue view 443` — checklist of done/remaining issues
-2. **QA doc:** [docs/qa/theming.md](docs/qa/theming.md) — every file changed, decisions made, known issues, gaps
-3. **Design doc:** [docs/designs/theming.md](docs/designs/theming.md) — full architecture and implementation plan
-
-Remove this section once the theming project is complete.
+- [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (Phase 1 of Electrobun migration)
+- [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration phases 2-6
+- [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
+- [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)
 
 ---
 

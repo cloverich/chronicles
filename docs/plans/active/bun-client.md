@@ -33,7 +33,8 @@ src/bun-client/
   indexer.ts
   importer.ts
   bulk-operations.ts
-  smoke.ts            # CLI entry: opens real DB, lists journals
+  smoke.ts            # CLI entry: opens real DB, lists journals (Phase 8)
+  importer.ts         # Markdown import pipeline — do last, see Phase 9
 ```
 
 Shared (unchanged):
@@ -208,23 +209,22 @@ test("returns defaults when key missing", async () => { ... });
 
 ---
 
-### Phase 7 — Importer + bulk operations
+### Phase 7 — Bulk operations
 
-**Goal:** `importer.ts` and `bulk-operations.ts` ported.
+**Goal:** `bulk-operations.ts` ported — batch tag edits, bulk delete, export.
 
-**Context files:** `src/preload/client/importer.ts`, `src/preload/client/bulk-operations.ts`, `src/preload/client/bulk-operations.electron-test.ts`
+**Context files:** `src/preload/client/bulk-operations.ts`, `src/preload/client/bulk-operations.electron-test.ts`, `docs/bulk-operations.md`
 
 **Steps:**
-1. Port importer — handles markdown + attachment file import into a journal
-2. Port bulk operations — batch tag edits, bulk delete, export
-3. Port existing test assertions
+1. Port `BulkOperationsClient` to use the new journals/documents clients
+2. Port existing test assertions
 
-**Test (`src/bun-client/importer.test.ts`, `src/bun-client/bulk-operations.test.ts`):**
-- Import a directory of markdown files → docs indexed
+**Test (`src/bun-client/bulk-operations.test.ts`):**
 - Bulk tag add/remove → reflected in search results
+- Bulk delete → documents removed from DB
 - Export produces expected file structure
 
-**Validation:** `bun test src/bun-client/` — all tests green.
+**Validation:** `bun test src/bun-client/bulk-operations.test.ts` — green.
 
 ---
 
@@ -251,7 +251,32 @@ bun test src/bun-client/
 # → all tests green
 ```
 
-At this point Phase -1 is complete. Hand off to Phase 0 (Electrobun scaffold).
+At this point the core client is complete. Hand off to Phase 2 (Electrobun scaffold).
+
+---
+
+### Phase 9 — Importer (human review before starting)
+
+**Goal:** `importer.ts` — imports markdown files (and potentially other formats)
+into journals. Potentially the trickiest module: it touches markdown parsing,
+frontmatter transformation, attachment handling, and format normalization.
+
+**Do a manual review of `src/preload/client/importer.ts` before starting this
+phase.** Understand what format transformations it performs, whether any are
+lossy, and whether the behavior is correct before porting it.
+
+**Context files:** `src/preload/client/importer.ts`, `src/preload/client/importer/frontmatter.test.ts`
+
+**Steps:**
+1. Read and understand the existing importer fully
+2. Identify any format transformation edge cases worth testing explicitly
+3. Port to use the new documents/journals clients
+4. Port or expand existing frontmatter tests
+
+**Test (`src/bun-client/importer.test.ts`):**
+- TBD after manual review — test cases should reflect the actual behavior
+
+**Validation:** `bun test src/bun-client/` — all tests green.
 
 ---
 
