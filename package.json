@@ -8,8 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "./build.sh",
-    "lint": "prettier . --write && tsc --noEmit --skipLibCheck",
-    "lint:check": "prettier . --check && tsc --noEmit --skipLibCheck",
+    "lint": "bunx prettier . --write && bunx tsc --noEmit --skipLibCheck",
+    "lint:check": "bunx prettier . --check && bunx tsc --noEmit --skipLibCheck",
     "postinstall": "yarn run electron-rebuild",
     "prebuild": "yarn run lint:check && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
