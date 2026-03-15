@@ -3,9 +3,13 @@ import { runInAction } from "mobx";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
-import type { IClient, SearchRequest, SearchResponse } from "../../hooks/useClient";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
+import type {
+  IClient,
+  SearchRequest,
+  SearchResponse,
+} from "../../hooks/useClient";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 import Documents from "./index";
 
@@ -33,10 +37,12 @@ function createClient({
   searchDocs?: typeof baseDocs;
   searchError?: SearchClientError | null;
 } = {}) {
-  const search = vi.fn<(q?: SearchRequest) => Promise<SearchResponse>>(async () => {
-    if (searchError) throw searchError;
-    return { data: [...searchDocs] };
-  });
+  const search = vi.fn<(q?: SearchRequest) => Promise<SearchResponse>>(
+    async () => {
+      if (searchError) throw searchError;
+      return { data: [...searchDocs] };
+    },
+  );
 
   const client = {
     preferences: {
@@ -59,7 +65,10 @@ function createClient({
     },
   };
 
-  return client as unknown as Pick<IClient, "preferences" | "journals" | "documents">;
+  return client as unknown as Pick<
+    IClient,
+    "preferences" | "journals" | "documents"
+  >;
 }
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
@@ -151,7 +160,9 @@ describe("Documents surface", () => {
   });
 
   it("renders the loading state", () => {
-    const { searchStore, applicationStore } = createSearchStore({ loading: true });
+    const { searchStore, applicationStore } = createSearchStore({
+      loading: true,
+    });
 
     renderDocuments({ searchStore, applicationStore });
 
