@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
-import { createClient, type BunClient } from "./factory";
-import { documentTags, documents, journals } from "./schema";
+import { type BunClient, createClient } from "./factory";
+import { documents, documentTags, journals } from "./schema";
 
 let client: BunClient;
 let notesDir: string;

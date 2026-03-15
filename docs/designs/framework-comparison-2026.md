@@ -312,17 +312,20 @@ Mature desktop framework (v1 shipped 2022, v2 stable Oct 2024) with Rust backend
 ### Near-term (2026):
 
 1. **Stay on Electron**, improve DX via **Vite migration** (see `VITE_MIGRATION.md`)
+
    - Addresses actual pain points (slow HMR, build times)
    - No framework risk, preserves all investments
    - Vite brings HMR, fast CSS iteration, better dev experience
 
 2. **Proceed with Vitest independently**
+
    - Natural follow-on after Vite renderer migration
    - Scoped entirely to renderer layer
    - Survives any future framework migration
    - Real value: HMR for tests, shared config, faster feedback loop
 
 3. **Monitor Electrobun** through mid-2026
+
    - Watch for plugin marketplace launch (Q3 2026)
    - Watch for third-party production apps
    - Re-evaluate if ecosystem matures

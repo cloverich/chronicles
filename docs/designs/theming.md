@@ -144,6 +144,7 @@ Ordered task list for converting into GitHub issues. Items marked **[DEFERRED]**
 ### Phase 1: Foundation
 
 - **1. Audit and document the full token inventory**
+
   - Enumerate every CSS custom property in `src/index.css` across `:root` and `.dark` (~30 token/variant pairs)
   - Classify each as "required" (theme must specify) vs "derivable" (can be computed from other tokens, e.g. `--card` defaults to `--background`)
   - Document which tokens are light-only, dark-only, or shared (e.g. `--foreground-strong`, `--link`, `--accent-muted` only exist in `.dark` today)
@@ -160,6 +161,7 @@ Ordered task list for converting into GitHub issues. Items marked **[DEFERRED]**
 ### Phase 2: Runtime plumbing
 
 - **3. Add theme storage and preferences wiring**
+
   - Depends on: #2 (schema)
   - Add a themes directory (default location TBD, e.g. `~/.chronicles/themes/` or within `settingsDir`)
   - Bundle the current light and dark color sets as `system-light.theme.json` and `system-dark.theme.json` (or as hardcoded defaults in code — the point is they become `ThemeConfig` objects)
@@ -167,6 +169,7 @@ Ordered task list for converting into GitHub issues. Items marked **[DEFERRED]**
   - When `darkMode` is toggled, the active theme switches between the two selections
 
 - **4. Extend StyleWatcher to apply theme colors**
+
   - Depends on: #3 (preferences wiring)
   - Load the active `ThemeConfig` (resolved from preference name -> themes directory -> parsed JSON -> validated)
   - Apply all color tokens to `document.documentElement.style` via `setProperty`, same pattern as fonts/widths
@@ -182,6 +185,7 @@ Ordered task list for converting into GitHub issues. Items marked **[DEFERRED]**
 ### Phase 3: Theme management
 
 - **6. Implement theme install/import flow**
+
   - Depends on: #2 (schema + validation)
   - Provide a way to "install" a theme: validate the file against the schema, copy it to the themes directory
   - Surface validation errors clearly so users (or LLMs generating themes) can fix issues
@@ -195,15 +199,18 @@ Ordered task list for converting into GitHub issues. Items marked **[DEFERRED]**
 ### Phase 4: Polish & deferred items
 
 - **8. [DEFERRED] FOUC mitigation**
+
   - Investigate injecting critical theme variables (background, foreground) from main process into `index.html` before React mounts
   - Requires main-process involvement in theme delivery — evaluate complexity vs. visual impact
 
 - **9. [DEFERRED] Per-journal contextual themes**
+
   - Co-locate `journal.theme.json` in journal directories; override global theme when journal is active
   - Requires path resolution across process boundary, file watching, precedence rules
   - Revisit after global theming is stable
 
 - **10. [DEFERRED] Theme visualizer / preview**
+
   - Swatch preview in preferences UI showing the active palette
   - Useful for authoring, but not required when themes are edited as JSON files
 

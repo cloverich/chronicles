@@ -2,6 +2,6 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "NodeNext",
-    "moduleResolution": "nodenext"
-  }
+    "moduleResolution": "nodenext",
+  },
 }

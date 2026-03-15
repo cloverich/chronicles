@@ -94,7 +94,7 @@ For 4000 documents with no changes, indexing completes in ~2-4 seconds instead o
 | `documents`      | Metadata: title, journal, frontmatter, sync info          |
 | `documents_fts`  | FTS5 virtual table for full-text search (title + content) |
 | `journals`       | Organizational containers (directories)                   |
-| `document_tags`  | Many-to-many: document ↔ tags                             |
+| `document_tags`  | Many-to-many: document ↔ tags                            |
 | `document_links` | Links between documents (for backlinks)                   |
 | `image_links`    | Image references with resolution status                   |
 | `sync`           | Index run metadata (timestamps, counts, errors)           |

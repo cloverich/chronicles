@@ -47,7 +47,9 @@
       "indexes": {
         "bulk_operation_items_status_idx": {
           "name": "bulk_operation_items_status_idx",
-          "columns": ["status"],
+          "columns": [
+            "status"
+          ],
           "isUnique": false
         }
       },
@@ -56,15 +58,22 @@
           "name": "bulk_operation_items_operationId_bulk_operations_id_fk",
           "tableFrom": "bulk_operation_items",
           "tableTo": "bulk_operations",
-          "columnsFrom": ["operationId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "operationId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "bulk_operation_items_operationId_documentId_pk": {
-          "columns": ["operationId", "documentId"],
+          "columns": [
+            "operationId",
+            "documentId"
+          ],
           "name": "bulk_operation_items_operationId_documentId_pk"
         }
       },
@@ -159,7 +168,9 @@
       "indexes": {
         "bulk_operations_status_idx": {
           "name": "bulk_operations_status_idx",
-          "columns": ["status"],
+          "columns": [
+            "status"
+          ],
           "isUnique": false
         }
       },
@@ -203,7 +214,9 @@
       "indexes": {
         "document_links_target_idx": {
           "name": "document_links_target_idx",
-          "columns": ["targetId"],
+          "columns": [
+            "targetId"
+          ],
           "isUnique": false
         }
       },
@@ -212,15 +225,22 @@
           "name": "document_links_documentId_documents_id_fk",
           "tableFrom": "document_links",
           "tableTo": "documents",
-          "columnsFrom": ["documentId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "documentId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {
         "document_links_documentId_targetId_pk": {
-          "columns": ["documentId", "targetId"],
+          "columns": [
+            "documentId",
+            "targetId"
+          ],
           "name": "document_links_documentId_targetId_pk"
         }
       },
@@ -248,7 +268,9 @@
       "indexes": {
         "tags_name_idx": {
           "name": "tags_name_idx",
-          "columns": ["tag"],
+          "columns": [
+            "tag"
+          ],
           "isUnique": false
         }
       },
@@ -257,15 +279,22 @@
           "name": "document_tags_documentId_documents_id_fk",
           "tableFrom": "document_tags",
           "tableTo": "documents",
-          "columnsFrom": ["documentId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "documentId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {
         "document_tags_documentId_tag_pk": {
-          "columns": ["documentId", "tag"],
+          "columns": [
+            "documentId",
+            "tag"
+          ],
           "name": "document_tags_documentId_tag_pk"
         }
       },
@@ -344,12 +373,16 @@
       "indexes": {
         "documents_title_idx": {
           "name": "documents_title_idx",
-          "columns": ["title"],
+          "columns": [
+            "title"
+          ],
           "isUnique": false
         },
         "documents_createdat_idx": {
           "name": "documents_createdat_idx",
-          "columns": ["createdAt"],
+          "columns": [
+            "createdAt"
+          ],
           "isUnique": false
         }
       },
@@ -358,8 +391,12 @@
           "name": "documents_journal_journals_name_fk",
           "tableFrom": "documents",
           "tableTo": "journals",
-          "columnsFrom": ["journal"],
-          "columnsTo": ["name"],
+          "columnsFrom": [
+            "journal"
+          ],
+          "columnsTo": [
+            "name"
+          ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -405,12 +442,16 @@
       "indexes": {
         "image_links_path_idx": {
           "name": "image_links_path_idx",
-          "columns": ["imagePath"],
+          "columns": [
+            "imagePath"
+          ],
           "isUnique": false
         },
         "image_links_resolved_idx": {
           "name": "image_links_resolved_idx",
-          "columns": ["resolved"],
+          "columns": [
+            "resolved"
+          ],
           "isUnique": false
         }
       },
@@ -419,15 +460,22 @@
           "name": "image_links_documentId_documents_id_fk",
           "tableFrom": "image_links",
           "tableTo": "documents",
-          "columnsFrom": ["documentId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "documentId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {
         "image_links_documentId_imagePath_pk": {
-          "columns": ["documentId", "imagePath"],
+          "columns": [
+            "documentId",
+            "imagePath"
+          ],
           "name": "image_links_documentId_imagePath_pk"
         }
       },

@@ -34,8 +34,7 @@ const variants = cva(
 );
 
 export interface Props
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof variants> {
   // onClick?: () => void;
   icon: keyof typeof Icons;

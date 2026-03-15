@@ -70,32 +70,33 @@ the v2 client type and widen `IClient` to accept both. Decide at Phase 1.
 
 ## Phases
 
-### Phase 1 — Runtime + schema + migrations ✅
-
-**Status:** Complete.
+### Phase 1 — Runtime + schema + migrations
 
 **Goal:** Prove Drizzle + bun:sqlite works end-to-end. No application logic yet.
 
-**What was done:**
+**Steps:**
 
-- Added `drizzle-orm` and `drizzle-kit` to `package.json`
-- Created `src/bun-client/schema.ts` — Drizzle table definitions for all 12 tables
-- Generated migrations via `bunx drizzle-kit generate`
-- Created `src/bun-client/factory.ts` — opens `bun:sqlite`, applies migrations,
-  creates FTS5 virtual table, returns typed Drizzle db
-- Created `src/bun-client/factory.test.ts` — 5 tests, all green
+1. `bun add drizzle-orm` / `bun add -D drizzle-kit`
+2. Create `src/bun-client/schema.ts` — Drizzle table definitions for `journals`, `documents`, `documents_fts`, `tags` (transcribed from the existing SQL migration files)
+3. Run `bunx drizzle-kit generate` → `src/bun-client/migrations/`
+4. Create `src/bun-client/factory.ts` — opens in-memory `bun:sqlite`, applies migrations programmatically, returns a stub `IClient`
+5. Write first test
 
-**IClient decision:** Deferred widening `IClient` for now. The bun-client returns
-a `BunClient` type with `db` (Drizzle) and `sqlite` (raw Database) fields. The
-`IClient` interface will be unified when modules are wired up in Phase 8.
+**Test (`src/bun-client/factory.test.ts`):**
 
-**Note — shared `package.json`:** Drizzle deps live in the same `package.json`
-as the Electron app. So far no conflicts (drizzle-orm is pure JS, drizzle-kit is
-dev-only). If a future dep conflicts with Electron's native rebuilds or bundler
-assumptions, consider extracting `src/bun-client/` into its own `package.json`
-with a workspace setup. For now, single `package.json` is simpler.
+```ts
+import { test, expect } from "bun:test";
+import { createClient } from "./factory";
 
-**Validation:** `bun test src/bun-client/factory.test.ts` — green (5/5 pass).
+test("migrations run and tables exist", async () => {
+  const client = await createClient({ dbPath: ":memory:", notesDir: "/tmp" });
+  // Drizzle db is exposed for inspection
+  const journals = await client.db.select().from(journalsTable);
+  expect(journals).toEqual([]);
+});
+```
+
+**Validation:** `bun test src/bun-client/factory.test.ts` — green.
 
 ---
 
