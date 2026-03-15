@@ -47,6 +47,7 @@
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
         "@types/better-sqlite3": "^5.4.0",
+        "@types/bun": "^1.3.10",
         "@types/chai": "^4.3.11",
         "@types/lodash": "^4.17.0",
         "@types/luxon": "^2.4.0",
@@ -582,6 +583,8 @@
 
     "@types/better-sqlite3": ["@types/better-sqlite3@https://registry.npmjs.org/@types/better-sqlite3/-/better-sqlite3-5.4.0.tgz", { "dependencies": { "@types/integer": "*" } }],
 
+    "@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
+
     "@types/cacheable-request": ["@types/cacheable-request@https://registry.npmjs.org/@types/cacheable-request/-/cacheable-request-6.0.2.tgz", { "dependencies": { "@types/http-cache-semantics": "*", "@types/keyv": "*", "@types/node": "*", "@types/responselike": "*" } }],
 
     "@types/chai": ["@types/chai@https://registry.npmjs.org/@types/chai/-/chai-4.3.11.tgz", {}],
@@ -705,6 +708,8 @@
     "buffer-crc32": ["buffer-crc32@https://registry.npmjs.org/buffer-crc32/-/buffer-crc32-0.2.13.tgz", {}],
 
     "buffer-from": ["buffer-from@1.1.2", "", {}, "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ=="],
+
+    "bun-types": ["bun-types@1.3.10", "", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
 
     "byte-counter": ["byte-counter@https://registry.npmjs.org/byte-counter/-/byte-counter-0.1.0.tgz", {}],
 
@@ -1990,6 +1995,8 @@
 
     "aria-hidden/tslib": ["tslib@https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz", {}],
 
+    "bun-types/@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
+
     "cacache/fs-minipass": ["fs-minipass@https://registry.npmjs.org/fs-minipass/-/fs-minipass-3.0.3.tgz", { "dependencies": { "minipass": "^7.0.3" } }],
 
     "cacache/glob": ["glob@https://registry.npmjs.org/glob/-/glob-10.5.0.tgz", { "dependencies": { "foreground-child": "^3.1.0", "jackspeak": "^3.1.2", "minimatch": "^9.0.4", "minipass": "^7.1.2", "package-json-from-dist": "^1.0.0", "path-scurry": "^1.11.1" } }],
@@ -2431,6 +2438,8 @@
     "@radix-ui/react-tooltip/@radix-ui/react-presence/@radix-ui/react-use-layout-effect": ["@radix-ui/react-use-layout-effect@https://registry.npmjs.org/@radix-ui/react-use-layout-effect/-/react-use-layout-effect-1.0.1.tgz", { "dependencies": { "@babel/runtime": "^7.13.10" } }],
 
     "@radix-ui/react-tooltip/@radix-ui/react-use-controllable-state/@radix-ui/react-use-callback-ref": ["@radix-ui/react-use-callback-ref@https://registry.npmjs.org/@radix-ui/react-use-callback-ref/-/react-use-callback-ref-1.0.1.tgz", { "dependencies": { "@babel/runtime": "^7.13.10" } }],
+
+    "bun-types/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 
     "cacache/glob/foreground-child": ["foreground-child@https://registry.npmjs.org/foreground-child/-/foreground-child-3.1.1.tgz", { "dependencies": { "cross-spawn": "^7.0.0", "signal-exit": "^4.0.1" } }],
 
