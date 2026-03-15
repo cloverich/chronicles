@@ -1,56 +1,12 @@
 import Conf from "conf";
 
-import { APPEARANCE_DEFAULTS } from "../electron/appearance-defaults";
+import {
+  IPreferences,
+  PREFERENCES_DEFAULTS,
+} from "../electron/preferences-types";
 
-/**
- * Re-declared here (from src/electron/settings.ts) to avoid importing
- * electron-store, which has a side-effect instantiation on module load.
- */
-export interface IPreferences {
-  databaseUrl: string;
-  defaultJournal: string | null;
-  archivedJournals: Record<string, boolean>;
-  notesDir: string;
-  settingsDir: string;
-  onboarding: "new" | "complete";
-  darkMode: "light" | "dark" | "system";
-  themeLightName: string;
-  themeDarkName: string;
-  codeThemeLight: string;
-  codeThemeDark: string;
-  fonts: {
-    heading?: string;
-    heading2?: string;
-    heading3?: string;
-    title?: string;
-    body?: string;
-    mono?: string;
-    systemBody?: string;
-    systemHeading?: string;
-    searchBody?: string;
-  };
-  maxWidth: {
-    prose?: string;
-    code?: string;
-    frontmatter?: string;
-  };
-  fontSizes: {
-    search?: string;
-    body?: string;
-    heading?: string;
-    title?: string;
-  };
-}
-
-export const PREFERENCES_DEFAULTS: IPreferences = {
-  databaseUrl: "",
-  defaultJournal: null,
-  archivedJournals: {},
-  notesDir: "",
-  settingsDir: "",
-  onboarding: "new",
-  ...APPEARANCE_DEFAULTS,
-};
+export { PREFERENCES_DEFAULTS };
+export type { IPreferences };
 
 /**
  * Bun-client replacement for PreferencesClient (was electron-store backed).
