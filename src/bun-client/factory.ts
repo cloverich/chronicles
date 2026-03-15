@@ -1,8 +1,13 @@
 import { Database } from "bun:sqlite";
+import Conf from "conf";
 import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import path from "path";
 import { fileURLToPath } from "url";
+import { BunFilesClient } from "./files";
+import { JournalsClient } from "./journals";
+import type { IPreferences } from "./preferences";
+import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
 import * as schema from "./schema";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +16,8 @@ const __dirname = path.dirname(__filename);
 export interface CreateClientOptions {
   dbPath: string; // ":memory:" for tests, or absolute file path
   notesDir: string;
+  /** Directory for the settings file. Defaults to notesDir. */
+  settingsDir?: string;
 }
 
 export interface BunClient {
@@ -18,6 +25,8 @@ export interface BunClient {
   /** The raw bun:sqlite Database, exposed for manual SQL when needed */
   sqlite: Database;
   notesDir: string;
+  preferences: PreferencesClient;
+  journals: JournalsClient;
 }
 
 /**
@@ -60,9 +69,20 @@ export async function createClient(
     `);
   }
 
+  const conf = new Conf<IPreferences>({
+    cwd: opts.settingsDir ?? opts.notesDir,
+    configName: "settings",
+    defaults: PREFERENCES_DEFAULTS,
+  });
+  const preferences = new PreferencesClient(conf);
+  const files = new BunFilesClient(opts.notesDir);
+  const journals = new JournalsClient(db, files, preferences);
+
   return {
     db,
     sqlite,
     notesDir: opts.notesDir,
+    preferences,
+    journals,
   };
 }

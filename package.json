@@ -8,8 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "./build.sh",
-    "lint": "prettier . --write && tsc --noEmit --skipLibCheck",
-    "lint:check": "prettier . --check && tsc --noEmit --skipLibCheck",
+    "lint": "bash scripts/lint.sh --fix",
+    "lint:check": "bash scripts/lint.sh",
     "postinstall": "yarn run electron-rebuild",
     "prebuild": "yarn run lint:check && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
@@ -30,6 +30,7 @@
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^12.5.0",
     "drizzle-orm": "^0.44.0",
+    "conf": "^14.0.0",
     "electron-store": "^10.1.0",
     "knex": "^2.5.0",
     "sharp": "^0.33.5",
