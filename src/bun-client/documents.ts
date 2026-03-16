@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import yaml from "yaml";
 
-import { and, eq, inArray, like, lt, notInArray, sql } from "drizzle-orm";
+import { type SQL, and, eq, inArray, like, lt, notInArray, sql } from "drizzle-orm";
 import { type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
 import type {
@@ -43,6 +43,7 @@ export class DocumentsClient {
     frontMatter: FrontMatter;
     body: string;
   } {
+    const now = new Date().toISOString();
     const fmMatch = rawContent.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
     if (fmMatch) {
       const fm: Record<string, any> = yaml.parse(fmMatch[1]) || {};
@@ -51,8 +52,8 @@ export class DocumentsClient {
         frontMatter: {
           tags: fm.tags || [],
           title: fm.title,
-          createdAt: fm.createdAt || new Date().toISOString(),
-          updatedAt: fm.updatedAt || new Date().toISOString(),
+          createdAt: fm.createdAt || now,
+          updatedAt: fm.updatedAt || now,
           ...fm,
         },
         body,
@@ -61,8 +62,8 @@ export class DocumentsClient {
     return {
       frontMatter: {
         tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       },
       body: rawContent.trim(),
     };
@@ -114,10 +115,7 @@ export class DocumentsClient {
     };
   };
 
-  createDocument = async (
-    args: CreateRequest,
-    index: boolean = true,
-  ): Promise<[string, string]> => {
+  createDocument = async (args: CreateRequest): Promise<[string, string]> => {
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
     args.frontMatter.createdAt =
       args.frontMatter.createdAt || new Date().toISOString();
@@ -208,32 +206,31 @@ export class DocumentsClient {
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
-    const conditions: ReturnType<typeof eq>[] = [];
+    const conditions: SQL[] = [];
 
     if (q?.ids?.length) {
-      conditions.push(inArray(documents.id, q.ids) as any);
+      conditions.push(inArray(documents.id, q.ids));
     }
 
     if (q?.journals?.length) {
-      conditions.push(inArray(documents.journal, q.journals) as any);
+      conditions.push(inArray(documents.journal, q.journals));
     }
 
     if (q?.exclude?.journals?.length) {
-      conditions.push(notInArray(documents.journal, q.exclude.journals) as any);
+      conditions.push(notInArray(documents.journal, q.exclude.journals));
     }
 
     if (q?.date) {
-      conditions.push(like(documents.createdAt, `${q.date}%`) as any);
+      conditions.push(like(documents.createdAt, `${q.date}%`));
     }
 
     if (q?.before) {
-      // Simple date-based before filter
-      conditions.push(lt(documents.createdAt, q.before) as any);
+      conditions.push(lt(documents.createdAt, q.before));
     }
 
     if (q?.titles?.length) {
       for (const title of q.titles) {
-        conditions.push(like(documents.title, `%${title}%`) as any);
+        conditions.push(like(documents.title, `%${title}%`));
       }
     }
 
@@ -245,7 +242,7 @@ export class DocumentsClient {
         .where(inArray(documentTags.tag, q.tags));
       const ids = taggedIds.map((r) => r.documentId);
       if (ids.length === 0) return { data: [] };
-      conditions.push(inArray(documents.id, ids) as any);
+      conditions.push(inArray(documents.id, ids));
     }
 
     // Tag exclusion: exclude doc IDs that have any of the excluded tags
@@ -256,49 +253,24 @@ export class DocumentsClient {
         .where(inArray(documentTags.tag, q.exclude.tags));
       const ids = excludedIds.map((r) => r.documentId);
       if (ids.length > 0) {
-        conditions.push(notInArray(documents.id, ids) as any);
+        conditions.push(notInArray(documents.id, ids));
       }
     }
 
     // FTS text search stub: Phase 5 will add FTS join here
     // q?.texts is intentionally ignored in Phase 4
 
+    const cols = {
+      id: documents.id,
+      createdAt: documents.createdAt,
+      title: documents.title,
+      journal: documents.journal,
+    };
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    let query = this.db
-      .select({
-        id: documents.id,
-        createdAt: documents.createdAt,
-        title: documents.title,
-        journal: documents.journal,
-      })
-      .from(documents)
-      .orderBy(sql`${documents.createdAt} DESC`);
-
-    if (whereClause) {
-      (query as any).where(whereClause);
-    }
-
-    const rows = whereClause
-      ? await this.db
-          .select({
-            id: documents.id,
-            createdAt: documents.createdAt,
-            title: documents.title,
-            journal: documents.journal,
-          })
-          .from(documents)
-          .where(whereClause)
-          .orderBy(sql`${documents.createdAt} DESC`)
-      : await this.db
-          .select({
-            id: documents.id,
-            createdAt: documents.createdAt,
-            title: documents.title,
-            journal: documents.journal,
-          })
-          .from(documents)
-          .orderBy(sql`${documents.createdAt} DESC`);
+    const base = this.db.select(cols).from(documents);
+    const rows = await (whereClause ? base.where(whereClause) : base).orderBy(
+      sql`${documents.createdAt} DESC`,
+    );
 
     const results = q?.limit ? rows.slice(0, q.limit) : rows;
 
@@ -355,17 +327,24 @@ export class DocumentsClient {
   };
 
   deleteOrphanedDocuments = async (seenIds: Set<string>): Promise<number> => {
-    const allDocs = await this.db.select({ id: documents.id }).from(documents);
-    const orphanedIds = allDocs.map((d) => d.id).filter((id) => !seenIds.has(id));
+    const seenIdsArray = Array.from(seenIds);
+    const orphaned = await this.db
+      .select({ id: documents.id })
+      .from(documents)
+      .where(
+        seenIdsArray.length > 0
+          ? notInArray(documents.id, seenIdsArray)
+          : sql`1=1`,
+      );
 
-    if (orphanedIds.length > 0) {
+    if (orphaned.length > 0) {
       await this.db
         .delete(documents)
-        .where(inArray(documents.id, orphanedIds));
+        .where(inArray(documents.id, orphaned.map((d) => d.id)));
       // FTS stub: Phase 5 will clean FTS here
     }
 
-    return orphanedIds.length;
+    return orphaned.length;
   };
 
   deindexJournal = async (journal: string): Promise<void> => {
