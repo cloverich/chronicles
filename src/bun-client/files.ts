@@ -51,7 +51,10 @@ export class BunFilesClient implements IJournalFolderOps {
     return docPath;
   };
 
-  deleteDocument = async (documentId: string, journal: string): Promise<void> => {
+  deleteDocument = async (
+    documentId: string,
+    journal: string,
+  ): Promise<void> => {
     const docPath = path.join(this.notesDir, journal, `${documentId}.md`);
     await fs.promises.unlink(docPath);
   };

@@ -3,7 +3,16 @@ import fs from "fs";
 import path from "path";
 import yaml from "yaml";
 
-import { type SQL, and, eq, inArray, like, lt, notInArray, sql } from "drizzle-orm";
+import {
+  and,
+  eq,
+  inArray,
+  like,
+  lt,
+  notInArray,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
 import type {
@@ -124,7 +133,10 @@ export class DocumentsClient {
 
     const id = args.id || createId(Date.parse(args.frontMatter.createdAt));
     const content = this.prependFrontMatter(args.content, args.frontMatter);
-    const docPath = await this.files.uploadDocument({ id, content }, args.journal);
+    const docPath = await this.files.uploadDocument(
+      { id, content },
+      args.journal,
+    );
 
     const syncMeta = await this.computeSyncMeta(docPath, content);
 
@@ -142,9 +154,14 @@ export class DocumentsClient {
       });
 
       if (args.frontMatter.tags.length > 0) {
-        await trx.insert(documentTags).values(
-          args.frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
-        );
+        await trx
+          .insert(documentTags)
+          .values(
+            args.frontMatter.tags.map((tag: string) => ({
+              documentId: id,
+              tag,
+            })),
+          );
       }
 
       // FTS stub: Phase 5 will add FTS indexing here
@@ -320,10 +337,7 @@ export class DocumentsClient {
     id: string,
     meta: { mtime: number; size: number },
   ): Promise<void> => {
-    await this.db
-      .update(documents)
-      .set(meta)
-      .where(eq(documents.id, id));
+    await this.db.update(documents).set(meta).where(eq(documents.id, id));
   };
 
   deleteOrphanedDocuments = async (seenIds: Set<string>): Promise<number> => {
@@ -338,9 +352,12 @@ export class DocumentsClient {
       );
 
     if (orphaned.length > 0) {
-      await this.db
-        .delete(documents)
-        .where(inArray(documents.id, orphaned.map((d) => d.id)));
+      await this.db.delete(documents).where(
+        inArray(
+          documents.id,
+          orphaned.map((d) => d.id),
+        ),
+      );
       // FTS stub: Phase 5 will clean FTS here
     }
 
