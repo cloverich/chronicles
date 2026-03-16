@@ -15,10 +15,13 @@ import {
 } from "drizzle-orm";
 import { type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
+import { mdastToString, parseMarkdown } from "../markdown";
+import { splitFrontMatter } from "../preload/client/importer/frontmatter";
 import type {
   CreateRequest,
   FrontMatter,
   GetDocumentResponse,
+  IndexRequest,
   SearchItem,
   SearchRequest,
   SearchResponse,
@@ -162,7 +165,10 @@ export class DocumentsClient {
         );
       }
 
-      // FTS stub: Phase 5 will add FTS indexing here
+      // Index into FTS5 for full-text search
+      trx.run(
+        sql`INSERT INTO documents_fts (id, title, content) VALUES (${id}, ${args.frontMatter.title || ""}, ${args.content})`,
+      );
     });
 
     return [id, docPath];
@@ -210,14 +216,18 @@ export class DocumentsClient {
         );
       }
 
-      // FTS stub: Phase 5 will update FTS here
+      // Update FTS index (delete + re-insert; FTS5 doesn't support UPDATE well)
+      trx.run(sql`DELETE FROM documents_fts WHERE id = ${args.id}`);
+      trx.run(
+        sql`INSERT INTO documents_fts (id, title, content) VALUES (${args.id}, ${args.frontMatter.title || ""}, ${args.content})`,
+      );
     });
   };
 
   del = async (id: string, journal: string): Promise<void> => {
     await this.files.deleteDocument(id, journal);
     await this.db.delete(documents).where(eq(documents.id, id));
-    // FTS stub: Phase 5 will clean up FTS here
+    this.db.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
@@ -272,8 +282,18 @@ export class DocumentsClient {
       }
     }
 
-    // FTS text search stub: Phase 5 will add FTS join here
-    // q?.texts is intentionally ignored in Phase 4
+    // FTS5 full-text search
+    if (q?.texts?.length) {
+      const ftsTerms = q.texts
+        .map((t) => `"${t.replace(/"/g, '""')}"`)
+        .join(" ");
+      const ftsRows = await this.db.all<{ id: string }>(
+        sql`SELECT id FROM documents_fts WHERE documents_fts MATCH ${ftsTerms}`,
+      );
+      const ftsIds = ftsRows.map((r) => r.id);
+      if (ftsIds.length === 0) return { data: [] };
+      conditions.push(inArray(documents.id, ftsIds));
+    }
 
     const cols = {
       id: documents.id,
@@ -350,20 +370,119 @@ export class DocumentsClient {
       );
 
     if (orphaned.length > 0) {
-      await this.db.delete(documents).where(
-        inArray(
-          documents.id,
-          orphaned.map((d) => d.id),
-        ),
-      );
-      // FTS stub: Phase 5 will clean FTS here
+      const orphanIds = orphaned.map((d) => d.id);
+      await this.db.delete(documents).where(inArray(documents.id, orphanIds));
+      for (const oid of orphanIds) {
+        this.db.run(sql`DELETE FROM documents_fts WHERE id = ${oid}`);
+      }
     }
 
     return orphaned.length;
   };
 
   deindexJournal = async (journal: string): Promise<void> => {
+    const rows = await this.db
+      .select({ id: documents.id })
+      .from(documents)
+      .where(eq(documents.journal, journal));
     await this.db.delete(documents).where(eq(documents.journal, journal));
-    // FTS stub: Phase 5 will clean FTS here
+    for (const row of rows) {
+      this.db.run(sql`DELETE FROM documents_fts WHERE id = ${row.id}`);
+    }
+  };
+
+  /**
+   * Read raw document contents from disk and compute content hash.
+   * Used by the indexer for incremental sync (hash comparison).
+   */
+  readDocRaw = async (filePath: string) => {
+    const rawContents = await this.files.readDocument(filePath);
+    const contentHash = this.computeHash(rawContents);
+    return { rawContents, contentHash };
+  };
+
+  /**
+   * Parse raw markdown contents into mdast body + frontMatter.
+   * Uses micromark → mdast → splitFrontMatter pipeline.
+   */
+  parseDoc = (rawContents: string, stats: fs.Stats) => {
+    const mdast = parseMarkdown(rawContents);
+    const { frontMatter, bodyMdast } = splitFrontMatter(mdast, stats);
+    return { mdast: bodyMdast, frontMatter };
+  };
+
+  /**
+   * Create or update a document index entry from a parsed mdast tree.
+   * This is the "slow path" used by the indexer after parsing a changed file.
+   * Handles documents table, tags, FTS5, in a single transaction.
+   */
+  createIndex = async ({
+    id,
+    journal,
+    mdast,
+    frontMatter,
+    syncMeta,
+  }: IndexRequest): Promise<string> => {
+    if (!id) throw new Error("id required to create document index");
+
+    const content = mdastToString(mdast);
+    const title = frontMatter.title || "";
+
+    await this.db.transaction(async (trx) => {
+      // Check if document already exists
+      const [existing] = await trx
+        .select({ id: documents.id })
+        .from(documents)
+        .where(eq(documents.id, id));
+
+      if (existing) {
+        await trx
+          .update(documents)
+          .set({
+            journal,
+            title: frontMatter.title,
+            updatedAt: frontMatter.updatedAt,
+            frontmatter: JSON.stringify(frontMatter),
+            ...(syncMeta && {
+              mtime: syncMeta.mtime,
+              size: syncMeta.size,
+              contentHash: syncMeta.contentHash,
+            }),
+          })
+          .where(eq(documents.id, id));
+      } else {
+        await trx.insert(documents).values({
+          id,
+          journal,
+          title: frontMatter.title,
+          createdAt: frontMatter.createdAt,
+          updatedAt: frontMatter.updatedAt,
+          frontmatter: JSON.stringify(frontMatter),
+          ...(syncMeta && {
+            mtime: syncMeta.mtime,
+            size: syncMeta.size,
+            contentHash: syncMeta.contentHash,
+          }),
+        });
+      }
+
+      // Clear and re-insert tags
+      await trx.delete(documentTags).where(eq(documentTags.documentId, id));
+      if (frontMatter.tags.length > 0) {
+        await trx
+          .insert(documentTags)
+          .values(
+            frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
+          );
+      }
+
+      // Update FTS index (delete + re-insert)
+      trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
+      trx.run(
+        sql`INSERT INTO documents_fts (id, title, content) VALUES (${id}, ${title}, ${content})`,
+      );
+    });
+
+    return id;
   };
 }
