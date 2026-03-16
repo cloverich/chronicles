@@ -4,6 +4,7 @@ import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import path from "path";
 import { fileURLToPath } from "url";
+import { DocumentsClient } from "./documents";
 import { BunFilesClient } from "./files";
 import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
@@ -27,6 +28,7 @@ export interface BunClient {
   notesDir: string;
   preferences: PreferencesClient;
   journals: JournalsClient;
+  documents: DocumentsClient;
 }
 
 /**
@@ -77,6 +79,7 @@ export async function createClient(
   const preferences = new PreferencesClient(conf);
   const files = new BunFilesClient(opts.notesDir);
   const journals = new JournalsClient(db, files, preferences);
+  const documents = new DocumentsClient(db, files, opts.notesDir);
 
   return {
     db,
@@ -84,5 +87,6 @@ export async function createClient(
     notesDir: opts.notesDir,
     preferences,
     journals,
+    documents,
   };
 }
