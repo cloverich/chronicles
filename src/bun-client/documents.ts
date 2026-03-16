@@ -27,7 +27,7 @@ import type {
 import { createId } from "../preload/client/util";
 import type { BunFilesClient } from "./files";
 import * as schema from "./schema";
-import { documentTags, documents } from "./schema";
+import { documents, documentTags } from "./schema";
 
 export interface DocSyncMeta {
   mtime: number | null;
@@ -154,14 +154,12 @@ export class DocumentsClient {
       });
 
       if (args.frontMatter.tags.length > 0) {
-        await trx
-          .insert(documentTags)
-          .values(
-            args.frontMatter.tags.map((tag: string) => ({
-              documentId: id,
-              tag,
-            })),
-          );
+        await trx.insert(documentTags).values(
+          args.frontMatter.tags.map((tag: string) => ({
+            documentId: id,
+            tag,
+          })),
+        );
       }
 
       // FTS stub: Phase 5 will add FTS indexing here
