@@ -4,6 +4,7 @@ import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import path from "path";
 import { fileURLToPath } from "url";
+import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { BunFilesClient } from "./files";
 import { IndexerClient } from "./indexer";
@@ -31,6 +32,7 @@ export interface BunClient {
   journals: JournalsClient;
   documents: DocumentsClient;
   indexer: IndexerClient;
+  bulkOperations: BulkOperationsClient;
 }
 
 /**
@@ -89,6 +91,7 @@ export async function createClient(
     files,
     preferences,
   );
+  const bulkOperations = new BulkOperationsClient(db, documents);
 
   return {
     db,
@@ -98,5 +101,6 @@ export async function createClient(
     journals,
     documents,
     indexer,
+    bulkOperations,
   };
 }
