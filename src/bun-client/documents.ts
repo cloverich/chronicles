@@ -89,6 +89,15 @@ export class DocumentsClient {
     return `${fm}\n\n${content}`;
   }
 
+  private beforeTokenFormat(input: string): "date" | "id" | "unknown" {
+    const dateRegex = /^(?:\d{4}(?:-\d{2}(?:-\d{2})?)?)$/;
+    const idRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (dateRegex.test(input)) return "date";
+    if (idRegex.test(input)) return "id";
+    return "unknown";
+  }
+
   private computeHash(content: string): string {
     return crypto.createHash("sha256").update(content).digest("hex");
   }
@@ -226,8 +235,10 @@ export class DocumentsClient {
 
   del = async (id: string, journal: string): Promise<void> => {
     await this.files.deleteDocument(id, journal);
-    await this.db.delete(documents).where(eq(documents.id, id));
-    this.db.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
+    await this.db.transaction(async (trx) => {
+      await trx.delete(documents).where(eq(documents.id, id));
+      trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
+    });
   };
 
   search = async (q?: SearchRequest): Promise<SearchResponse> => {
@@ -250,7 +261,11 @@ export class DocumentsClient {
     }
 
     if (q?.before) {
-      conditions.push(lt(documents.createdAt, q.before));
+      if (this.beforeTokenFormat(q.before) === "date") {
+        conditions.push(lt(documents.createdAt, q.before));
+      } else {
+        conditions.push(lt(documents.id, q.before));
+      }
     }
 
     if (q?.titles?.length) {
@@ -282,7 +297,9 @@ export class DocumentsClient {
       }
     }
 
-    // FTS5 full-text search
+    // FTS5 full-text search: two-query approach because Drizzle doesn't support
+    // virtual table JOINs. Feeds matching IDs into IN (...) — note SQLite's
+    // default SQLITE_MAX_VARIABLE_NUMBER is 999; fine for typical result sets.
     if (q?.texts?.length) {
       const ftsTerms = q.texts
         .map((t) => `"${t.replace(/"/g, '""')}"`)
@@ -302,14 +319,12 @@ export class DocumentsClient {
       journal: documents.journal,
     };
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const base = this.db.select(cols).from(documents);
-    const rows = await (whereClause ? base.where(whereClause) : base).orderBy(
-      sql`${documents.createdAt} DESC`,
-    );
+    let query = this.db.select(cols).from(documents);
+    const filtered = whereClause ? query.where(whereClause) : query;
+    const ordered = filtered.orderBy(sql`${documents.createdAt} DESC`);
+    const rows = await (q?.limit ? ordered.limit(q.limit) : ordered);
 
-    const results = q?.limit ? rows.slice(0, q.limit) : rows;
-
-    return { data: results as SearchItem[] };
+    return { data: rows as SearchItem[] };
   };
 
   getSyncMeta = async (id: string): Promise<DocSyncMeta> => {
@@ -372,23 +387,23 @@ export class DocumentsClient {
     if (orphaned.length > 0) {
       const orphanIds = orphaned.map((d) => d.id);
       await this.db.delete(documents).where(inArray(documents.id, orphanIds));
-      for (const oid of orphanIds) {
-        this.db.run(sql`DELETE FROM documents_fts WHERE id = ${oid}`);
-      }
+      this.db.run(
+        sql`DELETE FROM documents_fts WHERE id IN (${sql.join(
+          orphanIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      );
     }
 
     return orphaned.length;
   };
 
   deindexJournal = async (journal: string): Promise<void> => {
-    const rows = await this.db
-      .select({ id: documents.id })
-      .from(documents)
-      .where(eq(documents.journal, journal));
+    // Bulk-delete FTS entries via subquery before removing documents rows
+    this.db.run(
+      sql`DELETE FROM documents_fts WHERE id IN (SELECT id FROM documents WHERE journal = ${journal})`,
+    );
     await this.db.delete(documents).where(eq(documents.journal, journal));
-    for (const row of rows) {
-      this.db.run(sql`DELETE FROM documents_fts WHERE id = ${row.id}`);
-    }
   };
 
   /**
