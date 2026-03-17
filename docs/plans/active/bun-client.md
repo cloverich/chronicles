@@ -150,76 +150,60 @@ test("returns defaults when key missing", async () => { ... });
 
 ---
 
-### Phase 4 — Documents CRUD
+### Phase 4 — Documents CRUD ✅
+
+**Status:** Complete.
 
 **Goal:** `documents.ts` — create, get, update, delete, list. No FTS yet.
 
 **Context files:** `src/preload/client/documents.ts`
 
-**Steps:**
+**What was done:**
 
-1. Port create/get/update/delete/list to Drizzle
-2. `frontMatter` is stored as a JSON string — same as today
-3. Skip FTS indexing writes for now (stubs that no-op)
-
-**Test (`src/bun-client/documents.test.ts`):**
-
-- Create doc → retrievable by id
-- Update doc → content and frontMatter change
-- Delete doc → not retrievable
-- List by journal → returns only that journal's docs
-- `getSyncMeta` → returns mtime/size/contentHash
+- `src/bun-client/documents.ts` — `DocumentsClient` with full CRUD, sync meta, orphan cleanup, deindex
+- YAML frontmatter parsing, `prependFrontMatter` for file writes, SHA-256 content hashing
+- Search with journal/tag/date/title/exclusion filters (FTS stubs for Phase 5)
+- `src/bun-client/documents.test.ts` — 8 tests covering create/findById, update, delete, search by journal, sort order, getSyncMeta
 
 **Validation:** `bun test src/bun-client/documents.test.ts` — green.
 
 ---
 
-### Phase 5 — FTS5 search
+### Phase 5 — FTS5 search ✅
+
+**Status:** Complete.
 
 **Goal:** Full-text and tag search working via the `documents_fts` virtual table.
 
-**Context files:** `src/preload/client/search.electron-test.ts`, `docs/search.md`
+**What was done:**
 
-**Steps:**
+- Added FTS5 write path to `documents.ts`: `documents_fts` populated on create, update (delete+re-insert), and delete
+- FTS cleanup on `deleteOrphanedDocuments` and `deindexJournal`
+- Search query builder uses FTS5 MATCH with quoted phrase terms, ANDed by default
+- `src/bun-client/search.test.ts` — 17 tests covering text search, tag include/exclude, date prefix filters, journal filters, FTS update on doc change, FTS cleanup on delete, empty DB
 
-1. Add FTS5 write path to `documents.ts` (populate `documents_fts` on create/update/delete)
-2. Port the search query builder (text, tags, date, journal filter, exclusions) — this is the most complex query in the codebase; read `docs/search.md` first
-3. Port `search.electron-test.ts` assertions
-
-**Test (`src/bun-client/search.test.ts`):**
-
-- Text search finds matching docs
-- Tag filter includes/excludes correctly
-- Date prefix filter (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`) works
-- Journal filter narrows results
-- `exclude.tags` removes matching docs
-- Search on empty DB returns empty array
-
-**Validation:** `bun test src/bun-client/search.test.ts` — green.
+**Validation:** `bun test src/bun-client/` — green (47/47 pass).
 
 ---
 
-### Phase 6 — Indexer
+### Phase 6 — Indexer ✅
+
+**Status:** Complete.
 
 **Goal:** `indexer.ts` — filesystem scan, incremental sync, document indexing pipeline.
 
-**Context files:** `src/preload/client/indexer.ts`, `src/preload/client/indexer.electron-test.ts`, `docs/indexer.md`
+**What was done:**
 
-**Steps:**
+- `src/bun-client/indexer.ts` — `IndexerClient` with three-tier incremental sync (mtime/size → hash → full parse)
+- Added `readDocRaw`, `parseDoc`, `createIndex` to `DocumentsClient` for indexer's slow path
+- Added `ensureDir` to `BunFilesClient`
+- Journals discovered dynamically from filesystem; orphan journals cleaned up
+- `sync` table records completed index metadata
+- Wired into `factory.ts` — `createClient()` now returns `indexer`
+- Fixed orphan journal cleanup: track `journalsOnDisk` separately from pre-loaded DB journals
+- `src/bun-client/indexer.test.ts` — 10 tests: basic indexing, journal creation, FTS population, tag indexing, incremental skip, new file pickup, modified file re-index, deletion cleanup, empty journal cleanup, multi-journal indexing
 
-1. Port `IndexerClient` to use the new `journals` and `documents` clients
-2. Incremental sync: `getSyncMeta` + mtime/size/contentHash comparison to skip unchanged files
-3. Create a temp directory with markdown files in tests (no Electron, just `fs`)
-
-**Test (`src/bun-client/indexer.test.ts`):**
-
-- Index a directory of `.md` files → all appear in DB
-- Re-index unchanged files → no re-processing (check call count or timestamp unchanged)
-- Modify a file → re-index picks up the change
-- Delete a file → removed from DB on next index
-- Nested journal subdirectories indexed correctly
-
-**Validation:** `bun test src/bun-client/indexer.test.ts` — green.
+**Validation:** `bun test src/bun-client/` — green (57/57 pass across 6 files).
 
 ---
 

@@ -30,6 +30,20 @@ export class BunFilesClient implements IJournalFolderOps {
     await fs.promises.rm(folderPath, { recursive: true, force: true });
   };
 
+  /**
+   * Ensure a directory exists, creating it recursively if needed.
+   * @param dirPath - Absolute path to the directory
+   * @param createIfMissing - If false, just validate it exists (default: true)
+   */
+  ensureDir = async (
+    dirPath: string,
+    createIfMissing = true,
+  ): Promise<void> => {
+    if (createIfMissing) {
+      await fs.promises.mkdir(dirPath, { recursive: true });
+    }
+  };
+
   readDocument = async (filepath: string): Promise<string> => {
     return fs.promises.readFile(filepath, "utf8");
   };

@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { DocumentsClient } from "./documents";
 import { BunFilesClient } from "./files";
+import { IndexerClient } from "./indexer";
 import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
 import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
@@ -29,6 +30,7 @@ export interface BunClient {
   preferences: PreferencesClient;
   journals: JournalsClient;
   documents: DocumentsClient;
+  indexer: IndexerClient;
 }
 
 /**
@@ -80,6 +82,13 @@ export async function createClient(
   const files = new BunFilesClient(opts.notesDir);
   const journals = new JournalsClient(db, files, preferences);
   const documents = new DocumentsClient(db, files, opts.notesDir);
+  const indexer = new IndexerClient(
+    db,
+    journals,
+    documents,
+    files,
+    preferences,
+  );
 
   return {
     db,
@@ -88,5 +97,6 @@ export async function createClient(
     preferences,
     journals,
     documents,
+    indexer,
   };
 }
