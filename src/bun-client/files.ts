@@ -65,6 +65,11 @@ export class BunFilesClient implements IJournalFolderOps {
     return docPath;
   };
 
+  copyFile = async (src: string, dest: string): Promise<string> => {
+    await fs.promises.copyFile(src, dest);
+    return dest;
+  };
+
   deleteDocument = async (
     documentId: string,
     journal: string,

@@ -228,62 +228,64 @@ test("returns defaults when key missing", async () => { ... });
 
 ---
 
-### Phase 8 — Smoke test + `createClient()` wired up
+### Phase 8 — Smoke test + tags + `createClient()` wired up ✅
 
-**Goal:** Full `createClient()` against a real filesystem path. The CLI smoke
-test the migration plan originally specified.
+**Status:** Complete.
 
-**Steps:**
+**Goal:** Full `createClient()` against a real filesystem path, with all modules
+wired up. The CLI smoke test the migration plan originally specified.
 
-1. Complete `factory.ts` to wire all modules together
-2. Create `src/bun-client/smoke.ts`:
-   ```ts
-   const client = await createClient({
-     dbPath: process.env.DB_PATH!,
-     notesDir: process.env.NOTES_DIR!,
-   });
-   const journals = await client.journals.list();
-   console.log("journals:", journals);
-   ```
-3. Run against a real notes directory
+**What was done:**
 
-**Validation:**
+- `src/bun-client/tags.ts` — `TagsClient` with `all()` and `allWithCounts()` using Drizzle;
+  `all()` delegates to `allWithCounts()` to avoid a redundant query path
+- Wired `tags: TagsClient` into `factory.ts` / `BunClient` interface
+- `src/bun-client/tags.test.ts` — 5 tests: empty DB for both methods, distinct sorted tags,
+  no-tag docs don't pollute, correct counts with type assertion
+- `src/bun-client/smoke.ts` — CLI entry point: creates client, lists journals/documents/tags
 
-```bash
-DB_PATH=/tmp/test.db NOTES_DIR=/tmp/notes bun run src/bun-client/smoke.ts
-# → prints journal list (empty [] is fine)
-bun test src/bun-client/
-# → all tests green
-```
+**Validation:** `bun test src/bun-client/` — green (70/70 pass across 8 files).
+Smoke test runs clean against a real filesystem path.
 
-At this point the core client is complete. Hand off to Phase 2 (Electrobun scaffold).
+At this point the core client is complete (minus importer). Hand off to Phase 2 (Electrobun scaffold).
 
 ---
 
-### Phase 9 — Importer (human review before starting)
+### Phase 9 — Importer ✅
 
-**Goal:** `importer.ts` — imports markdown files (and potentially other formats)
-into journals. Potentially the trickiest module: it touches markdown parsing,
-frontmatter transformation, attachment handling, and format normalization.
+**Status:** Complete.
 
-**Do a manual review of `src/preload/client/importer.ts` before starting this
-phase.** Understand what format transformations it performs, whether any are
-lossy, and whether the behavior is correct before porting it.
+**Goal:** `importer.ts` — two-pass import system for markdown files (primarily
+Notion exports) into Chronicles journals.
 
-**Context files:** `src/preload/client/importer.ts`, `src/preload/client/importer/frontmatter.test.ts`
+**What was done:**
 
-**Steps:**
+- `src/bun-client/importer.ts` (~735 lines) — full Drizzle port of `ImporterClient`.
+  Reuses `frontmatter.ts`, `SourceType`, `walk`, markdown pipeline from their original
+  locations (no copies). Key improvements over original:
+  - `moveStagedFiles` called once after all file links updated (was per-note in original)
+  - `ensureJournal` cached with `Set<string>` to skip redundant DB/FS work
+  - `buildLinkMappings` combines two queries into one
+  - Error strings stored in `importNotes.error` (schema fixed from boolean to text)
+- `src/bun-client/files-import-resolver.ts` (~323 lines) — Drizzle port of
+  `FilesImportResolver`
+- `src/bun-client/files.ts` — added `copyFile` method to `BunFilesClient`
+- `src/bun-client/schema.ts` — fixed `importNotes.error` from `integer(boolean)` to `text`
+- `src/bun-client/factory.ts` — wired `importer: ImporterClient`
+- Bug fix: added `ensureJournal` to create journal rows before document insert
+  (bun-client's `createDocument` always inserts to DB unlike Electron version)
+- `src/bun-client/frontmatter.test.ts` — 12 tests ported from chai/node:test to bun:test
+- `src/bun-client/importer.test.ts` — 24 integration tests covering:
+  Notion import (notes, files, journals, frontmatter, cross-links, attachments, tags),
+  generic markdown import (frontmatter, wikilinks, tags, inline tags),
+  error handling (dir validation, clearImportTables, clearIncomplete),
+  sequential import (Notion then Other)
 
-1. Read and understand the existing importer fully
-2. Identify any format transformation edge cases worth testing explicitly
-3. Port to use the new documents/journals clients
-4. Port or expand existing frontmatter tests
+**Validation:** `bun test src/bun-client/` — green (106/106 pass across 10 files).
 
-**Test (`src/bun-client/importer.test.ts`):**
-
-- TBD after manual review — test cases should reflect the actual behavior
-
-**Validation:** `bun test src/bun-client/` — all tests green.
+**Note — Notion date timezone handling:** Deferred. The existing `parseAndNormalizeDate`
+in `frontmatter.ts` is shared code (not copied), so fixing it would affect both clients.
+Worth addressing as a separate PR with dedicated test coverage.
 
 ---
 
