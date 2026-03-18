@@ -9,6 +9,7 @@ import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
 // import Editor from "./editor";
 import { PlateContainer } from "./editorv2/PlateContainer";
+import { EditorLayout } from "./lexical/EditorLayout";
 import { EditLoadingComponent } from "./loading";
 import MarkdownEditor from "./markdown-editor";
 import ReadOnlyTextEditor from "./read-only-editor";
@@ -143,6 +144,16 @@ function EditorInner({
     case EditorMode.Editor:
       return (
         <PlateContainer
+          document={document}
+          journals={journals}
+          goBack={goBack}
+          selectedViewMode={selectedViewMode}
+          setSelectedViewMode={setSelectedViewMode}
+        />
+      );
+    case EditorMode.Lexical:
+      return (
+        <EditorLayout
           document={document}
           journals={journals}
           goBack={goBack}

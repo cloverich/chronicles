@@ -26,6 +26,7 @@ import { MarkToolbarButton } from "./MarkToolbarButton";
 
 const options = Object.freeze([
   { key: EditorMode.Editor, label: "Editor" },
+  { key: EditorMode.Lexical, label: "Lexical" },
   { key: EditorMode.Markdown, label: "Markdown" },
   { key: EditorMode.SlateDom, label: "Slate DOM" },
   { key: EditorMode.Mdast, label: "MDAST" },
