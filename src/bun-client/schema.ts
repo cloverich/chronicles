@@ -132,7 +132,7 @@ export const imports = sqliteTable("imports", {
   updatedAt: text("updatedAt")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  status: text("status").notNull(), // active, inactive
+  status: text("status").notNull(), // pending, complete
 });
 
 // ---------- import_files ----------

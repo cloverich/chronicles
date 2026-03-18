@@ -264,8 +264,7 @@ export class FilesImportResolver {
     for (const file of files) {
       const { sourcePathResolved, extension, chroniclesId } = file;
 
-      // todo: convert to just err checking
-      let [_, err] = await this.safeAccess(sourcePathResolved, importDir);
+      const [, err] = await this.safeAccess(sourcePathResolved, importDir);
 
       if (err != null) {
         console.error(

@@ -352,6 +352,8 @@ export class ImporterClient {
     const ensuredJournals = new Set<string>();
 
     // First pass: update all file links in notes (marks files as "referenced")
+    const mdastTrees = new Map<string, mdast.Root>();
+
     for (const item of items) {
       const mdastTree = parseMarkdownForImportProcessing(
         item.content!,
@@ -363,9 +365,7 @@ export class ImporterClient {
         wikiLinkMapping,
       );
       await resolver.updateFileLinks(item.sourcePath, mdastTree);
-
-      // Stash the parsed tree for the second pass
-      (item as any)._mdastTree = mdastTree;
+      mdastTrees.set(item.sourcePath, mdastTree);
     }
 
     // Move all referenced files in one batch, then mark orphans
@@ -373,7 +373,7 @@ export class ImporterClient {
 
     // Second pass: convert wiki nodes, extract tags, create documents
     for (const item of items) {
-      const mdastTree: mdast.Root = (item as any)._mdastTree;
+      const mdastTree = mdastTrees.get(item.sourcePath)!;
       const frontMatter: FrontMatter = JSON.parse(item.frontMatter!);
 
       this.convertWikiLinks(mdastTree);
@@ -391,7 +391,7 @@ export class ImporterClient {
           ensuredJournals.add(item.journal);
         }
 
-        const [id, docPath] = await this.documents.createDocument({
+        await this.documents.createDocument({
           id: item.chroniclesId,
           journal: item.journal, // using name as id
           content: mdastToString(mdastTree),
