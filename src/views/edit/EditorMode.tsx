@@ -4,6 +4,7 @@
 export enum EditorMode {
   // EditorV2 = "editor-v2",
   Editor = "editor-v2",
+  Lexical = "lexical",
   SlateDom = "slate-dom",
   Mdast = "mdast",
   Markdown = "markdown",

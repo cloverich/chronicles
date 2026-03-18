@@ -78,7 +78,7 @@ This remains the fallback if native markdown support proves too rigid for Chroni
 
 ## Minimal Replacement Editor (Spike)
 
-A new minimal replacement seam exists in `src/views/edit/lexical-spike/`:
+A new minimal replacement seam exists in `src/views/edit/lexical/`:
 
 - `minimalReplacementEditor.tsx`
   - markdown-in/markdown-out editing contract for drop-in experimentation
@@ -125,6 +125,26 @@ If Lexical cannot support note links cleanly, we should assume image/video, embe
 ---
 
 ## Incremental Proof Plan (with Vitest)
+
+### Current Status Snapshot (March 18, 2026)
+
+**Implemented**
+
+- Phase 0 baseline markdown contract is running with deterministic roundtrip and render-contract coverage (headings, lists, quotes, links, inline formatting, fixtures).
+- Phase 1 integration seam is active: Lexical mode can be selected in the existing editor workflow and markdown in/out is wired.
+- Formatting shortcuts are implemented and tested (`Cmd+B`, `Cmd+I`) with selection-boundary assertions.
+
+**In Progress**
+
+- Note links: markdown IO, note-link insertion flow, and click navigation are implemented; parity polish is still ongoing.
+- Regular links: toolbar open/edit/unlink/open flows are implemented; active polish is focused on close behavior, placement, and visual consistency.
+- Code blocks: basic markdown/code-block roundtrip is present; richer behavior parity remains in progress.
+
+**Remaining**
+
+- Media port (images, galleries, video).
+- Deeper human trial pass over real notes after note-link/link polish stabilizes.
+- Default switch and Plate removal gates.
 
 ### Phase 0 — Core Markdown Contract
 
