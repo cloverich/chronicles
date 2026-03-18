@@ -7,11 +7,13 @@ import { fileURLToPath } from "url";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { BunFilesClient } from "./files";
+import { ImporterClient } from "./importer";
 import { IndexerClient } from "./indexer";
 import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
 import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
 import * as schema from "./schema";
+import { TagsClient } from "./tags";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,6 +35,8 @@ export interface BunClient {
   documents: DocumentsClient;
   indexer: IndexerClient;
   bulkOperations: BulkOperationsClient;
+  tags: TagsClient;
+  importer: ImporterClient;
 }
 
 /**
@@ -92,6 +96,15 @@ export async function createClient(
     preferences,
   );
   const bulkOperations = new BulkOperationsClient(db, documents);
+  const tags = new TagsClient(db);
+  const importer = new ImporterClient(
+    db,
+    documents,
+    files,
+    preferences,
+    indexer,
+    opts.notesDir,
+  );
 
   return {
     db,
@@ -102,5 +115,7 @@ export async function createClient(
     documents,
     indexer,
     bulkOperations,
+    tags,
+    importer,
   };
 }

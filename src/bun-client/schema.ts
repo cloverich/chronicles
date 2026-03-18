@@ -132,7 +132,7 @@ export const imports = sqliteTable("imports", {
   updatedAt: text("updatedAt")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  status: text("status").notNull(), // active, inactive
+  status: text("status").notNull(), // pending, complete
 });
 
 // ---------- import_files ----------
@@ -154,7 +154,7 @@ export const importNotes = sqliteTable("import_notes", {
   chroniclesPath: text("chroniclesPath").notNull(),
   sourcePath: text("sourcePath").primaryKey().notNull(),
   sourceId: text("sourceId"),
-  error: integer("error", { mode: "boolean" }),
+  error: text("error"),
   journal: text("journal").notNull(),
   frontMatter: text("frontMatter"),
   content: text("content"),
