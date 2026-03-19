@@ -18,7 +18,9 @@
     "pretest:node": "node ./scripts/test.mjs",
     "test:node": "node --test 'src/**/*.test.bundle.mjs'",
     "pretest:electron": "node ./scripts/test.mjs",
-    "test:electron": "node ./scripts/electron-test-runner.mjs"
+    "test:electron": "node ./scripts/electron-test-runner.mjs",
+    "dev:electrobun": "electrobun dev",
+    "build:electrobun": "electrobun build"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.8",
@@ -31,6 +33,7 @@
     "better-sqlite3": "^12.5.0",
     "conf": "^14.0.0",
     "drizzle-orm": "^0.44.0",
+    "electrobun": "^1.16.0",
     "electron-store": "^10.1.0",
     "knex": "^2.5.0",
     "sharp": "^0.33.5",
