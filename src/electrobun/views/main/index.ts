@@ -1,19 +1,20 @@
-import { Electroview } from "electrobun/view";
+import Electrobun, { Electroview } from "electrobun/view";
 import { installChroniclesShim } from "../../chronicles-shim";
 import type { ChroniclesRPC } from "../../rpc-schema";
 
 // 1. Set up Electroview RPC (no webview→bun handlers needed yet)
-const electroview = Electroview.defineRPC<ChroniclesRPC>({
+const rpc = Electroview.defineRPC<ChroniclesRPC>({
+  maxRequestTime: 30000, // Match bun-side timeout for slow operations
   handlers: {
     requests: {},
     messages: {},
   },
 });
 
-const view = new Electroview({ rpc: electroview });
+const view = new Electrobun.Electroview({ rpc });
 
 // 2. Install window.chronicles shim — must happen BEFORE the React app loads
-installChroniclesShim(view.rpc);
+installChroniclesShim(view.rpc!);
 
 console.log("[Chronicles/Electroview] RPC bridge installed");
 

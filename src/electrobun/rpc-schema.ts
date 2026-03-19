@@ -1,4 +1,4 @@
-import type { ElectrobunRPCSchema } from "electrobun/bun";
+import type { RPCSchema } from "electrobun/bun";
 
 // The modules on BunClient that are proxied to the renderer
 export const CLIENT_MODULES = [
@@ -14,8 +14,8 @@ export const CLIENT_MODULES = [
 
 export type ClientModule = (typeof CLIENT_MODULES)[number];
 
-export type ChroniclesRPC = ElectrobunRPCSchema & {
-  bun: {
+export type ChroniclesRPC = {
+  bun: RPCSchema<{
     requests: {
       /** Generic dispatch for any IClient sub-module method */
       clientCall: {
@@ -87,9 +87,9 @@ export type ChroniclesRPC = ElectrobunRPCSchema & {
     messages: {
       showContextMenu: { x: number; y: number };
     };
-  };
-  webview: {
+  }>;
+  webview: RPCSchema<{
     requests: {};
     messages: {};
-  };
+  }>;
 };
