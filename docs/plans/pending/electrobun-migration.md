@@ -14,6 +14,10 @@ Rather than building a separate CLI-on-Bun alongside an Electron desktop app, we
 
 **Fallback:** If Electrobun doesn't work out, the architectural cleanup (better seams, documented interfaces) makes a Swift migration easier, not harder.
 
+### Portable backend
+
+Phase 1 (bun-client) proved `BunClient` runs fully independent of Electron. This opens doors beyond Electrobun — the same backend could serve a web app over HTTP, power a CLI tool, or wire into any desktop shell. Electrobun is the current target, but the architecture doesn't lock us in.
+
 ---
 
 ## Docs to Acquire
@@ -94,24 +98,13 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 ## Migration Phases
 
-### Phase 1: IClient on Bun (Current Milestone)
+### Phase 1: IClient on Bun ✅ COMPLETE
 
-**Goal:** A v2 `IClient` implementation runs under Bun with no Electron
-dependencies, validated by unit tests. No Electrobun required — pure Bun work,
-and also lays the foundation for the future CLI.
+**Status:** Complete — 106/106 tests passing across 10 test files.
 
 **Full plan:** [docs/plans/active/bun-client.md](../../plans/active/bun-client.md)
 
-**Key decisions already resolved:**
-
-- **Knex is not viable.** No bun:sqlite dialect exists (tracking issue open since March 2024, no PR). Using **Drizzle ORM** (`drizzle-orm/bun-sqlite`) instead — the only tool with native first-party bun:sqlite support.
-- **Built parallel, not in-place.** New code lives in `src/bun-client/`. `src/preload/client/` is untouched until this phase is complete and Phase 2 is ready to wire it in.
-- **`electron-store`** → custom `settings-store.ts` (zero deps, JSON r/w)
-- **`sharp`** → dropped. Existing fallback (write original bytes) always runs.
-
-**Deliverable:** `bun test src/bun-client/` all green; `bun run src/bun-client/smoke.ts` calls `createClient()` and lists journals.
-
-**Validation:** Tests are the validation. No window, no webview, no Electrobun.
+All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, preferences, files, indexer, bulk operations, importer. Settings store replaces electron-store. Sharp dropped (passthrough fallback). Smoke test validates end-to-end.
 
 ---
 
@@ -289,8 +282,21 @@ Each phase should have a runnable check the agent can execute:
 ## Decisions Made
 
 1. **Sharp:** Remove it. The existing fallback (write original bytes) stays. No resize, no webp conversion. Re-add proper image processing later as a standalone improvement.
-2. **Coexistence:** Cut over immediately. Replace Electron entry points with Electrobun, no parallel maintenance.
+2. **~~Coexistence:~~** ~~Cut over immediately.~~ **Revised: Dual-track.** Electron and Electrobun run side-by-side throughout Phases 2-5. The glue code is tiny (~450 lines total across main + preload) — maintaining two shells temporarily is low-cost. This de-risks the migration: Electron stays working while Electrobun matures. Phase 6 (cut over) deletes `src/electron/`, `src/preload/`, and Electron deps. See rationale below.
 3. **Bundler:** Keep Vite for the renderer. Proven, working, has Vitest. One migration at a time.
+
+### Dual-track rationale
+
+The hard decoupling is already done:
+- **Backend:** `src/bun-client/` is fully independent (106 tests, no Electron deps)
+- **Frontend:** Vite-built renderer is pure React/TypeScript, zero Electron APIs
+- **Bridge:** All 14 integration points go through `window.chronicles` — a facade that either shell can implement
+
+What actually differs per shell is minimal:
+- Electron: `src/electron/index.ts` (~376 lines) + `src/preload/utils.electron.tsx` (~90 lines)
+- Electrobun: equivalent entry + RPC handlers mapping to same `window.chronicles` shape
+
+The migration end-state is **deletion, not refactoring** — when Electrobun passes QA, we `rm -rf src/electron/ src/preload/` and strip Electron deps from package.json.
 
 ## Open Questions
 
