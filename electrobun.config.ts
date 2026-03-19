@@ -11,15 +11,14 @@ export default {
   },
   build: {
     bun: {
-      entrypoint: "src/electrobun/main.ts",
+      // Pre-bundled by scripts/build-electrobun-main.ts to work around
+      // Electrobun's `bun build --app` HTML bundler failing on the markdown
+      // pipeline's transitive React/Slate imports.
+      entrypoint: "dist/electrobun/main.js",
     },
-    views: {
-      main: {
-        entrypoint: "src/electrobun/views/main/index.ts",
-      },
-    },
-    copy: {
-      "src/electrobun/views/main/index.html": "views/main/index.html",
-    },
+  },
+  scripts: {
+    // Pre-bundle main.ts with Bun.build (target: bun) before Electrobun runs
+    preBuild: "scripts/build-electrobun-main.ts",
   },
 } satisfies ElectrobunConfig;
