@@ -21,6 +21,9 @@ const result = await Bun.build({
   outdir: "dist/electrobun",
   target: "bun",
   sourcemap: "external",
+  // electrobun/bun is a runtime-provided module (like bun:sqlite) —
+  // it must NOT be bundled; it resolves inside the Electrobun launcher.
+  external: ["electrobun", "electrobun/bun", "electrobun/view"],
 });
 
 if (!result.success) {
