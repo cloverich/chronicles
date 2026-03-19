@@ -19,6 +19,7 @@
     "test:node": "node --test 'src/**/*.test.bundle.mjs'",
     "pretest:electron": "node ./scripts/test.mjs",
     "test:electron": "node ./scripts/electron-test-runner.mjs",
+    "dev:vite": "vite",
     "dev:electrobun": "electrobun dev",
     "build:electrobun": "electrobun build"
   },

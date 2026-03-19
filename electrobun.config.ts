@@ -16,6 +16,15 @@ export default {
       // pipeline's transitive React/Slate imports.
       entrypoint: "dist/electrobun/main.js",
     },
+    views: {
+      // Electroview entry — sets up RPC + window.chronicles shim before React loads
+      main: {
+        entrypoint: "src/electrobun/views/main/index.ts",
+      },
+    },
+    copy: {
+      "src/electrobun/views/main/index.html": "views/main/index.html",
+    },
   },
   scripts: {
     // Pre-bundle main.ts with Bun.build (target: bun) before Electrobun runs

@@ -1,9 +1,13 @@
 import { ApplicationMenu, BrowserWindow, Utils } from "electrobun/bun";
 import { createRPC } from "./rpc-handlers";
 
-// Dev mode: point at Vite dev server; prod: use bundled views
+// Always load via views:// so the Electroview RPC + window.chronicles shim
+// initialises before the React app. In dev mode, index.ts dynamically injects
+// Vite's scripts; in prod the bundled React app is loaded directly.
 const isDev = process.env.NODE_ENV !== "production";
-const url = isDev ? "http://localhost:5173" : "views://main/index.html";
+const url = isDev
+  ? "views://main/index.html?dev=1"
+  : "views://main/index.html";
 
 // Create typed RPC bridge — all window.chronicles methods are wired here
 const rpc = createRPC();
