@@ -1,4 +1,4 @@
-import { BrowserView, Utils } from "electrobun/bun";
+import { BrowserView, ContextMenu, Utils } from "electrobun/bun";
 import { createClient } from "../bun-client/factory";
 import {
   getFontsCSSStylesheetHref,
@@ -177,7 +177,17 @@ export function createRPC() {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
-      messages: {},
+      messages: {
+        showContextMenu: ({ x, y }: { x: number; y: number }) => {
+          ContextMenu.showContextMenu([
+            { label: "Cut", role: "cut" },
+            { label: "Copy", role: "copy" },
+            { label: "Paste", role: "paste" },
+            { type: "separator" },
+            { label: "Select All", role: "selectAll" },
+          ]);
+        },
+      },
     },
   });
 }

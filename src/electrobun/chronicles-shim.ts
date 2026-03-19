@@ -83,4 +83,10 @@ export function installChroniclesShim(rpc: any) {
     setNativeTheme: (theme: "light" | "dark" | "system") =>
       rpc.request.setNativeTheme({ theme }),
   };
+
+  // Context menu — right-click triggers native menu via RPC
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    rpc.send.showContextMenu({ x: e.clientX, y: e.clientY });
+  });
 }

@@ -1,4 +1,4 @@
-import { ApplicationMenu, BrowserWindow } from "electrobun/bun";
+import { ApplicationMenu, BrowserWindow, Utils } from "electrobun/bun";
 import { createRPC } from "./rpc-handlers";
 
 // Dev mode: point at Vite dev server; prod: use bundled views
@@ -39,6 +39,24 @@ ApplicationMenu.setApplicationMenu([
     submenu: [{ role: "reload" }, { role: "toggleDevTools" }],
   },
 ]);
+
+// Prevent navigation away from the app — open external links in default browser
+win.webview.on("will-navigate", (event: any) => {
+  const navUrl = event.url;
+  // Allow our own dev server and views
+  if (navUrl.startsWith("http://localhost:") || navUrl.startsWith("views://")) {
+    return;
+  }
+  // Open external URLs in default browser
+  event.preventDefault();
+  if (
+    navUrl.startsWith("http://") ||
+    navUrl.startsWith("https://") ||
+    navUrl.startsWith("mailto:")
+  ) {
+    Utils.openExternal(navUrl);
+  }
+});
 
 // macOS: re-create window when dock icon clicked
 // Note: Electrobun handles this via runtime.exitOnLastWindowClosed: false

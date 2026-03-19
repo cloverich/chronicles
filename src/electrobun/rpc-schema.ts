@@ -84,7 +84,9 @@ export type ChroniclesRPC = ElectrobunRPCSchema & {
         response: boolean;
       };
     };
-    messages: {};
+    messages: {
+      showContextMenu: { x: number; y: number };
+    };
   };
   webview: {
     requests: {};
