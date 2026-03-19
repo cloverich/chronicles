@@ -1,17 +1,22 @@
+import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import React from "react";
+import { LexicalBlockShortcutsPlugin } from "./LexicalBlockShortcutsPlugin";
 import { LexicalCodeHighlightPlugin } from "./LexicalCodeHighlightPlugin";
+import { LexicalCodeLanguagePlugin } from "./LexicalCodeLanguagePlugin";
 import { LexicalFormattingShortcutsPlugin } from "./LexicalFormattingShortcutsPlugin";
 import { LexicalLinkToolbarPlugin } from "./LexicalLinkToolbarPlugin";
+import { LexicalListBehaviorPlugin } from "./LexicalListBehaviorPlugin";
 import { LexicalNoteLinkPlugin } from "./LexicalNoteLinkPlugin";
 import { LexicalPasteLinkPlugin } from "./LexicalPasteLinkPlugin";
 import {
@@ -63,7 +68,7 @@ export function LexicalBasedEditor({
             throw error;
           },
           theme: {
-            code: "mb-3 block rounded-md bg-muted/60 px-4 py-3 font-mono text-[0.9em]",
+            code: "mb-3 block rounded-md bg-muted/60 px-4 pt-8 pb-3 font-mono text-[0.9em]",
             codeHighlight: {
               comment: "text-muted-foreground italic",
               function: "text-blue-600",
@@ -80,9 +85,14 @@ export function LexicalBasedEditor({
             },
             link: "text-link cursor-pointer underline decoration-1 underline-offset-1",
             list: {
-              listitem: "ml-4",
+              checklist: "list-none pl-2",
+              listitem: "[&:has(>ul):not(:has(>span))]:list-none",
+              listitemChecked:
+                "relative ml-7 list-none before:absolute before:top-0 before:left-[-1.75rem] before:text-xs before:text-muted-foreground before:content-['[x]']",
+              listitemUnchecked:
+                "relative ml-7 list-none before:absolute before:top-0 before:left-[-1.75rem] before:text-xs before:text-muted-foreground before:content-['[ ]']",
               nested: {
-                listitem: "ml-4",
+                listitem: "",
               },
               ol: "list-decimal pl-6",
               ul: "list-disc pl-6",
@@ -115,9 +125,14 @@ export function LexicalBasedEditor({
         />
         <HistoryPlugin />
         <LinkPlugin />
+        <ListPlugin />
+        <CheckListPlugin />
         <MarkdownShortcutPlugin transformers={chroniclesLexicalTransformers} />
         <LexicalCodeHighlightPlugin />
+        <LexicalCodeLanguagePlugin />
         <LexicalFormattingShortcutsPlugin />
+        <LexicalBlockShortcutsPlugin />
+        <LexicalListBehaviorPlugin />
         <LexicalPasteLinkPlugin />
         <LexicalLinkToolbarPlugin />
         <OnChangePlugin

@@ -11,13 +11,15 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
+  KEY_TAB_COMMAND,
   PASTE_COMMAND,
   TextNode,
   type LexicalEditor,
 } from "lexical";
 import React from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LexicalBasedEditor } from "./LexicalBasedEditor";
 import {
   lexicalCapabilities,
@@ -36,6 +38,45 @@ if (typeof globalThis.ClipboardEvent === "undefined") {
   }
   (globalThis as any).ClipboardEvent = ClipboardEventPolyfill;
 }
+
+interface NoteSearchResult {
+  createdAt: string;
+  id: string;
+  journal: string;
+  title?: string;
+}
+
+type NoteSearchQuery = {
+  journals: string[];
+  limit?: number;
+  titles?: string[];
+};
+
+function mockChroniclesSearch(
+  resolver: (query: NoteSearchQuery) => NoteSearchResult[],
+) {
+  const searchMock = vi.fn(
+    async (query: NoteSearchQuery): Promise<{ data: NoteSearchResult[] }> => ({
+      data: resolver(query),
+    }),
+  );
+
+  (window as any).chronicles = {
+    getClient() {
+      return {
+        documents: {
+          search: searchMock,
+        },
+      };
+    },
+  };
+
+  return searchMock;
+}
+
+afterEach(() => {
+  delete (window as any).chronicles;
+});
 
 function RouterLocationProbe(): JSX.Element {
   const location = useLocation();
@@ -206,6 +247,215 @@ describe("lexical migration spike", () => {
         "/documents/edit/01931c56fc2378079233d986767c519c",
       );
     });
+  });
+
+  it("@ trigger shows note-link dropdown and typing filters results", async () => {
+    const searchMock = mockChroniclesSearch((query) => {
+      const term = query.titles?.[0]?.toLowerCase() ?? "";
+      if (term.includes("target")) {
+        return [
+          {
+            createdAt: "2026-03-19",
+            id: "target-note",
+            journal: "research",
+            title: "Target Note",
+          },
+        ];
+      }
+
+      return [
+        {
+          createdAt: "2026-03-19",
+          id: "other-note",
+          journal: "research",
+          title: "Other Note",
+        },
+      ];
+    });
+
+    let lexicalEditor: LexicalEditor | null = null;
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={vi.fn()}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "@target");
+
+    expect(await screen.findByText("Link a Chronicles note")).toBeTruthy();
+    expect(await screen.findByText("Target Note")).toBeTruthy();
+
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalled();
+    });
+    const latestQuery = searchMock.mock.calls.at(-1)?.[0] as
+      | NoteSearchQuery
+      | undefined;
+    expect(latestQuery?.titles).toEqual(["target"]);
+  });
+
+  it("Escape closes note-link dropdown without inserting a link", async () => {
+    const onMarkdownChange = vi.fn();
+    mockChroniclesSearch(() => [
+      {
+        createdAt: "2026-03-19",
+        id: "target-note",
+        journal: "research",
+        title: "Target Note",
+      },
+    ]);
+
+    let lexicalEditor: LexicalEditor | null = null;
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "@target");
+
+    expect(await screen.findByText("Link a Chronicles note")).toBeTruthy();
+
+    await act(async () => {
+      lexicalEditor!.dispatchCommand(
+        KEY_ESCAPE_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Escape",
+          key: "Escape",
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Link a Chronicles note")).toBeNull();
+    });
+    expect(onMarkdownChange.mock.calls.at(-1)?.[0]).toBe("@target");
+  });
+
+  it("shows empty note-link search state when no results are returned", async () => {
+    mockChroniclesSearch(() => []);
+
+    let lexicalEditor: LexicalEditor | null = null;
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={vi.fn()}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "@zzz");
+
+    expect(await screen.findByText("No matching notes")).toBeTruthy();
+  });
+
+  it("inserts a chronicles note link from the dropdown using Enter", async () => {
+    const onMarkdownChange = vi.fn();
+    mockChroniclesSearch(() => [
+      {
+        createdAt: "2026-03-19",
+        id: "01931c56fc2378079233d986767c519c",
+        journal: "research",
+        title: "Behavioral Interview Prep",
+      },
+    ]);
+
+    let lexicalEditor: LexicalEditor | null = null;
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "@beh");
+    expect(await screen.findByText("Behavioral Interview Prep")).toBeTruthy();
+
+    await act(async () => {
+      lexicalEditor!.dispatchCommand(
+        KEY_ENTER_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          key: "Enter",
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("Behavioral Interview Prep");
+      expect(latestMarkdown).toContain(
+        "../research/01931c56fc2378079233d986767c519c.md",
+      );
+    });
+    expect(screen.queryByText("Link a Chronicles note")).toBeNull();
   });
 
   it("opens a link toolbar when clicking a regular link", async () => {
@@ -871,6 +1121,457 @@ describe("lexical migration spike", () => {
       | string
       | undefined;
     expect(latestMarkdown).toBe("1. first");
+  });
+
+  it("converts ~~ typing to strikethrough text", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "~~Beta~~");
+
+    await waitFor(() => {
+      expect(editor.querySelector("span.line-through")?.textContent).toBe(
+        "Beta",
+      );
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBe("~~Beta~~");
+  });
+
+  it("toggles a paragraph into a code block with Cmd+Alt+8", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="const answer = 42;"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      selectLexicalText(lexicalEditor!, "const answer = 42;");
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          altKey: true,
+          code: "Digit8",
+          ctrlKey: true,
+          key: "8",
+          metaKey: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editor.querySelector("code")).toBeTruthy();
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toContain("```");
+    expect(latestMarkdown).toContain("const answer = 42;");
+  });
+
+  it("toggles a code block back to paragraph text with Cmd+Alt+8", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown={["```js", "const answer = 42;", "```"].join("\n")}
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    await act(async () => {
+      fireEvent.focus(screen.getByLabelText("Minimal replacement editor"));
+      lexicalEditor!.update(() => {
+        $getRoot().selectEnd();
+      });
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          altKey: true,
+          code: "Digit8",
+          ctrlKey: true,
+          key: "8",
+          metaKey: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("const answer = 42;");
+      expect(latestMarkdown).not.toContain("```");
+    });
+  });
+
+  it("shows a code language picker and updates fenced language", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown={["```js", "const answer = 42;", "```"].join("\n")}
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    await act(async () => {
+      fireEvent.focus(screen.getByLabelText("Minimal replacement editor"));
+      lexicalEditor!.update(() => {
+        $getRoot().selectEnd();
+      });
+    });
+
+    const languageSelect = (await screen.findByLabelText(
+      "Code language",
+    )) as HTMLSelectElement;
+    const optionValues = Array.from(languageSelect.options).map(
+      (option) => option.value,
+    );
+    const nextLanguage =
+      optionValues.find(
+        (value) => value !== languageSelect.value && value !== "plain",
+      ) ?? optionValues.find((value) => value !== languageSelect.value);
+    expect(nextLanguage).toBeDefined();
+
+    fireEvent.change(languageSelect, {
+      target: { value: nextLanguage! },
+    });
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("```" + nextLanguage);
+    });
+  });
+
+  it("roundtrips checklist markdown through Lexical", () => {
+    const markdown = ["- [ ] todo", "- [x] done"].join("\n");
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
+  });
+
+  it("escapes a list on double Enter and continues in a paragraph", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="- first"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectEnd();
+      });
+      lexicalEditor!.dispatchCommand(
+        KEY_ENTER_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          key: "Enter",
+        }),
+      );
+      lexicalEditor!.dispatchCommand(
+        KEY_ENTER_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          key: "Enter",
+        }),
+      );
+    });
+    await typeWithLexical(lexicalEditor!, "after");
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("- first");
+      expect(latestMarkdown).toContain("\nafter");
+      expect(latestMarkdown).not.toContain("- after");
+    });
+  });
+
+  it("indents and outdents list items with Tab and Shift+Tab", async () => {
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown={["- first", "- second"].join("\n")}
+          onMarkdownChange={vi.fn()}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      selectLexicalText(lexicalEditor!, "second");
+      lexicalEditor!.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Tab",
+          key: "Tab",
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editor.querySelector("ul > li > ul > li")?.textContent).toContain(
+        "second",
+      );
+    });
+
+    await act(async () => {
+      selectLexicalText(lexicalEditor!, "second");
+      lexicalEditor!.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Tab",
+          key: "Tab",
+          shiftKey: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editor.querySelector("ul > li > ul > li")).toBeNull();
+    });
+  });
+
+  it("Cmd+Enter exits code blocks to a paragraph", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown={["```js", "const answer = 42;", "```"].join("\n")}
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectEnd();
+      });
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          ctrlKey: true,
+          key: "Enter",
+          metaKey: true,
+        }),
+      );
+    });
+    await typeWithLexical(lexicalEditor!, "After code");
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("After code");
+
+      const afterCodeIndex = latestMarkdown?.indexOf("After code") ?? -1;
+      const closingFenceIndex = latestMarkdown?.lastIndexOf("```") ?? -1;
+      expect(afterCodeIndex).toBeGreaterThan(closingFenceIndex);
+    });
+  });
+
+  it("Cmd+Enter exits blockquotes to a paragraph", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="> quoted"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectEnd();
+      });
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          ctrlKey: true,
+          key: "Enter",
+          metaKey: true,
+        }),
+      );
+    });
+    await typeWithLexical(lexicalEditor!, "After quote");
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("After quote");
+      expect(latestMarkdown).toContain("\nAfter quote");
+      expect(latestMarkdown).not.toContain("> After quote");
+    });
+  });
+
+  it("Enter on an empty trailing code line exits to a paragraph", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown={["```js", "const answer = 42;", "```"].join("\n")}
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectEnd();
+      });
+      lexicalEditor!.dispatchCommand(
+        KEY_ENTER_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          key: "Enter",
+        }),
+      );
+      lexicalEditor!.dispatchCommand(
+        KEY_ENTER_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          key: "Enter",
+        }),
+      );
+    });
+    await typeWithLexical(lexicalEditor!, "After trailing line");
+
+    await waitFor(() => {
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toContain("After trailing line");
+
+      const afterIndex = latestMarkdown?.indexOf("After trailing line") ?? -1;
+      const closeFenceIndex = latestMarkdown?.lastIndexOf("```") ?? -1;
+      expect(afterIndex).toBeGreaterThan(closeFenceIndex);
+    });
   });
 
   it("creates a link from selected text when pasting a URL", async () => {

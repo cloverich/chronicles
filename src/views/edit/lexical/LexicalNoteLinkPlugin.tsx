@@ -13,6 +13,7 @@ import {
   KEY_ESCAPE_COMMAND,
 } from "lexical";
 import React from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { SearchItem } from "../../documents/SearchStore";
 import { parseNoteLink } from "../editorv2/features/note-linking/toMdast";
@@ -25,7 +26,13 @@ interface MatchState {
   start: number;
 }
 
+interface DropdownPosition {
+  left: number;
+  top: number;
+}
+
 const NOTE_LINK_TRIGGER = /(^|[\s([{])@([^\s@]*)$/;
+const NOTE_LINK_DROPDOWN_WIDTH_PX = 360;
 
 function matchNoteLinkTrigger(): MatchState | null {
   const selection = $getSelection();
@@ -66,6 +73,7 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
   const navigate = useNavigate();
   const [match, setMatch] = React.useState<MatchState | null>(null);
   const [results, setResults] = React.useState<SearchItem[]>([]);
+  const [position, setPosition] = React.useState<DropdownPosition | null>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const latestMatchRef = React.useRef<MatchState | null>(null);
   const latestResultsRef = React.useRef<SearchItem[]>([]);
@@ -105,7 +113,7 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
     let disposed = false;
     const query = match.query.trim();
     const searchQuery = query
-      ? { journals: [], titles: [query] }
+      ? { journals: [], limit: 10, titles: [query] }
       : { journals: [], limit: 10 };
 
     window.chronicles
@@ -132,6 +140,69 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
       disposed = true;
     };
   }, [match]);
+
+  React.useEffect(() => {
+    if (!match || typeof window === "undefined") {
+      setPosition(null);
+      return;
+    }
+
+    const syncPosition = () => {
+      const editorRoot = editor.getRootElement();
+      if (!(editorRoot instanceof HTMLElement)) {
+        setPosition(null);
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        setPosition(null);
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      if (!editorRoot.contains(range.startContainer)) {
+        setPosition(null);
+        return;
+      }
+
+      const getRangeRect = (range as any).getBoundingClientRect;
+      const getRangeClientRects = (range as any).getClientRects;
+      let rect: DOMRect = editorRoot.getBoundingClientRect();
+      if (typeof getRangeRect === "function") {
+        rect = getRangeRect.call(range) as DOMRect;
+      }
+
+      if (
+        rect.width === 0 &&
+        rect.height === 0 &&
+        typeof getRangeClientRects === "function"
+      ) {
+        const clientRect = getRangeClientRects.call(range)?.[0];
+        if (clientRect) {
+          rect = clientRect as DOMRect;
+        }
+      }
+
+      const maxLeft = Math.max(
+        8,
+        window.innerWidth - NOTE_LINK_DROPDOWN_WIDTH_PX - 8,
+      );
+      setPosition({
+        left: Math.min(maxLeft, Math.max(8, rect.left)),
+        top: Math.max(8, rect.bottom + 8),
+      });
+    };
+
+    syncPosition();
+    window.addEventListener("resize", syncPosition);
+    window.addEventListener("scroll", syncPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", syncPosition);
+      window.removeEventListener("scroll", syncPosition, true);
+    };
+  }, [editor, match]);
 
   const insertNoteLink = React.useCallback(
     (item: SearchItem) => {
@@ -276,12 +347,19 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
     );
   }, [editor, insertNoteLink, navigate, selectedIndex]);
 
-  if (!match) {
+  if (!match || !position || typeof document === "undefined") {
     return null;
   }
 
-  return (
-    <div className="border-border bg-popover absolute top-full left-0 z-20 mt-3 w-full max-w-md rounded-md border shadow-lg">
+  return createPortal(
+    <div
+      className="border-border bg-popover z-20 w-[360px] max-w-[calc(100vw-16px)] rounded-md border shadow-lg"
+      style={{
+        left: `${position.left}px`,
+        position: "fixed",
+        top: `${position.top}px`,
+      }}
+    >
       <div className="border-border text-muted-foreground border-b px-3 py-2 text-xs">
         Link a Chronicles note
       </div>
@@ -299,14 +377,26 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
                 key={item.id}
                 type="button"
                 className={[
-                  "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm",
-                  isActive ? "bg-muted" : "hover:bg-muted/60",
+                  "group text-popover-foreground flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors",
+                  isActive ? "text-link" : "hover:text-link",
                 ].join(" ")}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => insertNoteLink(item)}
               >
-                <span className="truncate">{item.title || item.id}</span>
-                <span className="text-muted-foreground shrink-0 text-xs">
+                <span
+                  className={[
+                    "truncate transition-colors",
+                    isActive ? "text-link" : "group-hover:text-link",
+                  ].join(" ")}
+                >
+                  {item.title || item.id}
+                </span>
+                <span
+                  className={[
+                    "text-muted-foreground shrink-0 text-xs transition-colors",
+                    isActive ? "text-link" : "group-hover:text-link",
+                  ].join(" ")}
+                >
                   {item.journal}
                 </span>
               </button>
@@ -314,6 +404,7 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
           })
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
