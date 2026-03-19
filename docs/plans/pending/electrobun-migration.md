@@ -108,141 +108,84 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 
 ---
 
-### Phase 2: Scaffold & Hello World
+### Phase 2: Scaffold & Hello World ✅ COMPLETE
 
-**Goal:** Electrobun project boots and shows a webview with static content.
-
-**Steps:**
-
-1. Install Electrobun, create project structure alongside existing Electron code
-2. Create Electrobun entry point (`src/electrobun/main.ts` or whatever the convention is)
-3. Create a BrowserView that loads a static HTML page
-4. Verify build and launch works
-
-**Deliverable:** `bun run dev:electrobun` opens a window with "Hello Chronicles"
-
-**Validation:** Window appears, no crashes. Screenshot it.
-
-**Docs needed:** Getting Started, Project Structure
+**Status:** Complete. `electrobun.config.ts` created, `src/electrobun/main.ts` entry point with BrowserWindow (hiddenInset titlebar, 900×800), ApplicationMenu with Edit/View. Dev mode loads `http://localhost:5173`.
 
 ---
 
-### Phase 3: Load the Renderer
+### Phase 3: Load the Renderer ✅ COMPLETE
 
-**Goal:** The Vite-built UI renders in the Electrobun webview.
-
-**Steps:**
-
-1. Point the webview at Vite dev server (`http://localhost:5173`) during development
-2. For production, load the built `dist/renderer/index.html`
-3. Handle any CSP or webview security configuration
-4. The app will show the UI but be non-functional (no backend wired up)
-
-**Deliverable:** The full Chronicles UI renders in the Electrobun webview
-
-**Validation:**
-
-- UI loads without console errors (check webview devtools)
-- Styles render correctly (Tailwind, themes)
-- Navigation works (client-side routing)
-- Will show errors for `window.chronicles` calls — that's expected
-
-**Docs needed:** BrowserView API, webview configuration
+**Status:** Complete. Electrobun webview loads the Vite dev server. `src/electrobun/views/main/` scaffolded with Electroview initialization. Production mode configured for `views://main/index.html`.
 
 ---
 
-### ~~Phases (old 2 & 3): Database Layer / Backend Services~~
+### Phase 4: IPC/RPC Bridge ✅ COMPLETE
 
-Absorbed into Phase 1. See above.
+**Status:** Complete.
 
----
+**Architecture:** Generic dispatch pattern for IClient + individual typed handlers for 13 utility methods.
 
-### Phase 4: IPC/RPC Bridge (depends on Phase 1 + Phase 3)
+**Files created:**
+- `src/electrobun/rpc-schema.ts` — `ChroniclesRPC` type with `clientCall` (generic dispatch) + 13 typed request handlers + `showContextMenu` message
+- `src/electrobun/rpc-handlers.ts` — Bun-side handler factory; `clientCall` dispatches dynamically to BunClient sub-modules via `c[module][method].apply(mod, args)`
+- `src/electrobun/chronicles-shim.ts` — Webview-side `installChroniclesShim(rpc)` that creates Proxy-based IClient (all ~50+ methods auto-routed through RPC)
 
-**Goal:** The renderer communicates with the Bun backend via Electrobun's typed RPC.
+**Key design decision:** Rather than creating individual RPC handlers for every IClient method (~50+), a single `clientCall` handler accepts `{ module, method, args }` and dispatches dynamically. The webview-side `getClient()` returns a two-level Proxy that converts `client.journals.list()` → `rpc.request.clientCall({ module: "journals", method: "list", args: [] })`. This means no schema changes when IClient methods change.
 
-This is the largest phase — every `window.chronicles.*` call needs a new bridge.
-
-**Steps:**
-
-1. Study Electrobun's RPC system (typed handlers, how data flows between main and webview)
-2. Define RPC handlers for each of the 14 `window.chronicles` methods
-3. Create a renderer-side shim that exposes the same `window.chronicles` interface but calls Electrobun RPC instead of Electron IPC
-4. Wire up the RPC handlers in the main process to call the IClient methods
-5. Handle the `chronicles://` protocol replacement:
-   - Electrobun may have its own protocol/URL scheme for loading local files
-   - Or we intercept requests in the RPC layer and serve file contents
-   - This affects `<img>` and `<video>` tags that reference attachments
-
-**Approach for minimal renderer changes:**
-The renderer currently calls `window.chronicles.foo()`. If we expose the same shape via Electrobun's RPC, the renderer code changes are minimal — ideally just the initialization path.
-
-**Deliverable:** The app is functional — can browse journals, view documents, search
-
-**Validation:**
-
-- Open the app, navigate to a journal, open a document — content displays
-- Search works (type a query, results appear)
-- Theme switching works
-- Font loading works
-- Image attachments display (via whatever protocol replacement we use)
-- No console errors related to IPC/RPC failures
-
-**Docs needed:** Electrobun RPC API (this is the critical doc)
+**Known gap:** `chronicles://` protocol for images/fonts needs data URL replacement (deferred to QA phase).
 
 ---
 
-### Phase 5: Native Chrome
+### Phase 5: Native Chrome ✅ COMPLETE
 
-**Goal:** Menus, dialogs, window management match the Electron version.
+**Status:** Complete.
 
-**Steps:**
+**What's wired:**
+- ✅ Hidden titlebar with inset traffic lights (`titleBarStyle: "hiddenInset"`)
+- ✅ ApplicationMenu (Chronicles, Edit with standard roles, View with reload/devtools)
+- ✅ File/folder dialogs via `Utils.openFileDialog`
+- ✅ `openPath` via `Utils.openPath`
+- ✅ Context menu via `ContextMenu.showContextMenu` (triggered by webview→bun RPC message)
+- ✅ External link interception (`will-navigate` event → `Utils.openExternal`)
+- ✅ macOS window lifecycle (`exitOnLastWindowClosed: false`)
 
-1. Window configuration: hidden titlebar, traffic light positioning (macOS)
-2. File/folder dialogs: `openDialogSelectDir`, `selectThemeFile`
-3. Application menu (if Electrobun supports native menus)
-4. External link handling: open URLs in default browser
-5. `openPath`: open directories in Finder
-6. Dark mode detection: `setNativeTheme` equivalent
-7. Context menus (replace `electron-context-menu`)
-8. Window lifecycle: close/reopen behavior, macOS dock click
-
-**Deliverable:** Full native feel — menus, dialogs, window behavior match Electron version
-
-**Validation:**
-
-- Can select a notes directory via folder picker
-- Can import a theme file via file picker
-- Dark/light mode switches correctly
-- External links open in browser
-- Cmd+Q quits, dock click reopens (macOS)
-- Context menu works in editor
-
-**Docs needed:** Electrobun Dialogs, Menus, native APIs
+**Known gaps:**
+- `setNativeTheme` returns `false` (Electrobun v1 has no native theme API; renderer uses `prefers-color-scheme` CSS media query instead)
+- Spell checking not yet configured (was `electron-context-menu` feature)
 
 ---
 
-### Phase 6: Build, Package & Distribution
+### Phase 6: Build, Package & QA
 
-**Goal:** Distributable macOS app bundle.
+**Goal:** Validate the Electrobun app works end-to-end, then cut over.
 
 **Steps:**
 
-1. Configure Electrobun's build pipeline
-2. Replace `@electron/packager` with Electrobun's packaging
-3. Handle production asset bundling (renderer, hljs themes, migrations)
-4. Code signing and notarization (if Electrobun supports it)
-5. Update the `local-install` and `release` skills
-6. DMG creation
+1. **QA in dev mode:** Launch `electrobun dev` + Vite, test all features against checklist
+2. **Fix `chronicles://` protocol:** Replace with RPC + data URLs for images and base64 fonts
+3. **Configure Electrobun build:** `electrobun build --env=stable`, bundled assets, Drizzle migrations
+4. **Code signing:** `build.mac.codesign: true` in `electrobun.config.ts`
+5. **Test production build:** App launches from built bundle, all features work
+6. **Cut over:** Delete `src/electron/`, `src/preload/`, remove Electron deps, update scripts
+7. **Update skills:** `local-install` and `release` skills point at Electrobun build
 
-**Deliverable:** A `.app` bundle that runs on macOS without dev tools installed
+**Deliverable:** A working `.app` bundle; Electron code deleted.
 
-**Validation:**
-
-- `bun run build` produces a working app
-- App launches from /Applications
-- All features work in production build (not just dev mode)
-- Bundle size is in the expected range (~12-15MB)
+**Validation checklist:**
+- [ ] Open app, navigate to journal, view document
+- [ ] Create/edit/delete documents
+- [ ] Search works (FTS)
+- [ ] Theme switching (light/dark/custom)
+- [ ] Font loading (custom fonts display)
+- [ ] Image attachments display
+- [ ] Import from Notion
+- [ ] File/folder dialogs work
+- [ ] Context menu works
+- [ ] External links open in browser
+- [ ] Cmd+Q quits, dock click reopens
+- [ ] Bundle size ≤ 15MB
+- [ ] Startup time < 100ms
 
 **Docs needed:** Electrobun Build & Distribute
 
