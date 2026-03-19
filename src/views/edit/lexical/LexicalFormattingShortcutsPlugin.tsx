@@ -23,20 +23,38 @@ export function LexicalFormattingShortcutsPlugin(): null {
         }
 
         const isModifierPressed = event.metaKey || event.ctrlKey;
-        if (!isModifierPressed || event.altKey || event.shiftKey) {
+        if (!isModifierPressed || event.altKey) {
           return false;
         }
 
         const key = event.key.toLowerCase();
-        if (key === "b") {
+        if (!event.shiftKey && key === "b") {
           event.preventDefault();
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
           return true;
         }
 
-        if (key === "i") {
+        if (!event.shiftKey && key === "i") {
           event.preventDefault();
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
+          return true;
+        }
+
+        if (!event.shiftKey && key === "e") {
+          event.preventDefault();
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
+          return true;
+        }
+
+        if (!event.shiftKey && key === "u") {
+          event.preventDefault();
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
+          return true;
+        }
+
+        if (event.shiftKey && key === "s") {
+          event.preventDefault();
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough");
           return true;
         }
 

@@ -16,19 +16,20 @@ MDAST remains used elsewhere in the app (indexer, search) but the editor pipelin
 
 ---
 
-## Current State (March 18, 2026)
+## Current State (March 19, 2026)
 
 **Done:**
 
 - Markdown roundtrip contract (headings, lists, quotes, code blocks, inline formatting, links)
 - Integration seam: Lexical mode selectable via debug dropdown, markdown in/out wired
-- Formatting shortcuts: `Cmd+B` (bold), `Cmd+I` (italic)
-- `MarkdownShortcutPlugin` handles typing triggers (`# `, `> `, `**`, `` ` ``, `- `, `1. `)
+- Formatting shortcuts: `Cmd+B` (bold), `Cmd+I` (italic), `Cmd+E` (inline code), `Cmd+Shift+S` (strikethrough), `Cmd+U` (underline)
+- `MarkdownShortcutPlugin` typing triggers covered by vitests (`## `, `> `, `` ` ``, `- `, `1. `, fenced code)
+- Code block syntax highlighting wiring via `@lexical/code` (`CodeHighlightNode` + `registerCodeHighlighting`)
 - Note links: custom `ChroniclesNoteLinkNode`, markdown transformer, `@`-trigger dropdown, click navigation
 - Regular links: floating toolbar (edit/unlink/open), paste-to-link conversion
-- 42 vitest cases across roundtrip, render contracts, editor interactions
+- 42 vitest cases across roundtrip, render contracts, and editor interactions
 
-**Not done:** everything below.
+**Not done:** remaining Phase 3 gaps (task list behavior, code-block language UI, list/code escape hatches, tab-indent behavior, `Cmd+Alt+8` parity).
 
 ---
 
@@ -40,18 +41,18 @@ Each phase adds features AND vitests. No phase is complete without test coverage
 
 Port remaining text formatting and block types to reach parity with Plate.
 
-| Feature | Plate has | Lexical has | Work needed |
-|---------|-----------|-------------|-------------|
-| Bold | `Cmd+B` | `Cmd+B` | Done |
-| Italic | `Cmd+I` | `Cmd+I` | Done |
-| Strikethrough | `~~text~~` autoformat | Theme class only | Add `Cmd+Shift+S` shortcut, verify `~~` trigger works |
-| Underline | `Cmd+U` | No | Add shortcut — note: underline has no markdown syntax, Cmd+U applies format only |
-| Inline code | `` `text` `` autoformat, `Cmd+E` | Autoformat only | Add `Cmd+E` shortcut |
-| Code blocks | ` ``` ` autoformat, `Cmd+Alt+8`, syntax highlighting | Basic roundtrip only | Add syntax highlighting via `@lexical/code`, verify ` ``` ` trigger |
-| Task lists | `[ ] ` autoformat (broken in Plate) | No | Add `ListItemNode` checkbox support or skip if Plate's was broken |
-| Headings typing | `# `, `## `, `### ` | Via `MarkdownShortcutPlugin` | Verify works, add test |
-| Blockquote typing | `> ` | Via `MarkdownShortcutPlugin` | Verify works, add test |
-| Lists typing | `- `, `1. ` | Via `MarkdownShortcutPlugin` | Verify works, add test |
+| Feature           | Plate has                                            | Lexical has                                                      | Work needed                                                              |
+| ----------------- | ---------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Bold              | `Cmd+B`                                              | `Cmd+B`                                                          | Done                                                                     |
+| Italic            | `Cmd+I`                                              | `Cmd+I`                                                          | Done                                                                     |
+| Strikethrough     | `~~text~~` autoformat                                | `Cmd+Shift+S` + markdown roundtrip                               | Verify `~~` typing trigger explicitly                                    |
+| Underline         | `Cmd+U`                                              | `Cmd+U`                                                          | Done — note: underline has no markdown syntax, Cmd+U applies format only |
+| Inline code       | `` `text` `` autoformat, `Cmd+E`                     | `Cmd+E` + backtick trigger                                       | Done                                                                     |
+| Code blocks       | ` ``` ` autoformat, `Cmd+Alt+8`, syntax highlighting | Fenced trigger + syntax-highlighting wiring + language roundtrip | Add `Cmd+Alt+8`; add language config UI                                  |
+| Task lists        | `[ ] ` autoformat (broken in Plate)                  | No                                                               | Add `ListItemNode` checkbox support or skip if Plate's was broken        |
+| Headings typing   | `# `, `## `, `### `                                  | Via `MarkdownShortcutPlugin`                                     | Verified with explicit typing tests                                      |
+| Blockquote typing | `> `                                                 | Via `MarkdownShortcutPlugin`                                     | Verified with explicit typing tests                                      |
+| Lists typing      | `- `, `1. `                                          | Via `MarkdownShortcutPlugin`                                     | Verified with explicit typing tests                                      |
 
 **Vitests:**
 
@@ -65,21 +66,30 @@ Port remaining text formatting and block types to reach parity with Plate.
 
 **Exit criteria:** All Plate marks and block types either work in Lexical or are explicitly deferred with rationale.
 
+**Observed constraints (March 18, 2026):**
+
+- List typing triggers (`- `, `1. `) work, but there is currently no reliable escape via double-enter. New lines continue list context.
+- Tab does not currently indent list items in Lexical mode; tab moves focus out of the editor.
+- Code block syntax highlighting works when a language is already present in markdown (for example by toggling to markdown mode, setting fence language, then toggling back to Lexical).
+- There is currently no in-editor language picker/config UI for code blocks.
+- There is currently no escape behavior from code blocks (for example empty-line Enter exit).
+- Both list/code-block escape gaps are expected to be addressed by future keyboard escape-hatch behavior (Phase 8 / dedicated escape plugin).
+
 ---
 
 ### Phase 4 — Note Link Creation
 
 Note link navigation and markdown IO already work. This phase completes the creation flow.
 
-| Feature | Status |
-|---------|--------|
-| `@` trigger opens dropdown | Done |
-| Search results populate dropdown | Done |
-| Arrow keys + Enter to insert | Done |
-| Click on existing note link navigates | Done |
-| Dropdown positioning | Verify — may need polish |
-| Empty state / no results | Verify — add test |
-| Escape closes dropdown | Verify — add test |
+| Feature                               | Status                   |
+| ------------------------------------- | ------------------------ |
+| `@` trigger opens dropdown            | Done                     |
+| Search results populate dropdown      | Done                     |
+| Arrow keys + Enter to insert          | Done                     |
+| Click on existing note link navigates | Done                     |
+| Dropdown positioning                  | Verify — may need polish |
+| Empty state / no results              | Verify — add test        |
+| Escape closes dropdown                | Verify — add test        |
 
 **Vitests:**
 
@@ -97,13 +107,13 @@ Note link navigation and markdown IO already work. This phase completes the crea
 
 Images are local-first: stored as attachments, referenced via `chronicles://` URLs.
 
-| Feature | Work needed |
-|---------|-------------|
-| Image rendering | Custom `ImageNode` (void/decorator), renders `<img>` with attachment URL resolution |
-| Drag-and-drop upload | Plugin intercepts `DROP` events with image files, calls `client.files.uploadImageBytes()`, inserts node |
-| Paste upload | Same plugin intercepts `PASTE` events with image data |
-| Image markdown roundtrip | `![alt](url)` import/export via transformer |
-| Max display size | CSS constraint (max-height 320px, max-width 80% — match Plate) |
+| Feature                  | Work needed                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Image rendering          | Custom `ImageNode` (void/decorator), renders `<img>` with attachment URL resolution                     |
+| Drag-and-drop upload     | Plugin intercepts `DROP` events with image files, calls `client.files.uploadImageBytes()`, inserts node |
+| Paste upload             | Same plugin intercepts `PASTE` events with image data                                                   |
+| Image markdown roundtrip | `![alt](url)` import/export via transformer                                                             |
+| Max display size         | CSS constraint (max-height 320px, max-width 80% — match Plate)                                          |
 
 **Not porting (defer to later):**
 
@@ -126,11 +136,11 @@ Images are local-first: stored as attachments, referenced via `chronicles://` UR
 
 Plate groups consecutive images into a lightbox gallery automatically.
 
-| Feature | Work needed |
-|---------|-------------|
-| Auto-grouping | Detect consecutive image nodes, wrap in gallery decorator |
-| Grid layout | 2 images: 48% width each. 3+: 31% width, "+N more" overflow |
-| Lightbox | Click to open full-screen dialog, arrow key navigation |
+| Feature       | Work needed                                                 |
+| ------------- | ----------------------------------------------------------- |
+| Auto-grouping | Detect consecutive image nodes, wrap in gallery decorator   |
+| Grid layout   | 2 images: 48% width each. 3+: 31% width, "+N more" overflow |
+| Lightbox      | Click to open full-screen dialog, arrow key navigation      |
 
 **Vitests:**
 
@@ -146,11 +156,11 @@ Plate groups consecutive images into a lightbox gallery automatically.
 
 ### Phase 7 — Video & File Embedding
 
-| Feature | Work needed |
-|---------|-------------|
-| Video rendering | Custom `VideoNode`, renders `<video>` with native controls |
-| Video drag-and-drop | Extend media upload plugin for video MIME types |
-| File links | Drop non-image/video files → insert as link with "File: {name}" text |
+| Feature             | Work needed                                                          |
+| ------------------- | -------------------------------------------------------------------- |
+| Video rendering     | Custom `VideoNode`, renders `<video>` with native controls           |
+| Video drag-and-drop | Extend media upload plugin for video MIME types                      |
+| File links          | Drop non-image/video files → insert as link with "File: {name}" text |
 
 **Defer:** Video is low-priority. Plate's video support was already broken. Implement basic rendering; skip upload if time-constrained.
 
@@ -166,12 +176,12 @@ Plate groups consecutive images into a lightbox gallery automatically.
 
 ### Phase 8 — Editor Polish & Keyboard Behavior
 
-| Feature | Work needed |
-|---------|-------------|
-| Exit break (`Cmd+Enter`) | Exit current block (code block, quote, list) to new paragraph |
-| Trailing block | Ensure document always ends with an empty paragraph for easy appending |
-| Indent/outdent | Tab/Shift+Tab in lists |
-| Code block exit | Enter on empty line at end of code block exits to paragraph |
+| Feature                  | Work needed                                                            |
+| ------------------------ | ---------------------------------------------------------------------- |
+| Exit break (`Cmd+Enter`) | Exit current block (code block, quote, list) to new paragraph          |
+| Trailing block           | Ensure document always ends with an empty paragraph for easy appending |
+| Indent/outdent           | Tab/Shift+Tab in lists                                                 |
+| Code block exit          | Enter on empty line at end of code block exits to paragraph            |
 
 **Vitests:**
 
