@@ -23,12 +23,13 @@ async function getOrCreateClient(): Promise<AnyClient> {
   if (client) return client;
 
   // TODO: In production, these paths should come from user preferences
-  // or Electrobun's PATHS API. For dev, use env vars.
+  // or Electrobun's PATHS API. For dev, share Electron's data directory.
+  const electronDataDir = `${process.env.HOME}/Library/Application Support/Electron`;
   const notesDir =
-    process.env.CHRONICLES_NOTES_DIR || `${process.env.HOME}/chronicles-notes`;
-  const settingsDir = process.env.CHRONICLES_SETTINGS_DIR || notesDir;
+    process.env.CHRONICLES_NOTES_DIR || `${electronDataDir}/notes`;
+  const settingsDir = process.env.CHRONICLES_SETTINGS_DIR || electronDataDir;
   const dbPath =
-    process.env.CHRONICLES_DB_PATH || `${settingsDir}/chronicles.db`;
+    process.env.CHRONICLES_DB_PATH || `${electronDataDir}/chronicles.db`;
 
   // Cast to AnyClient — BunClient interface doesn't expose all sub-modules
   // (e.g. files), but the runtime object does include them.
@@ -40,8 +41,7 @@ async function getOrCreateClient(): Promise<AnyClient> {
 function getSettingsDir(): string {
   return (
     process.env.CHRONICLES_SETTINGS_DIR ||
-    process.env.CHRONICLES_NOTES_DIR ||
-    `${process.env.HOME}/chronicles-notes`
+    `${process.env.HOME}/Library/Application Support/Electron`
   );
 }
 
@@ -178,6 +178,9 @@ export function createRPC() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       messages: {
+        webviewLog: ({ message }: { message: string }) => {
+          console.log(`[webview] ${message}`);
+        },
         showContextMenu: ({ x, y }: { x: number; y: number }) => {
           ContextMenu.showContextMenu([
             { label: "Cut", role: "cut" },

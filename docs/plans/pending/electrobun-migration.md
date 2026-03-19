@@ -153,6 +153,10 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 **Known gaps:**
 - `setNativeTheme` returns `false` (Electrobun v1 has no native theme API; renderer uses `prefers-color-scheme` CSS media query instead)
 - Spell checking not yet configured (was `electron-context-menu` feature)
+- DevTools (`openDevTools()`) shares the webview viewport — pushes app content down. Popping out to a separate window works but leaves a stale split. Likely an Electrobun/WebKit inspector layout issue; reload after detaching fixes it.
+- `window.chronicles` utility methods (themes, fonts, dialogs) are now async via RPC. Electron ran these synchronously in the preload context. Call sites in `StyleWatcher`, `preferences/index.tsx` updated to `await`; more may surface.
+- **WebKit `<select>` elements** render with native macOS chrome (not web-styled dropdowns). Replace with Radix Select components if consistent styling is needed.
+- **WebKit `::selection` colors** ignore the themed `--accent-secondary` variable; defaults to system blue highlight. Known WebKit limitation with CSS custom properties in `::selection` inside `@layer`. Not a regression — same behavior in Safari.
 
 ---
 

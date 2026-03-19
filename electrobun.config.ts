@@ -14,10 +14,10 @@ export default {
       // Pre-bundled by scripts/build-electrobun-main.ts to work around
       // Electrobun's `bun build --app` HTML bundler failing on the markdown
       // pipeline's transitive React/Slate imports.
-      entrypoint: "dist/electrobun/main.js",
+      // IMPORTANT: must be named index.js — launcher hardcodes bun/index.js
+      entrypoint: "dist/electrobun/index.js",
     },
     views: {
-      // Electroview entry — sets up RPC + window.chronicles shim before React loads
       main: {
         entrypoint: "src/electrobun/views/main/index.ts",
       },
@@ -27,7 +27,6 @@ export default {
     },
   },
   scripts: {
-    // Pre-bundle main.ts with Bun.build (target: bun) before Electrobun runs
     preBuild: "scripts/build-electrobun-main.ts",
   },
 } satisfies ElectrobunConfig;

@@ -4,7 +4,7 @@ import type { ChroniclesRPC } from "../../rpc-schema";
 
 // 1. Set up Electroview RPC (no webview→bun handlers needed yet)
 const rpc = Electroview.defineRPC<ChroniclesRPC>({
-  maxRequestTime: 30000, // Match bun-side timeout for slow operations
+  maxRequestTime: 30000,
   handlers: {
     requests: {},
     messages: {},
@@ -18,28 +18,25 @@ installChroniclesShim(view.rpc!);
 
 console.log("[Chronicles/Electroview] RPC bridge installed");
 
-// 3. Load the React app
-const isDev = new URLSearchParams(location.search).has("dev");
-
-if (isDev) {
-  // Dev mode: inject Vite dev server scripts for HMR
-  const VITE_URL = "http://localhost:5173";
-
-  const viteClient = document.createElement("script");
-  viteClient.type = "module";
-  viteClient.src = `${VITE_URL}/@vite/client`;
-  document.head.appendChild(viteClient);
-
-  const viteApp = document.createElement("script");
-  viteApp.type = "module";
-  viteApp.src = `${VITE_URL}/src/index.tsx`;
-  document.body.appendChild(viteApp);
-
-  console.log(
-    `[Chronicles/Electroview] Dev mode — loading Vite from ${VITE_URL}`,
-  );
-} else {
-  // Production: the bundled React app will be loaded separately
-  // TODO: Wire production React bundle loading
-  console.log("[Chronicles/Electroview] Production mode");
+// Forward webview console/errors to bun process via RPC message
+function logToBun(msg: string) {
+  try {
+    (view.rpc as any).send.webviewLog({ message: msg });
+  } catch {
+    // RPC not ready yet, ignore
+  }
 }
+
+// Catch all errors and forward to bun process
+window.addEventListener("error", (e) => {
+  const msg = `[webview error] ${e.message} at ${e.filename}:${e.lineno}`;
+  logToBun(msg);
+});
+window.addEventListener("unhandledrejection", (e) => {
+  logToBun(`[webview unhandled rejection] ${e.reason}`);
+});
+
+// In dev mode this runs as a preload on localhost:5173 — Vite serves the React
+// app directly. In production this runs inside views://main/index.html with
+// the bundled React app included.
+logToBun("[Electroview] chronicles shim installed, ready for React app");

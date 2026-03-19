@@ -12,18 +12,26 @@
  * dist/electrobun/main.js that Electrobun then wraps into the app bundle.
  */
 
-import { mkdirSync } from "fs";
+import { mkdirSync, cpSync } from "fs";
+import { resolve } from "path";
 
 mkdirSync("dist/electrobun", { recursive: true });
 
+// Resolve project root (where this script lives is scripts/)
+const projectRoot = resolve(import.meta.dir, "..");
+
 const result = await Bun.build({
-  entrypoints: ["src/electrobun/main.ts"],
+  entrypoints: ["src/electrobun/index.ts"],
   outdir: "dist/electrobun",
   target: "bun",
   sourcemap: "external",
   // electrobun/bun is a runtime-provided module (like bun:sqlite) —
   // it must NOT be bundled; it resolves inside the Electrobun launcher.
   external: ["electrobun", "electrobun/bun", "electrobun/view"],
+  // Inject project root so bundled code can find assets (migrations, etc.)
+  define: {
+    "process.env.CHRONICLES_PROJECT_ROOT": JSON.stringify(projectRoot),
+  },
 });
 
 if (!result.success) {

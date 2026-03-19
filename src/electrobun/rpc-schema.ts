@@ -86,6 +86,7 @@ export type ChroniclesRPC = {
     };
     messages: {
       showContextMenu: { x: number; y: number };
+      webviewLog: { message: string };
     };
   }>;
   webview: RPCSchema<{
