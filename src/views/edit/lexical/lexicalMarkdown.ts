@@ -1,4 +1,4 @@
-import { CodeNode } from "@lexical/code";
+import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { $isLinkNode, AutoLinkNode, LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import {
@@ -95,6 +95,7 @@ export const lexicalNodes: Array<Klass<LexicalNode>> = [
   ListNode,
   ListItemNode,
   CodeNode,
+  CodeHighlightNode,
   LinkNode,
   AutoLinkNode,
   ChroniclesNoteLinkNode,

@@ -6,8 +6,11 @@ import {
   waitFor,
 } from "@testing-library/react";
 import {
+  $getRoot,
   $nodesOfType,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
   KEY_DOWN_COMMAND,
+  KEY_ENTER_COMMAND,
   PASTE_COMMAND,
   TextNode,
   type LexicalEditor,
@@ -100,6 +103,17 @@ function createPasteEvent(plainText: string): ClipboardEvent {
   return event;
 }
 
+async function typeWithLexical(
+  editor: LexicalEditor,
+  text: string,
+): Promise<void> {
+  for (const char of text) {
+    await act(async () => {
+      editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, char);
+    });
+  }
+}
+
 describe("lexical migration spike", () => {
   it("documents capability differences from slate/plate", () => {
     expect(slatePlateCapabilities.commandSystem).toBe("transforms");
@@ -119,6 +133,11 @@ describe("lexical migration spike", () => {
         "\n",
       ),
     );
+  });
+
+  it("roundtrips code fences with language tags through Lexical", () => {
+    const markdown = ["```typescript", "const answer = 42;", "```"].join("\n");
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
   });
 
   it("roundtrips chronicles note links through Lexical", () => {
@@ -436,6 +455,422 @@ describe("lexical migration spike", () => {
     expect(latestMarkdown).toContain("Alpha");
     expect(latestMarkdown).toMatch(/(\*Beta\*|_Beta_)/);
     expect(latestMarkdown).not.toMatch(/(\*Alpha Beta\*|_Alpha Beta_)/);
+  });
+
+  it("applies Cmd+E only to the selected text", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="Alpha Beta"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      selectLexicalText(lexicalEditor!, "Alpha");
+
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "KeyE",
+          ctrlKey: true,
+          key: "e",
+          metaKey: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editor.querySelector("code")?.textContent).toBe("Alpha");
+    });
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toContain("`Alpha`");
+    expect(latestMarkdown).toContain("Beta");
+    expect(latestMarkdown).not.toContain("`Alpha Beta`");
+  });
+
+  it("applies Cmd+Shift+S only to the selected text", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="Alpha Beta"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      selectLexicalText(lexicalEditor!, "Beta");
+
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "KeyS",
+          ctrlKey: true,
+          key: "s",
+          metaKey: true,
+          shiftKey: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editor.querySelector("span.line-through")?.textContent).toBe(
+        "Beta",
+      );
+    });
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toContain("Alpha");
+    expect(latestMarkdown).toContain("~~Beta~~");
+    expect(latestMarkdown).not.toContain("~~Alpha Beta~~");
+  });
+
+  it("applies Cmd+U only to the selected text", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="Alpha Beta"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      selectLexicalText(lexicalEditor!, "Alpha");
+
+      lexicalEditor!.dispatchCommand(
+        KEY_DOWN_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "KeyU",
+          ctrlKey: true,
+          key: "u",
+          metaKey: true,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(editor.querySelector("span.underline")?.textContent).toBe("Alpha");
+    });
+
+    expect(onMarkdownChange).not.toHaveBeenCalled();
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBeUndefined();
+  });
+
+  it("converts single-backtick typing to inline code", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "`Alpha`");
+
+    await waitFor(() => {
+      expect(editor.querySelector("code")?.textContent).toBe("Alpha");
+    });
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBe("`Alpha`");
+  });
+
+  it("converts fenced markdown typing to a highlighted code block", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "```js");
+    await act(async () => {
+      lexicalEditor!.dispatchCommand(
+        KEY_ENTER_COMMAND,
+        new KeyboardEvent("keydown", {
+          code: "Enter",
+          key: "Enter",
+        }),
+      );
+    });
+    await typeWithLexical(lexicalEditor!, "const answer = 42;");
+
+    await waitFor(() => {
+      const codeBlock = editor.querySelector("code[data-language='js']");
+      expect(codeBlock).toBeTruthy();
+      expect(codeBlock?.getAttribute("data-highlight-language")).toBe("js");
+    });
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toContain("```js");
+    expect(latestMarkdown).toContain("const answer = 42;");
+  });
+
+  it("converts ## typing at line start to an h2 block", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "## Heading");
+
+    await waitFor(() => {
+      expect(editor.querySelector("h2")?.textContent).toBe("Heading");
+    });
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBe("## Heading");
+  });
+
+  it("converts > typing at line start to a blockquote", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "> Quoted");
+
+    await waitFor(() => {
+      expect(editor.querySelector("blockquote")?.textContent).toContain(
+        "Quoted",
+      );
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBe("> Quoted");
+  });
+
+  it("converts - typing at line start to an unordered list", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "- first");
+
+    await waitFor(() => {
+      expect(editor.querySelector("ul li")?.textContent).toContain("first");
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBe("- first");
+  });
+
+  it("converts 1. typing at line start to an ordered list", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+    await typeWithLexical(lexicalEditor!, "1. first");
+
+    await waitFor(() => {
+      expect(editor.querySelector("ol li")?.textContent).toContain("first");
+    });
+
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toBe("1. first");
   });
 
   it("creates a link from selected text when pasting a URL", async () => {

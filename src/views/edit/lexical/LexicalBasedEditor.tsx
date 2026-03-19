@@ -9,6 +9,7 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import React from "react";
+import { LexicalCodeHighlightPlugin } from "./LexicalCodeHighlightPlugin";
 import { LexicalFormattingShortcutsPlugin } from "./LexicalFormattingShortcutsPlugin";
 import { LexicalLinkToolbarPlugin } from "./LexicalLinkToolbarPlugin";
 import { LexicalNoteLinkPlugin } from "./LexicalNoteLinkPlugin";
@@ -62,6 +63,16 @@ export function LexicalBasedEditor({
             throw error;
           },
           theme: {
+            code: "mb-3 block rounded-md bg-muted/60 px-4 py-3 font-mono text-[0.9em]",
+            codeHighlight: {
+              comment: "text-muted-foreground italic",
+              function: "text-blue-600",
+              keyword: "text-fuchsia-600",
+              number: "text-orange-600",
+              operator: "text-foreground/80",
+              punctuation: "text-foreground/70",
+              string: "text-emerald-700",
+            },
             heading: {
               h1: "text-3xl font-semibold",
               h2: "text-2xl font-semibold",
@@ -83,6 +94,7 @@ export function LexicalBasedEditor({
               code: "bg-muted rounded px-1 py-0.5 font-mono text-[0.9em] text-foreground",
               italic: "italic",
               strikethrough: "line-through",
+              underline: "underline",
             },
           },
         }}
@@ -104,6 +116,7 @@ export function LexicalBasedEditor({
         <HistoryPlugin />
         <LinkPlugin />
         <MarkdownShortcutPlugin transformers={chroniclesLexicalTransformers} />
+        <LexicalCodeHighlightPlugin />
         <LexicalFormattingShortcutsPlugin />
         <LexicalPasteLinkPlugin />
         <LexicalLinkToolbarPlugin />
