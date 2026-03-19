@@ -207,22 +207,16 @@ test("returns defaults when key missing", async () => { ... });
 
 ---
 
-### Phase 7 — Bulk operations
+### Phase 7 — Bulk operations ✅
+
+**Status:** Complete.
 
 **Goal:** `bulk-operations.ts` ported — batch tag edits, bulk delete, export.
 
-**Context files:** `src/preload/client/bulk-operations.ts`, `src/preload/client/bulk-operations.electron-test.ts`, `docs/bulk-operations.md`
+**What was done:**
 
-**Steps:**
-
-1. Port `BulkOperationsClient` to use the new journals/documents clients
-2. Port existing test assertions
-
-**Test (`src/bun-client/bulk-operations.test.ts`):**
-
-- Bulk tag add/remove → reflected in search results
-- Bulk delete → documents removed from DB
-- Export produces expected file structure
+- `src/bun-client/bulk-operations.ts` — `BulkOperationsClient` ported to Drizzle
+- `src/bun-client/bulk-operations.test.ts` — tests covering tag add/remove, bulk delete, export
 
 **Validation:** `bun test src/bun-client/bulk-operations.test.ts` — green.
 

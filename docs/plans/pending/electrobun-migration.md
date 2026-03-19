@@ -294,7 +294,7 @@ Each phase should have a runnable check the agent can execute:
 
 ## Open Questions
 
-1. **Knex + bun:sqlite:** Does knex work with bun:sqlite? Determines whether Phase -1 is "swap a config line" or "rewrite queries." Will be resolved during Phase -1.
+1. ~~**Knex + bun:sqlite:**~~ **Resolved.** Knex has no bun:sqlite support. We chose Drizzle ORM (`drizzle-orm/bun-sqlite`). Phase 1 is complete with 106/106 tests passing.
 
 2. **`chronicles://` protocol:** ~~How does Electrobun handle custom URL schemes / local file serving in webviews?~~ **Resolved:** There is no `registerFileProtocol` equivalent. `urlSchemes` in `electrobun.config.ts` is deep-link only (external app-launch URLs). The solution is RPC + data URLs: images are fetched via RPC and displayed as `data:` URLs (Lexical controls rendering); fonts are fetched via RPC at startup and injected as `<style>` blocks with base64 `@font-face` data. See `docs/vendor/electrobun/browser-view-window.md` for details.
 
@@ -304,7 +304,7 @@ Each phase should have a runnable check the agent can execute:
 
 | Risk                                           | Likelihood | Impact | Mitigation                                                                |
 | ---------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------- |
-| Knex doesn't work with bun:sqlite              | Medium     | Medium | Write thin adapter or drop knex (small query surface)                     |
+| ~~Knex doesn't work with bun:sqlite~~           | Resolved   | —      | Chose Drizzle ORM instead. Phase 1 complete.                              |
 | Electrobun webview quirks (WebKit vs Chromium) | Medium     | High   | Test early in Phase 1; CSS/JS differences may need fixes                  |
 | Electrobun missing APIs we need                | Low-Medium | High   | Check docs thoroughly before starting; fallback to Swift if critical gaps |
 | Bun Node.js compat gaps                        | Low        | Medium | Most code is standard Node.js (fs, path, crypto); validated in Phase -1   |

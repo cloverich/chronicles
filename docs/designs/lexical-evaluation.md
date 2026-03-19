@@ -1,229 +1,233 @@
-# Lexical Evaluation for Chronicles: Replacing Slate/Plate Incrementally
+# Lexical Editor Migration
 
-**Analysis Date:** March 16, 2026  
-**Goal:** Evaluate whether Lexical can replace the current Slate/Plate editor architecture with low migration risk, starting from Lexical's built-in markdown import/export rather than a custom bridge.
-
----
-
-## Current Architecture (Baseline)
-
-Chronicles' editor pipeline today is:
-
-1. Parse markdown into MDAST (`micromark` + `remark`)
-2. Convert MDAST to Slate nodes (`mdastToSlate`)
-3. Render/edit in React via Plate plugins
-4. Convert Slate nodes back to MDAST (`slateToMdast`)
-5. Serialize to markdown for persistence
-
-This gives us strong markdown fidelity, custom note-link/image behaviors, and predictable storage.
+**Goal:** Replace Slate/Plate with Lexical. Markdown-first, vitest-driven, incremental.
 
 ---
 
-## Lexical vs Slate/Plate: Architectural Differences
+## Architecture
 
-### Data Model
+```
+markdown ⇄ LexicalState ⇄ React
+```
 
-- **Slate/Plate:** JSON tree is the primary source of truth and is directly manipulated by transforms.
-- **Lexical:** Editor state is immutable snapshots over a node graph with command/update semantics and strict read/update phases.
+Lexical's native `@lexical/markdown` transformers handle import/export. Custom syntax (note links, media) uses custom nodes + transformers. No MDAST bridge — Lexical owns the roundtrip.
 
-**Impact:** Existing Slate transforms and normalizers do not carry over directly. We need adapter logic for command-driven updates.
-
-### Plugin Surface
-
-- **Plate:** Plugin registry with node definitions + editor method overrides.
-- **Lexical:** Node classes + commands + React plugins (`OnChangePlugin`, `HistoryPlugin`, etc.).
-
-**Impact:** Existing editor features map, but implementation style shifts from transform interception to command + node behavior.
-
-### Markdown Strategy
-
-- **Current:** markdown ↔ MDAST ↔ Slate, with explicit control in both directions.
-- **Preferred Lexical spike path:** markdown transformers (`@lexical/markdown`) for import/export.
-
-**Impact:** The shortest viable path is to let Lexical own markdown import/export first and only add custom transformers/nodes when Chronicles syntax demands it. The main architectural question is not "can Lexical parse markdown?" but "can we override it cleanly enough when we hit Chronicles-specific syntax?"
-
-### Normalization & Invariants
-
-- **Current:** Custom Plate normalization plugins enforce image/code/link invariants.
-- **Lexical:** Invariants usually enforced via node transforms + command handlers.
-
-**Impact:** We should expect to rewrite normalizers as Lexical transforms.
+MDAST remains used elsewhere in the app (indexer, search) but the editor pipeline is purely Lexical.
 
 ---
 
-## Fit with Chronicles' Existing Pipeline
+## Current State (March 18, 2026)
 
-## Preferred Spike Architecture
+**Done:**
 
-`markdown ⇄ LexicalState ⇄ React`
+- Markdown roundtrip contract (headings, lists, quotes, code blocks, inline formatting, links)
+- Integration seam: Lexical mode selectable via debug dropdown, markdown in/out wired
+- Formatting shortcuts: `Cmd+B` (bold), `Cmd+I` (italic)
+- `MarkdownShortcutPlugin` handles typing triggers (`# `, `> `, `**`, `` ` ``, `- `, `1. `)
+- Note links: custom `ChroniclesNoteLinkNode`, markdown transformer, `@`-trigger dropdown, click navigation
+- Regular links: floating toolbar (edit/unlink/open), paste-to-link conversion
+- 42 vitest cases across roundtrip, render contracts, editor interactions
 
-MDAST remains important elsewhere in the app, but the spike should not start by rebuilding the current `markdown ⇄ MDAST ⇄ Slate` stack inside Lexical. The point of the spike is to learn how far Lexical's native markdown handling carries us before Chronicles-specific syntax forces customization.
-
-**Why this is the right first cut**
-
-- It minimizes new bridge code.
-- It tests Lexical the way we would actually want to adopt it.
-- It gives us a fast answer on whether custom syntax override points are strong enough.
-- It keeps success/failure visible through markdown roundtrip tests instead of hand-wavy UI impressions.
-
-## Fallback Architecture If Lexical Chokes
-
-`markdown ⇄ MDAST ⇄ (adapter) ⇄ LexicalState ⇄ React`
-
-This remains the fallback if native markdown support proves too rigid for Chronicles semantics. We should only pay this cost if note links or later media work show that the native path is not viable.
-
-**Recommendation:** Start with Lexical-native markdown handling and treat note links as the first serious override test. If we cannot make note links behave correctly, that is a strong signal that deeper Chronicles features will also be painful.
+**Not done:** everything below.
 
 ---
 
-## Minimal Replacement Editor (Spike)
+## Phases
 
-A new minimal replacement seam exists in `src/views/edit/lexical/`:
+Each phase adds features AND vitests. No phase is complete without test coverage.
 
-- `minimalReplacementEditor.tsx`
-  - markdown-in/markdown-out editing contract for drop-in experimentation
-- `editorArchitecture.ts`
-  - adapter interface + capability matrix for Slate/Plate vs Lexical
-- `lexicalSpike.vitest.tsx`
-  - verifies the capability deltas and editor contract behavior
+### Phase 3 — Feature Parity: Marks & Blocks
 
-This spike intentionally excludes frontmatter UI, note-link autocomplete, image galleries, upload handling, and slash/toolbar ergonomics.
+Port remaining text formatting and block types to reach parity with Plate.
 
-The immediate next step is to replace the textarea-style seam with a real Lexical-backed editor while preserving the same `markdown in / markdown out` contract.
+| Feature | Plate has | Lexical has | Work needed |
+|---------|-----------|-------------|-------------|
+| Bold | `Cmd+B` | `Cmd+B` | Done |
+| Italic | `Cmd+I` | `Cmd+I` | Done |
+| Strikethrough | `~~text~~` autoformat | Theme class only | Add `Cmd+Shift+S` shortcut, verify `~~` trigger works |
+| Underline | `Cmd+U` | No | Add shortcut — note: underline has no markdown syntax, Cmd+U applies format only |
+| Inline code | `` `text` `` autoformat, `Cmd+E` | Autoformat only | Add `Cmd+E` shortcut |
+| Code blocks | ` ``` ` autoformat, `Cmd+Alt+8`, syntax highlighting | Basic roundtrip only | Add syntax highlighting via `@lexical/code`, verify ` ``` ` trigger |
+| Task lists | `[ ] ` autoformat (broken in Plate) | No | Add `ListItemNode` checkbox support or skip if Plate's was broken |
+| Headings typing | `# `, `## `, `### ` | Via `MarkdownShortcutPlugin` | Verify works, add test |
+| Blockquote typing | `> ` | Via `MarkdownShortcutPlugin` | Verify works, add test |
+| Lists typing | `- `, `1. ` | Via `MarkdownShortcutPlugin` | Verify works, add test |
 
----
+**Vitests:**
 
-## Gap Analysis vs Current Editor
+- Strikethrough: shortcut applies/removes, markdown roundtrip `~~text~~`
+- Underline: shortcut applies/removes (no markdown representation — confirm underline text does not corrupt markdown on save)
+- Inline code: `Cmd+E` shortcut applies/removes
+- Code blocks: ` ``` ` typing creates code block, syntax highlighting renders classes, code block roundtrip preserves language tag
+- Headings: typing `## ` at line start creates h2 (test the MarkdownShortcutPlugin trigger, not just roundtrip)
+- Blockquote: typing `> ` at line start creates blockquote
+- Lists: typing `- ` creates unordered list, `1. ` creates ordered list
 
-### Must-have functional gaps
-
-1. **Custom note links (`[[wikilink]]` semantics + dropdown mention behavior)**
-2. **Image/video pipeline and gallery grouping**
-3. **Frontmatter-aware editing workflow**
-4. **Markdown parity for custom OFM/tag/wiki syntax**
-5. **Keyboard behaviors currently enforced by custom Plate plugins**
-
-### Why note links are the proving ground
-
-Note links are the first feature that meaningfully exercises all the hard parts at once:
-
-- custom markdown syntax
-- custom node modeling
-- custom import/export behavior
-- custom inline editing interactions
-- app-specific suggestion UI
-
-If Lexical cannot support note links cleanly, we should assume image/video, embeds, and other richer overrides will also be difficult. If note links do work, confidence rises materially.
-
-### UX/operational gaps
-
-1. Existing toolbar + floating link controls
-2. Read-only renderer parity
-3. Selection and composition edge cases (IME, mobile/webview)
-4. Performance baselines on large notes
+**Exit criteria:** All Plate marks and block types either work in Lexical or are explicitly deferred with rationale.
 
 ---
 
-## Incremental Proof Plan (with Vitest)
+### Phase 4 — Note Link Creation
 
-### Current Status Snapshot (March 18, 2026)
+Note link navigation and markdown IO already work. This phase completes the creation flow.
 
-**Implemented**
+| Feature | Status |
+|---------|--------|
+| `@` trigger opens dropdown | Done |
+| Search results populate dropdown | Done |
+| Arrow keys + Enter to insert | Done |
+| Click on existing note link navigates | Done |
+| Dropdown positioning | Verify — may need polish |
+| Empty state / no results | Verify — add test |
+| Escape closes dropdown | Verify — add test |
 
-- Phase 0 baseline markdown contract is running with deterministic roundtrip and render-contract coverage (headings, lists, quotes, links, inline formatting, fixtures).
-- Phase 1 integration seam is active: Lexical mode can be selected in the existing editor workflow and markdown in/out is wired.
-- Formatting shortcuts are implemented and tested (`Cmd+B`, `Cmd+I`) with selection-boundary assertions.
+**Vitests:**
 
-**In Progress**
+- `@` trigger shows dropdown, typing filters results
+- Enter inserts note link node with correct URL format
+- Escape closes dropdown without inserting
+- Empty search shows appropriate state
+- Inserted note link roundtrips correctly in markdown
 
-- Note links: markdown IO, note-link insertion flow, and click navigation are implemented; parity polish is still ongoing.
-- Regular links: toolbar open/edit/unlink/open flows are implemented; active polish is focused on close behavior, placement, and visual consistency.
-- Code blocks: basic markdown/code-block roundtrip is present; richer behavior parity remains in progress.
-
-**Remaining**
-
-- Media port (images, galleries, video).
-- Deeper human trial pass over real notes after note-link/link polish stabilizes.
-- Default switch and Plate removal gates.
-
-### Phase 0 — Core Markdown Contract
-
-- Build a real Lexical-backed spike using `@lexical/markdown`.
-- Add Vitest coverage for headings, lists, quotes, code blocks, inline formatting, and normal links.
-- Compare Lexical roundtrips against representative markdown fixtures from the existing pipeline.
-
-**Exit criteria:** deterministic roundtrip for baseline markdown that appears in ordinary notes.
-
-### Phase 1 — Editor Surface in the Existing Debug Workflow
-
-- Add Lexical as a third editor mode alongside the current Plate editor and raw markdown mode.
-- Reuse the top-right editor switch in the existing edit UI rather than creating a separate route or feature flag.
-- Keep the integration seam simple: load note markdown in, emit markdown out.
-
-**Exit criteria:** a note can be opened in Lexical mode, edited, and saved without crashes or obvious markdown corruption.
-
-### Phase 2 — Note Link Viability Test
-
-- Implement note-link support using Lexical nodes plus markdown transformer customization.
-- Port only enough note-link UI to prove real editing behavior, including insertion/editing and the existing note-picker interaction shape where needed.
-- Add Vitest coverage for note-link markdown IO, command behavior, and representative edge cases.
-
-**Exit criteria:** `[[wikilink]]` notes roundtrip correctly and are editable in a way that feels viable for daily use.
-
-### Phase 3 — Human Trial on Real Notes
-
-- Use the debug toggle to open real markdown notes in Lexical mode.
-- Focus on notes with mostly text and links; missing media support is acceptable at this stage.
-- Validate that ordinary notes mostly render and edit correctly, even before image/video work exists.
-
-**Exit criteria:** the editor is usable enough on real notes to justify deeper investment.
-
-### Phase 4 — Fixture and Validation Pass
-
-- Revisit test fixtures after the editor is actually usable.
-- Make it easy to load, diff, and validate representative real-world notes.
-- Expand fixtures around the failure cases discovered in Phases 1-3.
-
-**Exit criteria:** fixture coverage reflects actual Chronicles note content rather than an abstract markdown subset.
-
-### Phase 5 — Media Port
-
-- Implement image behavior, then video behavior.
-- Use this phase to test whether Lexical handles the richer embedded/media cases better than current Plate behavior.
-- Accept that Plate's current video implementation is already broken; parity is not a sufficient bar here.
-
-**Exit criteria:** image/video support is good enough that Lexical can replace Plate for the author's real workflow.
-
-### Phase 6 — Default, Then Permanent Swap
-
-- Make Lexical the default editor once it survives real usage.
-- Continue using it in anger rather than carrying a long-lived feature flag.
-- Remove Plate after confidence is established.
-
-**Exit criteria:** Lexical is the normal editor and Plate is no longer needed.
+**Exit criteria:** Note link creation UX matches Plate behavior. All interactions tested.
 
 ---
 
-## Testing Plan (Vitest-first)
+### Phase 5 — Images
 
-1. **Unit tests** (fast): markdown import/export contract using Lexical's transformers.
-2. **Component tests** (jsdom): editor renders initial markdown and emits markdown updates.
-3. **Fixture parity tests**: compare Lexical roundtrip to representative existing notes and current markdown fixtures.
-4. **Human validation**: use the existing debug editor switch to open real notes once note links are working.
+Images are local-first: stored as attachments, referenced via `chronicles://` URLs.
 
-The aim is to make migration confidence come from deterministic markdown outputs first, then targeted human testing once the editor becomes useful.
+| Feature | Work needed |
+|---------|-------------|
+| Image rendering | Custom `ImageNode` (void/decorator), renders `<img>` with attachment URL resolution |
+| Drag-and-drop upload | Plugin intercepts `DROP` events with image files, calls `client.files.uploadImageBytes()`, inserts node |
+| Paste upload | Same plugin intercepts `PASTE` events with image data |
+| Image markdown roundtrip | `![alt](url)` import/export via transformer |
+| Max display size | CSS constraint (max-height 320px, max-width 80% — match Plate) |
+
+**Not porting (defer to later):**
+
+- Image resize handles (Plate doesn't have them either — planned for bun-client era)
+- Remote image blocking (keep, but implement when wiring up the full media pipeline)
+
+**Vitests:**
+
+- Image markdown roundtrip: `![alt](../path.png)` imports and exports correctly
+- ImageNode renders `<img>` with correct src and alt
+- Drag-and-drop: simulated drop event with File triggers upload and node insertion
+- Paste: simulated paste event with image data triggers upload and node insertion
+- Multiple consecutive images render independently (no gallery yet)
+
+**Exit criteria:** Single images display and can be added via drag-drop/paste. Markdown fidelity preserved.
+
+---
+
+### Phase 6 — Image Gallery
+
+Plate groups consecutive images into a lightbox gallery automatically.
+
+| Feature | Work needed |
+|---------|-------------|
+| Auto-grouping | Detect consecutive image nodes, wrap in gallery decorator |
+| Grid layout | 2 images: 48% width each. 3+: 31% width, "+N more" overflow |
+| Lightbox | Click to open full-screen dialog, arrow key navigation |
+
+**Vitests:**
+
+- 2+ consecutive images grouped into gallery node
+- Gallery renders grid layout with correct image count
+- Lightbox opens on click, navigates with arrow keys
+- Single image does NOT become a gallery
+- Adding/removing images updates gallery grouping
+
+**Exit criteria:** Gallery behavior matches Plate. Lightbox works.
+
+---
+
+### Phase 7 — Video & File Embedding
+
+| Feature | Work needed |
+|---------|-------------|
+| Video rendering | Custom `VideoNode`, renders `<video>` with native controls |
+| Video drag-and-drop | Extend media upload plugin for video MIME types |
+| File links | Drop non-image/video files → insert as link with "File: {name}" text |
+
+**Defer:** Video is low-priority. Plate's video support was already broken. Implement basic rendering; skip upload if time-constrained.
+
+**Vitests:**
+
+- Video node renders `<video>` element with correct src
+- Video markdown roundtrip (if video has markdown representation — may be HTML passthrough)
+- File drop creates link node
+
+**Exit criteria:** Videos render if present in existing notes. File drops produce links.
+
+---
+
+### Phase 8 — Editor Polish & Keyboard Behavior
+
+| Feature | Work needed |
+|---------|-------------|
+| Exit break (`Cmd+Enter`) | Exit current block (code block, quote, list) to new paragraph |
+| Trailing block | Ensure document always ends with an empty paragraph for easy appending |
+| Indent/outdent | Tab/Shift+Tab in lists |
+| Code block exit | Enter on empty line at end of code block exits to paragraph |
+
+**Vitests:**
+
+- `Cmd+Enter` inside blockquote creates new paragraph after it
+- `Cmd+Enter` inside code block exits to paragraph
+- Document always has trailing paragraph node
+- Tab in list item indents, Shift+Tab outdents
+- Enter on empty code block line exits code block
+
+**Exit criteria:** Keyboard behavior feels natural for daily use.
+
+---
+
+### Phase 9 — Human Trial & Fixture Expansion
+
+- Use debug toggle to edit real notes in Lexical mode across a variety of note types
+- Catalog any rendering or editing regressions
+- Add regression fixtures for failures discovered during trial
+- Expand test fixtures with representative real-world notes (heavy linking, mixed media, long documents)
+
+**Exit criteria:** Author can use Lexical for daily journaling without switching back to Plate.
+
+---
+
+### Phase 10 — Default Swap
+
+1. Make Lexical the default editor mode
+2. Move Plate to debug dropdown as "Plate (legacy)"
+3. Run in this configuration for ≥1 week of daily use
+4. Remove Plate entirely once confidence is established
+
+**Exit criteria:** Plate code deleted. Lexical is the only editor.
+
+---
+
+## Idioms & Maintainability
+
+Rules for the Lexical codebase as it grows:
+
+1. **One plugin per file.** Each plugin is a React component using `useLexicalComposerContext`. Keep them focused — a plugin that does formatting shortcuts should not also handle link toolbar logic.
+
+2. **Commands over DOM hacks.** Use Lexical's command system (`editor.dispatchCommand` / `editor.registerCommand`) for all editor mutations. Never reach into the DOM to modify editor content.
+
+3. **Transformers are pure.** Markdown transformers (`TextMatchTransformer`, `ElementTransformer`) should be stateless functions. Side effects belong in plugins.
+
+4. **Test the contract, not the internals.** Vitests should assert on markdown roundtrip output and rendered DOM, not on Lexical's internal node tree structure. This keeps tests stable across Lexical version upgrades.
+
+5. **Theme classes, not inline styles.** All visual styling goes through the Lexical theme config object. Components should not apply ad-hoc styles.
+
+6. **No Plate patterns.** Don't port Plate idioms (transform interception, path-based selection, plugin registries). Use Lexical's native patterns even when they feel different.
 
 ---
 
 ## Risk Register
 
-1. **Markdown drift risk:** mitigated by roundtrip tests against real fixtures before and after each feature port.
-2. **Override-point risk in Lexical markdown:** mitigated by testing note links early instead of discovering the problem late.
-3. **Editor behavior regressions:** mitigated by command-level tests for critical shortcuts and focused human testing on real notes.
-4. **Scope creep:** mitigated by explicit phase gates and a hard "note links first, media second" sequence.
-
----
-
-## Recommendation
-
-Proceed with the Lexical spike as a markdown-first experimental editor track. Let Lexical's native markdown handling do as much as it can, prove note links next, then human-test real notes through the existing debug toggle before investing in media. If note links fail, stop and reassess rather than building a larger migration on a weak foundation.
+1. **Markdown drift:** Mitigated by roundtrip tests on every feature. Every phase requires vitest coverage before completion.
+2. **MarkdownShortcutPlugin gaps:** Some typing triggers may not work as expected. Test each one explicitly rather than assuming the plugin handles everything.
+3. **Media complexity:** Image gallery and video are the riskiest features. Gallery grouping logic will need careful design. Defer video upload if it blocks progress.
+4. **Scope creep:** Hard phase gates. Don't start Phase N+1 until Phase N's tests pass and exit criteria are met.
