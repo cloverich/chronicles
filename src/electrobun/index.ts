@@ -21,12 +21,11 @@ if (isDev) {
   try {
     // Read the bundled view JS that Electrobun produced
     // import.meta.dir = .../Resources/app/bun/
-    const viewJsPath = resolve(
-      import.meta.dir,
-      "../views/main/index.js",
-    );
+    const viewJsPath = resolve(import.meta.dir, "../views/main/index.js");
     preload = readFileSync(viewJsPath, "utf-8");
-    console.log(`[Chronicles/Electrobun] Loaded preload script (${preload.length} bytes)`);
+    console.log(
+      `[Chronicles/Electrobun] Loaded preload script (${preload.length} bytes)`,
+    );
   } catch (err) {
     console.error("[Chronicles/Electrobun] Failed to load preload:", err);
   }
@@ -77,10 +76,7 @@ win.webview.on("will-navigate", (event: any) => {
   }
   if (!navUrl) return;
   // Allow our own dev server and views
-  if (
-    navUrl.startsWith("http://localhost:") ||
-    navUrl.startsWith("views://")
-  ) {
+  if (navUrl.startsWith("http://localhost:") || navUrl.startsWith("views://")) {
     return;
   }
   // Open external URLs in default browser

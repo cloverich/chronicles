@@ -384,7 +384,9 @@ export class DocumentsClient {
 
     // Intentionally skip `before` and `limit` — we want the total count
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const query = this.db.select({ count: sql<number>`count(*)` }).from(documents);
+    const query = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(documents);
     const filtered = whereClause ? query.where(whereClause) : query;
     const [result] = await filtered;
     return Number(result?.count || 0);

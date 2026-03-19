@@ -79,9 +79,7 @@ export async function createClient(
     )
     .get();
   const migrationCount = sqlite
-    .prepare(
-      "SELECT count(*) as c FROM __drizzle_migrations",
-    )
+    .prepare("SELECT count(*) as c FROM __drizzle_migrations")
     .get() as { c: number } | null;
 
   if (hasExistingTables && (!migrationCount || migrationCount.c === 0)) {

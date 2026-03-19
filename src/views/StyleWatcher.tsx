@@ -128,14 +128,15 @@ function applyThemeColors(colors: ThemeColors): void {
 export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
   React.useEffect(() => {
     const fontsDir = `${preferences.settingsDir}/fonts`;
-    window.chronicles.refreshInstalledFontsCache(fontsDir).then(
-      (initialFonts: { changed: boolean; css: string | null; href: string | null }) => {
-        applyCustomFontsStylesheet(initialFonts.css);
-      },
-    );
+    (async () => {
+      const initialFonts =
+        await window.chronicles.refreshInstalledFontsCache(fontsDir);
+      applyCustomFontsStylesheet(initialFonts.css);
+    })();
 
     const refreshFontsCache = window.setTimeout(async () => {
-      const result = await window.chronicles.refreshInstalledFontsCache(fontsDir);
+      const result =
+        await window.chronicles.refreshInstalledFontsCache(fontsDir);
       if (result.changed) {
         applyCustomFontsStylesheet(result.css);
         console.info(
@@ -251,11 +252,11 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       // Set native theme and get OS dark mode preference.
       // In Electrobun this is async (RPC); falls back to matchMedia if setNativeTheme
       // returns false (stub).
-      const shouldUseDark = await window.chronicles.setNativeTheme(
-        preferences.darkMode,
-      ) || (preferences.darkMode === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        : preferences.darkMode === "dark");
+      const shouldUseDark =
+        (await window.chronicles.setNativeTheme(preferences.darkMode)) ||
+        (preferences.darkMode === "system"
+          ? window.matchMedia("(prefers-color-scheme: dark)").matches
+          : preferences.darkMode === "dark");
       const effectiveMode = shouldUseDark ? "dark" : "light";
       document.documentElement.classList.toggle(
         "dark",

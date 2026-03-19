@@ -127,6 +127,7 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 **Architecture:** Generic dispatch pattern for IClient + individual typed handlers for 13 utility methods.
 
 **Files created:**
+
 - `src/electrobun/rpc-schema.ts` — `ChroniclesRPC` type with `clientCall` (generic dispatch) + 13 typed request handlers + `showContextMenu` message
 - `src/electrobun/rpc-handlers.ts` — Bun-side handler factory; `clientCall` dispatches dynamically to BunClient sub-modules via `c[module][method].apply(mod, args)`
 - `src/electrobun/chronicles-shim.ts` — Webview-side `installChroniclesShim(rpc)` that creates Proxy-based IClient (all ~50+ methods auto-routed through RPC)
@@ -142,6 +143,7 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 **Status:** Complete.
 
 **What's wired:**
+
 - ✅ Hidden titlebar with inset traffic lights (`titleBarStyle: "hiddenInset"`)
 - ✅ ApplicationMenu (Chronicles, Edit with standard roles, View with reload/devtools)
 - ✅ File/folder dialogs via `Utils.openFileDialog`
@@ -151,6 +153,7 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 - ✅ macOS window lifecycle (`exitOnLastWindowClosed: false`)
 
 **Known gaps:**
+
 - `setNativeTheme` returns `false` (Electrobun v1 has no native theme API; renderer uses `prefers-color-scheme` CSS media query instead)
 - Spell checking not yet configured (was `electron-context-menu` feature)
 - DevTools (`openDevTools()`) shares the webview viewport — pushes app content down. Popping out to a separate window works but leaves a stale split. Likely an Electrobun/WebKit inspector layout issue; reload after detaching fixes it.
@@ -160,7 +163,7 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 
 ---
 
-### Phase 6: Build, Package & QA
+### Phase 6: Build, Package & QA (IN PROGRESS)
 
 **Goal:** Validate the Electrobun app works end-to-end, then cut over.
 
@@ -176,17 +179,22 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 
 **Deliverable:** A working `.app` bundle; Electron code deleted.
 
-**Validation checklist:**
-- [ ] Open app, navigate to journal, view document
-- [ ] Create/edit/delete documents
-- [ ] Search works (FTS)
-- [ ] Theme switching (light/dark/custom)
-- [ ] Font loading (custom fonts display)
-- [ ] Image attachments display
-- [ ] Import from Notion
-- [ ] File/folder dialogs work
-- [ ] Context menu works
-- [ ] External links open in browser
+**QA status (dev mode):**
+
+- [x] Open app, navigate to journal, view document
+- [x] Create/edit/delete documents
+- [x] Search works (FTS + searchCount)
+- [x] Theme switching (light/dark/custom)
+- [x] Sidebar folder navigation (fixed WebKit href="" reload)
+- [x] Sidebar tag navigation
+- [x] Preferences pane loads
+- [x] File/folder dialogs work
+- [x] Context menu works
+- [ ] Font loading (custom fonts — needs `chronicles://` replacement)
+- [ ] Image attachments display (needs `chronicles://` replacement)
+- [ ] Import from Notion (untested)
+- [ ] External links open in browser (untested)
+- [ ] Spell checking (was Chromium built-in; WebKit needs explicit enablement)
 - [ ] Cmd+Q quits, dock click reopens
 - [ ] Bundle size ≤ 15MB
 - [ ] Startup time < 100ms
@@ -235,11 +243,13 @@ Each phase should have a runnable check the agent can execute:
 ### Dual-track rationale
 
 The hard decoupling is already done:
+
 - **Backend:** `src/bun-client/` is fully independent (106 tests, no Electron deps)
 - **Frontend:** Vite-built renderer is pure React/TypeScript, zero Electron APIs
 - **Bridge:** All 14 integration points go through `window.chronicles` — a facade that either shell can implement
 
 What actually differs per shell is minimal:
+
 - Electron: `src/electron/index.ts` (~376 lines) + `src/preload/utils.electron.tsx` (~90 lines)
 - Electrobun: equivalent entry + RPC handlers mapping to same `window.chronicles` shape
 
@@ -257,7 +267,7 @@ The migration end-state is **deletion, not refactoring** — when Electrobun pas
 
 | Risk                                           | Likelihood | Impact | Mitigation                                                                |
 | ---------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------- |
-| ~~Knex doesn't work with bun:sqlite~~           | Resolved   | —      | Chose Drizzle ORM instead. Phase 1 complete.                              |
+| ~~Knex doesn't work with bun:sqlite~~          | Resolved   | —      | Chose Drizzle ORM instead. Phase 1 complete.                              |
 | Electrobun webview quirks (WebKit vs Chromium) | Medium     | High   | Test early in Phase 1; CSS/JS differences may need fixes                  |
 | Electrobun missing APIs we need                | Low-Medium | High   | Check docs thoroughly before starting; fallback to Swift if critical gaps |
 | Bun Node.js compat gaps                        | Low        | Medium | Most code is standard Node.js (fs, path, crypto); validated in Phase -1   |

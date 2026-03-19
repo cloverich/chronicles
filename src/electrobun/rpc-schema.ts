@@ -23,11 +23,11 @@ export type ChroniclesRPC = {
         response: unknown;
       };
       openDialogSelectDir: {
-        params?: undefined;
+        params: Record<string, never>;
         response: { value?: string; error?: string };
       };
       selectThemeFile: {
-        params?: undefined;
+        params: Record<string, never>;
         response: { value?: string; error?: string };
       };
       importThemeFile: {
@@ -56,7 +56,7 @@ export type ChroniclesRPC = {
         response: boolean;
       };
       listHljsThemes: {
-        params?: undefined;
+        params: Record<string, never>;
         response: string[];
       };
       loadHljsThemeCSS: {
@@ -64,15 +64,15 @@ export type ChroniclesRPC = {
         response: string | null;
       };
       listInstalledFonts: {
-        params?: undefined;
+        params: Record<string, never>;
         response: string[];
       };
       getInstalledFontsStylesheetHref: {
-        params?: undefined;
+        params: Record<string, never>;
         response: string | null;
       };
       refreshInstalledFontsCache: {
-        params?: undefined;
+        params: Record<string, never>;
         response: { changed: boolean; css: string | null; href: string | null };
       };
       openPath: {

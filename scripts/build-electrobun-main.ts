@@ -12,7 +12,7 @@
  * dist/electrobun/main.js that Electrobun then wraps into the app bundle.
  */
 
-import { mkdirSync, cpSync } from "fs";
+import { mkdirSync } from "fs";
 import { resolve } from "path";
 
 mkdirSync("dist/electrobun", { recursive: true });
@@ -42,4 +42,7 @@ if (!result.success) {
   process.exit(1);
 }
 
-console.log("[build-electrobun-main] Pre-bundled main.ts →", result.outputs.map(o => o.path).join(", "));
+console.log(
+  "[build-electrobun-main] Pre-bundled main.ts →",
+  result.outputs.map((o) => o.path).join(", "),
+);

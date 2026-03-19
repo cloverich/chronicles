@@ -63,9 +63,12 @@ export const JournalItem = observer(
               <JournalEditor journal={journal} done={store.toggleEditing} />
             ) : (
               <a
-                href=""
+                href="#"
                 className="hover:text-interactive-hover"
-                onClick={() => store.search(journal.name)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  store.search(journal.name);
+                }}
               >
                 {journal.name}
                 {isDefault ? "*" : ""}

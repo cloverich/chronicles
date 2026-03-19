@@ -1,6 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
 import { type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
-import type { GetDocumentResponse } from "../preload/client/types";
+import type {
+  GetDocumentResponse,
+  SearchRequest,
+} from "../preload/client/types";
 import { createId } from "../preload/client/util";
 import type { IDocumentsClient } from "./documents";
 import * as schema from "./schema";
