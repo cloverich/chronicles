@@ -1,6 +1,18 @@
 import { Electroview } from "electrobun/view";
+import { installChroniclesShim } from "../../chronicles-shim";
+import type { ChroniclesRPC } from "../../rpc-schema";
 
-// Phase 2-3: No RPC yet — just initialize Electroview
-const electroview = new Electroview({ rpc: undefined });
+// Define webview-side RPC (no handlers needed yet — all calls go webview→bun direction)
+const electroview = Electroview.defineRPC<ChroniclesRPC>({
+  handlers: {
+    requests: {},
+    messages: {},
+  },
+});
 
-console.log("[Chronicles/Electroview] Webview initialized");
+const view = new Electroview({ rpc: electroview });
+
+// Install window.chronicles shim that routes through RPC
+installChroniclesShim(view.rpc);
+
+console.log("[Chronicles/Electroview] RPC bridge installed");
