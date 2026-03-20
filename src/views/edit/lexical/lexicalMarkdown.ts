@@ -86,6 +86,7 @@ export const CHRONICLES_IMAGE_TRANSFORMER: ElementTransformer = {
 
     const altText = node
       .getAltText()
+      .replace(/\\/g, "\\\\")
       .replace(/\[/g, "\\[")
       .replace(/\]/g, "\\]");
     const src = unPrefixUrl(node.getSrc()).replace(/\)/g, "%29");
