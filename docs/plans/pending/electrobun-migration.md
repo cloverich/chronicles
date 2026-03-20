@@ -14,6 +14,10 @@ Rather than building a separate CLI-on-Bun alongside an Electron desktop app, we
 
 **Fallback:** If Electrobun doesn't work out, the architectural cleanup (better seams, documented interfaces) makes a Swift migration easier, not harder.
 
+### Portable backend
+
+Phase 1 (bun-client) proved `BunClient` runs fully independent of Electron. This opens doors beyond Electrobun — the same backend could serve a web app over HTTP, power a CLI tool, or wire into any desktop shell. Electrobun is the current target, but the architecture doesn't lock us in.
+
 ---
 
 ## Docs to Acquire
@@ -94,162 +98,106 @@ LLM agents need these docs in-repo for consistent context. Suggested location: `
 
 ## Migration Phases
 
-### Phase 1: IClient on Bun (Current Milestone)
+### Phase 1: IClient on Bun ✅ COMPLETE
 
-**Goal:** A v2 `IClient` implementation runs under Bun with no Electron
-dependencies, validated by unit tests. No Electrobun required — pure Bun work,
-and also lays the foundation for the future CLI.
+**Status:** Complete — 106/106 tests passing across 10 test files.
 
 **Full plan:** [docs/plans/active/bun-client.md](../../plans/active/bun-client.md)
 
-**Key decisions already resolved:**
-
-- **Knex is not viable.** No bun:sqlite dialect exists (tracking issue open since March 2024, no PR). Using **Drizzle ORM** (`drizzle-orm/bun-sqlite`) instead — the only tool with native first-party bun:sqlite support.
-- **Built parallel, not in-place.** New code lives in `src/bun-client/`. `src/preload/client/` is untouched until this phase is complete and Phase 2 is ready to wire it in.
-- **`electron-store`** → custom `settings-store.ts` (zero deps, JSON r/w)
-- **`sharp`** → dropped. Existing fallback (write original bytes) always runs.
-
-**Deliverable:** `bun test src/bun-client/` all green; `bun run src/bun-client/smoke.ts` calls `createClient()` and lists journals.
-
-**Validation:** Tests are the validation. No window, no webview, no Electrobun.
+All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, preferences, files, indexer, bulk operations, importer. Settings store replaces electron-store. Sharp dropped (passthrough fallback). Smoke test validates end-to-end.
 
 ---
 
-### Phase 2: Scaffold & Hello World
+### Phase 2: Scaffold & Hello World ✅ COMPLETE
 
-**Goal:** Electrobun project boots and shows a webview with static content.
+**Status:** Complete. `electrobun.config.ts` created, `src/electrobun/main.ts` entry point with BrowserWindow (hiddenInset titlebar, 900×800), ApplicationMenu with Edit/View. Dev mode loads `http://localhost:5173`.
+
+---
+
+### Phase 3: Load the Renderer ✅ COMPLETE
+
+**Status:** Complete. Electrobun webview loads the Vite dev server. `src/electrobun/views/main/` scaffolded with Electroview initialization. Production mode configured for `views://main/index.html`.
+
+---
+
+### Phase 4: IPC/RPC Bridge ✅ COMPLETE
+
+**Status:** Complete.
+
+**Architecture:** Generic dispatch pattern for IClient + individual typed handlers for 13 utility methods.
+
+**Files created:**
+
+- `src/electrobun/rpc-schema.ts` — `ChroniclesRPC` type with `clientCall` (generic dispatch) + 13 typed request handlers + `showContextMenu` message
+- `src/electrobun/rpc-handlers.ts` — Bun-side handler factory; `clientCall` dispatches dynamically to BunClient sub-modules via `c[module][method].apply(mod, args)`
+- `src/electrobun/chronicles-shim.ts` — Webview-side `installChroniclesShim(rpc)` that creates Proxy-based IClient (all ~50+ methods auto-routed through RPC)
+
+**Key design decision:** Rather than creating individual RPC handlers for every IClient method (~50+), a single `clientCall` handler accepts `{ module, method, args }` and dispatches dynamically. The webview-side `getClient()` returns a two-level Proxy that converts `client.journals.list()` → `rpc.request.clientCall({ module: "journals", method: "list", args: [] })`. This means no schema changes when IClient methods change.
+
+**Known gap:** `chronicles://` protocol for images/fonts needs data URL replacement (deferred to QA phase).
+
+---
+
+### Phase 5: Native Chrome ✅ COMPLETE
+
+**Status:** Complete.
+
+**What's wired:**
+
+- ✅ Hidden titlebar with inset traffic lights (`titleBarStyle: "hiddenInset"`)
+- ✅ ApplicationMenu (Chronicles, Edit with standard roles, View with reload/devtools)
+- ✅ File/folder dialogs via `Utils.openFileDialog`
+- ✅ `openPath` via `Utils.openPath`
+- ✅ Context menu via `ContextMenu.showContextMenu` (triggered by webview→bun RPC message)
+- ✅ External link interception (`will-navigate` event → `Utils.openExternal`)
+- ✅ macOS window lifecycle (`exitOnLastWindowClosed: false`)
+
+**Known gaps:**
+
+- `setNativeTheme` returns `false` (Electrobun v1 has no native theme API; renderer uses `prefers-color-scheme` CSS media query instead)
+- Spell checking not yet configured (was `electron-context-menu` feature)
+- DevTools (`openDevTools()`) shares the webview viewport — pushes app content down. Popping out to a separate window works but leaves a stale split. Likely an Electrobun/WebKit inspector layout issue; reload after detaching fixes it.
+- `window.chronicles` utility methods (themes, fonts, dialogs) are now async via RPC. Electron ran these synchronously in the preload context. Call sites in `StyleWatcher`, `preferences/index.tsx` updated to `await`; more may surface.
+- **WebKit `<select>` elements** render with native macOS chrome (not web-styled dropdowns). Replace with Radix Select components if consistent styling is needed.
+- **WebKit `::selection` colors** ignore the themed `--accent-secondary` variable; defaults to system blue highlight. Known WebKit limitation with CSS custom properties in `::selection` inside `@layer`. Not a regression — same behavior in Safari.
+
+---
+
+### Phase 6: Build, Package & QA (IN PROGRESS)
+
+**Goal:** Validate the Electrobun app works end-to-end, then cut over.
 
 **Steps:**
 
-1. Install Electrobun, create project structure alongside existing Electron code
-2. Create Electrobun entry point (`src/electrobun/main.ts` or whatever the convention is)
-3. Create a BrowserView that loads a static HTML page
-4. Verify build and launch works
+1. **QA in dev mode:** Launch `electrobun dev` + Vite, test all features against checklist
+2. **Fix `chronicles://` protocol:** Replace with RPC + data URLs for images and base64 fonts
+3. **Configure Electrobun build:** `electrobun build --env=stable`, bundled assets, Drizzle migrations
+4. **Code signing:** `build.mac.codesign: true` in `electrobun.config.ts`
+5. **Test production build:** App launches from built bundle, all features work
+6. **Cut over:** Delete `src/electron/`, `src/preload/`, remove Electron deps, update scripts
+7. **Update skills:** `local-install` and `release` skills point at Electrobun build
 
-**Deliverable:** `bun run dev:electrobun` opens a window with "Hello Chronicles"
+**Deliverable:** A working `.app` bundle; Electron code deleted.
 
-**Validation:** Window appears, no crashes. Screenshot it.
+**QA status (dev mode):**
 
-**Docs needed:** Getting Started, Project Structure
-
----
-
-### Phase 3: Load the Renderer
-
-**Goal:** The Vite-built UI renders in the Electrobun webview.
-
-**Steps:**
-
-1. Point the webview at Vite dev server (`http://localhost:5173`) during development
-2. For production, load the built `dist/renderer/index.html`
-3. Handle any CSP or webview security configuration
-4. The app will show the UI but be non-functional (no backend wired up)
-
-**Deliverable:** The full Chronicles UI renders in the Electrobun webview
-
-**Validation:**
-
-- UI loads without console errors (check webview devtools)
-- Styles render correctly (Tailwind, themes)
-- Navigation works (client-side routing)
-- Will show errors for `window.chronicles` calls — that's expected
-
-**Docs needed:** BrowserView API, webview configuration
-
----
-
-### ~~Phases (old 2 & 3): Database Layer / Backend Services~~
-
-Absorbed into Phase 1. See above.
-
----
-
-### Phase 4: IPC/RPC Bridge (depends on Phase 1 + Phase 3)
-
-**Goal:** The renderer communicates with the Bun backend via Electrobun's typed RPC.
-
-This is the largest phase — every `window.chronicles.*` call needs a new bridge.
-
-**Steps:**
-
-1. Study Electrobun's RPC system (typed handlers, how data flows between main and webview)
-2. Define RPC handlers for each of the 14 `window.chronicles` methods
-3. Create a renderer-side shim that exposes the same `window.chronicles` interface but calls Electrobun RPC instead of Electron IPC
-4. Wire up the RPC handlers in the main process to call the IClient methods
-5. Handle the `chronicles://` protocol replacement:
-   - Electrobun may have its own protocol/URL scheme for loading local files
-   - Or we intercept requests in the RPC layer and serve file contents
-   - This affects `<img>` and `<video>` tags that reference attachments
-
-**Approach for minimal renderer changes:**
-The renderer currently calls `window.chronicles.foo()`. If we expose the same shape via Electrobun's RPC, the renderer code changes are minimal — ideally just the initialization path.
-
-**Deliverable:** The app is functional — can browse journals, view documents, search
-
-**Validation:**
-
-- Open the app, navigate to a journal, open a document — content displays
-- Search works (type a query, results appear)
-- Theme switching works
-- Font loading works
-- Image attachments display (via whatever protocol replacement we use)
-- No console errors related to IPC/RPC failures
-
-**Docs needed:** Electrobun RPC API (this is the critical doc)
-
----
-
-### Phase 5: Native Chrome
-
-**Goal:** Menus, dialogs, window management match the Electron version.
-
-**Steps:**
-
-1. Window configuration: hidden titlebar, traffic light positioning (macOS)
-2. File/folder dialogs: `openDialogSelectDir`, `selectThemeFile`
-3. Application menu (if Electrobun supports native menus)
-4. External link handling: open URLs in default browser
-5. `openPath`: open directories in Finder
-6. Dark mode detection: `setNativeTheme` equivalent
-7. Context menus (replace `electron-context-menu`)
-8. Window lifecycle: close/reopen behavior, macOS dock click
-
-**Deliverable:** Full native feel — menus, dialogs, window behavior match Electron version
-
-**Validation:**
-
-- Can select a notes directory via folder picker
-- Can import a theme file via file picker
-- Dark/light mode switches correctly
-- External links open in browser
-- Cmd+Q quits, dock click reopens (macOS)
-- Context menu works in editor
-
-**Docs needed:** Electrobun Dialogs, Menus, native APIs
-
----
-
-### Phase 6: Build, Package & Distribution
-
-**Goal:** Distributable macOS app bundle.
-
-**Steps:**
-
-1. Configure Electrobun's build pipeline
-2. Replace `@electron/packager` with Electrobun's packaging
-3. Handle production asset bundling (renderer, hljs themes, migrations)
-4. Code signing and notarization (if Electrobun supports it)
-5. Update the `local-install` and `release` skills
-6. DMG creation
-
-**Deliverable:** A `.app` bundle that runs on macOS without dev tools installed
-
-**Validation:**
-
-- `bun run build` produces a working app
-- App launches from /Applications
-- All features work in production build (not just dev mode)
-- Bundle size is in the expected range (~12-15MB)
+- [x] Open app, navigate to journal, view document
+- [x] Create/edit/delete documents
+- [x] Search works (FTS + searchCount)
+- [x] Theme switching (light/dark/custom)
+- [x] Sidebar folder navigation (fixed WebKit href="" reload)
+- [x] Sidebar tag navigation
+- [x] Preferences pane loads
+- [x] File/folder dialogs work
+- [x] Context menu works
+- [ ] Font loading (custom fonts — needs `chronicles://` replacement)
+- [ ] Image attachments display (needs `chronicles://` replacement)
+- [ ] Import from Notion (untested)
+- [ ] External links open in browser (untested)
+- [ ] Spell checking (was Chromium built-in; WebKit needs explicit enablement)
+- [ ] Cmd+Q quits, dock click reopens
+- [ ] Bundle size ≤ 15MB
+- [ ] Startup time < 100ms
 
 **Docs needed:** Electrobun Build & Distribute
 
@@ -289,8 +237,23 @@ Each phase should have a runnable check the agent can execute:
 ## Decisions Made
 
 1. **Sharp:** Remove it. The existing fallback (write original bytes) stays. No resize, no webp conversion. Re-add proper image processing later as a standalone improvement.
-2. **Coexistence:** Cut over immediately. Replace Electron entry points with Electrobun, no parallel maintenance.
+2. **~~Coexistence:~~** ~~Cut over immediately.~~ **Revised: Dual-track.** Electron and Electrobun run side-by-side throughout Phases 2-5. The glue code is tiny (~450 lines total across main + preload) — maintaining two shells temporarily is low-cost. This de-risks the migration: Electron stays working while Electrobun matures. Phase 6 (cut over) deletes `src/electron/`, `src/preload/`, and Electron deps. See rationale below.
 3. **Bundler:** Keep Vite for the renderer. Proven, working, has Vitest. One migration at a time.
+
+### Dual-track rationale
+
+The hard decoupling is already done:
+
+- **Backend:** `src/bun-client/` is fully independent (106 tests, no Electron deps)
+- **Frontend:** Vite-built renderer is pure React/TypeScript, zero Electron APIs
+- **Bridge:** All 14 integration points go through `window.chronicles` — a facade that either shell can implement
+
+What actually differs per shell is minimal:
+
+- Electron: `src/electron/index.ts` (~376 lines) + `src/preload/utils.electron.tsx` (~90 lines)
+- Electrobun: equivalent entry + RPC handlers mapping to same `window.chronicles` shape
+
+The migration end-state is **deletion, not refactoring** — when Electrobun passes QA, we `rm -rf src/electron/ src/preload/` and strip Electron deps from package.json.
 
 ## Open Questions
 
@@ -304,7 +267,7 @@ Each phase should have a runnable check the agent can execute:
 
 | Risk                                           | Likelihood | Impact | Mitigation                                                                |
 | ---------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------- |
-| ~~Knex doesn't work with bun:sqlite~~           | Resolved   | —      | Chose Drizzle ORM instead. Phase 1 complete.                              |
+| ~~Knex doesn't work with bun:sqlite~~          | Resolved   | —      | Chose Drizzle ORM instead. Phase 1 complete.                              |
 | Electrobun webview quirks (WebKit vs Chromium) | Medium     | High   | Test early in Phase 1; CSS/JS differences may need fixes                  |
 | Electrobun missing APIs we need                | Low-Medium | High   | Check docs thoroughly before starting; fallback to Swift if critical gaps |
 | Bun Node.js compat gaps                        | Low        | Medium | Most code is standard Node.js (fs, path, crypto); validated in Phase -1   |

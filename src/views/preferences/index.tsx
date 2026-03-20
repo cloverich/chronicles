@@ -44,26 +44,38 @@ const PreferencesPane = observer((props: Props) => {
     ThemeListEntry[]
   >([]);
   const [availableFonts, setAvailableFonts] = React.useState<string[]>([]);
+  const [settingsPath, setSettingsPath] = React.useState<string>("");
   // Code theme selection disabled until #176 is fixed
   // https://github.com/cloverich/chronicles/issues/176
   // const [hljsThemes, setHljsThemes] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (props.isOpen) {
-      const themesDir = `${preferences.settingsDir}/themes`;
-      const { themes, overrides } =
-        window.chronicles.listAvailableThemes(themesDir);
-      setAvailableThemes(themes);
-      if (overrides.length > 0) {
-        toast.info(
-          `Your installed theme "${overrides.join('", "')}" overrides a bundled theme with the same name`,
-        );
-      }
+      (async () => {
+        const themesDir = `${preferences.settingsDir}/themes`;
+        const { themes, overrides } =
+          await window.chronicles.listAvailableThemes(themesDir);
+        setAvailableThemes(themes);
+        if (overrides.length > 0) {
+          toast.info(
+            `Your installed theme "${overrides.join('", "')}" overrides a bundled theme with the same name`,
+          );
+        }
 
-      const fontsDir = `${preferences.settingsDir}/fonts`;
-      const installedFonts = window.chronicles.listInstalledFonts(fontsDir);
-      setAvailableFonts(installedFonts);
-      // setHljsThemes(window.chronicles.listHljsThemes());
+        const fontsDir = `${preferences.settingsDir}/fonts`;
+        const installedFonts =
+          await window.chronicles.listInstalledFonts(fontsDir);
+        setAvailableFonts(installedFonts);
+
+        // Resolve async path for display
+        try {
+          const path = await client.preferences.settingsPath();
+          setSettingsPath(path);
+        } catch {
+          setSettingsPath("(unknown)");
+        }
+        // setHljsThemes(await window.chronicles.listHljsThemes());
+      })();
     }
   }, [props.isOpen, preferences.settingsDir]);
 
@@ -118,14 +130,15 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
-  function refreshThemeList() {
+  async function refreshThemeList() {
     const themesDir = `${preferences.settingsDir}/themes`;
-    setAvailableThemes(window.chronicles.listAvailableThemes(themesDir).themes);
+    const result = await window.chronicles.listAvailableThemes(themesDir);
+    setAvailableThemes(result.themes);
   }
 
-  function deleteTheme(name: string) {
+  async function deleteTheme(name: string) {
     const themesDir = `${preferences.settingsDir}/themes`;
-    const deleted = window.chronicles.deleteThemeByName(name, themesDir);
+    const deleted = await window.chronicles.deleteThemeByName(name, themesDir);
     if (deleted) {
       toast.success(`Theme "${name}" removed`);
       // Reset to system default if the deleted theme was active
@@ -581,7 +594,7 @@ const PreferencesPane = observer((props: Props) => {
                     Settings file
                   </dt>
                   <dd className="text-muted-foreground mb-2 text-xs">
-                    <code>{client.preferences.settingsPath()}</code>
+                    <code>{settingsPath}</code>
                   </dd>
 
                   <dt className="text-foreground-strong font-medium">

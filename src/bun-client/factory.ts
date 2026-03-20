@@ -18,6 +18,12 @@ import { TagsClient } from "./tags";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// When bundled for Electrobun, __dirname points inside the app bundle where
+// migration SQL files don't exist. The build script injects the real project
+// root so we can resolve to the source tree's migration folder.
+const projectRoot: string | undefined =
+  process.env.CHRONICLES_PROJECT_ROOT || undefined;
+
 export interface CreateClientOptions {
   dbPath: string; // ":memory:" for tests, or absolute file path
   notesDir: string;
@@ -57,7 +63,36 @@ export async function createClient(
   const db = drizzle(sqlite, { schema });
 
   // Apply Drizzle-managed migrations
-  const migrationsFolder = path.resolve(__dirname, "migrations");
+  // In bundled context (Electrobun), __dirname is inside the app bundle.
+  // Use project root if available to find the source-tree migrations.
+  const migrationsFolder = projectRoot
+    ? path.resolve(projectRoot, "src/bun-client/migrations")
+    : path.resolve(__dirname, "migrations");
+
+  // Handle migration for databases that already have the schema (e.g. created
+  // by Electron's migration system or by a previous Drizzle run that didn't
+  // record entries). If tables exist but the Drizzle journal is empty, stamp
+  // the migration as applied so Drizzle doesn't try to re-create tables.
+  const hasExistingTables = sqlite
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='documents'",
+    )
+    .get();
+  const migrationCount = sqlite
+    .prepare("SELECT count(*) as c FROM __drizzle_migrations")
+    .get() as { c: number } | null;
+
+  if (hasExistingTables && (!migrationCount || migrationCount.c === 0)) {
+    // Schema exists but Drizzle doesn't know about it — stamp the initial
+    // migration as applied so it doesn't try to re-create everything.
+    console.log(
+      "[bun-client] Existing schema detected, stamping Drizzle migration journal",
+    );
+    sqlite.exec(
+      `INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('0000_demonic_avengers', ${Date.now()})`,
+    );
+  }
+
   migrate(db, { migrationsFolder });
 
   // FTS5 virtual table — not expressible in Drizzle schema, so we create it

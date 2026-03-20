@@ -327,6 +327,71 @@ export class DocumentsClient {
     return { data: rows as SearchItem[] };
   };
 
+  /**
+   * Count matching documents (same filters as search, minus pagination).
+   * Used by the UI for "N results" display.
+   */
+  searchCount = async (q?: SearchRequest): Promise<number> => {
+    const conditions: SQL[] = [];
+
+    if (q?.ids?.length) {
+      conditions.push(inArray(documents.id, q.ids));
+    }
+    if (q?.journals?.length) {
+      conditions.push(inArray(documents.journal, q.journals));
+    }
+    if (q?.exclude?.journals?.length) {
+      conditions.push(notInArray(documents.journal, q.exclude.journals));
+    }
+    if (q?.date) {
+      conditions.push(like(documents.createdAt, `${q.date}%`));
+    }
+    if (q?.titles?.length) {
+      for (const title of q.titles) {
+        conditions.push(like(documents.title, `%${title}%`));
+      }
+    }
+    if (q?.tags?.length) {
+      const taggedIds = await this.db
+        .selectDistinct({ documentId: documentTags.documentId })
+        .from(documentTags)
+        .where(inArray(documentTags.tag, q.tags));
+      const ids = taggedIds.map((r) => r.documentId);
+      if (ids.length === 0) return 0;
+      conditions.push(inArray(documents.id, ids));
+    }
+    if (q?.exclude?.tags?.length) {
+      const excludedIds = await this.db
+        .selectDistinct({ documentId: documentTags.documentId })
+        .from(documentTags)
+        .where(inArray(documentTags.tag, q.exclude.tags));
+      const ids = excludedIds.map((r) => r.documentId);
+      if (ids.length > 0) {
+        conditions.push(notInArray(documents.id, ids));
+      }
+    }
+    if (q?.texts?.length) {
+      const ftsTerms = q.texts
+        .map((t) => `"${t.replace(/"/g, '""')}"`)
+        .join(" ");
+      const ftsRows = await this.db.all<{ id: string }>(
+        sql`SELECT id FROM documents_fts WHERE documents_fts MATCH ${ftsTerms}`,
+      );
+      const ftsIds = ftsRows.map((r) => r.id);
+      if (ftsIds.length === 0) return 0;
+      conditions.push(inArray(documents.id, ftsIds));
+    }
+
+    // Intentionally skip `before` and `limit` — we want the total count
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const query = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(documents);
+    const filtered = whereClause ? query.where(whereClause) : query;
+    const [result] = await filtered;
+    return Number(result?.count || 0);
+  };
+
   getSyncMeta = async (id: string): Promise<DocSyncMeta> => {
     const [row] = await this.db
       .select({
