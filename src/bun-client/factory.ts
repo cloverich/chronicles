@@ -69,6 +69,16 @@ export async function createClient(
     ? path.resolve(projectRoot, "src/bun-client/migrations")
     : path.resolve(__dirname, "migrations");
 
+  // Drizzle expects this bookkeeping table. Ensure it exists before we query
+  // it for compatibility with fresh file-backed databases.
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+      "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      "hash" TEXT NOT NULL,
+      "created_at" NUMERIC
+    );
+  `);
+
   // Handle migration for databases that already have the schema (e.g. created
   // by Electron's migration system or by a previous Drizzle run that didn't
   // record entries). If tables exist but the Drizzle journal is empty, stamp

@@ -3,6 +3,7 @@
 ## Active Projects
 
 - [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (Phase 1 of Electrobun migration)
+- [docs/plans/active/mcp-server.md](docs/plans/active/mcp-server.md) — stdio MCP server over Bun client (note CRUD + search)
 - [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration phases 2-6
 - [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
 - [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)

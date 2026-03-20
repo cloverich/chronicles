@@ -328,7 +328,9 @@ Index complete.  ← stderr
 
 ## 7. MCP (Out of Scope — Design Notes)
 
-MCP is a strong candidate for fast-follow once the CLI is working. A separate `docs/designs/chronicles-mcp.md` should be created when the time comes.
+MCP is now documented in [docs/designs/chronicles-mcp.md](chronicles-mcp.md).
+This section remains as rationale for why it was designed as a fast-follow to
+the CLI surface.
 
 **Why it will be straightforward:** The CLI commands map 1:1 to MCP tools. The zod input schemas can generate MCP `inputSchema` via `zod-to-json-schema`. The access profile system works via `CHRONICLES_PROFILE` env var, which MCP server configs support natively:
 
