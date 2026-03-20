@@ -21,7 +21,8 @@
     "test:electron": "node ./scripts/electron-test-runner.mjs",
     "dev:vite": "vite",
     "dev:electrobun": "electrobun dev",
-    "build:electrobun": "electrobun build"
+    "build:electrobun": "electrobun build",
+    "mcp:server": "bun run src/bun-client/mcp/server.ts"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.8",
