@@ -39,8 +39,11 @@ function isSelectionAtCodeBlockEnd(
     return anchorOffset === anchorNode.getChildrenSize();
   }
 
+  const parent = anchorNode.getParent();
   return (
-    anchorNode.getParent()?.is(codeNode) && anchorNode.getNextSibling() === null
+    parent !== null &&
+    parent.is(codeNode) &&
+    anchorNode.getNextSibling() === null
   );
 }
 

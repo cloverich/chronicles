@@ -9,6 +9,7 @@ import {
   $getRoot,
   $nodesOfType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  DROP_COMMAND,
   KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
@@ -52,12 +53,23 @@ type NoteSearchQuery = {
   titles?: string[];
 };
 
-function mockChroniclesSearch(
-  resolver: (query: NoteSearchQuery) => NoteSearchResult[],
-) {
+type UploadImageBytesFn = (
+  arrayBuffer: ArrayBuffer,
+  filename?: string,
+) => Promise<{ url: string } | string>;
+
+function mockChroniclesClient({
+  searchResolver = () => [],
+  uploadImageBytes = vi.fn(async (_buffer, filename = "upload.png") => ({
+    url: `chronicles://../_attachments/${filename}`,
+  })),
+}: {
+  searchResolver?: (query: NoteSearchQuery) => NoteSearchResult[];
+  uploadImageBytes?: UploadImageBytesFn;
+} = {}) {
   const searchMock = vi.fn(
     async (query: NoteSearchQuery): Promise<{ data: NoteSearchResult[] }> => ({
-      data: resolver(query),
+      data: searchResolver(query),
     }),
   );
 
@@ -67,11 +79,20 @@ function mockChroniclesSearch(
         documents: {
           search: searchMock,
         },
+        files: {
+          uploadImageBytes,
+        },
       };
     },
   };
 
-  return searchMock;
+  return { searchMock, uploadImageBytes };
+}
+
+function mockChroniclesSearch(
+  resolver: (query: NoteSearchQuery) => NoteSearchResult[],
+) {
+  return mockChroniclesClient({ searchResolver: resolver }).searchMock;
 }
 
 afterEach(() => {
@@ -144,6 +165,38 @@ function createPasteEvent(plainText: string): ClipboardEvent {
   return event;
 }
 
+function createImagePasteEvent(file: File): ClipboardEvent {
+  const event = new Event("paste", {
+    bubbles: true,
+    cancelable: true,
+  }) as ClipboardEvent;
+  Object.defineProperty(event, "clipboardData", {
+    value: {
+      files: [file],
+      getData(type: string): string {
+        return type === "text/plain" ? "" : "";
+      },
+    } as unknown as Pick<DataTransfer, "files" | "getData">,
+  });
+  return event;
+}
+
+function createDropEvent(file: File): DragEvent {
+  const event = new Event("drop", {
+    bubbles: true,
+    cancelable: true,
+  }) as DragEvent;
+  Object.defineProperty(event, "dataTransfer", {
+    value: {
+      files: [file],
+      getData(): string {
+        return "";
+      },
+    } as unknown as Pick<DataTransfer, "files" | "getData">,
+  });
+  return event;
+}
+
 async function typeWithLexical(
   editor: LexicalEditor,
   text: string,
@@ -203,6 +256,28 @@ describe("lexical migration spike", () => {
     );
   });
 
+  it("roundtrips image markdown through Lexical", () => {
+    const markdown = "![A tidy desk](../_attachments/desk.png)";
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
+  });
+
+  it("roundtrips consecutive images through Lexical", () => {
+    const markdown = [
+      "![one](../_attachments/one.png)",
+      "![two](../_attachments/two.png)",
+    ].join("\n");
+    const roundtripped = roundtripLexicalMarkdown(markdown);
+    expect(roundtripped).toContain("![one](../_attachments/one.png)");
+    expect(roundtripped).toContain("![two](../_attachments/two.png)");
+  });
+
+  it("normalizes chronicles image URLs back to markdown-relative paths", () => {
+    const markdown = "![A tidy desk](chronicles://../_attachments/desk.png)";
+    expect(roundtripLexicalMarkdown(markdown)).toBe(
+      "![A tidy desk](../_attachments/desk.png)",
+    );
+  });
+
   it("renders the lexical replacement seam", () => {
     const onMarkdownChange = vi.fn();
 
@@ -232,6 +307,39 @@ describe("lexical migration spike", () => {
 
     const link = await screen.findByRole("link", { name: "Like this" });
     expect(link.getAttribute("href")).toBe("https://foo.com");
+  });
+
+  it("renders markdown images as img elements in the editor DOM", async () => {
+    renderEditorWithRoutes(
+      "![A tidy desk](chronicles://../_attachments/desk.png)",
+    );
+
+    const image = await screen.findByRole("img", { name: "A tidy desk" });
+    expect(image.getAttribute("src")).toBe(
+      "chronicles://../_attachments/desk.png",
+    );
+  });
+
+  it("renders relative markdown image URLs using chronicles protocol", async () => {
+    renderEditorWithRoutes("![A tidy desk](../_attachments/desk.png)");
+
+    const image = await screen.findByRole("img", { name: "A tidy desk" });
+    expect(image.getAttribute("src")).toBe(
+      "chronicles://../_attachments/desk.png",
+    );
+  });
+
+  it("renders consecutive markdown images independently", async () => {
+    renderEditorWithRoutes(
+      [
+        "![one](chronicles://../_attachments/one.png)",
+        "![two](chronicles://../_attachments/two.png)",
+      ].join("\n"),
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("img")).toHaveLength(2);
+    });
   });
 
   it("navigates directly when clicking a chronicles note link", async () => {
@@ -1572,6 +1680,123 @@ describe("lexical migration spike", () => {
       const closeFenceIndex = latestMarkdown?.lastIndexOf("```") ?? -1;
       expect(afterIndex).toBeGreaterThan(closeFenceIndex);
     });
+  });
+
+  it("uploads dropped image files and inserts image markdown", async () => {
+    const onMarkdownChange = vi.fn();
+    const uploadImageBytes = vi.fn(async (_buffer: ArrayBuffer) => ({
+      url: "chronicles://../_attachments/dropped.png",
+    }));
+    mockChroniclesClient({ uploadImageBytes });
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    const file = new File(["png-bytes"], "dropped.png", { type: "image/png" });
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+      lexicalEditor!.dispatchCommand(DROP_COMMAND, createDropEvent(file));
+    });
+
+    await waitFor(() => {
+      expect(uploadImageBytes).toHaveBeenCalledWith(
+        expect.any(ArrayBuffer),
+        "dropped.png",
+      );
+    });
+
+    const image = await screen.findByRole("img", { name: "dropped.png" });
+    expect(image.getAttribute("src")).toBe(
+      "chronicles://../_attachments/dropped.png",
+    );
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toContain(
+      "![dropped.png](../_attachments/dropped.png)",
+    );
+  });
+
+  it("uploads pasted image files and inserts image markdown", async () => {
+    const onMarkdownChange = vi.fn();
+    const uploadImageBytes = vi.fn(async (_buffer: ArrayBuffer) => ({
+      url: "chronicles://../_attachments/pasted.png",
+    }));
+    mockChroniclesClient({ uploadImageBytes });
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(lexicalEditor).not.toBeNull();
+    });
+
+    const editor = screen.getByLabelText("Minimal replacement editor");
+    const file = new File(["png-bytes"], "pasted.png", { type: "image/png" });
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+      lexicalEditor!.dispatchCommand(
+        PASTE_COMMAND,
+        createImagePasteEvent(file),
+      );
+    });
+
+    await waitFor(() => {
+      expect(uploadImageBytes).toHaveBeenCalledWith(
+        expect.any(ArrayBuffer),
+        "pasted.png",
+      );
+    });
+
+    const image = await screen.findByRole("img", { name: "pasted.png" });
+    expect(image.getAttribute("src")).toBe(
+      "chronicles://../_attachments/pasted.png",
+    );
+
+    await waitFor(() => {
+      expect(onMarkdownChange).toHaveBeenCalled();
+    });
+    const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+      | string
+      | undefined;
+    expect(latestMarkdown).toContain(
+      "![pasted.png](../_attachments/pasted.png)",
+    );
   });
 
   it("creates a link from selected text when pasting a URL", async () => {

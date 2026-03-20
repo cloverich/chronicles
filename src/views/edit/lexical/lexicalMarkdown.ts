@@ -6,6 +6,7 @@ import {
   $convertToMarkdownString,
   LINK,
   TRANSFORMERS,
+  type ElementTransformer,
   type TextMatchTransformer,
   type Transformer,
 } from "@lexical/markdown";
@@ -18,13 +19,20 @@ import {
   type LexicalNode,
   type TextNode,
 } from "lexical";
+import { prefixUrl, unPrefixUrl } from "../../../hooks/images";
 import { parseNoteLink } from "../editorv2/features/note-linking/toMdast";
+import {
+  $createChroniclesImageNode,
+  $isChroniclesImageNode,
+  ChroniclesImageNode,
+} from "./ChroniclesImageNode";
 import {
   $createChroniclesNoteLinkNode,
   $isChroniclesNoteLinkNode,
   ChroniclesNoteLinkNode,
 } from "./ChroniclesNoteLinkNode";
 
+const IMAGE_ELEMENT_REGEXP = /^!\[([^[\]]*)\]\(([^()\s]+)\)\s?$/;
 const NOTE_LINK_IMPORT_REGEXP =
   /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((\.\.\/[^()\s]+\.md)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?\))/;
 const NOTE_LINK_SHORTCUT_REGEXP =
@@ -62,6 +70,36 @@ function createLinkTextNode(node: TextNode, match: RegExpMatchArray) {
   return contentNode;
 }
 
+function normalizeImageSource(url: string): string {
+  if (url.startsWith("chronicles://")) {
+    return url;
+  }
+  return prefixUrl(url);
+}
+
+export const CHRONICLES_IMAGE_TRANSFORMER: ElementTransformer = {
+  dependencies: [ChroniclesImageNode],
+  export: (node) => {
+    if (!$isChroniclesImageNode(node)) {
+      return null;
+    }
+
+    const altText = node
+      .getAltText()
+      .replace(/\[/g, "\\[")
+      .replace(/\]/g, "\\]");
+    return `![${altText}](${unPrefixUrl(node.getSrc())})`;
+  },
+  regExp: IMAGE_ELEMENT_REGEXP,
+  replace: (parentNode, _children, match) => {
+    const [, altText, src] = match;
+    parentNode.replace(
+      $createChroniclesImageNode(normalizeImageSource(src), altText),
+    );
+  },
+  type: "element",
+};
+
 export const CHRONICLES_NOTE_LINK_TRANSFORMER: TextMatchTransformer = {
   dependencies: [ChroniclesNoteLinkNode],
   export: (node, exportChildren) => {
@@ -98,10 +136,12 @@ export const lexicalNodes: Array<Klass<LexicalNode>> = [
   CodeHighlightNode,
   LinkNode,
   AutoLinkNode,
+  ChroniclesImageNode,
   ChroniclesNoteLinkNode,
 ];
 
 export const chroniclesLexicalTransformers: Transformer[] = [
+  CHRONICLES_IMAGE_TRANSFORMER,
   CHRONICLES_NOTE_LINK_TRANSFORMER,
   ...TRANSFORMERS,
 ];
