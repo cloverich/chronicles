@@ -16,7 +16,7 @@ MDAST remains used elsewhere in the app (indexer, search) but the editor pipelin
 
 ---
 
-## Current State (March 19, 2026)
+## Current State (March 20, 2026)
 
 **Done:**
 
@@ -27,9 +27,10 @@ MDAST remains used elsewhere in the app (indexer, search) but the editor pipelin
 - Code block syntax highlighting wiring via `@lexical/code` (`CodeHighlightNode` + `registerCodeHighlighting`)
 - Note links: custom `ChroniclesNoteLinkNode`, markdown transformer, `@`-trigger dropdown, click navigation
 - Regular links: floating toolbar (edit/unlink/open), paste-to-link conversion
-- 42 vitest cases across roundtrip, render contracts, and editor interactions
+- Images: custom `ChroniclesImageNode`, markdown roundtrip, drop/paste upload via `client.files.uploadImageBytes()`, max-size rendering constraints
+- Expanded vitest coverage across roundtrip, render contracts, and editor interactions, including image workflows
 
-**Not done:** remaining Phase 3 gaps (task list behavior, code-block language UI, list/code escape hatches, tab-indent behavior, `Cmd+Alt+8` parity).
+**Not done:** Remaining roadmap items in Phases 6-10, plus any deferred parity follow-ups noted in the phase sections below.
 
 ---
 
@@ -48,8 +49,8 @@ Port remaining text formatting and block types to reach parity with Plate.
 | Strikethrough     | `~~text~~` autoformat                                | `Cmd+Shift+S` + markdown roundtrip                               | Verify `~~` typing trigger explicitly                                    |
 | Underline         | `Cmd+U`                                              | `Cmd+U`                                                          | Done — note: underline has no markdown syntax, Cmd+U applies format only |
 | Inline code       | `` `text` `` autoformat, `Cmd+E`                     | `Cmd+E` + backtick trigger                                       | Done                                                                     |
-| Code blocks       | ` ``` ` autoformat, `Cmd+Alt+8`, syntax highlighting | Fenced trigger + syntax-highlighting wiring + language roundtrip | Add `Cmd+Alt+8`; add language config UI                                  |
-| Task lists        | `[ ] ` autoformat (broken in Plate)                  | No                                                               | Add `ListItemNode` checkbox support or skip if Plate's was broken        |
+| Code blocks       | ` ``` ` autoformat, `Cmd+Alt+8`, syntax highlighting | Fenced trigger + syntax-highlighting wiring + language roundtrip | Done — `Cmd+Alt+8` toggle and language picker UI shipped                 |
+| Task lists        | `[ ] ` autoformat (broken in Plate)                  | Checklist markdown roundtrip + checklist rendering               | Typing autoformat can remain deferred; Plate behavior was already broken |
 | Headings typing   | `# `, `## `, `### `                                  | Via `MarkdownShortcutPlugin`                                     | Verified with explicit typing tests                                      |
 | Blockquote typing | `> `                                                 | Via `MarkdownShortcutPlugin`                                     | Verified with explicit typing tests                                      |
 | Lists typing      | `- `, `1. `                                          | Via `MarkdownShortcutPlugin`                                     | Verified with explicit typing tests                                      |
@@ -66,14 +67,13 @@ Port remaining text formatting and block types to reach parity with Plate.
 
 **Exit criteria:** All Plate marks and block types either work in Lexical or are explicitly deferred with rationale.
 
-**Observed constraints (March 18, 2026):**
+**Observed constraints (March 20, 2026):**
 
-- List typing triggers (`- `, `1. `) work, but there is currently no reliable escape via double-enter. New lines continue list context.
-- Tab does not currently indent list items in Lexical mode; tab moves focus out of the editor.
-- Code block syntax highlighting works when a language is already present in markdown (for example by toggling to markdown mode, setting fence language, then toggling back to Lexical).
-- There is currently no in-editor language picker/config UI for code blocks.
-- There is currently no escape behavior from code blocks (for example empty-line Enter exit).
-- Both list/code-block escape gaps are expected to be addressed by future keyboard escape-hatch behavior (Phase 8 / dedicated escape plugin).
+- Double-enter list escape is implemented in Lexical mode.
+- Tab/Shift+Tab list indent and outdent are implemented in Lexical mode.
+- Code language can be changed from an in-editor picker UI.
+- Code-block escape behaviors are implemented (`Cmd+Enter`, and Enter on empty trailing line).
+- Any remaining keyboard UX deltas should be treated as polish follow-ups, not parity blockers.
 
 ---
 
@@ -88,8 +88,8 @@ Note link navigation and markdown IO already work. This phase completes the crea
 | Arrow keys + Enter to insert          | Done                     |
 | Click on existing note link navigates | Done                     |
 | Dropdown positioning                  | Verify — may need polish |
-| Empty state / no results              | Verify — add test        |
-| Escape closes dropdown                | Verify — add test        |
+| Empty state / no results              | Done                     |
+| Escape closes dropdown                | Done                     |
 
 **Vitests:**
 
@@ -107,28 +107,28 @@ Note link navigation and markdown IO already work. This phase completes the crea
 
 Images are local-first: stored as attachments, referenced via `chronicles://` URLs.
 
-| Feature                  | Work needed                                                                                             |
+| Feature                  | Status                                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| Image rendering          | Custom `ImageNode` (void/decorator), renders `<img>` with attachment URL resolution                     |
-| Drag-and-drop upload     | Plugin intercepts `DROP` events with image files, calls `client.files.uploadImageBytes()`, inserts node |
-| Paste upload             | Same plugin intercepts `PASTE` events with image data                                                   |
-| Image markdown roundtrip | `![alt](url)` import/export via transformer                                                             |
-| Max display size         | CSS constraint (max-height 320px, max-width 80% — match Plate)                                          |
+| Image rendering          | Done — custom `ChroniclesImageNode` decorator renders `<img>` with attachment URLs                      |
+| Drag-and-drop upload     | Done — `LexicalImageUploadPlugin` intercepts `DROP` and inserts uploaded image nodes                    |
+| Paste upload             | Done — `LexicalImageUploadPlugin` intercepts `PASTE` image files and inserts uploaded image nodes       |
+| Image markdown roundtrip | Done — custom markdown transformer roundtrips `![alt](url)`                                             |
+| Max display size         | Done — image class constrains display (`max-height: 320px`, `max-width: 80%`) to match Plate-era sizing |
 
 **Not porting (defer to later):**
 
 - Image resize handles (Plate doesn't have them either — planned for bun-client era)
 - Remote image blocking (keep, but implement when wiring up the full media pipeline)
 
-**Vitests:**
+**Vitests (implemented):**
 
-- Image markdown roundtrip: `![alt](../path.png)` imports and exports correctly
-- ImageNode renders `<img>` with correct src and alt
-- Drag-and-drop: simulated drop event with File triggers upload and node insertion
-- Paste: simulated paste event with image data triggers upload and node insertion
+- Image markdown roundtrip: `![alt](url)` imports and exports correctly
+- `ChroniclesImageNode` renders `<img>` with correct src and alt
+- Drag-and-drop: simulated drop event with `File` triggers upload and node insertion
+- Paste: simulated paste event with image file data triggers upload and node insertion
 - Multiple consecutive images render independently (no gallery yet)
 
-**Exit criteria:** Single images display and can be added via drag-drop/paste. Markdown fidelity preserved.
+**Exit criteria:** Completed (March 20, 2026). Single images display and can be added via drag-drop/paste. Markdown fidelity preserved.
 
 ---
 

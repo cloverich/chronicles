@@ -15,6 +15,7 @@ import { LexicalBlockShortcutsPlugin } from "./LexicalBlockShortcutsPlugin";
 import { LexicalCodeHighlightPlugin } from "./LexicalCodeHighlightPlugin";
 import { LexicalCodeLanguagePlugin } from "./LexicalCodeLanguagePlugin";
 import { LexicalFormattingShortcutsPlugin } from "./LexicalFormattingShortcutsPlugin";
+import { LexicalImageUploadPlugin } from "./LexicalImageUploadPlugin";
 import { LexicalLinkToolbarPlugin } from "./LexicalLinkToolbarPlugin";
 import { LexicalListBehaviorPlugin } from "./LexicalListBehaviorPlugin";
 import { LexicalNoteLinkPlugin } from "./LexicalNoteLinkPlugin";
@@ -133,6 +134,7 @@ export function LexicalBasedEditor({
         <LexicalFormattingShortcutsPlugin />
         <LexicalBlockShortcutsPlugin />
         <LexicalListBehaviorPlugin />
+        <LexicalImageUploadPlugin />
         <LexicalPasteLinkPlugin />
         <LexicalLinkToolbarPlugin />
         <OnChangePlugin
