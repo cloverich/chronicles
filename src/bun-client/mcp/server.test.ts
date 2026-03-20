@@ -4,7 +4,11 @@ import { spawn } from "child_process";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
-import { ContentLengthParser, encodeContentLengthMessage } from "./framing";
+import {
+  ContentLengthParser,
+  encodeContentLengthMessage,
+  isRecord,
+} from "./framing";
 
 interface JsonRpcError {
   code: number;
@@ -191,10 +195,6 @@ function onceDrain(stream: NodeJS.WritableStream): Promise<void> {
   return new Promise((resolve) => {
     stream.once("drain", () => resolve());
   });
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 let tempRoot = "";

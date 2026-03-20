@@ -1,7 +1,11 @@
 import path from "path";
 import type { FrontMatter, SearchRequest } from "../../preload/client/types";
 import { createClient, type BunClient } from "../factory";
-import { ContentLengthParser, encodeContentLengthMessage } from "./framing";
+import {
+  ContentLengthParser,
+  encodeContentLengthMessage,
+  isRecord,
+} from "./framing";
 
 type JsonRpcId = number | string | null;
 
@@ -105,7 +109,7 @@ const TOOL_DEFINITIONS: ToolDescriptor[] = [
   {
     name: "chronicles_notes_search",
     description:
-      "Search notes by text, journal, title, tags, and date filters.",
+      "Search notes. Use 'texts' for exact term matching or 'query' for a space-separated shorthand that splits into text terms. Also supports journal, title, tags, and date filters.",
     inputSchema: {
       type: "object",
       properties: {
@@ -138,6 +142,7 @@ class ChroniclesMcpServer {
   private parser = new ContentLengthParser();
   private clientPromise: Promise<BunClient> | null = null;
   private protocolVersion = DEFAULT_PROTOCOL_VERSION;
+  private knownJournals = new Set<string>();
 
   start() {
     this.redirectStdoutLogsToStderr();
@@ -295,9 +300,7 @@ class ChroniclesMcpServer {
     const id = optionalString(args, "id");
     const userFrontMatter = optionalRecord(args, "frontMatter") ?? {};
     const title =
-      optionalString(args, "title") ??
-      optionalString(userFrontMatter, "title") ??
-      undefined;
+      optionalString(args, "title") ?? optionalString(userFrontMatter, "title");
     const tags =
       optionalStringArray(args, "tags") ??
       optionalStringArray(userFrontMatter, "tags") ??
@@ -437,12 +440,16 @@ class ChroniclesMcpServer {
   }
 
   private async ensureJournalExists(journalName: string) {
+    if (this.knownJournals.has(journalName)) return;
+
     const client = await this.getClient();
     const journals = await client.journals.list();
-    if (journals.some((journal) => journal.name === journalName)) {
-      return;
+    for (const j of journals) this.knownJournals.add(j.name);
+
+    if (!this.knownJournals.has(journalName)) {
+      await client.journals.create({ name: journalName });
+      this.knownJournals.add(journalName);
     }
-    await client.journals.create({ name: journalName });
   }
 
   private sendResponse(id: JsonRpcId, result: unknown) {
@@ -553,10 +560,6 @@ function optionalRecord(
     throw new Error(`${field} must be an object`);
   }
   return value;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function toolSuccess(data: unknown): ToolResponse {

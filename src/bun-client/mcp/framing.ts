@@ -55,3 +55,7 @@ export function encodeContentLengthMessage(payload: unknown): string {
   const json = JSON.stringify(payload);
   return `Content-Length: ${Buffer.byteLength(json, "utf8")}\r\n\r\n${json}`;
 }
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
