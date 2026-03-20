@@ -105,7 +105,7 @@ Note link navigation and markdown IO already work. This phase completes the crea
 
 ### Phase 5 — Images
 
-Images are local-first: stored as attachments, referenced via `chronicles://` URLs.
+Images are local-first: stored as attachments on disk. At render time, relative paths are translated to loadable URLs. Currently this uses `chronicles://` protocol (Electron) or will use `http://localhost:{port}/` (Electrobun — see `docs/plans/pending/electrobun-migration.md` "Local File Server Design"). The translation layer lives in `src/hooks/images.tsx` (`prefixUrl` / `unPrefixUrl`) and is transparent to the editor — Lexical image nodes just receive a src URL.
 
 | Feature                  | Status                                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------------- |
@@ -162,7 +162,7 @@ Plate groups consecutive images into a lightbox gallery automatically.
 | Video drag-and-drop | Extend media upload plugin for video MIME types                      |
 | File links          | Drop non-image/video files → insert as link with "File: {name}" text |
 
-**Defer:** Video is low-priority. Plate's video support was already broken. Implement basic rendering; skip upload if time-constrained.
+**Defer (P1/P2):** Video is not a ship blocker. Plate's video support was already broken, and video seeking was broken in Electron's protocol handler too. The Electrobun HTTP file server will handle video better (native HTTP Range request support), but implementing video can happen after the Lexical and Electrobun migrations ship. Implement basic rendering if convenient; skip upload.
 
 **Vitests:**
 
