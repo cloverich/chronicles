@@ -152,30 +152,33 @@ export function LexicalImageUploadPlugin(): null {
       const client = chronicles?.getClient?.();
       const uploadImageBytes = client?.files?.uploadImageBytes;
       if (typeof uploadImageBytes !== "function") {
+        toast.warning("Image upload is not available.");
         return;
       }
 
-      const uploaded: Array<{ altText: string; url: string }> = [];
-      for (const file of files) {
-        const buffer = await file.arrayBuffer();
-        const uploadResult = parseUploadResult(
-          await uploadImageBytes(buffer, file.name),
-        );
-        if (!uploadResult) {
-          continue;
-        }
-
-        if (uploadResult.warning?.code) {
-          toast.warning(
-            buildImageWarningMessage(file.name, uploadResult.warning.code),
+      const results = await Promise.all(
+        files.map(async (file) => {
+          const buffer = await file.arrayBuffer();
+          const uploadResult = parseUploadResult(
+            await uploadImageBytes(buffer, file.name),
           );
-        }
+          if (!uploadResult) {
+            return null;
+          }
 
-        uploaded.push({
-          altText: file.name,
-          url: uploadResult.url,
-        });
-      }
+          if (uploadResult.warning?.code) {
+            toast.warning(
+              buildImageWarningMessage(file.name, uploadResult.warning.code),
+            );
+          }
+
+          return { altText: file.name, url: uploadResult.url };
+        }),
+      );
+
+      const uploaded = results.filter(
+        (r): r is { altText: string; url: string } => r !== null,
+      );
 
       if (uploaded.length === 0) {
         return;
@@ -193,43 +196,35 @@ export function LexicalImageUploadPlugin(): null {
   );
 
   React.useEffect(() => {
-    return editor.registerCommand(
+    function handleImageTransfer(event: Event): boolean {
+      const files = extractImageFiles(event);
+      if (files.length === 0) {
+        return false;
+      }
+
+      event.preventDefault();
+      void uploadAndInsertImages(files).catch((error) => {
+        console.error("Failed to upload images", error);
+        toast.error("Failed to upload image.");
+      });
+      return true;
+    }
+
+    const removeDrop = editor.registerCommand(
       DROP_COMMAND,
-      (event) => {
-        const files = extractImageFiles(event);
-        if (files.length === 0) {
-          return false;
-        }
-
-        event.preventDefault();
-        void uploadAndInsertImages(files).catch((error) => {
-          console.error("Failed to upload dropped images", error);
-          toast.error("Failed to upload dropped image.");
-        });
-        return true;
-      },
+      handleImageTransfer,
       COMMAND_PRIORITY_HIGH,
     );
-  }, [editor, uploadAndInsertImages]);
-
-  React.useEffect(() => {
-    return editor.registerCommand(
+    const removePaste = editor.registerCommand(
       PASTE_COMMAND,
-      (event) => {
-        const files = extractImageFiles(event);
-        if (files.length === 0) {
-          return false;
-        }
-
-        event.preventDefault();
-        void uploadAndInsertImages(files).catch((error) => {
-          console.error("Failed to upload pasted images", error);
-          toast.error("Failed to upload pasted image.");
-        });
-        return true;
-      },
+      handleImageTransfer,
       COMMAND_PRIORITY_HIGH,
     );
+
+    return () => {
+      removeDrop();
+      removePaste();
+    };
   }, [editor, uploadAndInsertImages]);
 
   return null;
