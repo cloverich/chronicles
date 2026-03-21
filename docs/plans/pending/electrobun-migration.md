@@ -170,7 +170,7 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 **Steps:**
 
 1. **QA in dev mode:** Launch `electrobun dev` + Vite, test all features against checklist
-2. **Fix `chronicles://` protocol:** Replace with RPC + data URLs for images and base64 fonts
+2. **Replace `chronicles://` protocol:** Local HTTP file server (see design below)
 3. **Configure Electrobun build:** `electrobun build --env=stable`, bundled assets, Drizzle migrations
 4. **Code signing:** `build.mac.codesign: true` in `electrobun.config.ts`
 5. **Test production build:** App launches from built bundle, all features work
@@ -200,6 +200,79 @@ All modules ported to Drizzle ORM + bun:sqlite: journals, documents, tags, prefe
 - [ ] Startup time < 100ms
 
 **Docs needed:** Electrobun Build & Distribute
+
+---
+
+## Local File Server Design (chronicles:// replacement)
+
+### Background
+
+Electron served local files (images, fonts) via a custom `chronicles://` protocol handler. Electrobun wraps WKWebView and doesn't expose `WKURLSchemeHandler` for custom URL schemes. The idiomatic alternative across frameworks is a custom protocol, but since Electrobun doesn't offer one, we use a localhost HTTP server on Bun.
+
+### Architecture
+
+The Bun main process starts a local HTTP file server on app launch. The renderer uses `http://localhost:{port}/` URLs where it previously used `chronicles://` URLs.
+
+```
+Bun main process
+  ├── Electrobun BrowserWindow (webview)
+  └── Bun.serve() on localhost:{dynamic_port}
+        ├── GET /attachments/{path} → notesDir/_attachments/{path}
+        └── GET /fonts/{path}       → settingsDir/fonts/{path}
+```
+
+### Port selection
+
+Use port 0 to let the OS assign an available port. Pass the resolved port to the renderer via RPC on startup (e.g. `rpc.request.getFileServerPort()` or inject as a global before page load).
+
+```typescript
+const server = Bun.serve({
+  port: 0, // OS assigns available port
+  fetch(req) {
+    /* ... */
+  },
+});
+const port = server.port; // actual assigned port
+```
+
+### URL translation
+
+`src/hooks/images.tsx` currently does:
+
+```typescript
+// Before (Electron):  chronicles://../_attachments/foo.png
+// After (Electrobun): http://localhost:{port}/attachments/foo.png
+```
+
+The `prefixUrl()` / `unPrefixUrl()` functions change to use the HTTP base URL. On disk, markdown files continue to store relative paths (`../_attachments/foo.png`). The translation is render-time only.
+
+### Security
+
+1. **Bind to localhost only** — not reachable from the network
+2. **Path validation** — same directory traversal checks as the Electron handler: resolve the path, verify it's within the allowed base directory
+3. **Allowlisted prefixes only** — only `/attachments/` and `/fonts/` are routed; everything else returns 404
+4. **CORS** — set `Access-Control-Allow-Origin` to the Vite dev server origin (dev) or the webview origin (prod)
+
+### CSP
+
+Update Content Security Policy to allow `http://localhost:*` in `img-src`, `media-src`, `font-src` instead of `chronicles://*`.
+
+### Renderer integration
+
+The renderer needs to know the server port. Options:
+
+- **RPC on startup:** `window.chronicles.getFileServerPort()` — simplest, already have the RPC channel
+- **Injected global:** Set `window.__CHRONICLES_FILE_SERVER_PORT__` before the page loads
+
+Then `prefixUrl()` builds URLs like `http://localhost:${port}/attachments/${relativePath}`.
+
+### Video
+
+Video serving is P1/P2 — not a ship blocker. Video doesn't work well in the current Electron build either (seeking broken on `registerFileProtocol`). When we do implement it, the HTTP server naturally supports `Range` requests for video seeking, which is actually an improvement over the Electron protocol handler.
+
+### Font serving
+
+Fonts currently use `chronicles://../_settings/fonts/` URLs in a generated `fonts.css` stylesheet. With the HTTP server, `fonts.css` generation changes to emit `http://localhost:{port}/fonts/` URLs instead. Or: inject font data as base64 `@font-face` blocks via RPC at startup (avoids server dependency for fonts). Either approach works.
 
 ---
 
@@ -259,7 +332,7 @@ The migration end-state is **deletion, not refactoring** — when Electrobun pas
 
 1. ~~**Knex + bun:sqlite:**~~ **Resolved.** Knex has no bun:sqlite support. We chose Drizzle ORM (`drizzle-orm/bun-sqlite`). Phase 1 is complete with 106/106 tests passing.
 
-2. **`chronicles://` protocol:** ~~How does Electrobun handle custom URL schemes / local file serving in webviews?~~ **Resolved:** There is no `registerFileProtocol` equivalent. `urlSchemes` in `electrobun.config.ts` is deep-link only (external app-launch URLs). The solution is RPC + data URLs: images are fetched via RPC and displayed as `data:` URLs (Lexical controls rendering); fonts are fetched via RPC at startup and injected as `<style>` blocks with base64 `@font-face` data. See `docs/vendor/electrobun/browser-view-window.md` for details.
+2. **`chronicles://` protocol:** ~~How does Electrobun handle custom URL schemes / local file serving in webviews?~~ **Resolved:** There is no `registerFileProtocol` equivalent. Electrobun doesn't expose `WKURLSchemeHandler` to user code. Solution: local HTTP file server on Bun (see design below).
 
 ---
 
