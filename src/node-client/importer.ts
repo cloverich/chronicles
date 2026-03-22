@@ -11,10 +11,6 @@ import {
 import { SourceType } from "../preload/client/importer/SourceType";
 import { parseTitleAndFrontMatterForImport } from "../preload/client/importer/frontmatter";
 import {
-  MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
-  validateJournalName,
-} from "../preload/client/journals";
-import {
   FrontMatter,
   SKIPPABLE_FILES,
   SKIPPABLE_PREFIXES,
@@ -25,6 +21,10 @@ import type { IDocumentsClient } from "./documents";
 import type { NodeFilesClient } from "./files";
 import { FilesImportResolver } from "./files-import-resolver";
 import type { IIndexerClient } from "./indexer";
+import {
+  MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
+  validateJournalName,
+} from "./journals";
 import type { PreferencesClient } from "./preferences";
 import * as schema from "./schema";
 
