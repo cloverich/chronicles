@@ -13,7 +13,7 @@
     "postinstall": "yarn run electron-rebuild",
     "prebuild": "yarn run lint:check && node ./scripts/icons.js",
     "start": "node ./scripts/dev.mjs",
-    "test": "vitest run && node --import tsx --test 'src/node-client/*.test.ts'",
+    "test": "vitest run && npm rebuild better-sqlite3 --build-from-source 2>/dev/null && node --import tsx --test 'src/node-client/*.test.ts'",
     "test:watch": "vitest",
     "test:node-client": "node --import tsx --test 'src/node-client/*.test.ts'",
     "test:rebuild": "npm rebuild better-sqlite3 --build-from-source 2>/dev/null; vitest run && node --import tsx --test 'src/node-client/*.test.ts'; yarn run electron-rebuild 2>/dev/null",
