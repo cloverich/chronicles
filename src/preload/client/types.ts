@@ -1,24 +1,22 @@
-import { Knex } from "knex";
-import { IBulkOperationsClient } from "./bulk-operations";
-import { IDocumentsClient } from "./documents";
-import { IFilesClient } from "./files";
-import { IImporterClient } from "./importer";
-import { IIndexerClient } from "./indexer";
-import { IJournalsClient } from "./journals";
-import { IPreferencesClient } from "./preferences";
-import { ITagsClient } from "./tags";
+import { IBulkOperationsClient } from "../../node-client/bulk-operations";
+import { IDocumentsClient } from "../../node-client/documents";
+import { NodeFilesClient } from "../../node-client/files";
+import { IImporterClient } from "../../node-client/importer";
+import { IIndexerClient } from "../../node-client/indexer";
+import { IJournalsClient } from "../../node-client/journals";
+import { IPreferencesClient } from "../../node-client/preferences";
+import { ITagsClient } from "../../node-client/tags";
 
 // This interface was created with these "I" types like this
 // so non-preload code could import this type without the bundler
 // trying (and failing) to bundle unrelated preload code, which expects
 // to be run in a node environment.
 export interface IClient {
-  knex: Knex;
   journals: IJournalsClient;
   tags: ITagsClient;
   documents: IDocumentsClient;
   preferences: IPreferencesClient;
-  files: IFilesClient;
+  files: NodeFilesClient;
   indexer: IIndexerClient;
   importer: IImporterClient;
   bulkOperations: IBulkOperationsClient;

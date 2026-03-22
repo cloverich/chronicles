@@ -1,5 +1,5 @@
 import React from "react";
-import { TagWithCount } from "../preload/client/tags";
+import { TagWithCount } from "../node-client/tags";
 import useClient from "./useClient";
 
 /**

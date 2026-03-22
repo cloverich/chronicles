@@ -143,7 +143,7 @@ function EditorInner({
   switch (selectedViewMode) {
     case EditorMode.Editor:
       return (
-        <PlateContainer
+        <EditorLayout
           document={document}
           journals={journals}
           goBack={goBack}
@@ -153,7 +153,7 @@ function EditorInner({
       );
     case EditorMode.Lexical:
       return (
-        <EditorLayout
+        <PlateContainer
           document={document}
           journals={journals}
           goBack={goBack}

@@ -1,29 +1,34 @@
-import { Knex } from "knex";
-import path from "path";
-import { PathStatsFile, walk } from "../utils/fs-utils";
-import { IDocumentsClient } from "./documents";
-import { IFilesClient } from "./files";
-import { IIndexerClient } from "./indexer";
-import {
-  MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
-  validateJournalName,
-} from "./journals";
-import { IPreferencesClient } from "./preferences";
-import { FrontMatter, SKIPPABLE_FILES, SKIPPABLE_PREFIXES } from "./types";
-
+import { and, count, eq, ne } from "drizzle-orm";
+import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as mdast from "mdast";
-
-export type IImporterClient = ImporterClient;
+import path from "path";
 
 import {
   isNoteLink,
   mdastToString,
   parseMarkdownForImportProcessing,
-} from "../../markdown";
-import { FilesImportResolver } from "./importer/FilesImportResolver";
-import { SourceType } from "./importer/SourceType";
-import { parseTitleAndFrontMatterForImport } from "./importer/frontmatter";
-import { createId } from "./util";
+} from "../markdown";
+import { SourceType } from "../preload/client/importer/SourceType";
+import { parseTitleAndFrontMatterForImport } from "../preload/client/importer/frontmatter";
+import {
+  FrontMatter,
+  SKIPPABLE_FILES,
+  SKIPPABLE_PREFIXES,
+} from "../preload/client/types";
+import { createId } from "../preload/client/util";
+import { PathStatsFile, walk } from "../preload/utils/fs-utils";
+import type { IDocumentsClient } from "./documents";
+import type { NodeFilesClient } from "./files";
+import { FilesImportResolver } from "./files-import-resolver";
+import type { IIndexerClient } from "./indexer";
+import {
+  MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
+  validateJournalName,
+} from "./journals";
+import type { PreferencesClient } from "./preferences";
+import * as schema from "./schema";
+
+export type IImporterClient = ImporterClient;
 
 // UUID in Notion notes look like 32 character hex strings; make this somewhat more lenient
 const hexIdRegex = /\b[0-9a-f]{16,}\b/;
@@ -79,23 +84,25 @@ interface StagedNote {
 
 export class ImporterClient {
   constructor(
-    private knex: Knex,
+    private db: BetterSQLite3Database<typeof schema>,
     private documents: IDocumentsClient,
-    private files: IFilesClient,
-    private preferences: IPreferencesClient,
+    private files: NodeFilesClient,
+    private preferences: PreferencesClient,
     private indexer: IIndexerClient,
+    private notesDir: string,
   ) {}
 
   processPending = async () => {
-    const pendingImports = await this.knex("imports").where({
-      status: "pending",
-    });
+    const pendingImports = await this.db
+      .select()
+      .from(schema.imports)
+      .where(eq(schema.imports.status, "pending"));
 
     for (const pendingImport of pendingImports) {
       await this.processStagedNotes(
-        await this.ensureRoot(),
+        this.notesDir,
         SourceType.Other,
-        new FilesImportResolver(this.knex, pendingImport.id, this.files),
+        new FilesImportResolver(this.db, pendingImport.id, this.files),
       );
     }
   };
@@ -119,7 +126,7 @@ export class ImporterClient {
 
     await this.clearIncomplete();
     const importerId = createId();
-    const chroniclesRoot = await this.ensureRoot();
+    const chroniclesRoot = this.notesDir;
 
     // Ensure `importDir` is a directory and can be accessed
     await this.files.ensureDir(importDir);
@@ -134,7 +141,7 @@ export class ImporterClient {
     // track, so if we have errors and want to re-run to fix remaining pending items,
     // we can. This is mostly for debugging.
     try {
-      await this.knex("imports").insert({
+      await this.db.insert(schema.imports).values({
         id: importerId,
         status: "pending",
         importDir,
@@ -146,7 +153,7 @@ export class ImporterClient {
 
     // todo: also create a NotesImportResolver to handle note links rather than mixing
     // into this importer class
-    const resolver = new FilesImportResolver(this.knex, importerId, this.files);
+    const resolver = new FilesImportResolver(this.db, importerId, this.files);
 
     // stage all notes and files in the import directory for processing.
     // we do this in two steps so we can generate mappings of source -> dest
@@ -277,7 +284,7 @@ export class ImporterClient {
         stagedNote.sourceId = notionId;
       }
 
-      await this.knex("import_notes").insert(stagedNote);
+      await this.db.insert(schema.importNotes).values(stagedNote);
     } catch (e) {
       // todo: this error handler is too big
       if ((e as any).code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
@@ -287,18 +294,18 @@ export class ImporterClient {
         // that is too long, or a front-matter key that is not supported, etc, user
         // can use table logs to fix and re-run th e import
         try {
-          await this.knex("import_notes").insert({
+          await this.db.insert(schema.importNotes).values({
             importerId,
             sourcePath: file.path,
             content: contents,
-            error: (e as any).message,
+            error: (e as Error).message || "staging_error",
 
             // note: these all have non-null / unique constraints;
             // its expected re-processing will delete / replace these values
             chroniclesId: createId(),
             chroniclesPath: "staging_error",
             journal: "staging_error",
-            frontMatter: {},
+            frontMatter: "{}",
             status: "staging_error",
           });
         } catch (err) {
@@ -314,71 +321,105 @@ export class ImporterClient {
     sourceType: SourceType,
     resolver: FilesImportResolver,
   ) => {
-    await this.ensureRoot();
-    const { id: importerId, importDir } = await this.knex("imports")
-      .where({
-        status: "pending",
-      })
-      .first();
+    const [pendingImport] = await this.db
+      .select({ id: schema.imports.id, importDir: schema.imports.importDir })
+      .from(schema.imports)
+      .where(eq(schema.imports.status, "pending"))
+      .limit(1);
 
-    if (!importerId) {
+    if (!pendingImport) {
       console.log("No pending imports");
       return;
-    } else {
-      console.log("Processing import", importerId, importDir);
     }
 
-    const linkMapping = await this.noteLinksMapping(importerId);
-    const wikiLinkMapping = await this.noteLinksWikiMapping(importerId);
+    const { id: importerId, importDir } = pendingImport;
+    console.log("Processing import", importerId, importDir);
 
-    const items = await this.knex<StagedNote>("import_notes").where({
-      importerId,
-      status: "pending",
-    });
+    const { linkMapping, wikiLinkMapping } =
+      await this.buildLinkMappings(importerId);
 
-    for await (const item of items) {
-      const frontMatter: FrontMatter = JSON.parse(item.frontMatter);
+    const items = await this.db
+      .select()
+      .from(schema.importNotes)
+      .where(
+        and(
+          eq(schema.importNotes.importerId, importerId),
+          eq(schema.importNotes.status, "pending"),
+        ),
+      );
 
-      // note: At this stage, we parse ofmTags and ofmWikilinks, to convert them to
-      // Chronicles tags and markdown links; they are not supported natively in Chronicles
-      // as of now.
-      const mdast = parseMarkdownForImportProcessing(
-        item.content,
+    // Track which journals have been ensured to avoid redundant DB/FS work
+    const ensuredJournals = new Set<string>();
+
+    // First pass: update all file links in notes (marks files as "referenced")
+    const mdastTrees = new Map<string, mdast.Root>();
+
+    for (const item of items) {
+      const mdastTree = parseMarkdownForImportProcessing(
+        item.content!,
       ) as any as mdast.Root;
-      await this.updateNoteLinks(mdast, item, linkMapping, wikiLinkMapping);
+      await this.updateNoteLinks(
+        mdastTree,
+        item as StagedNote,
+        linkMapping,
+        wikiLinkMapping,
+      );
+      await resolver.updateFileLinks(item.sourcePath, mdastTree);
+      mdastTrees.set(item.sourcePath, mdastTree);
+    }
 
-      // NOTE: A bit hacky: When we update file links, we also mark the file as referenced
-      // Then, we only move (copy) referenced files, and mark the remainder as orphaned.
-      // So these two calls must go in order:
-      await resolver.updateFileLinks(item.sourcePath, mdast);
-      await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
+    // Move all referenced files in one batch, then mark orphans
+    await resolver.moveStagedFiles(chroniclesRoot, importerId, importDir);
 
-      this.convertWikiLinks(mdast);
+    // Second pass: convert wiki nodes, extract tags, create documents
+    for (const item of items) {
+      const mdastTree = mdastTrees.get(item.sourcePath)!;
+      const frontMatter: FrontMatter = JSON.parse(item.frontMatter!);
+
+      this.convertWikiLinks(mdastTree);
 
       // process inline tags into front matter
       frontMatter.tags = Array.from(
-        new Set(this.processAndConvertTags(mdast, frontMatter.tags || [])),
+        new Set(this.processAndConvertTags(mdastTree, frontMatter.tags || [])),
       );
 
       // with updated links we can now save the document
       try {
-        const [id, docPath] = await this.documents.createDocument(
-          {
-            id: item.chroniclesId,
-            journal: item.journal, // using name as id
-            content: mdastToString(mdast),
-            frontMatter,
-          },
-          false, // don't index; we call indexer.index() after import
-        );
+        // Ensure journal row exists in DB (FK constraint) before inserting document.
+        if (!ensuredJournals.has(item.journal)) {
+          await this.ensureJournal(item.journal);
+          ensuredJournals.add(item.journal);
+        }
 
-        await this.knex<StagedNote>("import_notes")
-          .where({ importerId: item.importerId, sourcePath: item.sourcePath })
-          .update({ status: "note_created", error: null });
+        await this.documents.createDocument({
+          id: item.chroniclesId,
+          journal: item.journal, // using name as id
+          content: mdastToString(mdastTree),
+          frontMatter,
+        });
+
+        await this.db
+          .update(schema.importNotes)
+          .set({ status: "note_created", error: null })
+          .where(
+            and(
+              eq(schema.importNotes.importerId, item.importerId),
+              eq(schema.importNotes.sourcePath, item.sourcePath),
+            ),
+          );
       } catch (err: any) {
-        await this.knex<StagedNote>("import_notes")
-          .where({ importerId: item.importerId, sourcePath: item.sourcePath })
-          .update({ status: "processing_error", error: err.message });
+        await this.db
+          .update(schema.importNotes)
+          .set({
+            status: "processing_error",
+            error: (err as Error).message || "processing_error",
+          })
+          .where(
+            and(
+              eq(schema.importNotes.importerId, item.importerId),
+              eq(schema.importNotes.sourcePath, item.sourcePath),
+            ),
+          );
         // todo: pre-validate ids are unique
         // https://github.com/cloverich/chronicles/issues/248
         console.error(
@@ -390,22 +431,52 @@ export class ImporterClient {
     }
 
     // check for errors
-    const { error_count } = (await this.knex("import_notes")
-      .where({ importerId })
-      .whereIn("status", ["processing_error", "create_error"])
-      .count({ error_count: "*" })
-      .first())!;
+    const [errorResult] = await this.db
+      .select({ error_count: count() })
+      .from(schema.importNotes)
+      .where(
+        and(
+          eq(schema.importNotes.importerId, importerId),
+          eq(schema.importNotes.status, "processing_error"),
+        ),
+      );
+
+    const error_count = errorResult?.error_count ?? 0;
 
     console.log("import completed; errors count:", error_count);
     if (!error_count) {
-      await this.knex("imports")
-        .where({ id: importerId })
-        .update({ status: "complete" });
+      await this.db
+        .update(schema.imports)
+        .set({ status: "complete" })
+        .where(eq(schema.imports.id, importerId));
     }
 
     console.log("import complete; calling indexer to update indexes");
 
     await this.indexer.index(true);
+  };
+
+  // Ensure a journal row exists in the DB before inserting a document that references it.
+  // During import, journals are inferred from folder names and may not yet exist in the DB.
+  // The indexer will later reconcile journal rows with the filesystem, so this just ensures
+  // the FK constraint is satisfied.
+  private ensureJournal = async (journalName: string) => {
+    const timestamp = new Date().toISOString();
+    await this.db
+      .insert(schema.journals)
+      .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
+      .onConflictDoNothing();
+
+    // Ensure the journal directory exists on disk
+    const journalDir = `${this.notesDir}/${journalName}`;
+    await this.files.ensureDir(journalDir);
+
+    // Track in preferences (archivedJournals) if not already present
+    const archived: Record<string, boolean> =
+      (await this.preferences.get("archivedJournals")) ?? {};
+    if (!(journalName in archived)) {
+      await this.preferences.set(`archivedJournals.${journalName}`, false);
+    }
   };
 
   // probably shouldn't make it to final version
@@ -414,9 +485,9 @@ export class ImporterClient {
   // 2. Run this command
   // 3. Re-run import
   clearImportTables = async () => {
-    await this.knex("import_notes").delete();
-    await this.knex("import_files").delete();
-    await this.knex("imports").delete();
+    await this.db.delete(schema.importNotes);
+    await this.db.delete(schema.importFiles);
+    await this.db.delete(schema.imports);
   };
 
   // todo: optionally allow re-importing form a specific import directory by clearing
@@ -425,59 +496,48 @@ export class ImporterClient {
   // Clear errored or stuck notes so re-import can be attempted; all notes that
   // are not in the 'note_created' state are deleted.
   clearIncomplete = async () => {
-    await this.knex("import_notes").not.where({ status: "note_created" }).del();
+    await this.db
+      .delete(schema.importNotes)
+      .where(ne(schema.importNotes.status, "note_created"));
   };
 
-  // Pull all staged notes and generate a mapping of original file path
-  // (sourcePath) to the new file path (chroniclesPath). This is used to update
-  // links in the notes after they are moved.
-  private noteLinksMapping = async (importerId: string) => {
-    try {
-      let linkMapping: Record<
-        string,
-        { journal: string; chroniclesId: string }
-      > = {};
+  // Build both link mappings (sourcePath→dest and title→dest) in a single query.
+  private buildLinkMappings = async (importerId: string) => {
+    const linkMapping: Record<
+      string,
+      { journal: string; chroniclesId: string }
+    > = {};
+    const wikiLinkMapping: Record<
+      string,
+      { journal: string; chroniclesId: string }
+    > = {};
 
-      const importedItems = await this.knex("import_notes")
-        .where({ importerId })
-        .select("sourcePath", "journal", "chroniclesId");
-
-      for (const item of importedItems) {
-        if ("error" in item && item.error) continue;
-        const { journal, chroniclesId, sourcePath } = item;
-        linkMapping[sourcePath] = { journal, chroniclesId };
-      }
-
-      return linkMapping;
-    } catch (err) {
-      console.error("Error generating link mappings", err);
-      throw err;
-    }
-  };
-
-  // Pull all staged notes and generate a mapping of original note title
-  // to the new file path (chroniclesPath). This is used to update
-  // wikilinks that point to other notes to chronicles-style markdown links.
-  private noteLinksWikiMapping = async (importerId: string) => {
-    let linkMapping: Record<string, { journal: string; chroniclesId: string }> =
-      {};
-
-    const importedItems = await this.knex("import_notes")
-      .where({ importerId })
-      .select("frontMatter", "journal", "chroniclesId", "error");
+    const importedItems = await this.db
+      .select({
+        sourcePath: schema.importNotes.sourcePath,
+        frontMatter: schema.importNotes.frontMatter,
+        journal: schema.importNotes.journal,
+        chroniclesId: schema.importNotes.chroniclesId,
+        error: schema.importNotes.error,
+      })
+      .from(schema.importNotes)
+      .where(eq(schema.importNotes.importerId, importerId));
 
     for (const item of importedItems) {
-      if ("error" in item && item.error) continue;
-      const { journal, chroniclesId } = item;
-      const title = JSON.parse(item.frontMatter).title;
-      linkMapping[title] = { journal, chroniclesId };
+      if (item.error) continue;
+      const { journal, chroniclesId, sourcePath } = item;
+      linkMapping[sourcePath] = { journal, chroniclesId };
+      const title = JSON.parse(item.frontMatter!).title;
+      if (title) {
+        wikiLinkMapping[title] = { journal, chroniclesId };
+      }
     }
 
-    return linkMapping;
+    return { linkMapping, wikiLinkMapping };
   };
 
   private updateNoteLinks = async (
-    mdast: mdast.Root | mdast.Content,
+    mdastNode: mdast.Root | mdast.Content,
     item: StagedNote,
     // mapping of sourcePath to new journal and chroniclesId
     linkMapping: Record<string, { journal: string; chroniclesId: string }>,
@@ -485,8 +545,8 @@ export class ImporterClient {
     linkMappingWiki: Record<string, { journal: string; chroniclesId: string }>,
   ) => {
     // todo: update links that point to local files
-    if (isNoteLink(mdast as mdast.RootContent)) {
-      const url = decodeURIComponent((mdast as mdast.Link).url);
+    if (isNoteLink(mdastNode as mdast.RootContent)) {
+      const url = decodeURIComponent((mdastNode as mdast.Link).url);
       const sourceFolderPath = path.dirname(item.sourcePath);
       const sourceUrlResolved = path.resolve(sourceFolderPath, url);
       const mapped = linkMapping[sourceUrlResolved];
@@ -494,37 +554,26 @@ export class ImporterClient {
       // came up only once in my 400 notes when the linked file did not exist1
       if (!mapped) return;
 
-      mdast.url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
+      (mdastNode as mdast.Link).url =
+        `../${mapped.journal}/${mapped.chroniclesId}.md`;
     }
 
-    if (mdast.type === "ofmWikilink") {
-      const title = mdast.value;
+    if (mdastNode.type === "ofmWikilink") {
+      const title = (mdastNode as any).value;
       const mapped = linkMappingWiki[title];
 
       if (!mapped) return;
 
       // NOTE: This updates the url, but assumes the node type
       // will be converted to regular link in later step
-      mdast.url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
+      (mdastNode as any).url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
     }
 
-    if ("children" in mdast) {
-      for (const child of mdast.children as any) {
+    if ("children" in mdastNode) {
+      for (const child of mdastNode.children as any) {
         this.updateNoteLinks(child, item, linkMapping, linkMappingWiki);
       }
     }
-  };
-
-  private ensureRoot = async () => {
-    const chroniclesRoot = await this.preferences.get("notesDir");
-
-    // Sanity check this is set first, because I'm hacking a lot of stuff together
-    // in tiny increments, many things bound to get mixed up
-    if (!chroniclesRoot || typeof chroniclesRoot !== "string") {
-      throw new Error("No chronicles root directory set");
-    }
-
-    return chroniclesRoot;
   };
 
   /**
@@ -648,20 +697,22 @@ export class ImporterClient {
 
   // note: This assumes the mdast.url property of wikiembedding / link is already
   // updated by the updateFileLinks routine.
-  private convertWikiLinks = (mdast: mdast.Content | mdast.Root) => {
+  private convertWikiLinks = (mdastNode: mdast.Content | mdast.Root) => {
     // todo: also handle ofmWikiLink
-    if (mdast.type === "ofmWikiembedding") {
+    if (mdastNode.type === "ofmWikiembedding") {
       // todo: figure out what to do about hash
-      (mdast as any).type = "image";
-      mdast.title = mdast.value;
-      mdast.alt = mdast.value;
-      mdast.url = mdast.url;
-    } else if (mdast.type === "ofmWikilink") {
-      mdast.children = [{ type: "text", value: mdast.value }];
-      (mdast as any).type = "link";
+      (mdastNode as any).type = "image";
+      (mdastNode as any).title = (mdastNode as any).value;
+      (mdastNode as any).alt = (mdastNode as any).value;
+      // url is already set by updateFileLinks
+    } else if (mdastNode.type === "ofmWikilink") {
+      (mdastNode as any).children = [
+        { type: "text", value: (mdastNode as any).value },
+      ];
+      (mdastNode as any).type = "link";
     } else {
-      if ("children" in mdast) {
-        for (const child of mdast.children as any) {
+      if ("children" in mdastNode) {
+        for (const child of mdastNode.children as any) {
           this.convertWikiLinks(child);
         }
       }
@@ -673,18 +724,18 @@ export class ImporterClient {
   // Chronicles does not (yet) natively support inline tags
   // todo(test): Tag with #hash remains in document; tag without hash is stored in db
   private processAndConvertTags = (
-    mdast: mdast.Content | mdast.Root,
+    mdastNode: mdast.Content | mdast.Root,
     tags: string[] = [],
   ): string[] => {
-    if (mdast.type === "ofmTag") {
-      (mdast as any).type = "text";
-      const tag = mdast.value; // without hash
-      mdast.value = `#${mdast.value}`;
+    if (mdastNode.type === "ofmTag") {
+      (mdastNode as any).type = "text";
+      const tag = (mdastNode as any).value; // without hash
+      (mdastNode as any).value = `#${(mdastNode as any).value}`;
       tags.push(tag);
       return tags;
     } else {
-      if ("children" in mdast) {
-        for (const child of mdast.children as any[]) {
+      if ("children" in mdastNode) {
+        for (const child of mdastNode.children as any[]) {
           this.processAndConvertTags(child, tags);
         }
       }

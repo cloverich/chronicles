@@ -1,5 +1,13 @@
 # Electrobun Migration Plan
 
+## Status: Deferred
+
+**2025-03-21:** Electrobun is not mature enough for production use (WKWebView CSP quirks, fetch binary body issues, general immaturity). Pivoting back to Electron with a modernized backend. See [electron-modernization.md](../active/electron-modernization.md).
+
+The bun-client work (Phase 1) was successful and has been ported to a node-client for Electron. Phases 2-6 are deferred indefinitely.
+
+---
+
 ## Context
 
 Chronicles needs a CLI callable by LLMs. Electron can't serve as a CLI runtime — it's too heavy and not designed for it. Running the backend on Node.js directly requires transpilation and end users need Node installed. Bun solves this: `bun build --compile` produces a standalone binary with ~50ms startup and built-in SQLite.

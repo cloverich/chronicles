@@ -10,7 +10,7 @@ import { JournalResponse } from "../../../hooks/useClient";
 import { useIsMounted } from "../../../hooks/useIsMounted";
 import { useJournals } from "../../../hooks/useJournals";
 import { cn } from "../../../lib/utils";
-import { JournalWithCount } from "../../../preload/client/journals";
+import { JournalWithCount } from "../../../node-client/journals";
 import { SidebarStore } from "./store";
 
 export function JournalCreateForm({ done }: { done: () => any }) {

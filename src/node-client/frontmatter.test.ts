@@ -1,0 +1,299 @@
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
+import { dedent } from "../dedent";
+import { SourceType } from "../preload/client/importer/SourceType";
+import { parseTitleAndFrontMatterForImport } from "../preload/client/importer/frontmatter";
+
+const cases = {
+  [SourceType.Notion]: [
+    {
+      name: "Title and simple front matter with no special characters",
+      input: dedent(
+        `
+      # My First Note
+
+      Created By: Johnny Cage
+      Last Edited: July 20, 2023 12:00 PM
+      Category: personal
+      createdAt: January 1, 2021
+      published: Yes
+
+      This is the body of the document.`.trim(),
+      ),
+      expected: {
+        title: "My First Note",
+        frontMatter: {
+          title: "My First Note",
+          tags: [],
+          "Created By": "Johnny Cage",
+          Category: "personal",
+          createdAt: "2021-01-01T00:00:00.000Z",
+          published: "Yes",
+          updatedAt: "2023-07-20T12:00:00.000Z",
+        },
+        body: "This is the body of the document.",
+      },
+    },
+    {
+      name: "Title with no front matter",
+      input: dedent(
+        `
+      # Another Note
+
+      This document has no front matter, just content.`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "Another Note",
+          tags: [],
+        },
+        body: "This document has no front matter, just content.",
+      },
+    },
+    {
+      name: "Title with front matter missing values",
+      input: dedent(
+        `
+      # Empty Values
+
+      Created By:
+      Last Edited:
+      tags:
+      createdAt:
+      published:
+
+      Content for this note goes here.`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "Empty Values",
+          "Created By": null,
+          "Last Edited": null,
+          tags: [],
+          published: "",
+        },
+        body: "Content for this note goes here.",
+      },
+    },
+    {
+      name: "No front matter, colon in the body",
+      input: dedent(
+        `
+      # Notion title + colon in body
+
+      Body content has a colon: in it!`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "Notion title + colon in body",
+          tags: [],
+        },
+        body: "Body content has a colon: in it!",
+      },
+    },
+    {
+      name: "Front matter, colon in the body",
+      input: dedent(
+        `
+      # Notion title + front matter + colon in body
+
+      Created By: Johnny Cage
+      Last Edited: July 20, 2023 12:00 PM
+      Category: personal
+      createdAt: January 1, 2021
+      published: Yes
+
+      Body content has a colon: in it!`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "Notion title + front matter + colon in body",
+          tags: [],
+          "Created By": "Johnny Cage",
+          updatedAt: "2023-07-20T12:00:00.000Z",
+          Category: "personal",
+          createdAt: "2021-01-01T00:00:00.000Z",
+          published: "Yes",
+        },
+        body: "Body content has a colon: in it!",
+      },
+    },
+    {
+      name: "Front matter, no body (common in Notion databases)",
+      input: dedent(
+        `
+      # Notion title + front matter + no body
+
+      Created By: Johnny Cage
+      Last Edited: July 20, 2023 12:00 PM
+      Category: personal
+      createdAt: January 1, 2021
+      published: Yes`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "Notion title + front matter + no body",
+          tags: [],
+          "Created By": "Johnny Cage",
+          updatedAt: "2023-07-20T12:00:00.000Z",
+          Category: "personal",
+          createdAt: "2021-01-01T00:00:00.000Z",
+          published: "Yes",
+        },
+        body: "",
+      },
+    },
+    {
+      name: "No title, front matter has special characters",
+      input: dedent(
+        `
+      Created By: Jane Doe
+      Last Edited: July 20, 2023 12:00 PM
+      Category: "work, personal"
+      createdAt: January 1, 2021 8:30 AM
+      published: No
+
+      Body starts here and has no title.`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "",
+          tags: [],
+        },
+        body: dedent(
+          `
+        Created By: Jane Doe
+        Last Edited: July 20, 2023 12:00 PM
+        Category: "work, personal"
+        createdAt: January 1, 2021 8:30 AM
+        published: No
+
+        Body starts here and has no title.`.trim(),
+        ),
+      },
+    },
+  ],
+  [SourceType.Other]: [
+    {
+      name: "Title, tags (JSON aray syntax), body",
+      input: dedent(
+        `
+      ---
+      title: What chronicles was
+      tags: [tags, thesixthprototype]
+      createdAt: 2024-06-30T14:19:17.801Z
+      updatedAt: 2024-07-02T04:52:50.639Z
+      ---
+
+      foo`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "What chronicles was",
+          tags: ["tags", "thesixthprototype"],
+          createdAt: "2024-06-30T14:19:17.801Z",
+          updatedAt: "2024-07-02T04:52:50.639Z",
+        },
+        body: "foo\n",
+      },
+    },
+    {
+      name: "Title, tags (YAML aray syntax), body",
+      input: dedent(
+        `
+      ---
+      title: What chronicles was
+      tags:
+        - mytag
+        - thesixthprototype
+      createdAt: 2024-06-30T14:19:17.801Z
+      updatedAt: 2024-07-02T04:52:50.639Z
+      ---
+
+      foo`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "What chronicles was",
+          tags: ["mytag", "thesixthprototype"],
+          createdAt: "2024-06-30T14:19:17.801Z",
+          updatedAt: "2024-07-02T04:52:50.639Z",
+        },
+        body: "foo\n",
+      },
+    },
+    {
+      name: "Title, tags, no body",
+      input: dedent(
+        `
+        ---
+        title: What chronicles was
+        tags:
+          - tags, thesixthprototype
+        createdAt: 2024-06-30T14:19:17.801Z
+        updatedAt: 2024-07-02T04:52:50.639Z
+        ---
+        `.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "What chronicles was",
+          // note: it doesnt fix old-style tags (comma-separated)
+          tags: ["tags, thesixthprototype"],
+          createdAt: "2024-06-30T14:19:17.801Z",
+          updatedAt: "2024-07-02T04:52:50.639Z",
+        },
+        body: "",
+      },
+    },
+    {
+      name: "tag + wikilink in body -> no error",
+      input: dedent(
+        `---
+        title: What chronicles was
+        ---
+
+        This is some content with a #tag and a [[wikilink]].`.trim(),
+      ),
+      expected: {
+        frontMatter: {
+          title: "What chronicles was",
+          tags: [],
+        },
+        body: "This is some content with a #tag and a [[wikilink]].\n",
+      },
+    },
+    {
+      name: "Empty contents",
+      input: "",
+      expected: {
+        frontMatter: {
+          title: "",
+          tags: [],
+        },
+        body: "",
+      },
+    },
+  ],
+};
+
+describe("Frontmatter parsing", () => {
+  for (const sourceType of Object.keys(cases)) {
+    describe(sourceType, () => {
+      for (const testCase of cases[sourceType as SourceType]) {
+        test(testCase.name, () => {
+          const parsed = parseTitleAndFrontMatterForImport(
+            dedent(testCase.input),
+            "",
+            sourceType as SourceType,
+          );
+          assert.deepStrictEqual(
+            parsed.frontMatter,
+            testCase.expected.frontMatter,
+          );
+          assert.deepStrictEqual(parsed.body, testCase.expected.body);
+        });
+      }
+    });
+  }
+});

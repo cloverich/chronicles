@@ -1,5 +1,5 @@
 import { contextBridge } from "electron";
-import { getClient } from "./client";
+import { getClient, initClient } from "./client";
 import "./utils.electron";
 import {
   deleteThemeByName,
@@ -16,6 +16,11 @@ import {
   selectThemeFile,
   setNativeTheme,
 } from "./utils.electron";
+
+// Kick off client initialization eagerly so it's ready when the renderer calls getClient()
+initClient().catch((err) => {
+  console.error("[chronicles] Failed to initialize client:", err);
+});
 
 contextBridge.exposeInMainWorld("chronicles", {
   getClient,

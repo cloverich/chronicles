@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { Dialog } from "../../../components/Dialog";
-import { BulkOperationType } from "../../../preload/client/bulk-operations";
+import { BulkOperationType } from "../../../node-client/bulk-operations";
 
 /**
  * Modal for selecting which bulk operation to perform

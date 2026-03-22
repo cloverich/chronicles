@@ -1,13 +1,19 @@
+import { and, eq } from "drizzle-orm";
+import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
-import { Knex } from "knex";
 import mdast from "mdast";
 import path from "path";
-import { isNoteLink } from "../../../markdown";
-import { mkdirp, PathStatsFile } from "../../utils/fs-utils";
-import { IFilesClient } from "../files";
-import { createId } from "../util";
+import { isNoteLink } from "../markdown/index";
+import { createId } from "../preload/client/util";
+import { PathStatsFile, mkdirp } from "../preload/utils/fs-utils";
+import * as schema from "./schema";
 
 const ATTACHMENTS_DIR = "_attachments";
+
+// Minimal interface — only the method FilesImportResolver needs
+export interface IFilesClientForImport {
+  copyFile(src: string, dest: string): Promise<string>;
+}
 
 // Manages the staging and moving of files during the import process, and
 // resolves file links in markdown notes to the chronicles path, so they can
@@ -20,12 +26,16 @@ const ATTACHMENTS_DIR = "_attachments";
 // 3. moveStagedFiles: Move all staged files to the chronicles directory, and update their status
 //  in the import_files table.
 export class FilesImportResolver {
-  private knex: Knex;
+  private db: BetterSQLite3Database<typeof schema>;
   private importerId: string;
-  private filesclient: IFilesClient;
+  private filesclient: IFilesClientForImport;
 
-  constructor(knex: Knex, importerId: string, filesclient: IFilesClient) {
-    this.knex = knex;
+  constructor(
+    db: BetterSQLite3Database<typeof schema>,
+    importerId: string,
+    filesclient: IFilesClientForImport,
+  ) {
+    this.db = db;
     this.importerId = importerId;
     this.filesclient = filesclient;
   }
@@ -37,10 +47,19 @@ export class FilesImportResolver {
     name: string,
   ): Promise<string | undefined> => {
     // check db for chronicles id matching name, if any
-    const result = await this.knex("import_files")
-      .where({ filename: name, importerId: this.importerId })
-      .select("chroniclesId", "extension")
-      .first()!;
+    const [result] = await this.db
+      .select({
+        chroniclesId: schema.importFiles.chroniclesId,
+        extension: schema.importFiles.extension,
+      })
+      .from(schema.importFiles)
+      .where(
+        and(
+          eq(schema.importFiles.filename, name),
+          eq(schema.importFiles.importerId, this.importerId),
+        ),
+      )
+      .limit(1);
 
     if (!result) return;
 
@@ -48,9 +67,10 @@ export class FilesImportResolver {
     const updatedPath = this.makeDestinationFilePath(chroniclesId, extension);
 
     if (updatedPath) {
-      await this.knex("import_files").where({ chroniclesId }).update({
-        status: "referenced",
-      });
+      await this.db
+        .update(schema.importFiles)
+        .set({ status: "referenced" })
+        .where(eq(schema.importFiles.chroniclesId, chroniclesId));
 
       return updatedPath;
     }
@@ -61,12 +81,16 @@ export class FilesImportResolver {
   // the next step).
   // /path/to/file.jpg -> ../_attachments/<chroniclesId>.jpg
   private resolveToChroniclesByPath = async (
-    path: string,
+    filePath: string,
   ): Promise<string | undefined> => {
-    const result = await this.knex("import_files")
-      .where({ sourcePathResolved: path })
-      .select("chroniclesId", "extension")
-      .first();
+    const [result] = await this.db
+      .select({
+        chroniclesId: schema.importFiles.chroniclesId,
+        extension: schema.importFiles.extension,
+      })
+      .from(schema.importFiles)
+      .where(eq(schema.importFiles.sourcePathResolved, filePath))
+      .limit(1);
 
     if (!result) return;
 
@@ -74,9 +98,10 @@ export class FilesImportResolver {
     const updatedPath = this.makeDestinationFilePath(chroniclesId, extension);
 
     if (updatedPath) {
-      await this.knex("import_files").where({ chroniclesId }).update({
-        status: "referenced",
-      });
+      await this.db
+        .update(schema.importFiles)
+        .set({ status: "referenced" })
+        .where(eq(schema.importFiles.chroniclesId, chroniclesId));
 
       return updatedPath;
     }
@@ -119,7 +144,7 @@ export class FilesImportResolver {
     const ext = path.extname(filestats.path);
 
     try {
-      await this.knex("import_files").insert({
+      await this.db.insert(schema.importFiles).values({
         importerId: this.importerId,
         // note: assumes here and later this is an absolute path; assumption
         // based on Files.walk behavior
@@ -223,19 +248,23 @@ export class FilesImportResolver {
     importerId: string,
     importDir: string,
   ) => {
-    const files = await this.knex("import_files").where({
-      importerId,
-      status: "referenced",
-    });
+    const files = await this.db
+      .select()
+      .from(schema.importFiles)
+      .where(
+        and(
+          eq(schema.importFiles.importerId, importerId),
+          eq(schema.importFiles.status, "referenced"),
+        ),
+      );
 
     const attachmentsDir = path.join(chroniclesRoot, ATTACHMENTS_DIR);
     await mkdirp(attachmentsDir);
 
-    for await (const file of files) {
+    for (const file of files) {
       const { sourcePathResolved, extension, chroniclesId } = file;
 
-      // todo: convert to just err checking
-      let [_, err] = await this.safeAccess(sourcePathResolved, importDir);
+      const [, err] = await this.safeAccess(sourcePathResolved, importDir);
 
       if (err != null) {
         console.error(
@@ -243,9 +272,15 @@ export class FilesImportResolver {
           sourcePathResolved,
           err,
         );
-        await this.knex("import_files")
-          .where({ importerId, sourcePathResolved })
-          .update({ error: err });
+        await this.db
+          .update(schema.importFiles)
+          .set({ error: err })
+          .where(
+            and(
+              eq(schema.importFiles.importerId, importerId),
+              eq(schema.importFiles.sourcePathResolved, sourcePathResolved),
+            ),
+          );
         continue;
       }
 
@@ -257,14 +292,16 @@ export class FilesImportResolver {
 
       try {
         await this.filesclient.copyFile(sourcePathResolved, destinationFile);
-        await this.knex("import_files")
-          .where({ chroniclesId })
-          .update({ status: "complete", error: null });
+        await this.db
+          .update(schema.importFiles)
+          .set({ status: "complete", error: null })
+          .where(eq(schema.importFiles.chroniclesId, chroniclesId));
       } catch (err) {
         console.error("error moving file", chroniclesId, err);
-        await this.knex("import_files")
-          .where({ chroniclesId })
-          .update({ error: (err as Error).message });
+        await this.db
+          .update(schema.importFiles)
+          .set({ error: (err as Error).message })
+          .where(eq(schema.importFiles.chroniclesId, chroniclesId));
         continue;
       }
     }
@@ -272,8 +309,14 @@ export class FilesImportResolver {
     // Mark all remaining files as orphaned; can be used to debug import issues,
     // and potentially also be configurable (i.e. whether to import orphaned files
     // or not)
-    await this.knex("import_files")
-      .where({ status: "pending", importerId })
-      .update({ status: "orphaned" });
+    await this.db
+      .update(schema.importFiles)
+      .set({ status: "orphaned" })
+      .where(
+        and(
+          eq(schema.importFiles.status, "pending"),
+          eq(schema.importFiles.importerId, importerId),
+        ),
+      );
   };
 }
