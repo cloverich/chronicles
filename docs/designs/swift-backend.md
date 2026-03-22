@@ -304,49 +304,108 @@ iOS App
 
 ## Phased Approach
 
+### Incremental Strategy: Swift backend under Electron first
+
+Instead of building the Swift app shell and backend simultaneously, rewrite the backend in Swift while the app remains Electron. The Electron main process spawns the Swift backend as a subprocess, communicating over stdio JSON-RPC — the same `clientCall({ module, method, args })` dispatch pattern Electrobun used.
+
+This means:
+- **No big-bang migration.** Backend and shell are independent workstreams.
+- **Immediate value.** The Swift backend is usable from day one (Electron ships it as a subprocess).
+- **The MCP server comes free.** Same Swift binary, same `ChroniclesCore` library, different transport (stdio for MCP vs. stdio for Electron IPC).
+- **Shell swap is the final step.** Replace Electron with SwiftUI+WKWebView only after the backend is proven.
+
+#### The IPC Bridge
+
+The seam is `src/preload/client/factory.ts` — currently 25 lines that create a `NodeClient` in-process:
+
+```typescript
+// Today: in-process
+const nodeClient = await createNodeClient({ dbPath, notesDir, settingsDir });
+return { journals: nodeClient.journals, documents: nodeClient.documents, ... };
+```
+
+Replace with a subprocess bridge:
+
+```typescript
+// Tomorrow: subprocess
+const swiftProcess = spawn("path/to/chronicles-backend", ["--stdio"], { stdio: ["pipe", "pipe", "inherit"] });
+const rpc = createStdioRPC(swiftProcess.stdin, swiftProcess.stdout);
+
+// Same Proxy pattern as Electrobun's chronicles-shim.ts
+return new Proxy({}, {
+  get: (_, module: string) => new Proxy({}, {
+    get: (_, method: string) => (...args: unknown[]) =>
+      rpc.request({ module, method, args })
+  })
+}) as IClient;
+```
+
+This is almost identical to the Electrobun `chronicles-shim.ts` Proxy pattern (see `src/electrobun/chronicles-shim.ts`), just with stdio instead of Electrobun's RPC channel. The renderer and preload bridge don't change at all — `window.chronicles.getClient()` returns the same `IClient` shape.
+
+The ~13 utility methods (dialogs, themes, fonts, openPath) stay in Electron's main process — they need Electron APIs (dialog, shell, nativeTheme). They'll move to Swift only in the final shell swap.
+
+#### What about the non-IClient methods?
+
+The `window.chronicles` API has two layers:
+1. **IClient methods** (~50 methods across 8 modules) — these move to Swift subprocess
+2. **Utility methods** (13 methods: dialogs, themes, fonts, openPath, setNativeTheme) — these stay in Electron until shell swap
+
+This split is clean because the utility methods use Electron APIs that don't exist in a subprocess. During the Electron→Swift shell swap, they move to SwiftUI native equivalents (NSOpenPanel, NSFontManager, etc.).
+
+---
+
 ### Phase 0: Swift Package + GRDB Schema (1-2 days)
 
-- Create `chronicles-swift/` directory (or separate repo)
+- Create `chronicles-swift/` directory (monorepo — same repo, separate package manager)
 - Set up Swift Package with GRDB dependency
 - Port the Drizzle schema to GRDB table definitions
-- Port migrations (reuse SQL files)
+- Port migrations (reuse SQL files directly — they're just SQL)
 - Write tests against in-memory SQLite
+- **Validate:** Schema matches, migrations run, tables created
 
-### Phase 1: Core Backend (~1 week)
+### Phase 1: Core Backend + stdio RPC (~1 week)
 
-- Implement journals, documents, tags, preferences, files
+- Implement journals, documents, tags, preferences, files in Swift
 - FTS5 search (GRDB has first-class support)
+- Add a `chronicles-backend` executable target with stdio JSON-RPC transport
 - Test against a real notes directory
-- Validate: same queries, same results as node-client
+- **Validate:** Same queries, same results as node-client (can run both side-by-side against same DB)
 
-### Phase 2: macOS Shell + Bridge (~1 week)
+### Phase 2: Wire into Electron (~2-3 days)
 
-- SwiftUI app with WKWebView
-- `WKURLSchemeHandler` for `chronicles://` URLs
-- `WKScriptMessageHandler` bridge (JS ↔ Swift IPC)
-- Load Vite dev server in WKWebView
-- Validate: React app works end-to-end through Swift backend
+- Replace `src/preload/client/factory.ts` to spawn Swift subprocess
+- Proxy-based IClient bridge (reuse Electrobun `chronicles-shim.ts` pattern)
+- Bundle the Swift binary in the Electron app (`scripts/build.sh` change)
+- **Validate:** Full app works end-to-end, Electron shell unchanged, Swift backend underneath
 
 ### Phase 3: Indexer + Importer (~1 week)
 
 - Port incremental indexer (mtime/hash/FTS rebuild)
 - Markdown parsing via embedded JSContext (or swift-markdown if sufficient)
 - Port importer (Notion, Obsidian)
-- Validate: `yarn test:node-client` equivalent in Swift
+- MCP server target (same `ChroniclesCore`, stdio MCP transport)
+- **Validate:** Indexing works, MCP server responds correctly
 
-### Phase 4: iOS Shell (~1 week)
+### Phase 4: Swift App Shell (~1 week)
 
-- SwiftUI iOS app sharing backend code
+- SwiftUI macOS app with WKWebView
+- `WKURLSchemeHandler` for `chronicles://` URLs
+- `WKScriptMessageHandler` bridge (JS ↔ Swift IPC — in-process now, no subprocess needed)
+- Port utility methods (dialogs, themes, fonts) to SwiftUI/AppKit
+- **Validate:** React app works fully through native Swift shell
+
+### Phase 5: iOS Shell (~1 week)
+
+- SwiftUI iOS app sharing `ChroniclesCore`
 - iCloud Drive notes directory
 - Mobile-optimized navigation
-- Validate: create/edit/search documents on iPhone
+- **Validate:** create/edit/search documents on iPhone
 
-### Phase 5: Polish + Ship
+### Phase 6: Cut Over
 
 - App Store submission (macOS + iOS)
-- Code signing, notarization
-- Delete `src/electron/`, `src/preload/` from main branch
-- Keep `src/node-client/` for MCP server
+- Delete `src/electron/`, `src/preload/`, `src/node-client/`
+- Keep `src/bun-client/` as reference only
 
 ---
 
