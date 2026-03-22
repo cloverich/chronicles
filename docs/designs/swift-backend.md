@@ -363,28 +363,30 @@ This split is clean because the utility methods use Electron APIs that don't exi
 - Write tests against in-memory SQLite
 - **Validate:** Schema matches, migrations run, tables created
 
-### Phase 1: Core Backend + stdio RPC (~1 week)
+### Phase 1: Core Backend (~1 week)
 
 - Implement journals, documents, tags, preferences, files in Swift
 - FTS5 search (GRDB has first-class support)
-- Add a `chronicles-backend` executable target with stdio JSON-RPC transport
 - Test against a real notes directory
 - **Validate:** Same queries, same results as node-client (can run both side-by-side against same DB)
 
-### Phase 2: Wire into Electron (~2-3 days)
-
-- Replace `src/preload/client/factory.ts` to spawn Swift subprocess
-- Proxy-based IClient bridge (reuse Electrobun `chronicles-shim.ts` pattern)
-- Bundle the Swift binary in the Electron app (`scripts/build.sh` change)
-- **Validate:** Full app works end-to-end, Electron shell unchanged, Swift backend underneath
-
-### Phase 3: Indexer + Importer (~1 week)
+### Phase 2: Indexer + Importer (~1 week)
 
 - Port incremental indexer (mtime/hash/FTS rebuild)
 - Markdown parsing via embedded JSContext (or swift-markdown if sufficient)
 - Port importer (Notion, Obsidian)
+- **Validate:** Index a real notes directory, FTS search returns correct results
+
+The indexer must work before wiring into Electron — without it there's no FTS index, no document list, the app boots to nothing.
+
+### Phase 3: stdio RPC + Wire into Electron (~1 week)
+
+- Add a `chronicles-backend` executable target with stdio JSON-RPC transport
+- Replace `src/preload/client/factory.ts` to spawn Swift subprocess
+- Proxy-based IClient bridge (reuse Electrobun `chronicles-shim.ts` pattern)
+- Bundle the Swift binary in the Electron app (`scripts/build.sh` change)
 - MCP server target (same `ChroniclesCore`, stdio MCP transport)
-- **Validate:** Indexing works, MCP server responds correctly
+- **Validate:** Full app works end-to-end, Electron shell unchanged, Swift backend underneath. MCP server responds correctly.
 
 ### Phase 4: Swift App Shell (~1 week)
 
