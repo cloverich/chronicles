@@ -195,12 +195,35 @@ src/bun-client/      # Bun backend (reference only)
 
 ```
 Package.swift
-├── ChroniclesCore    (library: GRDB, indexer, all business logic)
-├── ChroniclesApp     (executable: SwiftUI + WKWebView shell)
-└── ChroniclesMCP     (executable: stdio MCP server, imports ChroniclesCore)
+├── ChroniclesCore       (library: GRDB, indexer, all business logic)
+├── chronicles            (executable: CLI + --serve daemon mode)
+├── chronicles-mcp        (executable: MCP stdio server, imports Core)
+└── ChroniclesApp         (executable: SwiftUI + WKWebView shell, imports Core)
 ```
 
-Single `swift build`, two binaries, zero `node-gyp`, zero `electron-rebuild`. The MCP server becomes a ~5MB static binary — distribute it anywhere, no runtime dependencies.
+Single `swift build`, three binaries, zero `node-gyp`, zero `electron-rebuild`. The `chronicles` binary serves triple duty:
+
+```bash
+# One-shot CLI (terminal use, scripting, validation)
+chronicles journals list --json
+chronicles documents search --text "foo" --json
+chronicles index
+
+# Long-running daemon (Electron IPC substrate)
+chronicles --serve
+# reads newline-delimited JSON from stdin, writes responses to stdout
+# DB connection stays open, ~1-5ms per call instead of ~50-100ms
+
+# MCP server (separate binary, same Core library)
+chronicles-mcp
+```
+
+The CLI and daemon are two modes of the same binary — ~100 lines each, both calling into `ChroniclesCore`. The CLI is also the validation harness for the Swift backend:
+
+```bash
+# Validate Swift matches node-client against same DB
+diff <(chronicles journals list --json) <(node -e "require('./node-client')...")
+```
 
 ---
 
@@ -214,9 +237,11 @@ Single `swift build`, two binaries, zero `node-gyp`, zero `electron-rebuild`. Th
 |------|------|---------------|
 | Edit Swift backend | VS Code/Cursor + [sourcekit-lsp](https://github.com/swiftlang/vscode-swift) | No |
 | Build/test backend | `swift build && swift test` | No |
+| Use CLI | `chronicles journals list --json` | No |
 | Run MCP server | `swift run chronicles-mcp` | No |
 | Edit React frontend | VS Code / Cursor | No |
-| Dev mode (WKWebView + Vite) | `swift run chronicles-app` + `yarn dev` | No |
+| Dev mode (Electron + Swift backend) | `yarn start` (spawns `chronicles --serve`) | No |
+| Dev mode (SwiftUI shell + Vite) | `swift run chronicles-app` + `yarn dev` | No |
 | iOS simulator testing | Xcode | Yes |
 | App Store submission | `xcodebuild` (can be CI-only) | Yes (CLI tools) |
 | SwiftUI previews | Xcode | Yes |
@@ -304,17 +329,35 @@ iOS App
 
 ## Phased Approach
 
-### Incremental Strategy: Swift backend under Electron first
+### Incremental Strategy: CLI first, then wire into Electron
 
-Instead of building the Swift app shell and backend simultaneously, rewrite the backend in Swift while the app remains Electron. The Electron main process spawns the Swift backend as a subprocess, communicating over stdio JSON-RPC — the same `clientCall({ module, method, args })` dispatch pattern Electrobun used.
+The `IClient` interface is the core abstraction. Every surface — Electron preload, Electrobun RPC, MCP server, future CLI, future HTTP API — is just a thin transport layer over the same client backend. The Swift rewrite exploits this: build the CLI first (validates the backend), then add `--serve` mode (long-running daemon for Electron IPC). It's a 2-for-1, not two separate workstreams.
 
-This means:
-- **No big-bang migration.** Backend and shell are independent workstreams.
-- **Immediate value.** The Swift backend is usable from day one (Electron ships it as a subprocess).
-- **The MCP server comes free.** Same Swift binary, same `ChroniclesCore` library, different transport (stdio for MCP vs. stdio for Electron IPC).
-- **Shell swap is the final step.** Replace Electron with SwiftUI+WKWebView only after the backend is proven.
+```
+                     ┌─────────────────────┐
+                     │   ChroniclesCore    │
+                     │   (Swift library)    │
+                     └────────┬────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+     chronicles CLI    chronicles --serve   chronicles-mcp
+     (one-shot)        (long-running)       (MCP protocol)
+     args + JSON out   stdin JSON-RPC       stdin MCP-RPC
+              │               │
+              │        ┌──────┴──────┐
+              │        │  Electron   │
+              │        │  main proc  │
+              │        │  spawns     │
+              │        │  --serve    │
+              │        └─────────────┘
+```
 
-#### The IPC Bridge
+**Why not just pipe to the CLI for Electron IPC?** Spawn-per-call overhead. Each CLI invocation = process start (~50ms) + DB open + query + exit. The app makes ~20 calls on startup — that's 1-2 seconds of latency. The `--serve` daemon keeps the DB connection open, so each call is ~1-5ms after the initial spawn.
+
+**But both modes share everything.** Same binary, same `ChroniclesCore` import, different entry points (~100 lines each). The CLI validates the backend; `--serve` makes it fast enough for app IPC.
+
+#### The Electron IPC Bridge
 
 The seam is `src/preload/client/factory.ts` — currently 25 lines that create a `NodeClient` in-process:
 
@@ -324,11 +367,11 @@ const nodeClient = await createNodeClient({ dbPath, notesDir, settingsDir });
 return { journals: nodeClient.journals, documents: nodeClient.documents, ... };
 ```
 
-Replace with a subprocess bridge:
+Replace with a subprocess bridge that spawns `chronicles --serve`:
 
 ```typescript
 // Tomorrow: subprocess
-const swiftProcess = spawn("path/to/chronicles-backend", ["--stdio"], { stdio: ["pipe", "pipe", "inherit"] });
+const swiftProcess = spawn("chronicles", ["--serve"], { stdio: ["pipe", "pipe", "inherit"] });
 const rpc = createStdioRPC(swiftProcess.stdin, swiftProcess.stdout);
 
 // Same Proxy pattern as Electrobun's chronicles-shim.ts
@@ -341,8 +384,6 @@ return new Proxy({}, {
 ```
 
 This is almost identical to the Electrobun `chronicles-shim.ts` Proxy pattern (see `src/electrobun/chronicles-shim.ts`), just with stdio instead of Electrobun's RPC channel. The renderer and preload bridge don't change at all — `window.chronicles.getClient()` returns the same `IClient` shape.
-
-The ~13 utility methods (dialogs, themes, fonts, openPath) stay in Electron's main process — they need Electron APIs (dialog, shell, nativeTheme). They'll move to Swift only in the final shell swap.
 
 #### What about the non-IClient methods?
 
@@ -363,30 +404,39 @@ This split is clean because the utility methods use Electron APIs that don't exi
 - Write tests against in-memory SQLite
 - **Validate:** Schema matches, migrations run, tables created
 
-### Phase 1: Core Backend (~1 week)
+### Phase 1: Core Backend + CLI (~1 week)
 
 - Implement journals, documents, tags, preferences, files in Swift
 - FTS5 search (GRDB has first-class support)
+- CLI entry point: `chronicles journals list --json`, `chronicles documents search --text "foo" --json`, etc.
 - Test against a real notes directory
-- **Validate:** Same queries, same results as node-client (can run both side-by-side against same DB)
+- **Validate:** CLI output matches node-client against same DB
+  ```bash
+  diff <(chronicles journals list --json) <(node -e "...")
+  ```
+
+The CLI is the first deliverable — a usable tool and a validation harness for the Swift backend in one.
 
 ### Phase 2: Indexer + Importer (~1 week)
 
 - Port incremental indexer (mtime/hash/FTS rebuild)
 - Markdown parsing via embedded JSContext (or swift-markdown if sufficient)
 - Port importer (Notion, Obsidian)
-- **Validate:** Index a real notes directory, FTS search returns correct results
+- CLI commands: `chronicles index`, `chronicles import --source notion --path ./export`
+- **Validate:** `chronicles index && chronicles documents search --text "foo" --json` against a real notes directory
 
 The indexer must work before wiring into Electron — without it there's no FTS index, no document list, the app boots to nothing.
 
-### Phase 3: stdio RPC + Wire into Electron (~1 week)
+### Phase 3: `--serve` mode + Wire into Electron (~1 week)
 
-- Add a `chronicles-backend` executable target with stdio JSON-RPC transport
-- Replace `src/preload/client/factory.ts` to spawn Swift subprocess
+- Add `chronicles --serve` daemon mode (newline-delimited JSON over stdio, DB stays open)
+- Replace `src/preload/client/factory.ts` to spawn `chronicles --serve`
 - Proxy-based IClient bridge (reuse Electrobun `chronicles-shim.ts` pattern)
 - Bundle the Swift binary in the Electron app (`scripts/build.sh` change)
-- MCP server target (same `ChroniclesCore`, stdio MCP transport)
-- **Validate:** Full app works end-to-end, Electron shell unchanged, Swift backend underneath. MCP server responds correctly.
+- MCP server target (`chronicles-mcp`, same `ChroniclesCore`)
+- **Validate:** Full app works end-to-end — Electron shell unchanged, Swift backend underneath. MCP server responds correctly.
+
+At this point: Electron app ships with Swift backend, CLI works standalone, MCP server is a separate binary. All three are thin shells over `ChroniclesCore`. The native dependency rebuild problem is solved — `better-sqlite3` and `node-client` are no longer in the critical path.
 
 ### Phase 4: Swift App Shell (~1 week)
 
