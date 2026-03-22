@@ -35,3 +35,13 @@ await esbuild.build({
   external: ["electron", "electron-store", "better-sqlite3"],
   plugins: [afterBuild("main")],
 });
+
+await esbuild.build({
+  entryPoints: ["src/mcp/server.ts"],
+  outfile: "src/mcp-server.bundle.mjs",
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  external: ["better-sqlite3", "sharp"],
+  plugins: [afterBuild("mcp-server")],
+});

@@ -2,6 +2,7 @@
 
 ## Active Projects
 
+- [docs/plans/active/mcp-node-port.md](docs/plans/active/mcp-node-port.md) — port MCP server to Node, bundle in Electron app
 - [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
 - [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)
 

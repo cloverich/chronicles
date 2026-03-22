@@ -1,4 +1,4 @@
-import { FolderOpen, Trash2 } from "lucide-react";
+import { Check, Copy, FolderOpen, Trash2 } from "lucide-react";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
@@ -624,6 +624,7 @@ const PreferencesPane = observer((props: Props) => {
                   </Button>
                 </div>
               </Section>
+              <McpIntegrationSection />
               <Section>
                 <SectionTitle
                   title="Import directory"
@@ -747,6 +748,142 @@ const PreferencesPane = observer((props: Props) => {
     </Dialog>
   );
 });
+
+function McpIntegrationSection() {
+  const [mcpPath, setMcpPath] = React.useState<string>("");
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    try {
+      setMcpPath(window.chronicles.getMcpServerPath());
+    } catch {
+      setMcpPath(
+        "/path/to/Chronicles.app/Contents/Resources/app/mcp-server.bundle.mjs",
+      );
+    }
+  }, []);
+
+  const configs: {
+    id: string;
+    label: string;
+    description: string;
+    snippet: string;
+  }[] = [
+    {
+      id: "claude-code",
+      label: "Claude Code",
+      description: "Add to ~/.claude/settings.json or project .mcp.json",
+      snippet: JSON.stringify(
+        {
+          mcpServers: {
+            chronicles: {
+              command: "node",
+              args: [mcpPath],
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    },
+    {
+      id: "claude-desktop",
+      label: "Claude Desktop",
+      description: "Add to Claude Desktop's MCP settings",
+      snippet: JSON.stringify(
+        {
+          mcpServers: {
+            chronicles: {
+              command: "node",
+              args: [mcpPath],
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    },
+    {
+      id: "gemini-cli",
+      label: "Gemini CLI",
+      description: "Add to ~/.gemini/settings.json",
+      snippet: JSON.stringify(
+        {
+          mcpServers: {
+            chronicles: {
+              command: "node",
+              args: [mcpPath],
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    },
+    {
+      id: "codex-cli",
+      label: "Codex CLI",
+      description: "Run in terminal",
+      snippet: `codex mcp add chronicles -- node "${mcpPath}"`,
+    },
+  ];
+
+  function copyToClipboard(id: string, text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }
+
+  return (
+    <Section>
+      <SectionTitle
+        title="AI Integration (MCP)"
+        sub="Connect AI assistants to your notes via the Model Context Protocol"
+      />
+      <p className="text-muted-foreground mb-4 max-w-[500px] text-sm">
+        Chronicles includes an MCP server that lets AI tools search, create, and
+        edit your notes. Copy a config snippet below and add it to your AI
+        tool's settings.
+      </p>
+      <div className="space-y-4">
+        {configs.map((config) => (
+          <div key={config.id} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-foreground-strong text-sm font-medium">
+                  {config.label}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  {config.description}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(config.id, config.snippet)}
+              >
+                {copiedId === config.id ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+                <span>{copiedId === config.id ? "Copied" : "Copy"}</span>
+              </Button>
+            </div>
+            <pre className="bg-muted overflow-x-auto rounded-md p-3 text-xs">
+              <code>{config.snippet}</code>
+            </pre>
+          </div>
+        ))}
+      </div>
+      <p className="text-muted-foreground mt-4 text-xs">
+        The MCP server runs as a standalone process — the app does not need to
+        be open. It accesses your notes database directly.
+      </p>
+    </Section>
+  );
+}
 
 function Separator() {
   return <hr className="bg-border my-8 h-px border-0" />;
