@@ -32,7 +32,7 @@ Swift solves the media problem natively (`WKURLSchemeHandler` is a first-class A
 |------|---------|
 | **Windows/Linux** | Dead. macOS/iOS only. (Chronicles has never shipped on these anyway.) |
 | **TypeScript backend** | The node-client/bun-client work becomes the reference implementation, not production code. |
-| **AI-assisted coding velocity** | Swift is less well-covered than TypeScript in LLM training data. Coding from phone (Cursor, Claude Code web) may be harder. |
+| **AI-assisted coding velocity** | Swift is less well-covered than TypeScript in LLM training data. Coding from phone (Cursor, Claude Code web) may be harder — but see DevX section, it's better than expected. |
 | **WebKit rendering** | Tied to system WebKit version. Same issue as Electrobun/Tauri but now it's permanent. |
 
 ---
@@ -185,15 +185,46 @@ The node-client is ~1,600 lines of business logic. In Swift this might be ~2,000
 ```
 src/electron/        # Main process
 src/preload/         # IPC bridge
-src/node-client/     # Node.js backend (keep as reference / MCP server)
-src/bun-client/      # Bun backend (keep as reference / MCP server)
+src/node-client/     # Node.js backend (reference only, no longer deployed)
+src/bun-client/      # Bun backend (reference only)
 ```
 
-**The node-client stays alive** as the MCP server backend. PR #486 already bundles it as a standalone Node.js script. The Swift app and the MCP server share the same SQLite database.
+**The node-client becomes reference code only.** The MCP server also moves to Swift (see Package Structure below). The whole point is escaping the native dependency rebuild treadmill — keeping MCP on Node with better-sqlite3 would defeat the purpose.
+
+### Swift Package Structure
+
+```
+Package.swift
+├── ChroniclesCore    (library: GRDB, indexer, all business logic)
+├── ChroniclesApp     (executable: SwiftUI + WKWebView shell)
+└── ChroniclesMCP     (executable: stdio MCP server, imports ChroniclesCore)
+```
+
+Single `swift build`, two binaries, zero `node-gyp`, zero `electron-rebuild`. The MCP server becomes a ~5MB static binary — distribute it anywhere, no runtime dependencies.
 
 ---
 
 ## DevX Changes
+
+### Xcode: when is it actually required?
+
+**Xcode is NOT required for most development.** The backend is a standard Swift Package Manager project. The entire non-UI layer — GRDB, SQLite, indexer, MCP server — builds and tests from the command line.
+
+| Task | Tool | Xcode needed? |
+|------|------|---------------|
+| Edit Swift backend | VS Code/Cursor + [sourcekit-lsp](https://github.com/swiftlang/vscode-swift) | No |
+| Build/test backend | `swift build && swift test` | No |
+| Run MCP server | `swift run chronicles-mcp` | No |
+| Edit React frontend | VS Code / Cursor | No |
+| Dev mode (WKWebView + Vite) | `swift run chronicles-app` + `yarn dev` | No |
+| iOS simulator testing | Xcode | Yes |
+| App Store submission | `xcodebuild` (can be CI-only) | Yes (CLI tools) |
+| SwiftUI previews | Xcode | Yes |
+| Debugging gnarly layout | Xcode | Helpful |
+
+You can [build a SwiftUI + WKWebView app purely from SPM](https://theswiftdev.com/how-to-build-macos-apps-using-only-the-swift-package-manager/) — `swift build` produces a binary that imports AppKit/WebKit just fine. For dev, you don't even need a `.app` bundle — just run the binary directly. There's a [minimal example](https://github.com/eudoxia0/swiftui-without-xcode) of this approach.
+
+**Swift 6.1+** added automatic background indexing for sourcekit-lsp, so VS Code/Cursor now gives proper autocomplete, jump-to-definition, and diagnostics without manual builds. This was a major friction point that's now resolved.
 
 ### Current workflow (Electron)
 
@@ -209,32 +240,33 @@ HEADLESS=true yarn start    # Electron + Vite dev server
 # Terminal 1: Vite dev server (unchanged)
 yarn dev:renderer    # or: npx vite
 
-# Terminal 2 (or Xcode):
+# Terminal 2:
+swift run chronicles-app
 # Swift app loads http://localhost:5173 in WKWebView
 # Edit React code → HMR in WKWebView (same as today)
-# Edit Swift backend → rebuild in Xcode (⌘R, ~2-5s incremental)
+# Edit Swift backend → ⌃C, swift build && swift run (~2-5s incremental)
 ```
 
-**Key difference:** Backend changes require an Xcode rebuild instead of a Node.js restart. Incremental Swift builds are 2-5 seconds — comparable to the current Electron restart. Full builds are slower (~15-30s) but rare.
+**Key difference:** Backend changes require a `swift build` (~2-5s incremental) instead of a Node.js restart. Comparable speed. Full builds are slower (~15-30s) but rare.
 
-**Xcode vs. VS Code:** You'd primarily edit Swift in Xcode (or use sourcekit-lsp in VS Code/Cursor). The React code stays in your preferred editor. This is a real split — two editors for two languages. It's the same tradeoff Tauri developers live with (Rust + JS).
+**Editor story:** Edit everything in VS Code/Cursor. sourcekit-lsp handles Swift, TypeScript tooling handles the frontend. No editor split needed — same as writing a Rust+JS project in VS Code today.
 
 ### Coding from phone
-
-This is the big question. Current options for mobile coding:
 
 | Tool | Swift support | TypeScript support | Verdict |
 |------|--------------|-------------------|---------|
 | **Claude Code (web)** | Can generate Swift, can't build/test | Full support | Swift is write-only from phone |
-| **GitHub Codespaces** | No Xcode, no macOS | Full support | Swift backend can't run |
+| **GitHub Codespaces** | No macOS SDK | Full support | Swift backend can't run |
 | **Cursor mobile** | Limited | Full support | Same limitation |
-| **Xcode on iPad** | Swift Playgrounds only, no full Xcode | N/A | Not viable for real project |
 
-**Reality:** You can't build or test Swift code from a phone. The React frontend remains fully editable from anywhere. The Swift backend is mac-only development.
+**Reality:** You can't build or test Swift code from a phone or Codespace (needs macOS SDK for AppKit/WebKit imports). The React frontend remains fully editable from anywhere.
 
-**Mitigation:** The backend API surface is stable and small (~50 methods). Most day-to-day development is frontend (editor, UI, themes, search UX). Backend changes are less frequent and can wait for a mac session.
+**Mitigations:**
+1. **Backend API is stable and small** (~50 methods). Most day-to-day work is frontend. Backend changes can wait for a mac session.
+2. **Keep node-client as a dev shim.** When coding from phone, run Vite + node-client in a Codespace. The renderer doesn't care which backend serves `window.chronicles`. Full-stack mobile development for everything except Swift-specific features.
+3. **`swift test` for pure logic** — the `ChroniclesCore` library (GRDB queries, indexer logic, file ops) imports only Foundation, not AppKit. This subset *could* potentially build on Linux in a Codespace, though this is untested and not a priority.
 
-**Alternative:** Keep the node-client as a development backend. When coding from phone, run the Vite dev server + node-client in a Codespace. The renderer doesn't care which backend serves `window.chronicles`. This gives you full-stack mobile development for everything except Swift-specific features.
+**Bottom line:** Phone coding story is "same as today for frontend, write-only for backend, use node-client shim for full-stack dev." Acceptable given backend change frequency.
 
 ---
 
@@ -322,7 +354,7 @@ iOS App
 
 1. **Separate repo or monorepo?** The Swift package could live in `chronicles-swift/` within the existing repo (monorepo) or in a separate `chronicles-native` repo. Monorepo keeps everything together but mixes npm and Swift Package Manager. Separate repo is cleaner but splits the project.
 
-2. **MCP server: keep Node or port to Swift?** The MCP server currently runs on Node.js (PR #486). It could stay that way — it shares the SQLite database with the Swift app. Or port it to Swift too for a single-binary distribution. Node is pragmatic; Swift is elegant.
+2. **~~MCP server: keep Node or port to Swift?~~** **Resolved: Port to Swift.** The whole motivation is escaping native dependency rebuild hell. A Swift MCP server is just another target in the same Swift package — single `swift build`, ~5MB binary, zero runtime dependencies.
 
 3. **Markdown parsing strategy?** The indexer needs to parse markdown to extract tags, links, and content for FTS. Using a JSContext from Swift works but is architecturally weird. swift-markdown is cleaner but may not support our custom syntax. Need a spike.
 
