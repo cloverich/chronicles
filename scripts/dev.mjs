@@ -101,7 +101,14 @@ async function watchPreload() {
     bundle: true,
     platform: "node",
     format: "esm",
-    external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
+    external: [
+      "knex",
+      "electron",
+      "electron-store",
+      "better-sqlite3",
+      "sharp",
+      "conf",
+    ],
     plugins: [startElectronPlugin("preload")],
     sourcemap: true,
   });

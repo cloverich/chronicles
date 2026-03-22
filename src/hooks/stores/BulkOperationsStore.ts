@@ -1,6 +1,6 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 import { toast } from "sonner";
-import type { IBulkOperationsClient } from "../../preload/client/bulk-operations";
+import type { IBulkOperationsClient } from "../../node-client/bulk-operations";
 import type { SearchRequest } from "../../preload/client/types";
 
 export type OperationStatus = "idle" | "processing" | "completed" | "error";

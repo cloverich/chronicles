@@ -2,10 +2,17 @@
 
 ## Active Projects
 
-- [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (Phase 1 of Electrobun migration)
-- [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration phases 2-6
 - [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
 - [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)
+
+## Completed Projects
+
+- [docs/plans/active/electron-modernization.md](docs/plans/active/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
+- [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
+
+## Deferred Projects
+
+- [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration (deferred — WKWebView not mature enough)
 
 ---
 
@@ -17,7 +24,8 @@ See [docs/development.md](docs/development.md) for all commands, workflow, direc
 
 ```bash
 HEADLESS=true yarn start    # run
-bun run test                # test
+yarn test                   # test (renderer vitest + node-client node:test)
+yarn test:node-client       # backend tests only
 bun run lint                # lint (pinned prettier + tsc, matches CI exactly)
 ```
 

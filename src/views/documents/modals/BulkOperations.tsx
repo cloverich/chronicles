@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { BulkOperationType } from "../../../preload/client/bulk-operations";
+import { BulkOperationType } from "../../../node-client/bulk-operations";
 import { SearchStore } from "../SearchStore";
 import { AddTagModal } from "./AddTagModal";
 import { BulkOperationSelectorModal } from "./BulkOperationSelectorModal";
