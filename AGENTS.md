@@ -2,17 +2,19 @@
 
 ## Active Projects
 
+- [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (~80% complete)
 - [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
 - [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)
 
 ## Completed Projects
 
-- [docs/plans/active/electron-modernization.md](docs/plans/active/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
+- [docs/plans/completed/electron-modernization.md](docs/plans/completed/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
 - [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
 
 ## Deferred Projects
 
 - [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration (deferred — WKWebView not mature enough)
+- [docs/plans/active/mcp-node-port.md](docs/plans/active/mcp-node-port.md) — MCP server (deferred — native module ABI mismatch, see [design](docs/designs/chronicles-mcp.md))
 
 ---
 
@@ -26,7 +28,7 @@ See [docs/development.md](docs/development.md) for all commands, workflow, direc
 HEADLESS=true yarn start    # run
 yarn test                   # test (renderer vitest + node-client node:test)
 yarn test:node-client       # backend tests only
-bun run lint                # lint (pinned prettier + tsc, matches CI exactly)
+yarn lint                # lint (pinned prettier + tsc, matches CI exactly)
 ```
 
 ## Docs

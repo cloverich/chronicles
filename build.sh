@@ -62,7 +62,7 @@ node ./scripts/build-main-preload.js
 # Build renderer (Vite) -> outputs to dist/renderer/
 npx vite build
 
-# Copy main/preload bundles to dist
+# Copy main/preload/mcp bundles to dist
 cp src/main.bundle.mjs dist/
 cp src/preload.bundle.mjs dist/
 

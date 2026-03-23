@@ -16,8 +16,7 @@
     "test": "vitest run && npm rebuild better-sqlite3 --build-from-source 2>/dev/null && node --import tsx --test 'src/node-client/*.test.ts'",
     "test:watch": "vitest",
     "test:node-client": "node --import tsx --test 'src/node-client/*.test.ts'",
-    "test:rebuild": "npm rebuild better-sqlite3 --build-from-source 2>/dev/null; vitest run && node --import tsx --test 'src/node-client/*.test.ts'; yarn run electron-rebuild 2>/dev/null",
-    "mcp:server": "bun run src/bun-client/mcp/server.ts"
+    "test:rebuild": "npm rebuild better-sqlite3 --build-from-source 2>/dev/null; vitest run && node --import tsx --test 'src/node-client/*.test.ts'; yarn run electron-rebuild 2>/dev/null"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.8",

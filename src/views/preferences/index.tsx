@@ -207,11 +207,11 @@ const PreferencesPane = observer((props: Props) => {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.onClose}>
       <DialogContent variant="fullish">
-        <DialogHeader>
+        <DialogHeader className="min-w-0">
           <DialogTitle className="sticky">Settings</DialogTitle>
           <Separator />
           <DialogDescription asChild>
-            <div>
+            <div className="min-w-0">
               <Section>
                 <SectionTitle
                   title="Appearance"
@@ -624,6 +624,7 @@ const PreferencesPane = observer((props: Props) => {
                   </Button>
                 </div>
               </Section>
+
               <Section>
                 <SectionTitle
                   title="Import directory"
