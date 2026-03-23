@@ -1,7 +1,5 @@
 // In renderer process (web page).
 import { ipcRenderer } from "electron";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   getFontsCSSStylesheetHref,
   listInstalledFonts,
@@ -76,18 +74,6 @@ export const openPath = (dirPath: string) => {
  */
 export const setNativeTheme = (theme: "light" | "dark" | "system"): boolean => {
   return ipcRenderer.sendSync("set-native-theme", theme);
-};
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-/**
- * Returns the absolute path to mcp-server.bundle.mjs.
- * In production this is inside the app bundle (Resources/app/).
- * In dev mode it's in the src/ directory alongside preload.bundle.mjs.
- */
-export const getMcpServerPath = (): string => {
-  return path.join(__dirname, "mcp-server.bundle.mjs");
 };
 
 export {

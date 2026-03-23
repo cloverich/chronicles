@@ -65,7 +65,6 @@ npx vite build
 # Copy main/preload/mcp bundles to dist
 cp src/main.bundle.mjs dist/
 cp src/preload.bundle.mjs dist/
-cp src/mcp-server.bundle.mjs dist/
 
 # Flatten Vite renderer output into dist root
 cp -r dist/renderer/* dist/

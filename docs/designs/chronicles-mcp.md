@@ -1,5 +1,15 @@
 # Design Doc: Chronicles MCP Server (stdio)
 
+> **Status: Deferred.** The Node-based MCP server was removed because
+> `better-sqlite3` requires separate native builds for Electron's ABI vs system
+> Node's ABI — not worth the complexity for a stopgap. The design remains valid
+> and can be revisited when one of these unblocks:
+>
+> - **Drizzle ships a `node:sqlite` driver** ([drizzle-team/drizzle-orm#5471](https://github.com/drizzle-team/drizzle-orm/issues/5471)) — eliminates the native module entirely
+> - **Bun standalone binary** — `bun build --compile` with `bun:sqlite`, no native dep
+> - **Swift backend** — HTTP-based MCP server, no Electron dependency
+> - **Cloud backend** — HTTP MCP transport
+
 ## Rationale
 
 The CLI commands map 1:1 to MCP tools, making MCP a natural surface on top of
@@ -9,16 +19,12 @@ needed.
 
 See [chronicles-cli.md](chronicles-cli.md) §7 for the original design notes.
 
-## Implementation
+## Tools
 
-The MCP server lives in `src/mcp/` and uses the node-client (`better-sqlite3` +
-Drizzle). It is bundled by esbuild into a single `mcp-server.bundle.mjs` file
-that runs with plain `node` — no additional runtime (Bun, tsx) required.
-
-**Available tools:** `chronicles_note_create`, `chronicles_note_get`,
+`chronicles_note_create`, `chronicles_note_get`,
 `chronicles_note_update`, `chronicles_note_delete`, `chronicles_notes_search`.
 
-**Environment variables** (all optional, sensible defaults for macOS):
+## Environment variables (all optional, sensible defaults for macOS)
 
 - `CHRONICLES_DB_PATH` — SQLite database location
 - `CHRONICLES_NOTES_DIR` — Notes root directory
@@ -27,26 +33,33 @@ that runs with plain `node` — no additional runtime (Bun, tsx) required.
 The app does **not** need to be running. The MCP server opens the SQLite
 database directly (WAL mode handles concurrent access).
 
-### Build & packaging
+## Lessons learned
 
-The esbuild config in `scripts/build-main-preload.js` produces three bundles:
+### Testing an MCP server locally
 
-1. `main.bundle.mjs` — Electron main process
-2. `preload.bundle.mjs` — Electron preload
-3. `mcp-server.bundle.mjs` — standalone MCP server
+The original Bun server (`src/bun-client/mcp/server.test.ts`) had an E2E test
+that spawned the server as a subprocess and exchanged JSON-RPC messages over
+stdin/stdout. Key patterns:
 
-`build.sh` copies all three into `dist/`, which gets packaged into the app.
-In the final `.app` bundle the MCP server is at:
+1. **Spawn the process** with `stdio: ['pipe', 'pipe', 'pipe']`
+2. **Send `initialize`** request, wait for response
+3. **Send `tools/list`**, verify tool names
+4. **Call a tool** via `tools/call`, assert the result content
+5. **Clean up**: kill the process, delete the temp DB
 
-```
-Chronicles.app/Contents/Resources/app/mcp-server.bundle.mjs
-```
+**Framing gotcha:** The MCP spec says stdio uses NDJSON (one JSON object per
+line, `\n`-delimited). Our first implementation used `Content-Length:\r\n\r\n`
+framing (the LSP convention), which worked with some hosts but not others. The
+correct framing for MCP stdio is plain NDJSON — no `Content-Length` headers.
 
-### Preferences UI
+### The native module problem
 
-The Settings dialog includes an "AI Integration (MCP)" section with copyable
-config snippets for Claude Code, Claude Desktop, Gemini CLI, and Codex CLI.
-The snippets auto-populate the correct path to the bundled server.
+`better-sqlite3` compiles a `.node` native addon against a specific Node ABI.
+Electron uses a different ABI than system Node. `electron-rebuild` recompiles
+for Electron, but then the MCP server (which runs under system `node`) can't
+load it. Shipping two copies of the native module is possible but ugly.
+`node:sqlite` (built into Node 22+) would solve this, but Drizzle doesn't
+support it yet.
 
 ## Register as an MCP Server
 
@@ -70,32 +83,10 @@ Most AI tools accept stdio MCP servers with the same pattern: point them at
 
 **Claude Desktop**: Same JSON format in Claude Desktop's MCP settings.
 
-**Gemini CLI** (`~/.gemini/settings.json`):
-
-```json
-{
-  "mcpServers": {
-    "chronicles": {
-      "command": "node",
-      "args": [
-        "/Applications/Chronicles.app/Contents/Resources/app/mcp-server.bundle.mjs"
-      ]
-    }
-  }
-}
-```
+**Gemini CLI** (`~/.gemini/settings.json`): Same JSON format.
 
 **Codex CLI**:
 
 ```bash
-codex mcp add chronicles -- node "/Applications/Chronicles.app/Contents/Resources/app/mcp-server.bundle.mjs"
+codex mcp add chronicles -- node "/path/to/mcp-server.bundle.mjs"
 ```
-
-**Dev mode** (from repo root):
-
-```bash
-node scripts/build-main-preload.js && node src/mcp-server.bundle.mjs
-```
-
-Or use the config snippets from the app's preferences UI, which resolve the
-correct path automatically.

@@ -4,7 +4,6 @@ import "./utils.electron";
 import {
   deleteThemeByName,
   getInstalledFontsStylesheetHref,
-  getMcpServerPath,
   importThemeFile,
   listAvailableThemes,
   listHljsThemes,
@@ -38,7 +37,6 @@ contextBridge.exposeInMainWorld("chronicles", {
   deleteThemeByName,
   listHljsThemes,
   loadHljsThemeCSS,
-  getMcpServerPath,
 });
 
 declare global {
@@ -58,7 +56,6 @@ declare global {
       deleteThemeByName: typeof deleteThemeByName;
       listHljsThemes: typeof listHljsThemes;
       loadHljsThemeCSS: typeof loadHljsThemeCSS;
-      getMcpServerPath: typeof getMcpServerPath;
     };
   }
 }
