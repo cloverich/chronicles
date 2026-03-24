@@ -66,7 +66,7 @@ export class IndexerClient {
    *
    * @param fullReindex - If true, skip mtime/hash optimizations and re-parse all documents.
    */
-  index = async (fullReindex = false): Promise<void> => {
+  index = async (fullReindex = false): Promise<{ duplicateCount: number }> => {
     const [{ id: syncId }] = await this.db
       .insert(sync)
       .values({})
@@ -93,7 +93,9 @@ export class IndexerClient {
     const knownJournals = await this.initJournalsCounter();
     const journalsOnDisk: Record<string, number> = {};
 
-    const seenDocumentIds = new Set<string>();
+    // Track document ID → journal for duplicate detection
+    const seenDocumentIds = new Map<string, string>();
+    const duplicateDocumentIds = new Map<string, string[]>();
     const erroredDocumentPaths: string[] = [];
 
     let indexedCount = 0;
@@ -109,9 +111,24 @@ export class IndexerClient {
         continue;
       }
 
-      seenDocumentIds.add(documentId);
-
       const dirname = path.basename(dir);
+
+      // Duplicate detection: same document ID in multiple journals
+      const previousJournal = seenDocumentIds.get(documentId);
+      if (previousJournal) {
+        const existing = duplicateDocumentIds.get(documentId);
+        if (existing) {
+          existing.push(dirname);
+        } else {
+          duplicateDocumentIds.set(documentId, [previousJournal, dirname]);
+        }
+        console.error(
+          `[indexer] Duplicate document ID "${documentId}" found in journals: ${previousJournal}, ${dirname}. Skipping duplicate.`,
+        );
+        continue;
+      }
+
+      seenDocumentIds.set(documentId, dirname);
 
       // Track journal as seen on disk; create in DB if unknown
       if (!(dirname in journalsOnDisk)) {
@@ -182,8 +199,19 @@ export class IndexerClient {
       }
     }
 
+    if (duplicateDocumentIds.size > 0) {
+      console.warn(
+        `[indexer] ${duplicateDocumentIds.size} document(s) exist in multiple journals — check logs for details`,
+      );
+    }
+
     // Delete documents that no longer exist on disk
-    await this.documents.deleteOrphanedDocuments(seenDocumentIds);
+    const seenIds = new Set(seenDocumentIds.keys());
+    // Include duplicate IDs so they aren't treated as orphaned
+    for (const id of duplicateDocumentIds.keys()) {
+      seenIds.add(id);
+    }
+    await this.documents.deleteOrphanedDocuments(seenIds);
 
     // Clean up orphaned journals
     await this.cleanupOrphanedJournals(journalsOnDisk);
@@ -227,6 +255,8 @@ export class IndexerClient {
         durationMs,
       })
       .where(eq(sync.id, syncId));
+
+    return { duplicateCount: duplicateDocumentIds.size };
   };
 
   private initJournalsCounter = async (): Promise<Record<string, number>> => {
