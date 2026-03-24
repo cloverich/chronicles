@@ -43,7 +43,7 @@ export class IndexerStore {
       toastId = toast.loading("Indexing notes...");
 
       // Call underlying client index
-      await this.client.indexer.index(fullReindex);
+      const { duplicateCount } = await this.client.indexer.index(fullReindex);
 
       // Update last index time
       this.lastIndexTime = new Date();
@@ -53,7 +53,13 @@ export class IndexerStore {
 
       // Dismiss loading toast and show success
       toast.dismiss(toastId);
-      toast.success("Index updated");
+      if (duplicateCount > 0) {
+        toast.warning(
+          `Index updated — ${duplicateCount} duplicate document(s) found in multiple journals. Check logs for details.`,
+        );
+      } else {
+        toast.success("Index updated");
+      }
     } catch (err: any) {
       console.error("Error during indexing:", err);
       this.error = err;
