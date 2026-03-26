@@ -210,7 +210,8 @@ function createWindow() {
     // Hides the default (empty) window title
     titleBarStyle: "hidden",
 
-    trafficLightPosition: { x: 10, y: 16 },
+    // y = floor((titlebar-height - button-cluster-height) / 2) = floor((44 - 16) / 2)
+    trafficLightPosition: { x: 10, y: 14 },
     webPreferences: {
       nodeIntegration: false,
       sandbox: false,

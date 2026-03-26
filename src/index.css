@@ -68,7 +68,7 @@
 
     --radius: 0.5rem;
     /* The MacOS titlebar takes up this space, other components should push below it */
-    --titlebar-height: 3.5rem;
+    --titlebar-height: 2.75rem;
   }
 }
 
