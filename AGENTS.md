@@ -1,12 +1,5 @@
 # AGENTS.md
 
-## Lexical Polish (in progress)
-
-- [x] [docs/plans/active/lexical-scrollbar-bounce.md](docs/plans/active/lexical-scrollbar-bounce.md) — fix scrollbar width bounce
-- [x] [docs/plans/active/lexical-notelink-filter.md](docs/plans/active/lexical-notelink-filter.md) — filter current note from note link dropdown
-- [ ] [docs/plans/active/lexical-entity-decoding.md](docs/plans/active/lexical-entity-decoding.md) — investigate &#x20; character display
-- [ ] [docs/plans/active/lexical-element-spacing.md](docs/plans/active/lexical-element-spacing.md) — fix element spacing to match Plate
-
 ## Active Projects
 
 - [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (~80% complete)

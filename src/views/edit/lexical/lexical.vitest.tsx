@@ -256,6 +256,12 @@ describe("lexical migration spike", () => {
     );
   });
 
+  it("decodes hex html entities (e.g. &#x20; from mdast-util-to-markdown) as spaces", () => {
+    expect(roundtripLexicalMarkdown("&#x20;leading space")).toBe(
+      " leading space",
+    );
+  });
+
   it("roundtrips image markdown through Lexical", () => {
     const markdown = "![A tidy desk](../_attachments/desk.png)";
     expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);

@@ -152,9 +152,15 @@ function normalizeQuotedUrlLinks(markdown: string): string {
   return markdown.replace(QUOTED_LINK_URL_REGEXP, "[$1]($2)");
 }
 
+function decodeHexHtmlEntities(markdown: string): string {
+  return markdown.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+    String.fromCodePoint(parseInt(hex, 16)),
+  );
+}
+
 export function $loadMarkdownIntoLexical(markdown: string): void {
   $convertFromMarkdownString(
-    normalizeQuotedUrlLinks(markdown),
+    decodeHexHtmlEntities(normalizeQuotedUrlLinks(markdown)),
     chroniclesLexicalTransformers,
   );
 }
