@@ -1,5 +1,5 @@
 import ariakeDark from "./bundled/ariake-dark.theme.json";
-import kaybDark from "./bundled/kayb-dark.theme.json";
+import hearthside from "./bundled/hearthside.theme.json";
 import kayb from "./bundled/kayb.theme.json";
 import neofloss from "./bundled/neofloss.theme.json";
 import nord from "./bundled/nord.theme.json";
@@ -11,8 +11,8 @@ import { ThemeConfig } from "./schema";
  */
 export const BUNDLED_THEMES: Record<string, ThemeConfig> = {
   [ariakeDark.name]: ariakeDark as ThemeConfig,
+  [hearthside.name]: hearthside as ThemeConfig,
   [kayb.name]: kayb as ThemeConfig,
-  [kaybDark.name]: kaybDark as ThemeConfig,
   [neofloss.name]: neofloss as ThemeConfig,
   [nord.name]: nord as ThemeConfig,
 };

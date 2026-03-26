@@ -68,10 +68,10 @@ export const EditorLayout = observer(
 
         <Base.TitlebarSpacer />
         <Base.ScrollContainer>
-          <div className="flex w-full grow flex-col">
+          <div className="flex w-full grow flex-col items-center">
             <FrontMatter document={document} journals={journals} />
 
-            <div className="flex w-full grow pt-6">
+            <div className="flex w-full max-w-(--max-w-prose) grow pt-6">
               <LexicalBasedEditor
                 initialMarkdown={document.getInitialContent()}
                 onMarkdownChange={document.setMarkdownContent}

@@ -18,7 +18,7 @@ function renderLexicalFixture(markdown: string): HTMLElement {
     </MemoryRouter>,
   );
 
-  return screen.getByLabelText("Minimal replacement editor");
+  return screen.getByLabelText("Editor");
 }
 
 async function assertRenderContract(

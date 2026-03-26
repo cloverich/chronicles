@@ -290,7 +290,7 @@ describe("lexical migration spike", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByLabelText("Minimal replacement editor")).toBeTruthy();
+    expect(screen.getByLabelText("Editor")).toBeTruthy();
     expect(screen.getByText("Day Log")).toBeTruthy();
   });
 
@@ -398,7 +398,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -447,7 +447,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -494,7 +494,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -534,7 +534,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -612,11 +612,68 @@ describe("lexical migration spike", () => {
 
     fireEvent.click(await screen.findByRole("link", { name: "Like this" }));
     const editButton = await screen.findByRole("button", { name: "Edit link" });
-    expect(editButton.className).toContain("hover:bg-accent");
+    expect(editButton.className).toContain("hover:bg-transparent");
 
     fireEvent.click(editButton);
     const saveButton = screen.getByRole("button", { name: "Save" });
-    expect(saveButton.className).toContain("hover:bg-accent");
+    expect(saveButton.className).toContain("hover:bg-transparent");
+  });
+
+  it("applies font-family classes to headings", async () => {
+    renderEditorWithRoutes("# Heading 1\n\n## Heading 2\n\n### Heading 3");
+
+    await waitFor(() => {
+      const h1 = document.querySelector("h1");
+      const h2 = document.querySelector("h2");
+      const h3 = document.querySelector("h3");
+      expect(h1).toBeTruthy();
+      expect(h1!.className).toContain("font-heading");
+      expect(h2).toBeTruthy();
+      expect(h2!.className).toContain("font-heading-2");
+      expect(h3).toBeTruthy();
+      expect(h3!.className).toContain("font-heading-3");
+    });
+  });
+
+  it("applies font-body class to the editor wrapper", async () => {
+    renderEditorWithRoutes("Hello world");
+
+    await waitFor(() => {
+      const contentEditable = screen.getByRole("textbox");
+      // The wrapper is the ancestor div with font-body
+      const wrapper = contentEditable.closest(".font-body");
+      expect(wrapper).toBeTruthy();
+    });
+  });
+
+  it("applies max-width classes to content elements", async () => {
+    renderEditorWithRoutes("# Heading\n\nA paragraph");
+
+    await waitFor(() => {
+      const h1 = document.querySelector("h1");
+      const p = document.querySelector("p");
+      expect(h1).toBeTruthy();
+      expect(h1!.className).toContain("max-w-");
+      expect(p).toBeTruthy();
+      expect(p!.className).toContain("max-w-");
+    });
+  });
+
+  it("applies font-size CSS variables to content elements", async () => {
+    renderEditorWithRoutes("# Heading\n\nA paragraph\n\n```\ncode\n```");
+
+    await waitFor(() => {
+      const h1 = document.querySelector("h1");
+      expect(h1).toBeTruthy();
+      expect(h1!.className).toContain("--font-size-heading");
+
+      const contentEditable = screen.getByRole("textbox");
+      expect(contentEditable.className).toContain("--font-size-body");
+
+      const codeBlock = document.querySelector("code");
+      expect(codeBlock).toBeTruthy();
+      expect(codeBlock!.className).toContain("--font-size-code");
+    });
   });
 
   it("closes the regular-link toolbar when clicking outside while editing", async () => {
@@ -705,9 +762,9 @@ describe("lexical migration spike", () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByLabelText("Minimal replacement editor"));
+    fireEvent.click(screen.getByLabelText("Editor"));
 
-    expect(screen.getByLabelText("Minimal replacement editor")).toBeTruthy();
+    expect(screen.getByLabelText("Editor")).toBeTruthy();
     expect(screen.queryByText("Unhandled Error")).toBeNull();
   });
 
@@ -731,7 +788,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Alpha");
@@ -783,7 +840,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Beta");
@@ -835,7 +892,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Alpha");
@@ -887,7 +944,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Beta");
@@ -942,7 +999,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Alpha");
@@ -990,7 +1047,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1033,7 +1090,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1089,7 +1146,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1132,7 +1189,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1173,7 +1230,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1212,7 +1269,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1251,7 +1308,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1292,7 +1349,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "const answer = 42;");
@@ -1340,7 +1397,7 @@ describe("lexical migration spike", () => {
     });
 
     await act(async () => {
-      fireEvent.focus(screen.getByLabelText("Minimal replacement editor"));
+      fireEvent.focus(screen.getByLabelText("Editor"));
       lexicalEditor!.update(() => {
         $getRoot().selectEnd();
       });
@@ -1386,7 +1443,7 @@ describe("lexical migration spike", () => {
     });
 
     await act(async () => {
-      fireEvent.focus(screen.getByLabelText("Minimal replacement editor"));
+      fireEvent.focus(screen.getByLabelText("Editor"));
       lexicalEditor!.update(() => {
         $getRoot().selectEnd();
       });
@@ -1441,7 +1498,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1493,7 +1550,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "second");
@@ -1549,7 +1606,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1599,7 +1656,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1647,7 +1704,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       lexicalEditor!.update(() => {
@@ -1706,7 +1763,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     const file = new File(["png-bytes"], "dropped.png", { type: "image/png" });
     await act(async () => {
       fireEvent.focus(editor);
@@ -1763,7 +1820,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     const file = new File(["png-bytes"], "pasted.png", { type: "image/png" });
     await act(async () => {
       fireEvent.focus(editor);
@@ -1819,7 +1876,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Alpha");
@@ -1868,7 +1925,7 @@ describe("lexical migration spike", () => {
       expect(lexicalEditor).not.toBeNull();
     });
 
-    const editor = screen.getByLabelText("Minimal replacement editor");
+    const editor = screen.getByLabelText("Editor");
     await act(async () => {
       fireEvent.focus(editor);
       selectLexicalText(lexicalEditor!, "Alpha");

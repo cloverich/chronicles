@@ -2,6 +2,8 @@
 
 Running QA checklist for the theming epic (#443). Updated as each issue lands.
 
+**Related docs:** [Feature doc](../features/theming.md) | [Design doc](../designs/theming.md)
+
 Each section covers: what changed, what to verify in the app, and what should NOT have changed (regression checks).
 
 ---
@@ -270,6 +272,33 @@ Replaced hardcoded Tailwind hljs color classes with dynamically loaded highlight
 
 - [ ] Use "Reset to defaults" button at the bottom of the appearance sections in Settings — should reset all appearance preferences (themes, fonts, font sizes, max widths) to defaults
 - [ ] Default values defined in `src/electron/appearance-defaults.ts`
+
+---
+
+## Post-launch fixes
+
+### Lexical editor missing font classes
+
+Font preferences (body, headings) were not applied in the Lexical editor — only the Plate editor had the correct classes.
+
+**Fixed:**
+
+- Added `font-body` to Lexical wrapper div (`LexicalBasedEditor.tsx`)
+- Added `font-heading`, `font-heading-2`, `font-heading-3` to the Lexical theme's heading entries
+- Two vitest cases added to `lexical.vitest.tsx` covering heading fonts and body font wrapper
+
+### Icon hover style: foreground-only
+
+Changed default hover behavior for `IconButton` ghost variant, `Toolbar` outline variant, and editor `Button` ghost variant to only change foreground color on hover (`hover:bg-transparent`) instead of painting an accent background (`hover:bg-accent`). Works better across custom themes where accent backgrounds can clash.
+
+### Build: Drizzle migrations not bundled
+
+Packaged app failed to start — `Can't find meta/_journal.json`. The `build.sh` script copied `src/electron/` (old migrations) but not `src/bun-client/migrations/` (Drizzle). Fixed by adding `cp -r src/bun-client/migrations dist/bun-client/` to `build.sh`.
+
+### Bundled theme changes
+
+- Removed Kayb Dark theme
+- Added Hearthside light theme (Solarized Light + Tufte blend)
 
 ---
 

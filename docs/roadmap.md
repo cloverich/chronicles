@@ -38,7 +38,7 @@ This roadmap outlines the transition of Chronicles from a "Local-First Journal" 
 
 - [ ] **Advanced Image Handling:** Move beyond simple lists to intelligent grouping and placement.
 - [ ] **macOS Optimization:** Further refine native-style toolbar and overall system integration.
-- [ ] **Theme Support:** Implementation of basic and custom themes. (Ref: [Theming Design](designs/theming.md))
+- [x] **Theme Support:** Implementation of basic and custom themes. (Ref: [Feature doc](features/theming.md), [Design](designs/theming.md))
 - [ ] **Font Settings:** User-customizable typography for the editor.
 - [ ] **Versioning:** Basic note versioning/history.
 - [ ] **Encryption:** Opt-in encryption for local-first security.

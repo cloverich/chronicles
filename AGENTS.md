@@ -4,10 +4,10 @@
 
 - [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (~80% complete)
 - [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
-- [docs/designs/theming.md](docs/designs/theming.md) — theming system (#443)
 
 ## Completed Projects
 
+- [docs/features/theming.md](docs/features/theming.md) — theming system (#443; deferred: FOUC, per-journal themes, visualizer, CLI validation)
 - [docs/plans/completed/electron-modernization.md](docs/plans/completed/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
 - [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
 
@@ -40,10 +40,11 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [docs/editor/markdown-pipeline.md](docs/editor/markdown-pipeline.md): micromark -> MDAST -> Slate roundtrip. Read when touching parsing or serialization.
 - [docs/editor/plugins.md](docs/editor/plugins.md): Plate plugin registry and configuration. Read when adding or modifying editor behavior.
 - [docs/editor/styling.md](docs/editor/styling.md): Editor CSS and Tailwind theming. Read when changing editor appearance.
+- [docs/editor/lexical.md](docs/editor/lexical.md): Lexical editor constraints (floating UI, portal pattern). Read when adding or modifying Lexical plugins.
 - [docs/search.md](docs/search.md): FTS implementation and query syntax. Read when modifying search.
 - [docs/indexer.md](docs/indexer.md): Background document indexing pipeline. Read when changing how documents are indexed.
 - [docs/bulk-operations.md](docs/bulk-operations.md): Batch import/export flows. Read when touching import or bulk edit logic.
-- [docs/theming.md](docs/theming.md): Token architecture, theme file format, creating/managing custom themes. Read when touching colors or adding themed UI.
+- [docs/features/theming.md](docs/features/theming.md): Token architecture, theme file format, creating/managing custom themes. Read when touching colors or adding themed UI.
 - [docs/testing.md](docs/testing.md): Current test infrastructure, what works, what's missing, and where things are headed.
 
 ## Skills

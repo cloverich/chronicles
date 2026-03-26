@@ -95,8 +95,9 @@ Themes can be managed in the preferences UI.
 
 ## Custom fonts
 
-User-installable fonts via a directory convention, similar to custom themes. See [docs/plans/active/custom-fonts.md](plans/active/custom-fonts.md).
+User-installable fonts via a directory convention, similar to custom themes. See [docs/plans/active/custom-fonts.md](../plans/active/custom-fonts.md).
 
-## Design document
+## Related docs
 
-For architectural rationale, deferred features (FOUC mitigation, per-journal themes, theme visualizer), and the original implementation plan, see [docs/designs/theming.md](designs/theming.md).
+- **Design document:** Architectural rationale, deferred features (FOUC mitigation, per-journal themes, theme visualizer) — [docs/designs/theming.md](../designs/theming.md)
+- **QA checklist:** Issue-by-issue verification for the theming epic (#443) — [docs/qa/theming.md](../qa/theming.md)
