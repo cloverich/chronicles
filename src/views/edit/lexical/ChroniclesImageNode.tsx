@@ -43,7 +43,7 @@ export class ChroniclesImageNode extends DecoratorNode<JSX.Element> {
 
   createDOM(): HTMLElement {
     const container = document.createElement("div");
-    container.className = "mb-3";
+    container.className = "mb-8";
     return container;
   }
 

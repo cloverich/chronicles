@@ -71,7 +71,7 @@ export function LexicalBasedEditor({
             throw error;
           },
           theme: {
-            code: "group/code mb-3 max-w-[var(--max-w-code)] w-full block relative rounded-md bg-muted/60 px-4 py-3 font-mono text-[length:var(--font-size-code)]",
+            code: "group/code mb-8 max-w-[var(--max-w-code)] w-full block relative rounded-md bg-muted/60 p-8 pr-4 font-mono text-[length:var(--font-size-code)]",
             codeHighlight: {
               comment: "text-muted-foreground italic",
               function: "text-blue-600",
@@ -82,9 +82,9 @@ export function LexicalBasedEditor({
               string: "text-emerald-700",
             },
             heading: {
-              h1: "max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-heading)] font-semibold font-heading",
-              h2: "max-w-[var(--max-w-prose)] w-full text-[length:calc(var(--font-size-heading)*0.833)] font-semibold font-heading-2",
-              h3: "max-w-[var(--max-w-prose)] w-full text-[length:calc(var(--font-size-heading)*0.75)] font-semibold font-heading-3",
+              h1: "max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-heading)] font-semibold font-heading mt-[1.6em] mb-[0.5em]",
+              h2: "max-w-[var(--max-w-prose)] w-full text-[length:calc(var(--font-size-heading)*0.833)] font-semibold font-heading-2 mt-[1.4em] mb-[0.5em]",
+              h3: "max-w-[var(--max-w-prose)] w-full text-[length:calc(var(--font-size-heading)*0.75)] font-semibold font-heading-3 mt-[1em] mb-[0.5em]",
             },
             link: "text-link cursor-pointer underline decoration-1 underline-offset-1",
             list: {
@@ -98,12 +98,12 @@ export function LexicalBasedEditor({
               nested: {
                 listitem: "",
               },
-              ol: "max-w-[var(--max-w-prose)] w-full list-decimal pl-6",
-              ul: "max-w-[var(--max-w-prose)] w-full list-disc pl-6",
+              ol: "max-w-[var(--max-w-prose)] w-full list-decimal pl-6 mb-8",
+              ul: "max-w-[var(--max-w-prose)] w-full list-disc pl-6 mb-8",
             },
-            paragraph: "mb-3 max-w-[var(--max-w-prose)] w-full",
+            paragraph: "mb-8 max-w-[var(--max-w-prose)] w-full",
             quote:
-              "max-w-[var(--max-w-prose)] w-full border-l-2 border-border pl-4 italic text-muted-foreground",
+              "max-w-[var(--max-w-prose)] w-full border-l-2 border-border pl-4 italic text-muted-foreground mb-8",
             text: {
               bold: "font-semibold",
               code: "bg-muted rounded px-1 py-0.5 font-mono text-[length:var(--font-size-code)] text-foreground",
