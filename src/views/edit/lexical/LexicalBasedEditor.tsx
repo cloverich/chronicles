@@ -31,6 +31,7 @@ interface MinimalReplacementEditorProps {
   initialMarkdown: string;
   onMarkdownChange: (markdown: string) => void;
   onEditorReady?: (editor: LexicalEditor) => void;
+  documentId?: string;
 }
 
 function EditorReadyPlugin({
@@ -52,6 +53,7 @@ export function LexicalBasedEditor({
   initialMarkdown,
   onMarkdownChange,
   onEditorReady,
+  documentId,
 }: MinimalReplacementEditorProps): JSX.Element {
   const lastMarkdownRef = React.useRef(initialMarkdown);
 
@@ -153,7 +155,7 @@ export function LexicalBasedEditor({
           }}
         />
         <EditorReadyPlugin onEditorReady={onEditorReady} />
-        <LexicalNoteLinkPlugin />
+        <LexicalNoteLinkPlugin documentId={documentId} />
       </LexicalComposer>
     </div>
   );

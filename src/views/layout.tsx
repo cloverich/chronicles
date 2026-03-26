@@ -78,6 +78,7 @@ export const ScrollContainer: React.FC<ClickableDivProps> = ({
   return (
     <div
       className="flex grow flex-col overflow-y-auto p-12"
+      style={{ scrollbarGutter: "stable" }}
       onClick={onClick || noop}
       onMouseDown={onMouseDown}
     >

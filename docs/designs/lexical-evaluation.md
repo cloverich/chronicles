@@ -235,6 +235,21 @@ Rules for the Lexical codebase as it grows:
 
 ---
 
+## TODO: highlight.js Code Theme Integration
+
+The Lexical editor currently uses hardcoded Tailwind classes for syntax highlighting tokens (`codeHighlight` in the Lexical theme object). The app already has full hljs infrastructure in place:
+
+- `src/themes/hljs.ts` — `loadHljsThemeCSS()`, `listHljsThemes()`, `resolveHljsDir()`
+- `src/views/StyleWatcher.tsx` — `applyHljsTheme()` (currently commented out, was for Plate)
+- Theme config schema supports `codeTheme` field; preferences store `codeThemeLight`/`codeThemeDark`
+- Defaults: `github` (light), `github-dark` (dark)
+
+**~256 themes available** from highlight.js (80 top-level + 176 base16 variants). These are CSS files ranging from ~1-5KB each. Need to evaluate bundle size impact: if total is reasonable (~500KB-1MB), we could bundle all themes and dynamically load the active one at runtime via `<style>` injection (the `applyHljsTheme` pattern already does this). Otherwise, ship a curated subset.
+
+**Work needed:** Map Lexical's `CodeHighlightNode` token types to hljs CSS classes (or apply hljs CSS directly to the code block), re-enable `applyHljsTheme` for Lexical, and wire up a theme selector in preferences/settings.
+
+---
+
 ## Risk Register
 
 1. **Markdown drift:** Mitigated by roundtrip tests on every feature. Every phase requires vitest coverage before completion.

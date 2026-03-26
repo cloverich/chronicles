@@ -75,6 +75,7 @@ export const EditorLayout = observer(
               <LexicalBasedEditor
                 initialMarkdown={document.getInitialContent()}
                 onMarkdownChange={document.setMarkdownContent}
+                documentId={document.id}
               />
             </div>
 

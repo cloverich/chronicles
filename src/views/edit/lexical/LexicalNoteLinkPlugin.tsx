@@ -68,7 +68,11 @@ function clampIndex(index: number, count: number): number {
   return ((index % count) + count) % count;
 }
 
-export function LexicalNoteLinkPlugin(): JSX.Element | null {
+export function LexicalNoteLinkPlugin({
+  documentId,
+}: {
+  documentId?: string;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const navigate = useNavigate();
   const [match, setMatch] = React.useState<MatchState | null>(null);
@@ -124,9 +128,12 @@ export function LexicalNoteLinkPlugin(): JSX.Element | null {
           return;
         }
 
-        setResults(response.data);
+        const filtered = documentId
+          ? response.data.filter((item) => item.id !== documentId)
+          : response.data;
+        setResults(filtered);
         setSelectedIndex((current) =>
-          clampIndex(current, Math.max(response.data.length, 1)),
+          clampIndex(current, Math.max(filtered.length, 1)),
         );
       })
       .catch(() => {
