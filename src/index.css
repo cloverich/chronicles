@@ -290,7 +290,7 @@ div {
 
 .lexical-listitem-unchecked::before,
 .lexical-listitem-checked::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0.125rem;
   top: 0.2em;

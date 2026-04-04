@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { JournalResponse } from "../../hooks/useClient";
+import useClient, { JournalResponse } from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { useSearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
@@ -85,6 +85,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   );
   const navigate = useNavigate();
   const searchStore = useSearchStore()!;
+  const client = useClient();
 
   // If there are no journals, redirect to the documents view
   React.useEffect(() => {
@@ -107,6 +108,13 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     }
   }
 
+  async function deleteDocument() {
+    if (!confirm("Are you sure you want to delete this note?")) return;
+    await client.documents.del(document.id, document.journal);
+    searchStore.updateSearch(document, "del");
+    navigate("/documents");
+  }
+
   return (
     <EditorErrorBoundary
       documentId={document.id}
@@ -119,6 +127,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
         setSelectedViewMode={setSelectedViewMode}
         journals={journals}
         goBack={goBack}
+        deleteDocument={deleteDocument}
       />
     </EditorErrorBoundary>
   );
@@ -133,12 +142,14 @@ function EditorInner({
   setSelectedViewMode,
   journals,
   goBack,
+  deleteDocument,
 }: {
   document: EditableDocument;
   selectedViewMode: EditorMode;
   setSelectedViewMode: (mode: EditorMode) => void;
   journals: JournalResponse[];
   goBack: () => void;
+  deleteDocument: () => void;
 }) {
   switch (selectedViewMode) {
     case EditorMode.Editor:
@@ -149,6 +160,7 @@ function EditorInner({
           goBack={goBack}
           selectedViewMode={selectedViewMode}
           setSelectedViewMode={setSelectedViewMode}
+          deleteDocument={deleteDocument}
         />
       );
     case EditorMode.Lexical:
@@ -179,6 +191,7 @@ function EditorInner({
           goBack={goBack}
           selectedViewMode={selectedViewMode}
           setSelectedViewMode={setSelectedViewMode}
+          deleteDocument={deleteDocument}
         />
       );
     case EditorMode.SlateDom:
@@ -188,6 +201,7 @@ function EditorInner({
           json={document.getInitialSlateContent()}
           selectedEditorMode={selectedViewMode}
           setSelectedEditorMode={setSelectedViewMode}
+          deleteDocument={deleteDocument}
         />
       );
     case EditorMode.Mdast:
@@ -197,6 +211,7 @@ function EditorInner({
           selectedEditorMode={selectedViewMode}
           setSelectedEditorMode={setSelectedViewMode}
           json={document.mdastDebug}
+          deleteDocument={deleteDocument}
         />
       );
   }

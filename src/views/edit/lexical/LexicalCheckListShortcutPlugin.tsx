@@ -1,11 +1,7 @@
 import { $isListItemNode, $isListNode } from "@lexical/list";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent } from "@lexical/utils";
-import {
-  $getSelection,
-  $isRangeSelection,
-  $isTextNode,
-} from "lexical";
+import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
 import React from "react";
 
 /**
@@ -26,10 +22,7 @@ export function LexicalCheckListShortcutPlugin(): null {
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) return;
 
         const anchorNode = selection.anchor.getNode();
-        if (
-          !$isTextNode(anchorNode) ||
-          !dirtyLeaves.has(anchorNode.getKey())
-        ) {
+        if (!$isTextNode(anchorNode) || !dirtyLeaves.has(anchorNode.getKey())) {
           return;
         }
 

@@ -7,6 +7,7 @@ import DebugDropdown from "../editorv2/features/toolbar/DebugDropdown";
 interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
+  deleteDocument: () => void;
 }
 
 /**
@@ -18,6 +19,7 @@ interface Props {
 export function ReadonlyToolbar({
   selectedEditorMode,
   setSelectedEditorMode,
+  deleteDocument,
 }: Props) {
   return (
     <TooltipProvider
@@ -40,7 +42,7 @@ export function ReadonlyToolbar({
                 <DebugDropdown
                   selectedEditorMode={selectedEditorMode}
                   setSelectedEditorMode={setSelectedEditorMode}
-                  deleteDocument={() => {}}
+                  deleteDocument={deleteDocument}
                 />
               </ToolbarGroup>
             </Toolbar>

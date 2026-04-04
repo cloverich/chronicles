@@ -17,6 +17,7 @@ interface Props {
   setSelectedViewMode: (mode: EditorMode) => void;
   journals: JournalResponse[];
   goBack: () => void;
+  deleteDocument: () => void;
 }
 
 /**
@@ -30,6 +31,7 @@ const MarkdownEditor = observer(
     setSelectedViewMode,
     journals,
     goBack,
+    deleteDocument,
   }: Props) => {
     // const focusEditor = useFocusEditor();
     const navigate = useNavigate();
@@ -65,6 +67,7 @@ const MarkdownEditor = observer(
             selectedEditorMode={selectedViewMode}
             setSelectedEditorMode={setSelectedViewMode}
             document={document}
+            deleteDocument={deleteDocument}
           />
         </Titlebar>
 

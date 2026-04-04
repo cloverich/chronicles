@@ -16,6 +16,7 @@ interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
   goBack: () => void;
+  deleteDocument: () => void;
 }
 
 /**
@@ -29,6 +30,7 @@ export const ReadOnlyTextEditor = observer(
     selectedEditorMode,
     setSelectedEditorMode,
     goBack,
+    deleteDocument,
   }: Props) => {
     function content() {
       if (json) {
@@ -56,6 +58,7 @@ export const ReadOnlyTextEditor = observer(
           <ReadonlyToolbar
             selectedEditorMode={selectedEditorMode}
             setSelectedEditorMode={setSelectedEditorMode}
+            deleteDocument={deleteDocument}
           />
         </Titlebar>
 

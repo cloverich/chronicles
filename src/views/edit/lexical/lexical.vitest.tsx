@@ -1503,7 +1503,9 @@ describe("lexical migration spike", () => {
 
     const editor = screen.getByLabelText("Editor");
     await waitFor(() => {
-      expect(editor.querySelector(".lexical-listitem-unchecked")).not.toBeNull();
+      expect(
+        editor.querySelector(".lexical-listitem-unchecked"),
+      ).not.toBeNull();
       expect(editor.querySelector(".lexical-listitem-checked")).not.toBeNull();
     });
   });
@@ -1539,7 +1541,9 @@ describe("lexical migration spike", () => {
     await typeWithLexical(lexicalEditor!, "- [ ] ");
 
     await waitFor(() => {
-      expect(editor.querySelector(".lexical-listitem-unchecked")).not.toBeNull();
+      expect(
+        editor.querySelector(".lexical-listitem-unchecked"),
+      ).not.toBeNull();
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
         | string
         | undefined;

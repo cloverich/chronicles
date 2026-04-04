@@ -9,6 +9,7 @@ interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
   document: EditableDocument;
+  deleteDocument: () => void;
 }
 
 /**
@@ -18,6 +19,7 @@ export function MarkdownToolbar({
   selectedEditorMode,
   setSelectedEditorMode,
   document,
+  deleteDocument,
 }: Props) {
   return (
     <TooltipProvider
@@ -40,7 +42,7 @@ export function MarkdownToolbar({
                 <DebugDropdown
                   selectedEditorMode={selectedEditorMode}
                   setSelectedEditorMode={setSelectedEditorMode}
-                  deleteDocument={() => {}}
+                  deleteDocument={deleteDocument}
                 />
               </ToolbarGroup>
             </Toolbar>

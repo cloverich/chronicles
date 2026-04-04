@@ -19,6 +19,7 @@ interface Props {
   setSelectedViewMode: (mode: EditorMode) => void;
   journals: JournalResponse[];
   goBack: () => void;
+  deleteDocument: () => void;
 }
 
 export const EditorLayout = observer(
@@ -28,6 +29,7 @@ export const EditorLayout = observer(
     setSelectedViewMode,
     journals,
     goBack,
+    deleteDocument,
   }: Props) => {
     return (
       <Base.EditorContainer>
@@ -57,7 +59,7 @@ export const EditorLayout = observer(
                     <DebugDropdown
                       selectedEditorMode={selectedViewMode}
                       setSelectedEditorMode={setSelectedViewMode}
-                      deleteDocument={() => {}}
+                      deleteDocument={deleteDocument}
                     />
                   </ToolbarGroup>
                 </Toolbar>
