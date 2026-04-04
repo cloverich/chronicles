@@ -17,6 +17,7 @@ import { LexicalCodeLanguagePlugin } from "./LexicalCodeLanguagePlugin";
 import { LexicalFormattingShortcutsPlugin } from "./LexicalFormattingShortcutsPlugin";
 import { LexicalImageUploadPlugin } from "./LexicalImageUploadPlugin";
 import { LexicalLinkToolbarPlugin } from "./LexicalLinkToolbarPlugin";
+import { LexicalCheckListShortcutPlugin } from "./LexicalCheckListShortcutPlugin";
 import { LexicalListBehaviorPlugin } from "./LexicalListBehaviorPlugin";
 import { LexicalNoteLinkPlugin } from "./LexicalNoteLinkPlugin";
 import { LexicalPasteLinkPlugin } from "./LexicalPasteLinkPlugin";
@@ -91,10 +92,8 @@ export function LexicalBasedEditor({
               checklist: "list-none pl-2",
               listitem:
                 "text-[length:var(--font-size-body)] [&:has(>ul):not(:has(>span))]:list-none",
-              listitemChecked:
-                "relative ml-7 list-none before:absolute before:top-0 before:left-[-1.75rem] before:text-xs before:text-muted-foreground before:content-['[x]']",
-              listitemUnchecked:
-                "relative ml-7 list-none before:absolute before:top-0 before:left-[-1.75rem] before:text-xs before:text-muted-foreground before:content-['[ ]']",
+              listitemChecked: "lexical-listitem-checked",
+              listitemUnchecked: "lexical-listitem-unchecked",
               nested: {
                 listitem: "",
               },
@@ -138,6 +137,7 @@ export function LexicalBasedEditor({
         <LexicalFormattingShortcutsPlugin />
         <LexicalBlockShortcutsPlugin />
         <LexicalListBehaviorPlugin />
+        <LexicalCheckListShortcutPlugin />
         <LexicalImageUploadPlugin />
         <LexicalPasteLinkPlugin />
         <LexicalLinkToolbarPlugin />

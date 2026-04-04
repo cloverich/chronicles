@@ -271,3 +271,44 @@ div {
 .content-section > :first-child {
   margin-top: 0;
 }
+
+/**
+ * Lexical checklist items.
+ *
+ * ::before is positioned inside the left padding so CheckListPlugin's click
+ * detection works — it reads getComputedStyle(li, '::before').width and
+ * accepts clicks between rect.left and rect.left + beforeWidth.
+ * Negative left (outside rect.left) is never detected.
+ */
+.lexical-listitem-unchecked,
+.lexical-listitem-checked {
+  list-style: none;
+  position: relative;
+  padding-left: 1.75rem;
+  outline: none;
+}
+
+.lexical-listitem-unchecked::before,
+.lexical-listitem-checked::before {
+  content: '';
+  position: absolute;
+  left: 0.125rem;
+  top: 0.2em;
+  width: 1em;
+  height: 1em;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.lexical-listitem-unchecked::before {
+  border: 1.5px solid var(--muted-foreground);
+}
+
+.lexical-listitem-checked::before {
+  background-color: var(--primary);
+  border: 1.5px solid var(--primary);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 75%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none' d='M2.5 8l4 4 7-7'/%3E%3C/svg%3E");
+}

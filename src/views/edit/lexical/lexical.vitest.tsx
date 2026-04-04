@@ -1484,6 +1484,108 @@ describe("lexical migration spike", () => {
     expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
   });
 
+  it("renders checklist items from markdown with correct CSS classes", async () => {
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown={["- [ ] unchecked", "- [x] checked"].join("\n")}
+          onMarkdownChange={vi.fn()}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(lexicalEditor).not.toBeNull());
+
+    const editor = screen.getByLabelText("Editor");
+    await waitFor(() => {
+      expect(editor.querySelector(".lexical-listitem-unchecked")).not.toBeNull();
+      expect(editor.querySelector(".lexical-listitem-checked")).not.toBeNull();
+    });
+  });
+
+  it("converts - [ ] typing to an unchecked checklist item", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(lexicalEditor).not.toBeNull());
+
+    const editor = screen.getByLabelText("Editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+
+    // `- ` triggers UNORDERED_LIST; `[ ] ` (including trailing space) triggers
+    // LexicalCheckListShortcutPlugin via registerUpdateListener.
+    await typeWithLexical(lexicalEditor!, "- [ ] ");
+
+    await waitFor(() => {
+      expect(editor.querySelector(".lexical-listitem-unchecked")).not.toBeNull();
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      // Lexical's list exporter always adds ' ' between prefix and content,
+      // so an empty checklist item serializes as "- [ ] " (with trailing space).
+      expect(latestMarkdown).toBe("- [ ] ");
+    });
+  });
+
+  it("converts - [x] typing to a checked checklist item", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(lexicalEditor).not.toBeNull());
+
+    const editor = screen.getByLabelText("Editor");
+    await act(async () => {
+      fireEvent.focus(editor);
+      lexicalEditor!.update(() => {
+        $getRoot().selectStart();
+      });
+    });
+
+    await typeWithLexical(lexicalEditor!, "- [x] ");
+
+    await waitFor(() => {
+      expect(editor.querySelector(".lexical-listitem-checked")).not.toBeNull();
+      const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
+        | string
+        | undefined;
+      expect(latestMarkdown).toBe("- [x] ");
+    });
+  });
+
   it("escapes a list on double Enter and continues in a paragraph", async () => {
     const onMarkdownChange = vi.fn();
     let lexicalEditor: LexicalEditor | null = null;

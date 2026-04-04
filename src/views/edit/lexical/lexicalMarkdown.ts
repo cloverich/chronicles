@@ -4,6 +4,7 @@ import { ListItemNode, ListNode } from "@lexical/list";
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  CHECK_LIST,
   LINK,
   TRANSFORMERS,
   type ElementTransformer,
@@ -145,6 +146,7 @@ export const lexicalNodes: Array<Klass<LexicalNode>> = [
 export const chroniclesLexicalTransformers: Transformer[] = [
   CHRONICLES_IMAGE_TRANSFORMER,
   CHRONICLES_NOTE_LINK_TRANSFORMER,
+  CHECK_LIST,
   ...TRANSFORMERS,
 ];
 
