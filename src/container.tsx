@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
-import "react-day-picker/dist/style.css";
+import "react-day-picker/style.css";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Navigate, Route, Routes } from "react-router-dom";
 

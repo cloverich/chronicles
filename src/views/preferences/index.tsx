@@ -2,7 +2,6 @@ import { FolderOpen, Trash2 } from "lucide-react";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
-import { InputProps } from "react-day-picker";
 import { toast } from "sonner";
 import { Label } from "../../components";
 import { Button } from "../../components/Button";
@@ -23,7 +22,7 @@ import {
   SKIPPABLE_PREFIXES,
 } from "../../preload/client/types";
 import { ThemeListEntry } from "../../themes/loader";
-import { Input } from "../documents/Input";
+import { Input, InputProps } from "../documents/Input";
 
 interface Props {
   isOpen: boolean;

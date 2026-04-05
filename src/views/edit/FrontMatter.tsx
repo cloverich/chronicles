@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React, { useMemo } from "react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, getDefaultClassNames } from "react-day-picker";
 import * as D from "../../components/DropdownMenu";
 import * as Popover from "../../components/Popover";
 import TagInput from "../../components/tag-input/TagInput";
@@ -9,14 +9,22 @@ import { JournalResponse } from "../../hooks/useClient";
 import { usePreferences } from "../../hooks/usePreferences";
 import { useTags } from "../../hooks/useTags";
 import { TagTokenParser } from "../documents/search/parsers/tag";
-import { EditableDocument } from "./EditableDocument";
+interface DocumentProps {
+  createdAt: string;
+  title?: string;
+  journal: string;
+  tags: string[];
+  save(type: "frontmatter", content: undefined): unknown;
+}
+
+const rdp = getDefaultClassNames();
 
 const FrontMatter = observer(
   ({
     document,
     journals,
   }: {
-    document: EditableDocument;
+    document: DocumentProps;
     journals: JournalResponse[];
   }) => {
     const journalSelectorOpenState = D.useOpenState();
@@ -99,7 +107,8 @@ const FrontMatter = observer(
       );
     }
 
-    function onDayPick(day: Date) {
+    function onDayPick(day: Date | undefined) {
+      if (!day) return;
       document.createdAt = day.toISOString();
       datePickerOpenState.onOpenChange(false);
     }
@@ -116,12 +125,34 @@ const FrontMatter = observer(
             </span>
           </Popover.PopoverTrigger>
           <Popover.PopoverContent align="start">
-            <div className="max-h-24rem overflow-auto">
+            <div className="font-mono text-xs">
               <DayPicker
                 selected={new Date(document.createdAt)}
                 defaultMonth={new Date(document.createdAt)}
-                onDayClick={(day) => onDayPick(day)}
+                captionLayout="dropdown"
+                onSelect={onDayPick}
                 mode="single"
+                style={
+                  {
+                    "--rdp-accent-color": "var(--accent)",
+                    "--rdp-weekday-text-transform": "uppercase",
+                  } as React.CSSProperties
+                }
+                classNames={{
+                  ...rdp,
+                  dropdown_root: `${rdp.dropdown_root} text-sm`,
+                  month_caption: `${rdp.month_caption} uppercase text-xs px-2`,
+                  weekdays: `${rdp.weekday} font-mono uppercase`,
+                  nav: `${rdp.nav} text-accent-foreground`,
+                  root: `${rdp.root} bg-popover text-popover-foreground`,
+                  button_previous: `${rdp.button_previous} hover:bg-accent hover:text-accent-foreground`,
+                  button_next: `${rdp.button_next} hover:bg-accent hover:text-accent-foreground`,
+                  day: `${rdp.day} hover:text-accent-foreground`,
+                  selected: `${rdp.selected} text-accent font-semibold`,
+                  today: `${rdp.today} font-semibold`,
+                  outside: `${rdp.outside} text-muted-foreground opacity-50`,
+                  disabled: `${rdp.disabled} text-muted-foreground opacity-50`,
+                }}
               />
             </div>
           </Popover.PopoverContent>
