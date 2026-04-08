@@ -28,7 +28,7 @@
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^12.5.0",
     "conf": "^14.0.0",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "electrobun": "^1.16.0",
     "electron-store": "^10.1.0",
     "knex": "^2.5.0",
