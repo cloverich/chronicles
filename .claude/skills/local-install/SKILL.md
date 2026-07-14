@@ -1,6 +1,8 @@
 ---
 name: local-install
 description: Automates the build and local installation of the Chronicles application on macOS. Use when the user wants to test a local build of the application by installing it into their /Applications folder.
+context: fork
+agent: haiku
 ---
 
 # Local Build & Install

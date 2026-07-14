@@ -81,6 +81,9 @@ export class DocumentsClient {
     };
   }
 
+  /**
+   * Serializes title, tags, etc, into markdown front-matter to be embedded into the final file content
+   */
   private prependFrontMatter(
     content: string,
     frontMatter: Record<string, any>,
@@ -130,6 +133,7 @@ export class DocumentsClient {
 
     return {
       id: row.id,
+      filepath,
       journal: row.journal,
       frontMatter,
       content: body,
@@ -192,6 +196,8 @@ export class DocumentsClient {
   updateDocument = async (args: UpdateRequest): Promise<void> => {
     if (!args.id) throw new Error("id required to update document");
 
+    const origJournal = (await this.findById({ id: args.id })).journal;
+
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
     args.frontMatter.updatedAt =
       args.frontMatter.updatedAt || new Date().toISOString();
@@ -201,6 +207,15 @@ export class DocumentsClient {
       { id: args.id, content },
       args.journal,
     );
+
+    // If journal changed, immediately delete old document.
+    // NOTE: If create completes but delete errors, there will be duplicates; we could auto-clean
+    // up on re-index and build intelligence around that but using files as source of truth + nesting
+    // documents in /journal1/<docid>.md + /journal2/<docid2>.md is flawed. IMO best to move back to
+    // a DB-first approach and rely on DB provided referential integrity/atomic operations (etc).
+    if (args.journal !== origJournal) {
+      await this.files.deleteDocument(args.id, origJournal);
+    }
 
     const syncMeta = await this.computeSyncMeta(docPath, content);
 

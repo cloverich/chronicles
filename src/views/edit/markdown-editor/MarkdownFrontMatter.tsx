@@ -26,6 +26,13 @@ export const MarkdownFrontMatter = observer(
         <h2 className="mb-2 font-medium">Document Metadata</h2>
         <div className="grid grid-cols-2 gap-2">
           <div>
+            <span className="font-mono font-medium">ID:</span> {document.id}
+          </div>
+          <div>
+            <span className="font-mono font-medium">Filepath:</span>{" "}
+            {document.filepath}
+          </div>
+          <div>
             <span className="font-mono font-medium">Title:</span>{" "}
             {document.title || "Untitled"}
           </div>
@@ -40,9 +47,6 @@ export const MarkdownFrontMatter = observer(
           <div>
             <span className="font-mono font-medium">Updated:</span>{" "}
             {document.updatedAt.slice(0, 10)}
-          </div>
-          <div>
-            <span className="font-mono font-medium">ID:</span> {document.id}
           </div>
           <div>
             <span className="font-mono font-medium">Tags:</span>{" "}

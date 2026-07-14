@@ -1,5 +1,6 @@
 import { mkdtempSync, rmSync } from "fs";
 import assert from "node:assert/strict";
+import { open } from "node:fs/promises";
 import { after, before, describe, test } from "node:test";
 import { tmpdir } from "os";
 import { createClient } from "./factory";
@@ -50,6 +51,13 @@ describe("createDocument / findById", () => {
 });
 
 describe("updateDocument", () => {
+  let journal2Name: string;
+
+  before(async () => {
+    journal2Name = "test-journal2";
+    await client.journals.create({ name: journal2Name });
+  });
+
   test("update changes content and frontMatter", async () => {
     const [id] = await client.documents.createDocument({
       journal: journalName,
@@ -78,6 +86,56 @@ describe("updateDocument", () => {
     assert.strictEqual(doc.content, "Updated content");
     assert.strictEqual(doc.frontMatter.title, "Updated Title");
     assert.deepStrictEqual(doc.frontMatter.tags, ["tagB"]);
+  });
+
+  // While file system is source of truth, changing the journal requires deleting the
+  // old file on disk, to avoid duplicates on next startup
+  test("changing journal name removes old document", async () => {
+    const [id] = await client.documents.createDocument({
+      journal: journalName,
+      content: "Original content",
+      frontMatter: {
+        title: "Original Title",
+        tags: ["tagA"],
+        createdAt: "2024-02-01T00:00:00.000Z",
+        updatedAt: "2024-02-01T00:00:00.000Z",
+      },
+    });
+
+    let doc = await client.documents.findById({ id });
+    let originalFilepath = doc.filepath;
+    await assert.doesNotReject(
+      open(originalFilepath),
+      "Document should exist on disk at originalFilePath",
+    );
+    assert.ok(
+      originalFilepath.includes(`/${journalName}/${doc.id}`),
+      `Expected ${journalName} to be part of ${originalFilepath}`,
+    );
+
+    await client.documents.updateDocument({
+      id,
+      journal: journal2Name,
+      content: "Original content",
+      frontMatter: {
+        title: "Original Title",
+        tags: ["tagA"],
+        createdAt: "2024-02-01T00:00:00.000Z",
+        updatedAt: "2024-02-01T00:00:00.000Z",
+      },
+    });
+
+    doc = await client.documents.findById({ id });
+    const updatedFilepath = doc.filepath;
+    assert.ok(
+      updatedFilepath.includes(`/${journal2Name}/${doc.id}`),
+      `Expected ${journalName} to be part of ${updatedFilepath}`,
+    );
+
+    await assert.rejects(
+      open(originalFilepath),
+      "Original file path should no longer exist",
+    );
   });
 });
 

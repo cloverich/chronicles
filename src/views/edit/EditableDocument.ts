@@ -54,6 +54,7 @@ export class EditableDocument {
   title?: string;
   journal: string;
   id: string;
+  filepath: string;
   createdAt: string;
   updatedAt: string; // read-only outside this class
   tags: string[];
@@ -78,6 +79,7 @@ export class EditableDocument {
     this.journal = doc.journal;
     this.content = doc.content;
     this.id = doc.id;
+    this.filepath = doc.filepath;
     this.createdAt = doc.frontMatter.createdAt;
     this.updatedAt = doc.frontMatter.updatedAt;
     this.tags = doc.frontMatter.tags;
@@ -91,6 +93,7 @@ export class EditableDocument {
       title: observable,
       journal: observable,
       id: observable,
+      filepath: observable,
       createdAt: observable,
       updatedAt: observable,
       tags: observable,
@@ -110,10 +113,10 @@ export class EditableDocument {
         };
       },
       () => {
+        // I tried delay here, but it works like throttle.
+        // So, I put a debounce on save instead
         this.save("frontmatter", undefined);
       },
-      // I tried delay here, but it works like throttle.
-      // So, I put a debounce on save instead
     );
   }
 

@@ -31,6 +31,7 @@ export type JournalResponse = {
 
 export interface GetDocumentResponse {
   id: string;
+  filepath: string;
   content: string;
   journal: string;
   frontMatter: FrontMatter;

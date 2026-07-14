@@ -9,6 +9,7 @@ import { JournalResponse } from "../../hooks/useClient";
 import { usePreferences } from "../../hooks/usePreferences";
 import { useTags } from "../../hooks/useTags";
 import { TagTokenParser } from "../documents/search/parsers/tag";
+
 interface DocumentProps {
   createdAt: string;
   title?: string;
