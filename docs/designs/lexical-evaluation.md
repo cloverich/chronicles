@@ -30,7 +30,11 @@ MDAST remains used elsewhere in the app (indexer, search) but the editor pipelin
 - Images: custom `ChroniclesImageNode`, markdown roundtrip, drop/paste upload via `client.files.uploadImageBytes()`, max-size rendering constraints
 - Expanded vitest coverage across roundtrip, render contracts, and editor interactions, including image workflows
 
-**Not done:** Remaining roadmap items in Phases 6-10, plus any deferred parity follow-ups noted in the phase sections below.
+**Not done (as of July 2026):** Phase 6 (image gallery) is the main remaining
+build. Phase 7 (video/file) is deferred to [cloud-web.md](cloud-web.md); Phase 8
+(polish) is deferred except the `Ctrl+E` macOS fix, now done. Critical path to
+retiring Plate is Phase 6 → Phase 9 (dogfood) → Phase 10 (default swap). GFM
+checklist support has since landed (Phase 3 task-lists row).
 
 ---
 
@@ -154,7 +158,20 @@ Plate groups consecutive images into a lightbox gallery automatically.
 
 ---
 
-### Phase 7 — Video & File Embedding
+### Phase 7 — Video & File Embedding — DEFERRED to Chronicles Cloud
+
+**Deferred (July 2026).** Video/file embedding is punted to the web version
+rather than built against Electron's `chronicles://` protocol handler. Video
+seeking was already broken under that handler (no HTTP Range support), and the
+media pipeline is exactly what changes in the cloud design: attachments move to
+R2, served over HTTP with native Range support, and `chronicles://` URLs are
+rewritten to `/files/` routes. Building video against the soon-to-be-replaced
+protocol handler is throwaway work.
+
+Do it there, on the real media pipeline. See
+[cloud-web.md](cloud-web.md) (assets / R2, Phase 2).
+
+Original scope, for whoever picks it up later:
 
 | Feature             | Work needed                                                          |
 | ------------------- | -------------------------------------------------------------------- |
@@ -162,19 +179,26 @@ Plate groups consecutive images into a lightbox gallery automatically.
 | Video drag-and-drop | Extend media upload plugin for video MIME types                      |
 | File links          | Drop non-image/video files → insert as link with "File: {name}" text |
 
-**Defer (P1/P2):** Video is not a ship blocker. Plate's video support was already broken, and video seeking was broken in Electron's protocol handler too. The Electrobun HTTP file server will handle video better (native HTTP Range request support), but implementing video can happen after the Lexical and Electrobun migrations ship. Implement basic rendering if convenient; skip upload.
-
-**Vitests:**
-
-- Video node renders `<video>` element with correct src
-- Video markdown roundtrip (if video has markdown representation — may be HTML passthrough)
-- File drop creates link node
-
-**Exit criteria:** Videos render if present in existing notes. File drops produce links.
-
 ---
 
-### Phase 8 — Editor Polish & Keyboard Behavior
+### Phase 8 — Editor Polish & Keyboard Behavior — DEFERRED
+
+**Mostly deferred (July 2026).** Per the "observed constraints" note in Phase 3,
+most of this already works in Lexical mode (double-enter list escape, Tab/
+Shift+Tab indent/outdent, `Cmd+Enter` block exit, code-block exit). Remaining
+polish (trailing-block guarantee, etc.) is deferred — not a blocker for the
+default swap. Revisit after Phase 10 if daily use surfaces friction.
+
+**Exception — fixed (July 2026): `Ctrl+E` (end of line) on macOS.**
+`LexicalFormattingShortcutsPlugin` treated Ctrl and Cmd as interchangeable
+(`event.metaKey || event.ctrlKey`), so macOS Ctrl+E was hijacked as the
+inline-code shortcut instead of moving the cursor to end of line. Ctrl+A
+"worked" only because no handler matched `a`. Fixed by requiring the platform
+modifier — Cmd on Apple, Ctrl elsewhere (`IS_APPLE` check) — so native
+emacs-style Ctrl bindings pass through. macOS-only app today; the platform
+check keeps a future web build correct on Windows/Linux.
+
+Original scope, for the deferred remainder:
 
 | Feature                  | Work needed                                                            |
 | ------------------------ | ---------------------------------------------------------------------- |
@@ -182,16 +206,6 @@ Plate groups consecutive images into a lightbox gallery automatically.
 | Trailing block           | Ensure document always ends with an empty paragraph for easy appending |
 | Indent/outdent           | Tab/Shift+Tab in lists                                                 |
 | Code block exit          | Enter on empty line at end of code block exits to paragraph            |
-
-**Vitests:**
-
-- `Cmd+Enter` inside blockquote creates new paragraph after it
-- `Cmd+Enter` inside code block exits to paragraph
-- Document always has trailing paragraph node
-- Tab in list item indents, Shift+Tab outdents
-- Enter on empty code block line exits code block
-
-**Exit criteria:** Keyboard behavior feels natural for daily use.
 
 ---
 
