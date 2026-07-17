@@ -16,20 +16,6 @@ MDAST remains used elsewhere in the app (indexer, search) but the editor pipelin
 
 ---
 
-## Current State (March 20, 2026)
-
-**Done:**
-
-- Markdown roundtrip contract (headings, lists, quotes, code blocks, inline formatting, links)
-- Integration seam: Lexical mode selectable via debug dropdown, markdown in/out wired
-- Formatting shortcuts: `Cmd+B` (bold), `Cmd+I` (italic), `Cmd+E` (inline code), `Cmd+Shift+S` (strikethrough), `Cmd+U` (underline)
-- `MarkdownShortcutPlugin` typing triggers covered by vitests (`## `, `> `, `` ` ``, `- `, `1. `, fenced code)
-- Code block syntax highlighting wiring via `@lexical/code` (`CodeHighlightNode` + `registerCodeHighlighting`)
-- Note links: custom `ChroniclesNoteLinkNode`, markdown transformer, `@`-trigger dropdown, click navigation
-- Regular links: floating toolbar (edit/unlink/open), paste-to-link conversion
-- Images: custom `ChroniclesImageNode`, markdown roundtrip, drop/paste upload via `client.files.uploadImageBytes()`, max-size rendering constraints
-- Expanded vitest coverage across roundtrip, render contracts, and editor interactions, including image workflows
-
 ## Decisions — Lexical is done, ship it (July 2026)
 
 The author has dogfooded Lexical as the default editor for months. Verdict:
