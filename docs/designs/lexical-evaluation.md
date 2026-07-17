@@ -1,6 +1,13 @@
 # Lexical Editor Migration
 
-**Goal:** Replace Slate/Plate with Lexical. Markdown-first, vitest-driven, incremental.
+> **Status: COMPLETE (July 2026).** Lexical is the sole editor; Plate and the
+> Slate⇄MDAST transformer are fully removed (commits `11ae356`, `f24f477`,
+> `3f53af7`). The remaining roadmap was cut, not built — see the Decisions
+> section. This doc is retained as the historical record of the migration.
+> Deferred follow-ons live in the web work: media handling →
+> [chronicles-web-local.md](chronicles-web-local.md); minor editor polish → backlog.
+
+**Goal (met):** Replace Slate/Plate with Lexical. Markdown-first, vitest-driven, incremental.
 
 ---
 
