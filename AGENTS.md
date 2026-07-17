@@ -2,8 +2,11 @@
 
 ## Active Projects
 
-- [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (~80% complete)
-- [docs/plans/active/vitest-renderer.md](docs/plans/active/vitest-renderer.md) — renderer test coverage
+- [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical migration: Lexical is the default and is done; only remaining work is **removing Plate** (staged, in progress)
+
+## Next Up (speccing, not started)
+
+- [docs/designs/chronicles-web-local.md](docs/designs/chronicles-web-local.md) — Chronicles Web (Node + SQLite, self-hosted, runs anywhere). Supersedes the deferred [Cloudflare design](docs/designs/cloud-web.md). Blocked on Plate removal.
 
 ## Completed Projects
 
