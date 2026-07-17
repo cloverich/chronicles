@@ -1,5 +1,46 @@
 # Design Doc: Chronicles Cloud (Cloudflare Workers)
 
+> **Status: DEFERRED (July 2026).** Superseded for now by
+> [chronicles-web-local.md](chronicles-web-local.md) — a plain Node + SQLite web
+> server that runs anywhere (laptop over Tailscale today, a fixed-price VPS
+> later). Rationale below. The Cloudflare/Durable-Objects design is kept as a
+> possible future scale-out: a web build that speaks HTTP to the `node-client`
+> is a **minimal refactor away** from speaking to a Durable Object, so nothing
+> here is wasted. Do not implement this doc yet.
+>
+> **Why deferred — cost risk vs. use case.** Two reasons, in order:
+>
+> 1. **Denial-of-wallet, however unlikely, is unbounded.** Cloudflare Workers
+>    Paid is metered usage-based billing with a card on file and **no hard spend
+>    cap** — "Budget alerts" (April 2026) only _notify_, they don't throttle or
+>    stop the meter ([budget alerts][cf-budget]). For this app's setup the odds
+>    of an overrun are genuinely low: every `/api/*` route sits behind
+>    Cloudflare Access (auth), so unauthenticated traffic can't reach metered DO
+>    compute at all; the only public surfaces are `/p/*` (blog) and `/share/*`
+>    (tokens), both rate-limitable; realistic volume for a handful of humans is
+>    hundreds–thousands of requests/day against a 100k/day free ceiling; and
+>    markdown storage is kilobytes-to-megabytes against multi-GB free tiers.
+>    With **no card / Free plan**, overrun is _impossible_ (service just stops
+>    at free limits) — SQLite-backed DOs even run on Free and aren't billed. So
+>    the risk is "near-impossible, but not zero, and the tail is unbounded." For
+>    the author's risk tolerance, an unbounded tail — even at low probability —
+>    isn't worth it when a fixed-price alternative exists.
+> 2. **A fixed-price VPS is a better fit anyway.** A $4–6/mo DigitalOcean/Hetzner
+>    droplet, co-located near the author, is fast enough for a few users, has a
+>    **predictable ceiling by construction** (no variable-cost tail to worry
+>    about), and doubles as general-purpose compute (other services, cron, the
+>    MCP server, etc.). The blog can be hosted elsewhere on a fixed/free tier
+>    with a hard stop. Cloudflare's edge-distribution and scale-to-zero are the
+>    things given up — neither of which this use case needs.
+>
+> The local web design reuses the existing `node-client` (already Node +
+> Drizzle + better-sqlite3) directly, which is _less_ exotic than Durable
+> Objects and proves out the whole web architecture first.
+
+---
+
+> **(original speccing notes below, retained for the future scale-out option)**
+
 > **Status: Speccing.** Direction agreed; decisions below marked _decided_ or
 > _open_. Nothing here is implemented yet. Expect this doc to change.
 
@@ -99,7 +140,7 @@ Rationale:
   no Dropbox. It costs two-phase writes, move/rename consistency bugs (see
   e.g. `372c9bf` "fix: delete old file when note moves to another journal"),
   and the entire indexer subsystem.
-- The application layer continues to *speak markdown* everywhere — paste,
+- The application layer continues to _speak markdown_ everywhere — paste,
   raw mode, publishing, MCP — markdown remains the content format. Only the
   "one file per note on a filesystem" storage shape is dropped.
 - **Export must stay trivial and first-class**: a single pass over
@@ -124,7 +165,7 @@ Surveyed options:
 - **Option A — plaintext + Access (recommended for v1).** Server-side FTS5 in
   the DO. Every feature works. Trust boundary: Cloudflare encrypts at rest
   but can technically read content (as with any server-side app). Access
-  closes *exposure*; it does not close *trust*.
+  closes _exposure_; it does not close _trust_.
 - **Option B — full E2EE, client-side search.** The proven pattern (Notesnook,
   Standard Notes): server stores ciphertext blobs + minimal metadata; every
   client holds a local decrypted copy and searches locally. In the browser
@@ -136,7 +177,7 @@ Surveyed options:
     materially different backend.
   - Sharing requires either recipient keypairs (wrap the note key to the
     recipient) or explicit **declassification** (sharing creates a plaintext
-    copy — arguably honest, since sharing *is* disclosure).
+    copy — arguably honest, since sharing _is_ disclosure).
   - Blog publishing is inherently declassification; unaffected.
   - MCP must run where the key is (local), or behind an unlock step.
   - Multi-device key UX (passphrase entry per device) is real friction.
@@ -148,7 +189,7 @@ Surveyed options:
   server search (searched client-side only or not at all). A pragmatic
   compromise at the cost of two code paths.
 
-**Recommendation:** ship v1 as Option A, but make the design *B-ready*:
+**Recommendation:** ship v1 as Option A, but make the design _B-ready_:
 
 - Store note content as an opaque versioned envelope:
   `{ v: 1, cipher: "none", data: <markdown> }`. Turning on encryption later
@@ -214,7 +255,7 @@ filesystem-specific `files` logic (R2 reimplementation), `indexer`
 A `published` flag / action on a note creates a `publications` row:
 
 - v1: server-rendered at `/p/<slug>` on the user's domain, Access-exempt,
-  styled minimally. The journal *is* the blog.
+  styled minimally. The journal _is_ the blog.
 - Later/alternative: publish action pushes markdown to the blog repo
   (Pages/static) for full control. Both consume the same `publications` row.
 
@@ -272,3 +313,4 @@ two platforms mid-editor-swap.
 [do-billing]: https://developers.cloudflare.com/changelog/post/2025-12-12-durable-objects-sqlite-storage-billing/
 [workers-pricing]: https://developers.cloudflare.com/workers/platform/pricing/
 [cf-access]: https://www.cloudflare.com/sase/products/access/
+[cf-budget]: https://developers.cloudflare.com/billing/manage/budget-alerts/

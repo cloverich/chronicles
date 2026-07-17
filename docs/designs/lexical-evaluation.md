@@ -30,11 +30,98 @@ MDAST remains used elsewhere in the app (indexer, search) but the editor pipelin
 - Images: custom `ChroniclesImageNode`, markdown roundtrip, drop/paste upload via `client.files.uploadImageBytes()`, max-size rendering constraints
 - Expanded vitest coverage across roundtrip, render contracts, and editor interactions, including image workflows
 
-**Not done (as of July 2026):** Phase 6 (image gallery) is the main remaining
-build. Phase 7 (video/file) is deferred to [cloud-web.md](cloud-web.md); Phase 8
-(polish) is deferred except the `Ctrl+E` macOS fix, now done. Critical path to
-retiring Plate is Phase 6 → Phase 9 (dogfood) → Phase 10 (default swap). GFM
-checklist support has since landed (Phase 3 task-lists row).
+## Decisions — Lexical is done, ship it (July 2026)
+
+The author has dogfooded Lexical as the default editor for months. Verdict:
+**Lexical is good enough to be the only editor.** The remaining roadmap is
+cut, not completed:
+
+- **Phase 6 (image gallery): CUT.** Not worth building. Consecutive images
+  render fine as individual images; the lightbox/grid was a Plate-era nicety,
+  not a requirement.
+- **Phase 7 (video / image-upload changes): DEFERRED INDEFINITELY to the web
+  version.** Media upload/handling changes ride on a new media pipeline (R2 or
+  a local file server), not Electron's `chronicles://` handler. Do it once,
+  there. See [chronicles-web-local.md](chronicles-web-local.md).
+- **Phase 8 (polish): DEFERRED to backlog** (some items "maybe"), except the
+  `Ctrl+E` macOS fix which is **done**.
+- **Phase 9 (dogfood): satisfied** by months of real daily use.
+- **Phase 10 (default swap): effectively done** — Lexical is already the
+  default editor (`EditorMode.Editor` renders the Lexical `EditorLayout`). The
+  only remaining work is **removing Plate entirely** (see below).
+
+### Remaining work: remove Plate (in progress)
+
+This is now the _only_ active work in this migration. "Remove Plate" is not a
+simple delete — the Lexical editor and the markdown pipeline still reach into
+`src/views/edit/editorv2/`. Removal is staged (see
+[Plate Removal Plan](#plate-removal-plan) below). Once complete, this project
+is closed.
+
+---
+
+## Current State (March 20, 2026)
+
+**Done:**
+
+- Markdown roundtrip contract (headings, lists, quotes, code blocks, inline formatting, links)
+- Integration seam: Lexical mode selectable via debug dropdown, markdown in/out wired
+- Formatting shortcuts: `Cmd+B` (bold), `Cmd+I` (italic), `Cmd+E` (inline code), `Cmd+Shift+S` (strikethrough), `Cmd+U` (underline)
+- `MarkdownShortcutPlugin` typing triggers covered by vitests (`## `, `> `, `` ` ``, `- `, `1. `, fenced code)
+- Code block syntax highlighting wiring via `@lexical/code` (`CodeHighlightNode` + `registerCodeHighlighting`)
+- Note links: custom `ChroniclesNoteLinkNode`, markdown transformer, `@`-trigger dropdown, click navigation
+- Regular links: floating toolbar (edit/unlink/open), paste-to-link conversion
+- Images: custom `ChroniclesImageNode`, markdown roundtrip, drop/paste upload via `client.files.uploadImageBytes()`, max-size rendering constraints
+- Expanded vitest coverage across roundtrip, render contracts, and editor interactions, including image workflows
+
+**Superseded by the Decisions block above.** Phases 6–10 are cut, deferred, or
+satisfied; the only open task is Plate removal.
+
+## Plate Removal Plan
+
+**Coupling map (verified July 2026).** The blast radius is the editor layer
+only — the indexer / node-client / search do **not** touch Slate. Three layers:
+
+1. **Plate editor proper** — `src/views/edit/editorv2/PlateContainer.tsx` and
+   its Plate feature/plugin tree; the `EditorMode.Lexical` case in
+   `index.tsx` that renders `<PlateContainer>` (note: the enum label is
+   misleading — `EditorMode.Editor` is the real Lexical editor); the
+   `platejs` / `@platejs/*` deps.
+2. **Slate ⇄ MDAST transformer** — `src/markdown/remark-slate-transformer/`;
+   the `stringToSlate` / `slateToString` / `slateToMdast` / `mdastToSlate`
+   exports in `src/markdown/index.ts`; the Slate methods on
+   `EditableDocument.ts` (`slateContent`, `getInitialSlateContent`,
+   `setSlateContent`, `mdastDebug`, the `"slate-dom"` save path); the `slate*`
+   deps; the `SlateDom` and `Mdast` debug `EditorMode`s.
+3. **Shared code Lexical still needs — EXTRACT, don't delete.** Lexical
+   (`EditorLayout`, `LexicalNoteLinkPlugin`, `lexicalMarkdown`,
+   `LexicalLinkToolbarPlugin`), the read-only editor, and the markdown editor
+   import from `editorv2`: `components/Toolbar`, `components/Tooltip`,
+   `components/Button`, `features/toolbar/DebugDropdown`, and
+   `features/note-linking/toMdast` (`parseNoteLink`). `src/markdown/index.ts`
+   also imports `features/images/toMdast`. These must move to neutral homes
+   before `editorv2/` can be deleted.
+
+**Staged execution (multiple commits):**
+
+- **Commit 1 — Extract shared code out of `editorv2`.** Move the shared UI
+  primitives and pure markdown helpers (layer 3) to neutral locations (e.g.
+  `src/views/edit/components/`, and a markdown-side home for `parseNoteLink` /
+  image `toMdast`). Repoint Lexical, read-only, markdown editors, and the
+  markdown pipeline. No behavior change; both editors still work. Lint + tests
+  green.
+- **Commit 2 — Delete the Plate editor.** Remove `PlateContainer` + the Plate
+  feature tree, the `EditorMode.Lexical`→Plate case, collapse the `EditorMode`
+  enum, drop `platejs`/`@platejs/*` from `package.json`. Verify **before**
+  confirming that `EditableDocument`'s save path used by Lexical does not go
+  through the Slate methods (Lexical deals in markdown strings).
+- **Commit 3 — Delete the Slate transformer + `EditableDocument` Slate path.**
+  Remove `remark-slate-transformer/`, the Slate exports from
+  `src/markdown/index.ts` and their tests, the Slate methods on
+  `EditableDocument`, the `SlateDom`/`Mdast` debug modes, and the `slate*`
+  deps.
+
+Each commit: `yarn lint` + `yarn test` green before the next.
 
 ---
 
