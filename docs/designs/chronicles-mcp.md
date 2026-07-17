@@ -9,6 +9,21 @@
 > - **Bun standalone binary** — `bun build --compile` with `bun:sqlite`, no native dep
 > - **Swift backend** — HTTP-based MCP server, no Electron dependency
 > - **Cloud backend** — HTTP MCP transport
+>
+> **Update (July 2026 — node:sqlite investigation).** `node:sqlite` itself is
+> ready: it loads in Electron 39's real main process with **no flag** and
+> **FTS5 works** (verified). But the Drizzle `node-sqlite` driver only exists in
+> **drizzle-orm 1.0.0-rc**, and v1 replaces the `drizzle(db, { schema })` pattern
+> this codebase uses with a new `relations()`-based API — so adopting it is a
+> Drizzle major upgrade + rewrite of `schema.ts` and all node-client clients, on
+> a release candidate. Deferred until drizzle v1 is stable (or done via a
+> hand-rolled `DatabaseSync`→Drizzle adapter). **Note:** for the web/MCP servers
+> (both run under **system Node**, where better-sqlite3 builds normally with no
+> ABI conflict), node:sqlite is a nice-to-have, not a blocker — the ABI dance
+> only bites under Electron. The Electron dual-ABI test pain was separately
+> resolved by running node-client tests under `ELECTRON_RUN_AS_NODE` so app and
+> tests share one ABI (see [docs/development.md](../development.md)); no rebuild
+> flip, no migration required.
 
 ## Rationale
 

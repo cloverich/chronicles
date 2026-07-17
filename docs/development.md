@@ -1,16 +1,28 @@
 # Development
 
 ```bash
-yarn                              # install
-yarn run electron-rebuild --force # rebuild native deps (after Electron/Node change)
+yarn                              # install (postinstall runs electron-rebuild)
 HEADLESS=true yarn start          # dev mode; renderer logs in terminal as [RENDERER]
-yarn test                         # vitest renderer tests (*.vitest.ts / *.vitest.tsx)
-yarn test:node                    # legacy node:test suite, files: *.test.ts -> *.test.bundle.mjs
-yarn test:electron                # legacy Electron-runner suite for *.electron-test.ts
+yarn test                         # vitest renderer tests + node-client backend tests
+yarn test:node-client             # backend only (node:test, src/node-client/*.test.ts)
+yarn test:watch                   # vitest in watch mode
 bun run lint                      # prettier (autofix) + tsc --noEmit; matches CI exactly
 bun run lint:check                # same but prettier in check mode (no writes)
 yarn build                        # production build (electron-packager)
 ```
+
+### Native modules and the single-ABI test setup
+
+`better-sqlite3` is the only native module needing an ABI-specific build
+(`sharp` uses N-API, which is ABI-stable). `postinstall` runs `electron-rebuild`
+so it's built for **Electron's** ABI, which the app uses. The node-client tests
+therefore run under Electron's own Node (`ELECTRON_RUN_AS_NODE=1 electron …`, see
+`test:node-client`) so tests and app share **one** ABI — no rebuild flip.
+
+Do **not** reintroduce `npm rebuild better-sqlite3 --build-from-source` into the
+test scripts: it rebuilds for system Node and breaks the app until the next
+`electron-rebuild`. If you change the Electron version, run
+`yarn run electron-rebuild --force`.
 
 ## Workflow
 
