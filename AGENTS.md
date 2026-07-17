@@ -2,14 +2,15 @@
 
 ## Active Projects
 
-- [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical migration: Lexical is the default and is done; only remaining work is **removing Plate** (staged, in progress)
+- _(none — next up: Chronicles Web, below)_
 
 ## Next Up (speccing, not started)
 
-- [docs/designs/chronicles-web-local.md](docs/designs/chronicles-web-local.md) — Chronicles Web (Node + SQLite, self-hosted, runs anywhere). Supersedes the deferred [Cloudflare design](docs/designs/cloud-web.md). Blocked on Plate removal.
+- [docs/designs/chronicles-web-local.md](docs/designs/chronicles-web-local.md) — Chronicles Web (Node + SQLite, self-hosted, runs anywhere). Monorepo alongside Electron (shared node-client + renderer, thin shells); fork only once Electron tooling becomes pure tax. Supersedes the deferred [Cloudflare design](docs/designs/cloud-web.md).
 
 ## Completed Projects
 
+- [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (complete; Plate + Slate transformer removed, Lexical is the sole editor)
 - [docs/features/theming.md](docs/features/theming.md) — theming system (#443; deferred: FOUC, per-journal themes, visualizer, CLI validation)
 - [docs/plans/completed/electron-modernization.md](docs/plans/completed/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
 - [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
@@ -40,8 +41,8 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 
 - [docs/development.md](docs/development.md): Install, run, test, lint, build commands and project conventions. Read first.
 - [docs/architecture.md](docs/architecture.md): Tech stack, process model, DB schema. Read when reasoning about cross-cutting concerns.
-- [docs/editor/markdown-pipeline.md](docs/editor/markdown-pipeline.md): micromark -> MDAST -> Slate roundtrip. Read when touching parsing or serialization.
-- [docs/editor/plugins.md](docs/editor/plugins.md): Plate plugin registry and configuration. Read when adding or modifying editor behavior.
+- [docs/editor/markdown-pipeline.md](docs/editor/markdown-pipeline.md): Lexical's markdown roundtrip, plus the separate micromark -> MDAST -> remark pipeline used by the indexer/search/import. Read when touching parsing or serialization.
+- [docs/editor/plugins.md](docs/editor/plugins.md): Lexical plugin set and conventions. Read when adding or modifying editor behavior.
 - [docs/editor/styling.md](docs/editor/styling.md): Editor CSS and Tailwind theming. Read when changing editor appearance.
 - [docs/editor/lexical.md](docs/editor/lexical.md): Lexical editor constraints (floating UI, portal pattern). Read when adding or modifying Lexical plugins.
 - [docs/search.md](docs/search.md): FTS implementation and query syntax. Read when modifying search.
