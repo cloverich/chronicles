@@ -6,5 +6,3 @@ export {
   createNoteLinkDropdownPlugin,
 } from "./createNoteLinkDropdownPlugin";
 export { createNoteLinkElementPlugin } from "./createNoteLinkElementPlugin";
-
-export { toMdastLinkFactory as createLinkFromNoteLinkFactory } from "./toMdast";

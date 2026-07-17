@@ -21,7 +21,7 @@ import {
   type TextNode,
 } from "lexical";
 import { prefixUrl, unPrefixUrl } from "../../../hooks/images";
-import { parseNoteLink } from "../editorv2/features/note-linking/toMdast";
+import { parseNoteLink } from "../../../markdown/noteLinks";
 import {
   $createChroniclesImageNode,
   $isChroniclesImageNode,

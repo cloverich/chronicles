@@ -1,10 +1,19 @@
 import mdast from "mdast";
-import {
-  BaseElement,
-  SlateNode,
-} from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import type { INoteLinkElement } from "./NoteLinkElement";
-import { ELEMENT_NOTE_LINK } from "./NoteLinkElement";
+
+import { parseNoteLink } from "../../noteLinks";
+import { BaseElement, SlateNode } from "./mdast-to-slate";
+
+// Legacy Slate/Plate node type + shape for note links. Only used by the
+// Slate <-> MDAST transformer (this whole directory is removed once the
+// Slate editor is fully retired). The pure `parseNoteLink` helper Lexical
+// still needs lives in ../../noteLinks.
+export const ELEMENT_NOTE_LINK = "noteLinkElement";
+
+export interface INoteLinkElement extends BaseElement {
+  title: string;
+  noteId: string;
+  journalName: string;
+}
 
 /**
  * Convert a NoteLinkElement to a standard MDAST link (i.e. Slate -> MDAST).
@@ -34,26 +43,6 @@ export function toMdastLinkFactory(convertNodes: (nodes: SlateNode[]) => any) {
       children: convertNodes(children), // as any as mdast.Link["children"],
     };
   };
-}
-
-// For parsing note links, i.e. the `./<journalName>/<noteId>.md` format.
-const noteLinkRegex = /^\..\/(?:(.+)\/)?([a-zA-Z0-9-]+)\.md$/;
-
-/**
- * Check if url conforms to the note link format.
- *
- * todo: fuse with isNoteLink in markdown/index.ts
- *
- * ex: `../journal/note_id.md`
- */
-export function parseNoteLink(url: string) {
-  if (!url) return null;
-
-  const match = url.match(noteLinkRegex);
-  const journalName = match ? match[1] : null;
-  const noteId = match ? match[2] : null;
-  if (!noteId || !journalName) return null;
-  return { noteId, journalName };
 }
 
 interface ToSlateNoteLink {

@@ -26,7 +26,7 @@ import { CODE_BLOCK_LANGUAGES } from "../../../plate-types";
 
 // import { cn } from '@/src/lib/utils';
 import { IconButton } from "@/src/components/IconButton";
-import { Button } from "../../components/Button";
+import { Button } from "../../../components/Button";
 
 export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
   const { editor, element } = props;

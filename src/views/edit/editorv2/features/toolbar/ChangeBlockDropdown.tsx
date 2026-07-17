@@ -28,7 +28,7 @@ import {
   useOpenState,
 } from "../../../../../components/DropdownMenu";
 import { Icons } from "../../../../../components/icons";
-import { ToolbarButton } from "../../components/Toolbar";
+import { ToolbarButton } from "../../../components/Toolbar";
 
 const items = [
   {

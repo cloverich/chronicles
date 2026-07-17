@@ -6,7 +6,7 @@ import {
 import React from "react";
 import { Editor, Range, Text } from "slate";
 import { Icons } from "../../../../../components/icons";
-import { ToolbarButton } from "../../components/Toolbar";
+import { ToolbarButton } from "../../../components/Toolbar";
 
 /**
  * Toolbar buttons for marks - bold, italic, underline, strikethrough, code, link

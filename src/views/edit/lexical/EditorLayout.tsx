@@ -8,9 +8,9 @@ import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
 import { EditorMode } from "../EditorMode";
 import FrontMatter from "../FrontMatter";
-import { Toolbar, ToolbarGroup } from "../editorv2/components/Toolbar";
-import { TooltipProvider } from "../editorv2/components/Tooltip";
-import DebugDropdown from "../editorv2/features/toolbar/DebugDropdown";
+import DebugDropdown from "../components/DebugDropdown";
+import { Toolbar, ToolbarGroup } from "../components/Toolbar";
+import { TooltipProvider } from "../components/Tooltip";
 import { LexicalBasedEditor } from "./LexicalBasedEditor";
 
 interface Props {

@@ -19,11 +19,11 @@ import { toMarkdown } from "mdast-util-to-markdown";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
 
+import { slateToMdast } from "./remark-slate-transformer/index.js";
 import {
   unwrapAndGroupImagesSlate,
   wrapImagesForMdast,
-} from "../views/edit/editorv2/features/images/toMdast.js";
-import { slateToMdast } from "./remark-slate-transformer/index.js";
+} from "./remark-slate-transformer/transformers/image-gallery.js";
 import * as SlateCustom from "./remark-slate-transformer/transformers/mdast-to-slate";
 import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
 export { slateToMdast } from "./remark-slate-transformer/transformers/slate-to-mdast.js";

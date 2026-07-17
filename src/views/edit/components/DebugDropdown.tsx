@@ -10,10 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   useOpenState,
-} from "../../../../../components/DropdownMenu";
-import { Icons } from "../../../../../components/icons";
-import { EditorMode } from "../../../EditorMode";
-import { ToolbarButton } from "../../components/Toolbar";
+} from "../../../components/DropdownMenu";
+import { Icons } from "../../../components/icons";
+import { EditorMode } from "../EditorMode";
+import { ToolbarButton } from "./Toolbar";
 
 const options = Object.freeze([
   { key: EditorMode.Editor, label: "Editor" },

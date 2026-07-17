@@ -12,7 +12,7 @@ import {
 import React from "react";
 import { createPortal } from "react-dom";
 import { Separator } from "../../../components/Separator";
-import { buttonVariants } from "../editorv2/components/Button";
+import { buttonVariants } from "../components/Button";
 
 interface LinkToolbarPosition {
   left: number;

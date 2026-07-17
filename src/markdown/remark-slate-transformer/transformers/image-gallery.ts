@@ -1,11 +1,24 @@
 import mdast from "mdast";
-import { prefixUrl, videoExtensions } from "../../../../../hooks/images";
-import {
-  BaseElement,
-  toUndefined,
-} from "../../../../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
-import type { IImageGalleryElement } from "./ImageGalleryElement";
-import { ELEMENT_IMAGE_GALLERY } from "./ImageGalleryElement";
+import type { TElement } from "platejs";
+
+import { prefixUrl, videoExtensions } from "../../../hooks/images";
+import { BaseElement, toUndefined } from "./mdast-to-slate";
+
+// Legacy Slate/Plate node type + shape for grouped consecutive images. Only
+// used by the Slate <-> MDAST transformer (this whole directory is removed
+// once the Slate editor is fully retired).
+export const ELEMENT_IMAGE_GALLERY = "imageGalleryElement";
+
+type ImageMetadata = {
+  alt: string;
+  url: string; // "../_attachments/03duel8ega71y7iucmf6uv4zg.png"
+  title: string;
+};
+
+export interface IImageGalleryElement extends TElement {
+  images: ImageMetadata[];
+  type: typeof ELEMENT_IMAGE_GALLERY;
+}
 
 /**
  * Convert a Slate ImageGroupElement to an mdast list of images.

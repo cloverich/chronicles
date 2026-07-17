@@ -1,24 +1,17 @@
-import type { TElement } from "platejs";
 import { PlateElement, useElement } from "platejs/react";
 import React from "react";
 
 import { Button } from "../../../../../components/Button";
 import * as Dialog from "../../../../../components/Dialog";
 import { Icons } from "../../../../../components/icons";
+import {
+  ELEMENT_IMAGE_GALLERY,
+  IImageGalleryElement,
+} from "../../../../../markdown/remark-slate-transformer/transformers/image-gallery";
 import { ImageDisplay } from "./ImageDisplay";
 
-export const ELEMENT_IMAGE_GALLERY = "imageGalleryElement";
-
-type ImageMetadata = {
-  alt: string;
-  url: string; // "../_attachments/03duel8ega71y7iucmf6uv4zg.png"
-  title: string;
-};
-
-export interface IImageGalleryElement extends TElement {
-  images: ImageMetadata[];
-  type: typeof ELEMENT_IMAGE_GALLERY;
-}
+export { ELEMENT_IMAGE_GALLERY };
+export type { IImageGalleryElement };
 
 /**
  * When multiple images appear consecutively in the document, they are grouped
@@ -45,7 +38,7 @@ ImageGalleryElement.displayName = "ImageGalleryElement";
 export const ImageGalleryLightbox = ({
   images,
 }: {
-  images: ImageMetadata[];
+  images: IImageGalleryElement["images"];
 }) => {
   const [open, setOpen] = React.useState(false);
   const [current, setCurrent] = React.useState(0);

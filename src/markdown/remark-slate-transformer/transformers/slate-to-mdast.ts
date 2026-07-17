@@ -19,16 +19,13 @@ import {
 import {
   createImagesFromImageGallery,
   ELEMENT_IMAGE_GALLERY,
-} from "../../../views/edit/editorv2/features/images";
+} from "./image-gallery";
 
+import { Image, Video } from "./image-gallery";
 import {
-  Image,
-  Video,
-} from "../../../views/edit/editorv2/features/images/toMdast";
-import {
-  createLinkFromNoteLinkFactory,
+  toMdastLinkFactory as createLinkFromNoteLinkFactory,
   ELEMENT_NOTE_LINK,
-} from "../../../views/edit/editorv2/features/note-linking";
+} from "./note-link";
 
 // NOTE: Changed these, they were just mirroring mdasts' before
 // which doesn't make sense

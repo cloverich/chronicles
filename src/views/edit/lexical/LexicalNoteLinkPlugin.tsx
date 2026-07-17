@@ -15,8 +15,8 @@ import {
 import React from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { parseNoteLink } from "../../../markdown/noteLinks";
 import type { SearchItem } from "../../documents/SearchStore";
-import { parseNoteLink } from "../editorv2/features/note-linking/toMdast";
 import { $createChroniclesNoteLinkNode } from "./ChroniclesNoteLinkNode";
 
 interface MatchState {

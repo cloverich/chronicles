@@ -5,7 +5,7 @@ import {
 import React from "react";
 
 import { Icons } from "../../../../../components/icons";
-import { ToolbarButton } from "../../components/Toolbar";
+import { ToolbarButton } from "../../../components/Toolbar";
 
 export const LinkToolbarButton = React.forwardRef<
   React.ElementRef<typeof ToolbarButton>,

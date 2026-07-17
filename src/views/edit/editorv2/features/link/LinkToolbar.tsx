@@ -28,7 +28,7 @@ import {
 } from "platejs/react";
 
 import { Separator } from "../../../../../components/Separator";
-import { buttonVariants } from "../../components/Button";
+import { buttonVariants } from "../../../components/Button";
 
 const popoverVariants = cva(
   "z-50 w-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden",

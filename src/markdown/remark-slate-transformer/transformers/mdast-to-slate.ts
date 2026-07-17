@@ -19,15 +19,10 @@ import {
   ELEMENT_UL,
 } from "../../../views/edit/plate-types";
 
-import type { SlateImageGallery } from "../../../views/edit/editorv2/features/images";
-import { createImageGalleryElement } from "../../../views/edit/editorv2/features/images";
-import type {
-  Image,
-  Video,
-} from "../../../views/edit/editorv2/features/images/toMdast";
-import { createImage } from "../../../views/edit/editorv2/features/images/toMdast";
-import type { SlateNoteLink } from "../../../views/edit/editorv2/features/note-linking/toMdast";
-import { toSlateNoteLink } from "../../../views/edit/editorv2/features/note-linking/toMdast";
+import type { Image, SlateImageGallery, Video } from "./image-gallery";
+import { createImage, createImageGalleryElement } from "./image-gallery";
+import type { SlateNoteLink } from "./note-link";
+import { toSlateNoteLink } from "./note-link";
 
 export type Decoration = {
   [key in (
