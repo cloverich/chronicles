@@ -7,7 +7,7 @@ Chronicles is a local-first, markdown-based journaling app built with Electron +
 | Layer     | Technology                              |
 | --------- | --------------------------------------- |
 | Framework | Electron (main + renderer)              |
-| Editor    | Slate.js / Plate                        |
+| Editor    | Lexical                                 |
 | State     | MobX                                    |
 | Bundler   | Vite (renderer), esbuild (main/preload) |
 | Styling   | Tailwind CSS v4, Radix UI               |
@@ -28,17 +28,19 @@ Communication flows through `src/preload/`; shared types live in `src/preload/cl
 
 ```
 src/
-  electron/        Main process, database migrations
+  electron/        Main process (app lifecycle, settings, IPC wiring)
+  node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import)
+  bun-client/      Drizzle SQL migrations (src/bun-client/migrations/)
   preload/         IPC bridge + client API definitions
   views/           React views (documents, edit, preferences)
   components/      Reusable UI (Radix-based)
   hooks/           React hooks, MobX stores (hooks/stores/)
-  markdown/        Custom markdown parsing + serialization
+  markdown/        Markdown parsing + serialization (indexer, search, import)
 ```
 
 ## Database
 
-SQLite via Knex. Migrations in `src/electron/migrations/`.
+SQLite via Drizzle + better-sqlite3. Migrations in `src/bun-client/migrations/`, applied via `src/node-client/factory.ts`.
 
 Core tables: `documents`, `journals`, `document_tags`, `files`.
 
@@ -46,7 +48,7 @@ Core tables: `documents`, `journals`, `document_tags`, `files`.
 
 See [docs/editor/markdown-pipeline.md](editor/markdown-pipeline.md) for the full pipeline.
 
-Parsing: micromark with OFM extensions -> MDAST -> Slate/Plate -> roundtrip back to markdown.
+Parsing (indexer, search, import): micromark with OFM extensions -> MDAST -> remark stringify. The editor no longer participates in this pipeline — it has its own Lexical-owned markdown roundtrip (see [docs/editor/markdown-pipeline.md](editor/markdown-pipeline.md)).
 
 Custom syntax: `#tag`, `#tag/subtag`, `[[wikilink]]`, YAML frontmatter, GFM tables/task lists.
 
@@ -54,7 +56,7 @@ Custom syntax: `#tag`, `#tag/subtag`, `[[wikilink]]`, YAML frontmatter, GFM tabl
 
 See [docs/editor/](editor/) for plugin and styling details.
 
-Slate.js foundation + Plate extensions. Three modes: rich text, markdown source, read-only. Custom plugins handle note linking, images, and markdown serialization.
+Lexical. Two modes: rich text (WYSIWYG) and markdown source. Custom plugins handle note linking, images, and markdown serialization.
 
 ## State Management
 

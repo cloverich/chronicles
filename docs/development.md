@@ -23,12 +23,14 @@ yarn build                        # production build (electron-packager)
 ## Key Directories
 
 ```
-src/electron/        Main process, DB migrations (Knex)
+src/electron/        Main process (app lifecycle, settings, IPC wiring)
+src/node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import)
+src/bun-client/      Drizzle SQL migrations (src/bun-client/migrations/)
 src/preload/         IPC bridge, client API types (src/preload/client/types.ts)
 src/views/           React views (documents, edit, preferences)
 src/components/      Reusable UI (Radix-based)
 src/hooks/           React hooks, MobX stores (hooks/stores/)
-src/markdown/        Markdown parsing + serialization
+src/markdown/        Markdown parsing + serialization (indexer, search, import)
 ```
 
 ## Environment Variables
@@ -52,10 +54,10 @@ Bullet points communicate key changes, not dev practices (i.e. "added search by 
 
 ## Conventions
 
-- **Database**: SQLite via Knex. Migrations in `src/electron/migrations/`
+- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/bun-client/migrations/`
 - **IPC**: All renderer<->main communication through `src/preload/`
 - **State**: MobX stores in `src/hooks/stores/`
 - **Styling**: Tailwind CSS v4 + Radix UI primitives
-- **Editor**: Slate.js / Plate. See docs/editor/ for details
+- **Editor**: Lexical. See docs/editor/ for details
 - **Markdown storage**: Standard markdown + `#tags`, `[[wikilinks]]`, YAML frontmatter
 - **Local files**: `chronicles://` protocol for local asset access

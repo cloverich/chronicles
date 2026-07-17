@@ -1,12 +1,12 @@
 # Editor Styling
 
-Styling is managed through Tailwind CSS v4 classes on Plate.js element components.
+Styling is managed through Tailwind CSS v4 classes, applied to Lexical nodes via the `theme` object passed to `LexicalComposer`. See [docs/editor/lexical.md](lexical.md) for plugin/DOM constraints.
 
 ## Key Files
 
-- **`src/views/edit/editorv2/PlateContainer.tsx`**: Editor setup — maps Plate element types to React components via `usePlateEditor({ plugins, components })`
-- **`src/views/edit/editorv2/EditorLayout.tsx`**: Layout wrapper — flex column with `items-center` for centering
-- **`src/views/edit/editorv2/features/`**: Element components, each responsible for its own Tailwind styling
+- **`src/views/edit/lexical/LexicalBasedEditor.tsx`**: Editor setup — the `theme` object in `initialConfig` maps each Lexical node type (`paragraph`, `heading.h1`/`h2`/`h3`, `quote`, `code`, `codeHighlight.*`, `list.*`, `link`, `text.*`) to Tailwind classes, which Lexical attaches to the corresponding DOM elements
+- **`src/views/edit/lexical/ChroniclesImageNode.tsx`**: Custom node that renders its own DOM directly (not via the `theme` object) and sets classes imperatively
+- **`src/views/edit/lexical/EditorLayout.tsx`**: Layout wrapper — flex column with `items-center` for centering
 - **`src/index.css`**: CSS custom properties (widths, font families, font sizes) and `@utility` definitions
 - **`src/views/StyleWatcher.tsx`**: Syncs user preference values to CSS custom properties at runtime
 - **`src/views/preferences/index.tsx`**: Preferences UI — font family, font size, and max-width selectors
@@ -30,8 +30,8 @@ All user-configurable style values are expressed as CSS custom properties define
 
 ### Font size
 
-- `--font-size-body` (`1rem`): paragraphs (`ParagraphElement`)
-- `--font-size-heading` (`1.5rem`): H1 in editor content; H2/H3 scale via `calc()` in `HeadingElement`
+- `--font-size-body` (`1rem`): paragraphs, list items (`theme.paragraph`, `theme.list.listitem`)
+- `--font-size-heading` (`1.5rem`): H1 in editor content; H2/H3 scale via `calc()` in `theme.heading`
 - `--font-size-title` (`1.5rem`): document title textarea in `FrontMatter`
 - `--font-size-code` (`calc(--font-size-body * 0.875)`): code blocks and inline code
 
@@ -39,7 +39,7 @@ The first three font-size vars are user-editable in **Preferences → Font Sizes
 
 ## Width & Centering Model
 
-Centering is achieved via `items-center` on the `PlateContent` flex column. Each block element sets `w-full max-w-[var(--max-w-prose)]` (or `--max-w-code` for code). Breakout elements (images, galleries) omit `max-w` to fill the container.
+Centering is achieved via `items-center` on the flex column wrapping the editor in `EditorLayout.tsx`. Each block-level theme class (`paragraph`, `heading.*`, `quote`, `list.ol`/`list.ul`, `code`) sets `w-full max-w-[var(--max-w-prose)]` (or `--max-w-code` for code). Breakout elements (images) omit `max-w` to fill the container.
 
 ## Tailwind v4 Pitfalls
 
@@ -61,35 +61,24 @@ RIGHT:  max-w-[var(--max-w-code)]          → resolves to CSS variable value
 
 ## Styling Patterns
 
-Element components wrap `PlateElement` with Tailwind classes:
+Most node styling is a plain Tailwind class string (or nested object of class strings) assigned to the matching key of the `theme` object in `LexicalBasedEditor.tsx`; Lexical applies the class to the DOM element it manages for that node — there is no per-element React component to style:
 
 ```tsx
-// Simple element
-export const BlockquoteElement = (props: PlateElementProps) => (
-  <PlateElement
-    as="blockquote"
-    className="text-muted-foreground my-6 w-full max-w-[var(--max-w-prose)] border-l-4 pl-6 italic"
-    {...props}
-  />
-);
-
-// Variant-based element using cva; font-size from CSS var via inline style
-const headingVariants = cva("relative mb-1 max-w-[var(--max-w-prose)] w-full", {
-  variants: {
-    variant: {
-      h1: "mb-[0.5em] mt-[1.6em] font-heading font-medium",
-      h2: "mb-[0.5em] mt-[1.4em] font-heading-2 font-medium",
-    },
+theme: {
+  quote:
+    "max-w-[var(--max-w-prose)] w-full border-l-2 border-border pl-4 italic text-muted-foreground mb-8",
+  heading: {
+    h1: "max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-heading)] font-semibold font-heading mt-[1.6em] mb-[0.5em]",
+    h2: "max-w-[var(--max-w-prose)] w-full text-[length:calc(var(--font-size-heading)*0.833)] font-semibold font-heading-2 mt-[1.4em] mb-[0.5em]",
   },
-});
-// style={{ fontSize: headingFontSizes[variant] }} — applied inline, not via Tailwind
+},
 ```
 
-Libraries used: `class-variance-authority` (cva) for variants, `cn` from `src/lib/utils` for class merging.
+Custom nodes that render their own DOM (e.g. `ChroniclesImageNode`) set `className` imperatively in their `createDOM()`/update logic instead of going through the `theme` object.
 
 ## Adding/Modifying Styles
 
-1. Locate the element component in `src/views/edit/editorv2/features/`
-2. Modify Tailwind classes in that file
+1. For built-in node types, edit the relevant key of the `theme` object in `src/views/edit/lexical/LexicalBasedEditor.tsx`
+2. For custom nodes (`ChroniclesImageNode.tsx`, `ChroniclesNoteLinkNode.ts`), edit the class strings set directly in that node's DOM creation/update code
 3. For width constraints, use `max-w-[var(--max-w-prose)]` or `max-w-[var(--max-w-code)]` — never bare `max-w-prose`
-4. For new elements, create a component and register it in `PlateContainer.tsx`
+4. For new node types, add a `theme` key (or DOM styling in the node itself) and register the node per [markdown-pipeline.md](markdown-pipeline.md#extending)
