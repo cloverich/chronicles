@@ -17,9 +17,6 @@ import { ToolbarButton } from "./Toolbar";
 
 const options = Object.freeze([
   { key: EditorMode.Editor, label: "Editor" },
-  { key: EditorMode.Lexical, label: "Plate" },
-  { key: EditorMode.SlateDom, label: "Slate DOM" },
-  { key: EditorMode.Mdast, label: "MDAST" },
   { key: EditorMode.Markdown, label: "Markdown" },
 ]);
 

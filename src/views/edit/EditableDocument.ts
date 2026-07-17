@@ -1,7 +1,6 @@
 import { debounce } from "lodash";
 import {
   IReactionDisposer,
-  computed,
   makeObservable,
   observable,
   reaction,
@@ -9,8 +8,6 @@ import {
 } from "mobx";
 import { toast } from "sonner";
 import type { IClient } from "../../hooks/useClient";
-import { slateToMdast, slateToString, stringToSlate } from "../../markdown";
-import * as SlateCustom from "../../markdown/remark-slate-transformer/transformers/mdast-to-slate";
 import type {
   FrontMatter,
   GetDocumentResponse,
@@ -31,24 +28,9 @@ export class EditableDocument {
   savingError: Error | null = null;
 
   /**
-   * The markdown string, i.e. after converting Slate DOM content
-   * to a string for saving, its stored here.
+   * The markdown string content of the document.
    */
   content: string = "";
-
-  /**
-   * For debugging how slate DOM is converted to MDAST. See save.
-   * NOTE: This is computed so its only computed when called by the
-   * debug view.
-   */
-  get mdastDebug() {
-    const slateContent = this.getInitialSlateContent();
-    if (slateContent) {
-      return slateToMdast(toJS(slateContent));
-    } else {
-      return "No EditableDocument.slateContent not yet set.";
-    }
-  }
 
   // The underlying document properties:
   title?: string;
@@ -59,9 +41,6 @@ export class EditableDocument {
   updatedAt: string; // read-only outside this class
   tags: string[];
   frontMatter: FrontMatter;
-
-  // editor properties
-  slateContent: SlateCustom.SlateNode[] = [];
 
   // todo: save queue. I'm saving too often, but need to do this until I allow exiting note
   // while save is in progress; track and report saveCount to discover if this is a major issue
@@ -89,7 +68,6 @@ export class EditableDocument {
       saving: observable,
       savingError: observable,
       content: observable,
-      mdastDebug: computed,
       title: observable,
       journal: observable,
       id: observable,
@@ -124,30 +102,9 @@ export class EditableDocument {
     return this.content;
   };
 
-  getInitialSlateContent = () => {
-    const slateNodes = stringToSlate(this.content);
-    this.slateContent = slateNodes;
-    return slateNodes;
-  };
-
-  /**
-   * Updates the Slate DOM content.
-   * This is used by the WYSIWYG editor.
-   */
-  setSlateContent = (nodes: SlateCustom.SlateNode[]) => {
-    // NOTE: This is called when the cursor moves, but the content appears to be unchanged
-    // It seems like the slate nodes always change if any content changes, so this is
-    // hopefully safe :|
-    // (if not, people's changes would be unsaved in those cases)
-    if (nodes !== this.slateContent) {
-      this.slateContent = nodes;
-      this.save("slate-dom", nodes);
-    }
-  };
-
   /**
    * Updates the raw markdown content directly.
-   * This is used by the markdown editor.
+   * This is used by the markdown editor and the Lexical editor.
    */
   setMarkdownContent = (markdown: string) => {
     if (markdown !== this.content) {
@@ -158,17 +115,11 @@ export class EditableDocument {
 
   /**
    * Saves the document to the server.
-   * For WYSIWYG editor, it converts the Slate DOM to markdown before saving.
-   * For markdown editor, it saves the raw markdown content directly.
    */
   save: {
     (
       type: "frontmatter",
       content: undefined,
-    ): Promise<void | undefined> | undefined;
-    (
-      type: "slate-dom",
-      content: SlateCustom.SlateNode[],
     ): Promise<void | undefined> | undefined;
     (type: "markdown", content: string): Promise<void | undefined> | undefined;
   } = debounce(
@@ -196,11 +147,7 @@ export class EditableDocument {
           return;
         }
 
-        if (type === "slate-dom") {
-          this.content = slateToString(toJS(content));
-        } else {
-          this.content = content;
-        }
+        this.content = content;
 
         // todo: is toJS necessary here, i.e. copying this.journal to journal, loses Proxy or not?
         // todo: use mobx viewmodel over GetDocumentResponse; track frontMatter properties directly rather

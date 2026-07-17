@@ -19,15 +19,6 @@ import { toMarkdown } from "mdast-util-to-markdown";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
 
-import { slateToMdast } from "./remark-slate-transformer/index.js";
-import {
-  unwrapAndGroupImagesSlate,
-  wrapImagesForMdast,
-} from "./remark-slate-transformer/transformers/image-gallery.js";
-import * as SlateCustom from "./remark-slate-transformer/transformers/mdast-to-slate";
-import { mdastToSlate } from "./remark-slate-transformer/transformers/mdast-to-slate.js";
-export { slateToMdast } from "./remark-slate-transformer/transformers/slate-to-mdast.js";
-
 // During import (processing) parse #tag and [[WikiLink]]; importer converts them
 // to Chronicles tags and markdown links. Future versions may support these properly.
 export const parseMarkdownForImportProcessing = (
@@ -71,16 +62,6 @@ export const mdastToString = (tree: mdast.Nodes) => {
     bullet: "-",
     emphasis: "_",
   });
-};
-
-// parser param: support configuring for importer tests, which import and convert
-// a few otherwise unsupported markdown features (tags, wikilinks)
-export const stringToSlate = (input: string, parse = parseMarkdown) => {
-  return mdastToSlate(unwrapAndGroupImagesSlate(parse(input)));
-};
-
-export const slateToString = (nodes: SlateCustom.SlateNode[]) => {
-  return mdastToString(wrapImagesForMdast(slateToMdast(nodes)));
 };
 
 // is a markdown link a link to another note?

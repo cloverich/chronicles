@@ -7,12 +7,9 @@ import { useSearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import EditorErrorBoundary from "./EditorErrorBoundary";
 import { EditorMode } from "./EditorMode";
-// import Editor from "./editor";
-import { PlateContainer } from "./editorv2/PlateContainer";
 import { EditorLayout } from "./lexical/EditorLayout";
 import { EditLoadingComponent } from "./loading";
 import MarkdownEditor from "./markdown-editor";
-import ReadOnlyTextEditor from "./read-only-editor";
 import { useEditableDocument } from "./useEditableDocument";
 
 // Loads document, with loading and error placeholders
@@ -133,8 +130,6 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   );
 });
 
-// Moved from Container to support using useFocusEditor, which requires
-// component being wrapped in PlateContainer
 function EditorInner({
   // todo: inject these into a store via context
   document,
@@ -163,26 +158,6 @@ function EditorInner({
           deleteDocument={deleteDocument}
         />
       );
-    case EditorMode.Lexical:
-      return (
-        <PlateContainer
-          document={document}
-          journals={journals}
-          goBack={goBack}
-          selectedViewMode={selectedViewMode}
-          setSelectedViewMode={setSelectedViewMode}
-        />
-      );
-    // case EditorMode.Editor:
-    //   return (
-    //     <Editor
-    //       document={document}
-    //       journals={journals}
-    //       goBack={goBack}
-    //       selectedViewMode={selectedViewMode}
-    //       setSelectedViewMode={setSelectedViewMode}
-    //     />
-    //   );
     case EditorMode.Markdown:
       return (
         <MarkdownEditor
@@ -191,26 +166,6 @@ function EditorInner({
           goBack={goBack}
           selectedViewMode={selectedViewMode}
           setSelectedViewMode={setSelectedViewMode}
-          deleteDocument={deleteDocument}
-        />
-      );
-    case EditorMode.SlateDom:
-      return (
-        <ReadOnlyTextEditor
-          goBack={goBack}
-          json={document.getInitialSlateContent()}
-          selectedEditorMode={selectedViewMode}
-          setSelectedEditorMode={setSelectedViewMode}
-          deleteDocument={deleteDocument}
-        />
-      );
-    case EditorMode.Mdast:
-      return (
-        <ReadOnlyTextEditor
-          goBack={goBack}
-          selectedEditorMode={selectedViewMode}
-          setSelectedEditorMode={setSelectedViewMode}
-          json={document.mdastDebug}
           deleteDocument={deleteDocument}
         />
       );
