@@ -1,24 +1,20 @@
 # AGENTS.md
 
-## Active Projects
+## Current Plan
 
-- _(none — next up: Chronicles Web, below)_
+1. Make SQLite the authoritative note store, with safe migration and Markdown export.
+2. Extract a clean platform-neutral `NotesClient` contract.
+3. Finish remaining Electron note-taking features against that contract.
+4. Later, selectively reintroduce useful web-spike ideas using the cleaner contract.
 
-## Next Up (speccing, not started)
-
-- [docs/designs/chronicles-web-local.md](docs/designs/chronicles-web-local.md) — Chronicles Web (Node + SQLite, self-hosted, runs anywhere). Monorepo alongside Electron (shared node-client + renderer, thin shells); fork only once Electron tooling becomes pure tax. Supersedes the deferred [Cloudflare design](docs/designs/cloud-web.md).
+The `web-local-phase1` branch is an archived architectural spike and reference, not active work. Documentation that conflicts with this direction is tracked in [docs/plans/pending/documentation-cleanup.md](docs/plans/pending/documentation-cleanup.md).
 
 ## Completed Projects
 
 - [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (complete; Plate + Slate transformer removed, Lexical is the sole editor)
 - [docs/features/theming.md](docs/features/theming.md) — theming system (#443; deferred: FOUC, per-journal themes, visualizer, CLI validation)
 - [docs/plans/completed/electron-modernization.md](docs/plans/completed/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
-- [docs/plans/active/bun-client.md](docs/plans/active/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
-
-## Deferred Projects
-
-- [docs/plans/pending/electrobun-migration.md](docs/plans/pending/electrobun-migration.md) — Electrobun migration (deferred — WKWebView not mature enough)
-- [docs/plans/active/mcp-node-port.md](docs/plans/active/mcp-node-port.md) — MCP server (deferred — native module ABI mismatch, see [design](docs/designs/chronicles-mcp.md))
+- [docs/plans/archived/bun-client.md](docs/plans/archived/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
 
 ---
 
