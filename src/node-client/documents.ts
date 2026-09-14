@@ -1,6 +1,5 @@
 import crypto from "crypto";
 import fs from "fs";
-import path from "path";
 import yaml from "yaml";
 
 import {
@@ -42,40 +41,6 @@ export class DocumentsClient {
   ) {}
 
   /**
-   * Parse raw document content (YAML frontmatter + body) without a full mdast pass.
-   * Sufficient for Phase 4 CRUD operations. Phase 5 (FTS) introduces mdast parsing.
-   */
-  private parseDocument(rawContent: string): {
-    frontMatter: FrontMatter;
-    body: string;
-  } {
-    const now = new Date().toISOString();
-    const fmMatch = rawContent.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-    if (fmMatch) {
-      const fm: Record<string, any> = yaml.parse(fmMatch[1]) || {};
-      const body = fmMatch[2].trim();
-      return {
-        frontMatter: {
-          tags: fm.tags || [],
-          title: fm.title,
-          createdAt: fm.createdAt || now,
-          updatedAt: fm.updatedAt || now,
-          ...fm,
-        },
-        body,
-      };
-    }
-    return {
-      frontMatter: {
-        tags: [],
-        createdAt: now,
-        updatedAt: now,
-      },
-      body: rawContent.trim(),
-    };
-  }
-
-  /**
    * Serializes title, tags, etc, into markdown front-matter to be embedded into the final file content
    */
   private prependFrontMatter(
@@ -109,19 +74,34 @@ export class DocumentsClient {
       throw new Error(`[DOCUMENT_NOT_FOUND] Document ${id} not found`);
     }
 
-    const filepath = path.join(this.notesDir, row.journal, `${id}.md`);
-    const rawContent = await this.files.readDocument(filepath);
-    const { frontMatter, body } = this.parseDocument(rawContent);
+    const tagRows = await this.db
+      .select({ tag: documentTags.tag })
+      .from(documentTags)
+      .where(eq(documentTags.documentId, id))
+      .orderBy(documentTags.tag);
+    const tags = tagRows.map((t) => t.tag);
 
-    frontMatter.createdAt = frontMatter.createdAt || row.createdAt;
-    frontMatter.updatedAt = frontMatter.updatedAt || row.updatedAt;
+    const userKeys: Record<string, any> = row.frontmatter
+      ? JSON.parse(row.frontmatter)
+      : {};
+    delete userKeys.title;
+    delete userKeys.tags;
+    delete userKeys.createdAt;
+    delete userKeys.updatedAt;
+
+    const frontMatter: FrontMatter = {
+      ...userKeys,
+      title: row.title ?? undefined,
+      tags,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
 
     return {
       id: row.id,
-      filepath,
       journal: row.journal,
       frontMatter,
-      content: body,
+      content: row.content,
     };
   };
 

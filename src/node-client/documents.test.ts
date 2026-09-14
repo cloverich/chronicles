@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { open } from "node:fs/promises";
 import { after, before, describe, test } from "node:test";
 import { tmpdir } from "os";
+import path from "path";
 import { createClient } from "./factory";
 
 let client: Awaited<ReturnType<typeof createClient>>;
@@ -48,6 +49,49 @@ describe("createDocument / findById", () => {
       /\[DOCUMENT_NOT_FOUND\]/,
     );
   });
+
+  test("findById reads from the database only — no .md file required", async () => {
+    const [id] = await client.documents.createDocument({
+      journal: journalName,
+      content: "No file needed",
+      frontMatter: {
+        title: "DB Only",
+        tags: ["zeta", "alpha"],
+        createdAt: "2024-01-05T00:00:00.000Z",
+        updatedAt: "2024-01-05T00:00:00.000Z",
+        mood: "curious",
+      },
+    });
+
+    // Prove there is no filesystem dependency: delete the .md file entirely.
+    const filepath = path.join(notesDir, journalName, `${id}.md`);
+    rmSync(filepath);
+
+    const doc = await client.documents.findById({ id });
+    assert.strictEqual(doc.id, id);
+    assert.strictEqual(doc.journal, journalName);
+    assert.strictEqual(doc.content, "No file needed");
+    assert.strictEqual(doc.frontMatter.title, "DB Only");
+    assert.deepStrictEqual(doc.frontMatter.tags, ["alpha", "zeta"]);
+    assert.strictEqual(doc.frontMatter.createdAt, "2024-01-05T00:00:00.000Z");
+    assert.strictEqual(doc.frontMatter.updatedAt, "2024-01-05T00:00:00.000Z");
+    assert.strictEqual(doc.frontMatter.mood, "curious");
+  });
+
+  test("findById omits title when the document has none", async () => {
+    const [id] = await client.documents.createDocument({
+      journal: journalName,
+      content: "Untitled body",
+      frontMatter: {
+        tags: [],
+        createdAt: "2024-01-06T00:00:00.000Z",
+        updatedAt: "2024-01-06T00:00:00.000Z",
+      },
+    });
+
+    const doc = await client.documents.findById({ id });
+    assert.strictEqual(doc.frontMatter.title, undefined);
+  });
 });
 
 describe("updateDocument", () => {
@@ -88,9 +132,10 @@ describe("updateDocument", () => {
     assert.deepStrictEqual(doc.frontMatter.tags, ["tagB"]);
   });
 
-  // While file system is source of truth, changing the journal requires deleting the
-  // old file on disk, to avoid duplicates on next startup
-  test("changing journal name removes old document", async () => {
+  // The write path still mirrors documents to disk (task 3 removes that), so the
+  // old file should still be cleaned up on journal move. findById no longer exposes
+  // a filepath, so we compute the on-disk path the same way the client does.
+  test("changing journal name removes old document from disk", async () => {
     const [id] = await client.documents.createDocument({
       journal: journalName,
       content: "Original content",
@@ -102,15 +147,10 @@ describe("updateDocument", () => {
       },
     });
 
-    let doc = await client.documents.findById({ id });
-    let originalFilepath = doc.filepath;
+    const originalFilepath = path.join(notesDir, journalName, `${id}.md`);
     await assert.doesNotReject(
       open(originalFilepath),
       "Document should exist on disk at originalFilePath",
-    );
-    assert.ok(
-      originalFilepath.includes(`/${journalName}/${doc.id}`),
-      `Expected ${journalName} to be part of ${originalFilepath}`,
     );
 
     await client.documents.updateDocument({
@@ -125,12 +165,8 @@ describe("updateDocument", () => {
       },
     });
 
-    doc = await client.documents.findById({ id });
-    const updatedFilepath = doc.filepath;
-    assert.ok(
-      updatedFilepath.includes(`/${journal2Name}/${doc.id}`),
-      `Expected ${journalName} to be part of ${updatedFilepath}`,
-    );
+    const doc = await client.documents.findById({ id });
+    assert.strictEqual(doc.journal, journal2Name);
 
     await assert.rejects(
       open(originalFilepath),
