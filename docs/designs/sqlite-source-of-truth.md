@@ -1,12 +1,12 @@
 # Design Doc: SQLite as the authoritative note store
 
-> **Status: active.** Step 1 of the [current plan](../../Agents.md). Tracked in Engram (not GitHub issues).
+> **Status: complete** on branch `sqlite-source-of-truth`; steps 1–8 landed. Tracked in Engram (not GitHub issues).
 
 ## Goal
 
 SQLite becomes the sole source of truth for note content and metadata. Markdown stays the editor format and the import/export format, but is no longer the live store. Attachments stay as files on disk with metadata in the database.
 
-This removes the two-truths reconciliation the app carries today ([documents.ts:214](../../src/node-client/documents.ts:214) — a journal move writes a file, deletes the old one, then updates SQLite; the indexer then needs mtime/hash/orphan/duplicate logic to keep the index honest). It also makes a future Swift backend small: schema + CRUD + FTS, no filesystem indexer to port.
+This removes the two-truths reconciliation the app used to carry (a journal move wrote a file, deleted the old one, then updated SQLite; the indexer then needed mtime/hash/orphan/duplicate logic to keep the index honest). It also makes a future Swift backend small: schema + CRUD + FTS, no filesystem indexer to port.
 
 ## Cutover approach
 
@@ -41,11 +41,11 @@ Each item is one task. Order matters through 4; 5–8 are independent after that
 
 ## Validation
 
-- Fixture corpus of synthetic notes (frontmatter variants, tags, note links, images, code, lists, empty body, Unicode, journal move). No private notes in the repo.
+- [x] Fixture corpus of synthetic notes (frontmatter variants, tags, note links, images, code, lists, empty body, Unicode, journal move) — `src/preload/client/importer/test/chronicles-tree/`.
 - CRUD, journal move, bulk ops, tags, search, backlinks, images, and restart persistence all pass with no notes directory present.
-- `rebuildDerived()` reproduces identical search/tag/link results.
-- Export → import round-trip is semantically identical: IDs, journals, titles, timestamps, body, tags, links, attachments.
-- Manual: import the real archive, spot-check old, image-heavy, and link-heavy notes.
+- [x] `rebuildDerived()` reproduces identical search/tag/link results (tested).
+- [x] Export → import round-trip is semantically identical: IDs, journals, titles, timestamps, body, tags, links, attachments (tested).
+- [x] Manual: imported the real archive (857 notes) and round-tripped export → import with 0 mismatches.
 
 ## GitHub issue cleanup
 

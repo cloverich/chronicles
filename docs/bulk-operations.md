@@ -15,7 +15,7 @@ Initiate bulk operations using cmd+k on the search documents page. This will pre
 The bulk operations system consists of:
 
 - **Database Tables**: `bulk_operations` and `bulk_operation_items` track operations and individual document changes
-- **Backend Client**: `BulkOperationsClient` in `src/preload/client/bulk-operations.ts` handles creation and processing
+- **Backend Client**: `BulkOperationsClient` in `src/node-client/bulk-operations.ts` handles creation and processing
 - **Frontned Store**: The UI utilizes the bulk operations client through the `BulkOperationsStore`, to ensure actions are observable
 - **Audit Trail**: All operations and their results are persisted in the database for debugging
 
@@ -65,7 +65,7 @@ CREATE TABLE "bulk_operation_items" (
 2. **Process Operation**: Iterates through pending items
 
    - Marks operation as 'running'
-   - Uses `documents.updateDocument()` for each item (ensures consistency with single-document edits)
+   - Uses `documents.updateDocument()` for each item — the same write path as a single-document edit, so each item's content, tags, and derived rows (links, images, FTS) update atomically in one transaction; no separate re-index step needed
    - Records success/error status for each item
    - Updates operation success/error counts
    - Marks operation as 'completed'

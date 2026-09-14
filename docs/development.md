@@ -65,7 +65,7 @@ Bullet points communicate key changes, not dev practices (i.e. "added search by 
 
 ## Conventions
 
-- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`
+- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`; generate new ones with `bunx drizzle-kit generate` (config: `drizzle.config.ts` at repo root)
 - **IPC**: All renderer<->main communication through `src/preload/`
 - **State**: MobX stores in `src/hooks/stores/`
 - **Styling**: Tailwind CSS v4 + Radix UI primitives

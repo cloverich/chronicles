@@ -3,7 +3,7 @@
 Chronicles stores notes as markdown files. There are two separate markdown pipelines:
 
 - **Editor roundtrip** (this doc, below) — Lexical's own markdown import/export, used only while a document is open for editing.
-- **Indexer / search / import pipeline** — micromark (with OFM extensions) → MDAST → remark, used by the background indexer, full-text search, and bulk import. It does not touch the editor. See `src/markdown/index.ts` and `src/node-client/`.
+- **derive / search / import / export pipeline** — micromark (with OFM extensions) → MDAST → remark, used by `derive()` (to extract links/images and populate FTS from `documents.content`), the importer, and export round-trips. It does not touch the editor. See `src/markdown/index.ts` and `src/node-client/`.
 
 ## Editor Flow (Lexical)
 
@@ -45,6 +45,8 @@ To add a new node type to the editor:
 3. Write an `ElementTransformer` or `TextMatchTransformer` for it and add it to `chroniclesLexicalTransformers`
 4. Create a plugin/component to render it if needed (see [plugins.md](plugins.md))
 
-## Indexer / Search / Import Pipeline
+## Derive / Search / Import / Export Pipeline
 
-Unchanged by the Lexical migration — still micromark → MDAST → remark, used outside the editor. See `src/markdown/index.ts`, `src/node-client/indexer.ts`, `src/node-client/importer.ts`, and [docs/indexer.md](../indexer.md).
+Unchanged by the Lexical migration — still micromark → MDAST → remark, used outside the editor. See `src/markdown/index.ts`, `src/node-client/derive.ts`, `src/node-client/importer.ts`, and [docs/indexer.md](../indexer.md).
+
+One normalization fact worth knowing: the Chronicles importer (`importer-chronicles.ts`) re-serializes each note's body via `mdastToString` (bullets become `-`, emphasis becomes `_`), so import is semantically but not byte-identical to the source. Export (`export.ts`) writes the `content` column verbatim, with no re-serialization.

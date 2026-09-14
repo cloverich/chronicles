@@ -37,11 +37,11 @@ src/
   markdown/        Markdown parsing + serialization (indexer, search, import)
 ```
 
-## Database
+## Storage
 
-SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`, applied via `src/node-client/factory.ts`.
+SQLite is the source of truth for notes — `documents` (including a `content` column with the Markdown body) and `document_tags` are canonical; `document_links`, `image_links`, and `documents_fts` are derived from `content` on every write (see [docs/indexer.md](indexer.md)). Journals are DB-only rows, not directories. `notesDir` on disk holds only `_attachments/` and the settings/themes files (see `src/electron/settings.ts`). Markdown files reappear only at the file-format boundary: import, export, and backup (`src/node-client/importer*.ts`, `export.ts`, `backup.ts`).
 
-Core tables: `documents`, `journals`, `document_tags`, `files`.
+Database: Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/` (generate with `bunx drizzle-kit generate`, config at `drizzle.config.ts`), applied via `src/node-client/factory.ts`.
 
 ## Markdown Pipeline
 
