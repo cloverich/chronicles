@@ -214,6 +214,44 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
+  async function exportNotes() {
+    store.loading = true;
+    try {
+      const result = await window.chronicles.openDialogSelectDir();
+      if (!result?.value) {
+        store.loading = false;
+        return;
+      }
+
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+        now.getDate(),
+      )}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(
+        now.getSeconds(),
+      )}`;
+      const destDir = `${result.value}/chronicles-export-${timestamp}`;
+
+      toast.info("Exporting notes...this may take a few minutes");
+      const report = await client.export.export(destDir);
+
+      toast.success(
+        `Export completed: ${report.notes} notes, ${report.attachments.copied} attachments copied to ${report.destDir}`,
+      );
+      if (report.attachments.missing.length > 0) {
+        toast.warning(
+          `Export had ${report.attachments.missing.length} missing attachments. See console for details.`,
+        );
+        console.warn("Export missing attachments", report.attachments.missing);
+      }
+    } catch (e) {
+      console.error("Error exporting notes", e);
+      toast.error("Failed to export notes");
+    } finally {
+      store.loading = false;
+    }
+  }
+
   async function clearImportTable() {
     store.loading = true;
     try {
@@ -717,6 +755,30 @@ const PreferencesPane = observer((props: Props) => {
                     size="sm"
                   >
                     Import directory
+                  </Button>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="Export notes"
+                  sub="Export every note as Markdown, with frontmatter and referenced attachments"
+                />
+                <p className="mb-2 max-w-[500px]">
+                  Writes every note as{" "}
+                  <code>&lt;journal&gt;/&lt;id&gt;.md</code> with full
+                  frontmatter, plus a manifest and copies of referenced
+                  attachments. Suitable for backing up with Git, or re-importing
+                  later.
+                </p>
+                <div className="mt-4 flex">
+                  <Button
+                    variant="ghost"
+                    loading={store.loading}
+                    disabled={store.loading}
+                    onClick={exportNotes}
+                    size="sm"
+                  >
+                    Export notes…
                   </Button>
                 </div>
               </Section>

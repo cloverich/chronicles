@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
+import { ExportClient } from "./export";
 import { NodeFilesClient } from "./files";
 import { ImporterClient } from "./importer";
 import { JournalsClient } from "./journals";
@@ -70,6 +71,7 @@ export interface NodeClient {
   bulkOperations: BulkOperationsClient;
   tags: TagsClient;
   importer: ImporterClient;
+  export: ExportClient;
 }
 
 /**
@@ -174,6 +176,7 @@ export async function createClient(
     preferences,
     opts.notesDir,
   );
+  const exportClient = new ExportClient(db, opts.notesDir);
 
   await journals.ensureDefault();
 
@@ -188,5 +191,6 @@ export async function createClient(
     bulkOperations,
     tags,
     importer,
+    export: exportClient,
   };
 }
