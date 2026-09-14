@@ -19,8 +19,6 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Allow cross-origin requests from Electrobun's views:// scheme
-    cors: true,
   },
   build: {
     outDir: "../dist/renderer",

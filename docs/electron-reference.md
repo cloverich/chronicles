@@ -1,6 +1,8 @@
 # Electron Reference
 
-How Chronicles ran on Electron. Keep this around in case we need to roll back from Electrobun.
+How Chronicles ran on Electron.
+
+> **Historical note:** This doc was originally written to support rolling back from Electrobun, an experimental host that has since been removed. Electron is the current (and only) host; the Electrobun comparisons below are historical context, not current guidance.
 
 ---
 

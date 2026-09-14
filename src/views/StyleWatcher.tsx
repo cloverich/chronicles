@@ -250,8 +250,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
      */
     async function applyActiveTheme(): Promise<void> {
       // Set native theme and get OS dark mode preference.
-      // In Electrobun this is async (RPC); falls back to matchMedia if setNativeTheme
-      // returns false (stub).
+      // Falls back to matchMedia if setNativeTheme returns false (stub).
       const shouldUseDark =
         (await window.chronicles.setNativeTheme(preferences.darkMode)) ||
         (preferences.darkMode === "system"
