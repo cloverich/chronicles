@@ -228,31 +228,3 @@ describe("search", () => {
     assert.strictEqual(results.data[1].id, idOld);
   });
 });
-
-describe("getSyncMeta", () => {
-  test("returns mtime, size, and contentHash after create", async () => {
-    const [id] = await client.documents.createDocument({
-      journal: journalName,
-      content: "Sync meta test",
-      frontMatter: {
-        title: "Sync Meta",
-        tags: [],
-        createdAt: "2024-05-01T00:00:00.000Z",
-        updatedAt: "2024-05-01T00:00:00.000Z",
-      },
-    });
-
-    const meta = await client.documents.getSyncMeta(id);
-    assert.ok(meta.mtime !== null && meta.mtime > 0);
-    assert.ok(meta.size !== null && meta.size > 0);
-    assert.strictEqual(typeof meta.contentHash, "string");
-    assert.strictEqual(meta.contentHash!.length, 64); // SHA-256 hex
-  });
-
-  test("returns nulls for unknown id", async () => {
-    const meta = await client.documents.getSyncMeta("does-not-exist");
-    assert.strictEqual(meta.mtime, null);
-    assert.strictEqual(meta.size, null);
-    assert.strictEqual(meta.contentHash, null);
-  });
-});

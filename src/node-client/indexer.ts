@@ -81,13 +81,6 @@ export class IndexerClient {
     await this.files.ensureDir(rootDir);
     await this.files.ensureDir(path.join(rootDir, "_attachments"));
 
-    const needsFull = fullReindex || (await this.needsFullReindex());
-
-    // Pre-fetch all sync metadata for O(1) lookups during walk
-    const allSyncMeta = needsFull
-      ? new Map()
-      : await this.documents.getAllDocSyncMeta();
-
     // Pre-load existing DB journals so we skip duplicate create calls,
     // but track journalsOnDisk separately (only journals with files on disk).
     const knownJournals = await this.initJournalsCounter();
@@ -99,7 +92,6 @@ export class IndexerClient {
     const erroredDocumentPaths: string[] = [];
 
     let indexedCount = 0;
-    let skippedCount = 0;
 
     for await (const file of walk(rootDir, 1, shouldIndex)) {
       const { name, dir } = path.parse(file.path);
@@ -139,35 +131,11 @@ export class IndexerClient {
         }
       }
 
-      const existingMeta = allSyncMeta.get(documentId);
-      const fileMtime = Math.floor(file.stats.mtimeMs);
-      const fileSize = file.stats.size;
+      // Read file, parse, and reindex. Incremental mtime/hash skipping was
+      // dropped along with the sync-meta columns (see docs/designs/sqlite-source-of-truth.md);
+      // every file is always re-parsed and re-indexed.
+      const { rawContents } = await this.documents.readDocRaw(file.path);
 
-      // FAST PATH: mtime + size match → skip entirely
-      if (
-        existingMeta?.mtime === fileMtime &&
-        existingMeta?.size === fileSize
-      ) {
-        skippedCount++;
-        continue;
-      }
-
-      // Read file + compute hash
-      const { rawContents, contentHash } = await this.documents.readDocRaw(
-        file.path,
-      );
-
-      // MEDIUM PATH: hash matches → update meta only, skip parse
-      if (existingMeta?.contentHash === contentHash) {
-        await this.documents.updateDocSyncMeta(documentId, {
-          mtime: fileMtime,
-          size: fileSize,
-        });
-        skippedCount++;
-        continue;
-      }
-
-      // SLOW PATH: content changed → parse and reindex
       const { mdast, frontMatter } = this.documents.parseDoc(
         rawContents,
         file.stats,
@@ -180,11 +148,6 @@ export class IndexerClient {
           mdast,
           frontMatter,
           rootDir,
-          syncMeta: {
-            mtime: fileMtime,
-            size: fileSize,
-            contentHash,
-          },
         });
         indexedCount++;
       } catch (e) {

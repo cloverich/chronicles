@@ -119,11 +119,21 @@ export async function createClient(
   if (hasExistingTables && (!migrationCount || migrationCount.c === 0)) {
     // Schema exists but Drizzle doesn't know about it — stamp the initial
     // migration as applied so it doesn't try to re-create everything.
+    // Use the 0000 entry's own journal timestamp (not Date.now()) so that
+    // later migrations — whose journal `when` is necessarily greater than
+    // 0000's — still get picked up by Drizzle's "when > last created_at" check.
     console.log(
       "[node-client] Existing schema detected, stamping Drizzle migration journal",
     );
+    const journal = JSON.parse(
+      fs.readFileSync(
+        path.join(migrationsFolder, "meta/_journal.json"),
+        "utf-8",
+      ),
+    ) as { entries: { tag: string; when: number }[] };
+    const initialEntry = journal.entries[0];
     sqlite.exec(
-      `INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('0000_demonic_avengers', ${Date.now()})`,
+      `INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('${initialEntry.tag}', ${initialEntry.when})`,
     );
   }
 

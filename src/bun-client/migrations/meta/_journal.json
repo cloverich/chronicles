@@ -8,6 +8,13 @@
       "when": 1773553443855,
       "tag": "0000_demonic_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789396785295,
+      "tag": "0001_sqlite_source_of_truth",
+      "breakpoints": true
     }
   ]
 }

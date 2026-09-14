@@ -38,10 +38,8 @@ export const documents = sqliteTable(
         onUpdate: "cascade",
       }),
     frontmatter: text("frontmatter").notNull(),
-    // Incremental sync columns (migration 2)
-    mtime: integer("mtime"),
-    size: integer("size"),
-    contentHash: text("contentHash"),
+    /** Markdown body, frontmatter stripped. SQLite is the source of truth for content. */
+    content: text("content").notNull().default(""),
   },
   (table) => [
     index("documents_title_idx").on(table.title),

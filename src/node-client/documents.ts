@@ -32,12 +32,6 @@ import type { NodeFilesClient } from "./files";
 import * as schema from "./schema";
 import { documents, documentTags } from "./schema";
 
-export interface DocSyncMeta {
-  mtime: number | null;
-  size: number | null;
-  contentHash: string | null;
-}
-
 export type IDocumentsClient = DocumentsClient;
 
 export class DocumentsClient {
@@ -105,15 +99,6 @@ export class DocumentsClient {
     return crypto.createHash("sha256").update(content).digest("hex");
   }
 
-  private async computeSyncMeta(filePath: string, content: string) {
-    const stats = await fs.promises.stat(filePath);
-    return {
-      mtime: Math.floor(stats.mtimeMs),
-      size: stats.size,
-      contentHash: this.computeHash(content),
-    };
-  }
-
   findById = async ({ id }: { id: string }): Promise<GetDocumentResponse> => {
     const [row] = await this.db
       .select()
@@ -154,8 +139,6 @@ export class DocumentsClient {
       args.journal,
     );
 
-    const syncMeta = await this.computeSyncMeta(docPath, content);
-
     this.db.transaction((trx) => {
       trx
         .insert(documents)
@@ -166,9 +149,7 @@ export class DocumentsClient {
           createdAt: args.frontMatter.createdAt,
           updatedAt: args.frontMatter.updatedAt,
           frontmatter: JSON.stringify(args.frontMatter),
-          mtime: syncMeta.mtime,
-          size: syncMeta.size,
-          contentHash: syncMeta.contentHash,
+          content: args.content,
         })
         .run();
 
@@ -217,8 +198,6 @@ export class DocumentsClient {
       await this.files.deleteDocument(args.id, origJournal);
     }
 
-    const syncMeta = await this.computeSyncMeta(docPath, content);
-
     this.db.transaction((trx) => {
       trx
         .update(documents)
@@ -227,9 +206,7 @@ export class DocumentsClient {
           title: args.frontMatter.title,
           updatedAt: args.frontMatter.updatedAt,
           frontmatter: JSON.stringify(args.frontMatter),
-          mtime: syncMeta.mtime,
-          size: syncMeta.size,
-          contentHash: syncMeta.contentHash,
+          content: args.content,
         })
         .where(eq(documents.id, args.id))
         .run();
@@ -418,52 +395,6 @@ export class DocumentsClient {
     return Number(result?.count || 0);
   };
 
-  getSyncMeta = async (id: string): Promise<DocSyncMeta> => {
-    const [row] = await this.db
-      .select({
-        mtime: documents.mtime,
-        size: documents.size,
-        contentHash: documents.contentHash,
-      })
-      .from(documents)
-      .where(eq(documents.id, id));
-
-    if (!row) return { mtime: null, size: null, contentHash: null };
-    return {
-      mtime: row.mtime ?? null,
-      size: row.size ?? null,
-      contentHash: row.contentHash ?? null,
-    };
-  };
-
-  getAllDocSyncMeta = async (): Promise<Map<string, DocSyncMeta>> => {
-    const rows = await this.db
-      .select({
-        id: documents.id,
-        mtime: documents.mtime,
-        size: documents.size,
-        contentHash: documents.contentHash,
-      })
-      .from(documents);
-
-    const map = new Map<string, DocSyncMeta>();
-    for (const row of rows) {
-      map.set(row.id, {
-        mtime: row.mtime ?? null,
-        size: row.size ?? null,
-        contentHash: row.contentHash ?? null,
-      });
-    }
-    return map;
-  };
-
-  updateDocSyncMeta = async (
-    id: string,
-    meta: { mtime: number; size: number },
-  ): Promise<void> => {
-    await this.db.update(documents).set(meta).where(eq(documents.id, id));
-  };
-
   deleteOrphanedDocuments = async (seenIds: Set<string>): Promise<number> => {
     const seenIdsArray = Array.from(seenIds);
     const orphaned = await this.db
@@ -527,7 +458,6 @@ export class DocumentsClient {
     journal,
     mdast,
     frontMatter,
-    syncMeta,
   }: IndexRequest): Promise<string> => {
     if (!id) throw new Error("id required to create document index");
 
@@ -550,11 +480,7 @@ export class DocumentsClient {
             title: frontMatter.title,
             updatedAt: frontMatter.updatedAt,
             frontmatter: JSON.stringify(frontMatter),
-            ...(syncMeta && {
-              mtime: syncMeta.mtime,
-              size: syncMeta.size,
-              contentHash: syncMeta.contentHash,
-            }),
+            content,
           })
           .where(eq(documents.id, id))
           .run();
@@ -568,11 +494,7 @@ export class DocumentsClient {
             createdAt: frontMatter.createdAt,
             updatedAt: frontMatter.updatedAt,
             frontmatter: JSON.stringify(frontMatter),
-            ...(syncMeta && {
-              mtime: syncMeta.mtime,
-              size: syncMeta.size,
-              contentHash: syncMeta.contentHash,
-            }),
+            content,
           })
           .run();
       }
