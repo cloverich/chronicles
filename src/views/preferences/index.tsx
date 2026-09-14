@@ -279,17 +279,14 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
-  async function clearImportTable() {
-    store.loading = true;
-    try {
-      await client.importer.clearImportTables();
-      store.loading = false;
-      toast.success("Import table cleared");
-    } catch (e) {
-      console.error("Error clearing import table", e);
-      store.loading = false;
-      toast.error("Failed to clear import table");
-    }
+  async function resetNotes() {
+    if (
+      !confirm(
+        "Delete ALL notes, journals, and import records? Attachments are kept. This cannot be undone.",
+      )
+    )
+      return;
+    await maintenanceStore.resetNotes();
   }
 
   return (
@@ -825,30 +822,22 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
-                  title="Clear import table"
-                  sub="Clearing import tables and syncing cache"
+                  title="Reset notes"
+                  sub="Delete every note, journal, and import record"
                 />
                 <p className="mb-2 max-w-[500px]">
-                  <strong>(Advanced)</strong> Re-running import from same
-                  location will skip previously imported files. To fully re-run
-                  the import, you can clear the import tables by clicking below,
-                  but this will result in duplicate files unless the prior
-                  imported files are removed (<strong>manually, by you</strong>)
-                  from root directory.
-                </p>
-                <p className="mb-2 max-w-[500px]">
-                  Note that ids are generated and tracked in the import table
-                  prior to creating the files, so these can be used to
-                  (manually) link imported files to their location in
-                  Chronicles.
+                  <strong>(Advanced)</strong> Wipes the database so an import
+                  can be re-run from scratch. Files in <code>_attachments</code>{" "}
+                  are left in place; a re-import skips attachments that already
+                  exist. Back up first.
                 </p>
                 <div className="mt-4 flex">
                   <Button
                     variant="destructive"
-                    onClick={clearImportTable}
-                    disabled={store.loading}
+                    onClick={resetNotes}
+                    disabled={store.loading || maintenanceStore.isRepairing}
                   >
-                    Clear import table
+                    Reset notes
                   </Button>
                 </div>
               </Section>

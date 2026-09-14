@@ -81,3 +81,5 @@ CREATE TABLE "bulk_operation_items" (
 ### Manual Recovery & Debugging
 
 All operations are persisted in the database. You can query them directly using SQL for debugging or manual recovery. You'd need to use the combination of the original search (in bulk operations) and the operation+params (e.g. "add_tag" and "tag: foo_tag") to undo; not currently supported in the API but feasible as far as the data goes.
+
+Missing attachments after a Chronicles import can usually be traced through the `imports` / `import_files` tables (original source path → chronicles id) in the pre-migration database backup from 2026-09-14.

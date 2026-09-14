@@ -502,3 +502,45 @@ describe("rebuildDerived", () => {
     assert.deepStrictEqual(tagRowsAfter, tagRowsBefore);
   });
 });
+
+describe("deleteAll", () => {
+  test("removes notes, tags, derived rows, journals, and imports", async () => {
+    const dir = mkdtempSync(tmpdir() + "/chronicles-reset-");
+    const c = await createClient({ dbPath: ":memory:", notesDir: dir });
+    await c.journals.create({ name: "j1" });
+    await c.documents.createDocument({
+      journal: "j1",
+      content: "hello ![x](../_attachments/a.png) [l](../j1/abc.md)",
+      frontMatter: {
+        title: "T",
+        tags: ["t"],
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      },
+    });
+    await c.documents.deleteAll();
+    await c.journals.ensureDefault();
+
+    const count = (t: string) =>
+      (c.sqlite.prepare(`SELECT count(*) as n FROM ${t}`).get() as any).n;
+    for (const t of [
+      "documents",
+      "document_tags",
+      "document_links",
+      "image_links",
+      "documents_fts",
+      "imports",
+    ]) {
+      assert.strictEqual(count(t), 0, t);
+    }
+    assert.deepStrictEqual(
+      (await c.journals.list()).map((j) => j.name),
+      ["default_journal"],
+    );
+    assert.strictEqual(
+      await c.preferences.get("defaultJournal"),
+      "default_journal",
+    );
+    rmSync(dir, { recursive: true, force: true });
+  });
+});

@@ -464,6 +464,22 @@ export class DocumentsClient {
    * FTS index for every row in `documents`, from stored content. Tags are
    * canonical (not derived), so `document_tags` is left untouched.
    */
+  /**
+   * Maintenance command: deletes every note, tag, derived row, journal, and
+   * import record. Attachments on disk are untouched. Callers should follow
+   * with `journals.ensureDefault()`.
+   */
+  deleteAll = async (): Promise<void> => {
+    this.db.transaction((trx) => {
+      trx.run(sql`DELETE FROM documents_fts`);
+      trx.delete(documents).run();
+      trx.delete(schema.journals).run();
+      trx.delete(schema.importNotes).run();
+      trx.delete(schema.importFiles).run();
+      trx.delete(schema.imports).run();
+    });
+  };
+
   rebuildDerived = async (): Promise<{ count: number }> => {
     let count = 0;
 

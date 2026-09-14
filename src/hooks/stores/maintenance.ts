@@ -26,6 +26,28 @@ export class MaintenanceStore {
    *
    * @returns Promise that resolves when the repair completes
    */
+  /**
+   * Deletes all notes, journals, and import records so an import can be
+   * re-run from scratch. Attachments on disk are left in place.
+   */
+  resetNotes = async (): Promise<void> => {
+    if (this.isRepairing) return;
+    this.isRepairing = true;
+    try {
+      await this.client.documents.deleteAll();
+      await this.client.journals.ensureDefault();
+      this.lastRepairTime = new Date();
+      await this.journalsStore.refresh();
+      toast.success("All notes deleted");
+    } catch (err: any) {
+      console.error("Error resetting notes:", err);
+      toast.error("Failed to reset notes");
+      throw err;
+    } finally {
+      this.isRepairing = false;
+    }
+  };
+
   repair = async (): Promise<void> => {
     // Prevent duplicate calls - no-op if already repairing
     if (this.isRepairing) {
