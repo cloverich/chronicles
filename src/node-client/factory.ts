@@ -163,7 +163,7 @@ export async function createClient(
   });
   const preferences = new PreferencesClient(conf);
   const files = new NodeFilesClient(opts.notesDir);
-  const journals = new JournalsClient(db, files, preferences);
+  const journals = new JournalsClient(db, preferences);
   const documents = new DocumentsClient(db, files);
   const bulkOperations = new BulkOperationsClient(db, documents);
   const tags = new TagsClient(db);

@@ -24,7 +24,7 @@ No dry-run/apply migration tool, no dual-write, no reversible transition build. 
 - **FTS stays application-managed** (delete + insert inside the write transaction, as today). No triggers.
 - **Attachments unchanged**: files under the existing data directory, `chronicles://` references, `imageLinks` metadata. No dedup or GC in this project.
 - **No revision history.** Deterministic export + optional Git is the history mechanism.
-- **Journals stay keyed by name** for now; renaming journals is a later, separate change once storage no longer depends on directory names.
+- **Journals are database-only.** Keyed by name; no journal directories on disk. Renaming by ID is a later change.
 
 ## Work plan
 
@@ -69,4 +69,4 @@ Everything else (theming, fonts, search UX, editor bugs) migrates to Engram when
 
 ## Non-goals
 
-Device sync, web service, permissions, Swift backend, attachment GC, journal rename by ID, note revisions. This project builds the persistence foundation those would need.
+Device sync, web service, permissions, Swift backend, attachment GC, journal rename by ID, note revisions, per-journal attachment scoping / access control. This project builds the persistence foundation those would need.

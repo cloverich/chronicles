@@ -463,10 +463,6 @@ export class ImporterClient {
       .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
       .onConflictDoNothing();
 
-    // Ensure the journal directory exists on disk
-    const journalDir = `${this.notesDir}/${journalName}`;
-    await this.files.ensureDir(journalDir);
-
     // Track in preferences (archivedJournals) if not already present
     const archived: Record<string, boolean> =
       (await this.preferences.get("archivedJournals")) ?? {};
