@@ -1,3 +1,4 @@
+import { BackupClient } from "../../node-client/backup";
 import { IBulkOperationsClient } from "../../node-client/bulk-operations";
 import { IDocumentsClient } from "../../node-client/documents";
 import { ExportClient } from "../../node-client/export";
@@ -20,6 +21,7 @@ export interface IClient {
   importer: IImporterClient;
   bulkOperations: IBulkOperationsClient;
   export: ExportClient;
+  backup: BackupClient;
 }
 
 export type JournalResponse = {

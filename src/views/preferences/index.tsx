@@ -214,6 +214,14 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
+  function timestampForDirName(): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate(),
+    )}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  }
+
   async function exportNotes() {
     store.loading = true;
     try {
@@ -223,14 +231,7 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
-      const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-        now.getDate(),
-      )}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(
-        now.getSeconds(),
-      )}`;
-      const destDir = `${result.value}/chronicles-export-${timestamp}`;
+      const destDir = `${result.value}/chronicles-export-${timestampForDirName()}`;
 
       toast.info("Exporting notes...this may take a few minutes");
       const report = await client.export.export(destDir);
@@ -247,6 +248,32 @@ const PreferencesPane = observer((props: Props) => {
     } catch (e) {
       console.error("Error exporting notes", e);
       toast.error("Failed to export notes");
+    } finally {
+      store.loading = false;
+    }
+  }
+
+  async function backupNotes() {
+    store.loading = true;
+    try {
+      const result = await window.chronicles.openDialogSelectDir();
+      if (!result?.value) {
+        store.loading = false;
+        return;
+      }
+
+      const destDir = `${result.value}/chronicles-backup-${timestampForDirName()}`;
+
+      toast.info("Backing up...this may take a few minutes");
+      const report = await client.backup.backup(destDir);
+
+      const databaseMb = (report.databaseBytes / (1024 * 1024)).toFixed(2);
+      toast.success(
+        `Backup completed: ${databaseMb} MB database, ${report.attachments.files} attachments, saved to ${report.destDir}`,
+      );
+    } catch (e) {
+      console.error("Error backing up notes", e);
+      toast.error("Failed to back up notes");
     } finally {
       store.loading = false;
     }
@@ -770,7 +797,12 @@ const PreferencesPane = observer((props: Props) => {
                   attachments. Suitable for backing up with Git, or re-importing
                   later.
                 </p>
-                <div className="mt-4 flex">
+                <p className="mb-2 max-w-[500px]">
+                  A backup is a snapshot of the database plus all attachments;
+                  restore by replacing the database file and{" "}
+                  <code>_attachments</code> directory while the app is closed.
+                </p>
+                <div className="mt-4 flex gap-2">
                   <Button
                     variant="ghost"
                     loading={store.loading}
@@ -779,6 +811,15 @@ const PreferencesPane = observer((props: Props) => {
                     size="sm"
                   >
                     Export notes…
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    loading={store.loading}
+                    disabled={store.loading}
+                    onClick={backupNotes}
+                    size="sm"
+                  >
+                    Back up…
                   </Button>
                 </div>
               </Section>

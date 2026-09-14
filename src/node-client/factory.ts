@@ -8,6 +8,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { BackupClient } from "./backup";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { ExportClient } from "./export";
@@ -72,6 +73,7 @@ export interface NodeClient {
   tags: TagsClient;
   importer: ImporterClient;
   export: ExportClient;
+  backup: BackupClient;
 }
 
 /**
@@ -177,6 +179,7 @@ export async function createClient(
     opts.notesDir,
   );
   const exportClient = new ExportClient(db, opts.notesDir);
+  const backupClient = new BackupClient(sqlite, opts.notesDir);
 
   await journals.ensureDefault();
 
@@ -192,5 +195,6 @@ export async function createClient(
     tags,
     importer,
     export: exportClient,
+    backup: backupClient,
   };
 }

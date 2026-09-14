@@ -6,8 +6,9 @@ import path from "path";
 import yaml from "yaml";
 
 import { createId } from "../preload/client/util";
+import { isSameOrInside, pathExists } from "./fs-guards";
 import * as schema from "./schema";
-import { documents, documentTags, imageLinks } from "./schema";
+import { documentTags, documents, imageLinks } from "./schema";
 
 export interface ExportReport {
   destDir: string;
@@ -29,29 +30,6 @@ interface Manifest {
 }
 
 const ATTACHMENT_PREFIX = "../_attachments/";
-
-/** Resolve a path, always ending without a trailing separator, for containment checks. */
-function normalizeForContainment(p: string): string {
-  const resolved = path.resolve(p);
-  return resolved.endsWith(path.sep) ? resolved.slice(0, -1) : resolved;
-}
-
-/** True if `child` is the same path as `parent`, or nested inside it. */
-function isSameOrInside(child: string, parent: string): boolean {
-  const c = normalizeForContainment(child);
-  const p = normalizeForContainment(parent);
-  return c === p || c.startsWith(p + path.sep);
-}
-
-async function pathExists(p: string): Promise<boolean> {
-  try {
-    await fs.promises.lstat(p);
-    return true;
-  } catch (err: any) {
-    if (err?.code === "ENOENT") return false;
-    throw err;
-  }
-}
 
 export class ExportClient {
   constructor(
