@@ -37,7 +37,7 @@ const COLUMN_OWNED_FRONTMATTER_KEYS = [
 ] as const;
 
 /** Strip column-owned keys from a FrontMatter object, leaving only user keys. */
-function stripColumnOwnedKeys(
+export function stripColumnOwnedKeys(
   frontMatter: Record<string, any>,
 ): Record<string, any> {
   const userKeys = { ...frontMatter };
@@ -199,6 +199,96 @@ export class DocumentsClient {
         title: args.frontMatter.title,
         content: args.content,
       });
+    });
+  };
+
+  /**
+   * Import a document, preserving id/timestamps verbatim (used by the
+   * Chronicles-tree importer). Runs entirely in one transaction: checks
+   * existence, then either skips, replaces (all columns including
+   * createdAt), or inserts — writing tags and derived rows in all cases
+   * except skip.
+   */
+  importDocument = async (
+    args: {
+      id: string;
+      journal: string;
+      title?: string;
+      createdAt: string;
+      updatedAt: string;
+      tags: string[];
+      content: string;
+      /** Arbitrary user-supplied frontmatter keys only (no title/tags/createdAt/updatedAt). */
+      frontMatter: Record<string, any>;
+    },
+    opts: { onConflict: "skip" | "replace" } = { onConflict: "skip" },
+  ): Promise<"created" | "skipped" | "replaced"> => {
+    const tags = Array.from(new Set(args.tags));
+    const frontmatterJson = JSON.stringify(args.frontMatter);
+
+    return this.db.transaction((trx): "created" | "skipped" | "replaced" => {
+      const [existing] = trx
+        .select({ id: documents.id })
+        .from(documents)
+        .where(eq(documents.id, args.id))
+        .all();
+
+      if (existing) {
+        if (opts.onConflict === "skip") {
+          return "skipped";
+        }
+
+        trx
+          .update(documents)
+          .set({
+            journal: args.journal,
+            title: args.title,
+            createdAt: args.createdAt,
+            updatedAt: args.updatedAt,
+            frontmatter: frontmatterJson,
+            content: args.content,
+          })
+          .where(eq(documents.id, args.id))
+          .run();
+
+        trx
+          .delete(documentTags)
+          .where(eq(documentTags.documentId, args.id))
+          .run();
+
+        if (tags.length > 0) {
+          trx
+            .insert(documentTags)
+            .values(tags.map((tag) => ({ documentId: args.id, tag })))
+            .run();
+        }
+
+        derive(trx, { id: args.id, title: args.title, content: args.content });
+        return "replaced";
+      }
+
+      trx
+        .insert(documents)
+        .values({
+          id: args.id,
+          journal: args.journal,
+          title: args.title,
+          createdAt: args.createdAt,
+          updatedAt: args.updatedAt,
+          frontmatter: frontmatterJson,
+          content: args.content,
+        })
+        .run();
+
+      if (tags.length > 0) {
+        trx
+          .insert(documentTags)
+          .values(tags.map((tag) => ({ documentId: args.id, tag })))
+          .run();
+      }
+
+      derive(trx, { id: args.id, title: args.title, content: args.content });
+      return "created";
     });
   };
 

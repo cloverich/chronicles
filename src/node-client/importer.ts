@@ -21,6 +21,11 @@ import type { IDocumentsClient } from "./documents";
 import type { NodeFilesClient } from "./files";
 import { FilesImportResolver } from "./files-import-resolver";
 import {
+  importChroniclesTree,
+  type ChroniclesImportOptions,
+  type ChroniclesImportReport,
+} from "./importer-chronicles";
+import {
   MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
   validateJournalName,
 } from "./journals";
@@ -118,12 +123,9 @@ export class ImporterClient {
   import = async (
     importDir: string,
     sourceType: SourceType = SourceType.Other,
-  ) => {
-    // await this.clearImportTables();
+    opts?: ChroniclesImportOptions,
+  ): Promise<ChroniclesImportReport | void> => {
     importDir = path.resolve(importDir);
-
-    await this.clearIncomplete();
-    const importerId = createId();
     const chroniclesRoot = this.notesDir;
 
     // Ensure `importDir` is a directory and can be accessed
@@ -135,6 +137,24 @@ export class ImporterClient {
         "Import directory must not reside within the chronicles root directory",
       );
     }
+
+    if (sourceType === SourceType.Chronicles) {
+      return importChroniclesTree(
+        {
+          db: this.db,
+          documents: this.documents,
+          files: this.files,
+          preferences: this.preferences,
+          notesDir: this.notesDir,
+        },
+        importDir,
+        opts,
+      );
+    }
+
+    // await this.clearImportTables();
+    await this.clearIncomplete();
+    const importerId = createId();
 
     // track, so if we have errors and want to re-run to fix remaining pending items,
     // we can. This is mostly for debugging.

@@ -14,6 +14,7 @@ import {
 } from "../../components/Dialog";
 import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
 import useClient from "../../hooks/useClient";
+import { useJournals } from "../../hooks/useJournals";
 import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
 import { usePreferences } from "../../hooks/usePreferences";
 import { SourceType } from "../../preload/client/importer/SourceType";
@@ -31,11 +32,13 @@ interface Props {
 
 const PreferencesPane = observer((props: Props) => {
   const maintenanceStore = useMaintenanceStore();
+  const journalsStore = useJournals();
   const client = useClient();
   const [store, _] = React.useState(() =>
     observable({
       loading: false,
       sourceType: SourceType.Other,
+      replaceExisting: false,
     }),
   );
   const preferences = usePreferences();
@@ -171,12 +174,35 @@ const PreferencesPane = observer((props: Props) => {
       }
 
       toast.info("Importing directory...this may take a few minutes");
-      await client.importer.import(result.value, store.sourceType);
+      const report = await client.importer.import(
+        result.value,
+        store.sourceType,
+        store.sourceType === SourceType.Chronicles
+          ? { onConflict: store.replaceExisting ? "replace" : "skip" }
+          : undefined,
+      );
 
-      // Import calls sync internally, so just refresh the journals store
-      // and show success notification
-      // await jstore.refresh();
-      toast.success("Import completed");
+      await journalsStore.refresh();
+
+      if (report) {
+        console.warn("Chronicles import report", report);
+        toast.success(
+          `Import completed: created ${report.created}, skipped ${report.skipped}, replaced ${report.replaced}, errored ${report.errored.length}`,
+        );
+
+        const duplicateCount = Object.keys(report.duplicates).length;
+        if (
+          report.errored.length > 0 ||
+          duplicateCount > 0 ||
+          report.attachments.missing.length > 0
+        ) {
+          toast.warning(
+            `Import had issues: ${report.errored.length} errored, ${duplicateCount} duplicate ids, ${report.attachments.missing.length} missing attachments. See console for details.`,
+          );
+        }
+      } else {
+        toast.success("Import completed");
+      }
       store.loading = false;
 
       // Navigate to main view to show newly imported documents
@@ -660,8 +686,27 @@ const PreferencesPane = observer((props: Props) => {
                   >
                     <option value={SourceType.Notion}>Notion</option>
                     <option value={SourceType.Other}>Other</option>
+                    <option value={SourceType.Chronicles}>Chronicles</option>
                   </NativeSelect>
                 </div>
+                {store.sourceType === SourceType.Chronicles && (
+                  <div className="my-4 flex max-w-[500px] items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="replace-existing"
+                      checked={store.replaceExisting}
+                      onChange={(e) =>
+                        (store.replaceExisting = e.target.checked)
+                      }
+                    />
+                    <Label.Base
+                      htmlFor="replace-existing"
+                      className="text-sm leading-none font-medium"
+                    >
+                      Replace existing notes with the same ID
+                    </Label.Base>
+                  </div>
+                )}
                 <div className="mt-4 flex">
                   {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
                   <Button
