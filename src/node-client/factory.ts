@@ -30,25 +30,25 @@ const projectRoot: string | undefined =
 /**
  * Resolve the Drizzle migrations folder. Works in three contexts:
  * - CHRONICLES_PROJECT_ROOT set: explicit path (production bundle)
- * - Unbundled (vitest): __dirname is src/node-client/, so ../bun-client/migrations
- * - Bundled (esbuild → src/preload.bundle.mjs): __dirname is src/, so bun-client/migrations
+ * - Unbundled (vitest): __dirname is src/node-client/, so ./migrations
+ * - Bundled (esbuild → src/preload.bundle.mjs): __dirname is src/, so node-client/migrations
  */
 function resolveMigrationsFolder(): string {
   if (projectRoot) {
-    return path.resolve(projectRoot, "src/bun-client/migrations");
+    return path.resolve(projectRoot, "src/node-client/migrations");
   }
   // Try the unbundled path first (vitest, running from src/node-client/)
-  const fromSource = path.resolve(__dirname, "../bun-client/migrations");
+  const fromSource = path.resolve(__dirname, "migrations");
   if (fs.existsSync(path.join(fromSource, "meta"))) {
     return fromSource;
   }
   // Bundled by esbuild into src/preload.bundle.mjs — __dirname is src/
-  const fromBundle = path.resolve(__dirname, "bun-client/migrations");
+  const fromBundle = path.resolve(__dirname, "node-client/migrations");
   if (fs.existsSync(path.join(fromBundle, "meta"))) {
     return fromBundle;
   }
   // Last resort: resolve from cwd
-  return path.resolve(process.cwd(), "src/bun-client/migrations");
+  return path.resolve(process.cwd(), "src/node-client/migrations");
 }
 
 export interface CreateClientOptions {

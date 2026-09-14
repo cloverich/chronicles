@@ -52,10 +52,10 @@ mkdir -p dist/electron
 cp -r src/electron dist
 
 # Copy Drizzle migration files so the packaged app can run them.
-# The preload bundle resolves migrations via __dirname + "bun-client/migrations".
+# The preload bundle resolves migrations via __dirname + "node-client/migrations".
 echo "Copying Drizzle migrations"
-mkdir -p dist/bun-client
-cp -r src/bun-client/migrations dist/bun-client/
+mkdir -p dist/node-client
+cp -r src/node-client/migrations dist/node-client/
 
 # Delete any previously generated bundles
 # In case we were changing names or something like that.

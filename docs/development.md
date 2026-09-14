@@ -36,8 +36,7 @@ test scripts: it rebuilds for system Node and breaks the app until the next
 
 ```
 src/electron/        Main process (app lifecycle, settings, IPC wiring)
-src/node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import)
-src/bun-client/      Drizzle SQL migrations (src/bun-client/migrations/)
+src/node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import, migrations/)
 src/preload/         IPC bridge, client API types (src/preload/client/types.ts)
 src/views/           React views (documents, edit, preferences)
 src/components/      Reusable UI (Radix-based)
@@ -66,7 +65,7 @@ Bullet points communicate key changes, not dev practices (i.e. "added search by 
 
 ## Conventions
 
-- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/bun-client/migrations/`
+- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`
 - **IPC**: All renderer<->main communication through `src/preload/`
 - **State**: MobX stores in `src/hooks/stores/`
 - **Styling**: Tailwind CSS v4 + Radix UI primitives

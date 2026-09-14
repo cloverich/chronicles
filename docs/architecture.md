@@ -29,8 +29,7 @@ Communication flows through `src/preload/`; shared types live in `src/preload/cl
 ```
 src/
   electron/        Main process (app lifecycle, settings, IPC wiring)
-  node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import)
-  bun-client/      Drizzle SQL migrations (src/bun-client/migrations/)
+  node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import, migrations/)
   preload/         IPC bridge + client API definitions
   views/           React views (documents, edit, preferences)
   components/      Reusable UI (Radix-based)
@@ -40,7 +39,7 @@ src/
 
 ## Database
 
-SQLite via Drizzle + better-sqlite3. Migrations in `src/bun-client/migrations/`, applied via `src/node-client/factory.ts`.
+SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`, applied via `src/node-client/factory.ts`.
 
 Core tables: `documents`, `journals`, `document_tags`, `files`.
 
