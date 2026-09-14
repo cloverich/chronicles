@@ -1,92 +1,36 @@
 # Testing
 
-## Current State
-
-Testing in Chronicles is minimal and partially broken. This document describes what exists, what doesn't work, and where things are headed.
-
----
-
-## Renderer Tests (`yarn test`)
+Two runners, one command. Nothing requires a display or a live Electron window.
 
 ```bash
-yarn test   # runs Vitest against renderer-focused *.vitest.ts / *.vitest.tsx files
+yarn test          # both suites; what CI runs
+yarn test:watch    # vitest in watch mode
+yarn test:node     # node:test suites only
 ```
 
-Vitest now owns renderer-facing smoke tests and component-level tests that benefit from Vite transforms and a DOM environment.
+## Vitest (`src/**/*.vitest.{ts,tsx}`)
 
-Current coverage is intentionally shallow and focused on the main UI surfaces:
+Renderer code: React views, hooks, stores driven through real providers, and the Lexical editor. Runs in jsdom with React Testing Library (`vitest.config.ts`, setup in `src/test/setup.ts`, which installs a fake `window.chronicles`).
 
-- `src/views/documents/index.vitest.tsx` — documents surface smoke states
-- `src/views/edit/loading.vitest.tsx` — editor loading/error shell
-- `src/views/preferences/index.vitest.tsx` — preferences modal surface
+Conventions:
 
-This is the new default direction for frontend testing.
+- Render the real component tree with real providers; mock at the client boundary (`ClientContext`, preload APIs), not child components or stores.
+- Assert on visible UI, not implementation details. No snapshot-heavy tests.
+- Lexical behaviour is tested here in jsdom (`src/views/edit/lexical/*.vitest.tsx`); browser mode has not been needed.
 
-### Renderer test preference
+## node:test (`src/**/*.test.ts`)
 
-- Prefer rendering the real component tree with real providers.
-- Mock at the client/request boundary first: `ClientContext`, preload APIs, or equivalent service interfaces.
-- Avoid mocking child components, hooks, or stores unless there is a clear cost or isolation reason.
-- Prefer visible UI assertions over implementation-detail assertions.
+Backend and pure logic: `node-client` (Drizzle + better-sqlite3 against a temp DB), the markdown pipeline, search parser and stores, themes, fonts, frontmatter, utilities. Uses `chai` for assertions.
 
----
+These run under Electron's own Node (`ELECTRON_RUN_AS_NODE=1 electron --import tsx --test …`) so `better-sqlite3` is loaded with the same ABI the app uses. See [development.md](development.md#native-modules-and-the-single-abi-test-setup) — do not add a rebuild step to the test scripts.
 
-## Legacy Node Tests (`yarn test:node`)
+`src/bun-client/` is excluded; only its `migrations/` directory is live.
 
-```bash
-yarn test:node   # bundles *.test.ts with esbuild, runs with node --test
-```
+## What is deliberately not here
 
-These tests still use `node:test` (Node's built-in runner) with `chai` for assertions. The pipeline:
+**No Electron end-to-end suite.** Several attempts (Playwright, a file-polling UI driver, an in-process `electron-test` runner) were abandoned; the Electron test ecosystem has not been worth the cost. Whole-app verification is done by running the app (`HEADLESS=true yarn start`) and exercising key flows — increasingly by an LLM driving the app as a final QA step rather than by a checked-in harness. Historical context: [designs/ui-driver.md](designs/ui-driver.md), [plans/archived/playwright-e2e.md](plans/archived/playwright-e2e.md).
 
-1. `scripts/test.mjs` — esbuild bundles all `*.test.ts` → `*.test.bundle.mjs`
-2. `node --test 'src/**/*.test.bundle.mjs'` runs the bundles
+## Gaps
 
-**What actually has tests:**
-
-- `src/markdown/index.test.ts` — markdown ↔ Slate roundtrip; the most substantive suite
-- `src/preload/client/importer/frontmatter.test.ts` — frontmatter parsing
-- `src/preload/client/util.test.ts` — utility functions
-- `src/views/documents/search/SearchParser.test.ts` — search query parsing
-- `src/views/documents/search/groupDocumentsByDate.test.ts` — date grouping
-- `src/views/documents/SearchStore.test.ts` — search store
-- `src/components/tag-input/TagStore.test.ts` — tag store
-
-**What is stubbed:**
-
-- `src/views/edit/index.test.ts` — test names only, no implementations
-
-**Historical note:** The test runner was at some point migrated from mocha toward `node:test`. The migration is nominally complete but coverage is thin and several suites were never filled in.
-
----
-
-## Legacy Electron Tests (`yarn test:electron`)
-
-A separate runner exists for tests that require the Electron process (i.e., anything that imports from `electron` directly). These can't run under plain Node because `electron` is not available there.
-
-```bash
-yarn pretest:electron   # bundles *.electron-test.ts
-yarn test:electron      # runs bundles inside an Electron process via electron-test-runner.mjs
-```
-
-Currently there are no meaningful electron tests in the repo. Do not add new renderer coverage here; prefer Vitest unless the full Electron shell is genuinely required.
-
----
-
-## What's Missing
-
-**Component / integration tests.** Vitest and React Testing Library now exist for renderer smoke tests, but coverage is still thin. The next step is to expand from shell-level render checks into isolated components and view logic, then add browser-mode coverage where jsdom stops being credible.
-
-**E2E / UI tests.** No end-to-end test suite. There was an intern attempt at a file-polling UI driver (now discarded). A proper approach is under design — see [docs/designs/ui-driver.md](designs/ui-driver.md). Playwright-based E2E is still planned after the Vitest migration, so the renderer test stack is established first.
-
----
-
-## Where Things Are Going
-
-See [docs/designs/ui-driver.md](designs/ui-driver.md) for the design of the planned E2E and LLM-assisted testing approach, which covers:
-
-- Playwright for Electron as the base layer
-- A defined, stable testing surface across the four main UI areas
-- Editor state introspection via a preload API
-- A smoke suite for regression coverage
-- LLM-assisted exploration as the primary goal
+- Coverage is thin on interaction flows (save, journal move, bulk actions); most renderer tests are render/shell checks.
+- Tests write to a temp DB, but see the open issues about tests touching the dev settings file.

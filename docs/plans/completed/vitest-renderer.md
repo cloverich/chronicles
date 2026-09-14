@@ -1,5 +1,7 @@
 # Vitest Renderer Plan
 
+> **Status: complete (2026-09).** Phases 1–3 landed in #460 and follow-ups; Lexical is covered in jsdom (`src/views/edit/lexical/*.vitest.tsx`), so Phase 4 (browser mode) was not needed. The script split was finished late: `yarn test:node` now runs every `node:test` suite (the plan's `test:node`), and the legacy `test:electron` runner was deleted. See [docs/testing.md](../../testing.md) for the current state.
+
 ## Goal
 
 Introduce Vitest for renderer-facing tests first, without forcing a full migration of the existing `node:test` and Electron-runner suites in the same pass.

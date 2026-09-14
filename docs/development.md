@@ -4,7 +4,7 @@
 yarn                              # install (postinstall runs electron-rebuild)
 HEADLESS=true yarn start          # dev mode; renderer logs in terminal as [RENDERER]
 yarn test                         # vitest renderer tests + node-client backend tests
-yarn test:node-client             # backend only (node:test, src/node-client/*.test.ts)
+yarn test:node                    # node:test suites (backend, markdown, stores, themes) under Electron's ABI
 yarn test:watch                   # vitest in watch mode
 bun run lint                      # prettier (autofix) + tsc --noEmit; matches CI exactly
 bun run lint:check                # same but prettier in check mode (no writes)
@@ -17,7 +17,7 @@ yarn build                        # production build (electron-packager)
 (`sharp` uses N-API, which is ABI-stable). `postinstall` runs `electron-rebuild`
 so it's built for **Electron's** ABI, which the app uses. The node-client tests
 therefore run under Electron's own Node (`ELECTRON_RUN_AS_NODE=1 electron …`, see
-`test:node-client`) so tests and app share **one** ABI — no rebuild flip.
+`test:node`) so tests and app share **one** ABI — no rebuild flip.
 
 Do **not** reintroduce `npm rebuild better-sqlite3 --build-from-source` into the
 test scripts: it rebuilds for system Node and breaks the app until the next
@@ -26,7 +26,7 @@ test scripts: it rebuilds for system Node and breaks the app until the next
 
 ## Workflow
 
-1. Evaluate task or issue (`gh issue view <n>`)
+1. Evaluate task (tracked in Engram)
 2. Write code
 3. `HEADLESS=true yarn start` to verify
 4. `bun run lint && bun run test`

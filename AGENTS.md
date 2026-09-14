@@ -13,6 +13,7 @@ The `web-local-phase1` branch is an archived architectural spike and reference, 
 
 - [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (complete; Plate + Slate transformer removed, Lexical is the sole editor)
 - [docs/features/theming.md](docs/features/theming.md) — theming system (#443; deferred: FOUC, per-journal themes, visualizer, CLI validation)
+- [docs/plans/completed/vitest-renderer.md](docs/plans/completed/vitest-renderer.md) — Vitest renderer tests (complete; jsdom + RTL, Lexical covered in jsdom, no Electron test runner)
 - [docs/plans/completed/electron-modernization.md](docs/plans/completed/electron-modernization.md) — Electron backend modernization (Drizzle + better-sqlite3, node:test)
 - [docs/plans/archived/bun-client.md](docs/plans/archived/bun-client.md) — v2 IClient on Bun (complete — ported to node-client)
 
@@ -26,8 +27,8 @@ See [docs/development.md](docs/development.md) for all commands, workflow, direc
 
 ```bash
 HEADLESS=true yarn start    # run
-yarn test                   # test (renderer vitest + node-client node:test)
-yarn test:node-client       # backend tests only
+yarn test                   # test (vitest renderer + node:test suites)
+yarn test:node              # node:test suites only
 yarn lint                # lint (pinned prettier + tsc, matches CI exactly)
 ```
 
