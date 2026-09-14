@@ -2,7 +2,7 @@
 
 ## Current Plan
 
-1. Make SQLite the authoritative note store, with safe migration and Markdown export.
+1. Make SQLite the authoritative note store, with import of the existing notes tree and Markdown export — [docs/designs/sqlite-source-of-truth.md](docs/designs/sqlite-source-of-truth.md).
 2. Extract a clean platform-neutral `NotesClient` contract.
 3. Finish remaining Electron note-taking features against that contract.
 4. Later, selectively reintroduce useful web-spike ideas using the cleaner contract.
