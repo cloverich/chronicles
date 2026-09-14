@@ -118,7 +118,7 @@ function createSearchStore({
     applicationStore.journals,
     vi.fn(),
     [],
-    { lastIndexTime: null },
+    { lastRepairTime: null },
   );
 
   runInAction(() => {

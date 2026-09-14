@@ -170,6 +170,27 @@ export class JournalsClient {
     await this.preferences.set(`archivedJournals.${journal}`, false);
     return this.list();
   };
+
+  /**
+   * Ensures a usable default journal exists. Called once at startup
+   * (see `createClient` in ./factory.ts):
+   * - If no journals exist, creates `default_journal`.
+   * - If the `defaultJournal` preference is unset or names a journal that
+   *   no longer exists, resets it to the first journal (by name).
+   */
+  ensureDefault = async (): Promise<void> => {
+    let journals = await this.list();
+
+    if (journals.length === 0) {
+      await this.create({ name: "default_journal" });
+      journals = await this.list();
+    }
+
+    const defaultJournal = await this.preferences.get("defaultJournal");
+    if (!defaultJournal || !journals.some((j) => j.name === defaultJournal)) {
+      await this.preferences.set("defaultJournal", journals[0].name);
+    }
+  };
 }
 
 export const MAX_NAME_LENGTH = 25;

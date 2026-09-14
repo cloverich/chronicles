@@ -414,3 +414,91 @@ describe("search", () => {
     assert.strictEqual(results.data[1].id, idOld);
   });
 });
+
+describe("rebuildDerived", () => {
+  test("regenerates FTS, document_links, and image_links after corruption; leaves tags untouched", async () => {
+    const targetJournal = "rebuild-target-journal";
+    await client.journals.create({ name: targetJournal });
+    const targetId = "rebuild-target-note-id";
+
+    const content =
+      "See [related note](../rebuild-target-journal/rebuild-target-note-id.md) and " +
+      "![an image](chronicles://../_attachments/rebuild.png). Findable via giraffewords.";
+
+    const id = await client.documents.createDocument({
+      journal: journalName,
+      content,
+      frontMatter: {
+        title: "Rebuild me",
+        tags: ["rebuild-tag"],
+        createdAt: "2024-06-01T00:00:00.000Z",
+        updatedAt: "2024-06-01T00:00:00.000Z",
+      },
+    });
+
+    const linkRowsBefore = await client.db
+      .select()
+      .from(schema.documentLinks)
+      .where(eq(schema.documentLinks.documentId, id));
+    const imageRowsBefore = await client.db
+      .select()
+      .from(schema.imageLinks)
+      .where(eq(schema.imageLinks.documentId, id));
+    const tagRowsBefore = await client.db
+      .select()
+      .from(schema.documentTags)
+      .where(eq(schema.documentTags.documentId, id));
+
+    assert.strictEqual(linkRowsBefore.length, 1);
+    assert.strictEqual(imageRowsBefore.length, 1);
+    assert.strictEqual(tagRowsBefore.length, 1);
+
+    // Corrupt all derived state (but not tags, which are canonical).
+    client.sqlite.exec("DELETE FROM documents_fts");
+    client.sqlite.exec("DELETE FROM document_links");
+    client.sqlite.exec("DELETE FROM image_links");
+
+    const searchDuringCorruption = await client.documents.search({
+      texts: ["giraffewords"],
+    });
+    assert.strictEqual(searchDuringCorruption.data.length, 0);
+
+    const { count } = await client.documents.rebuildDerived();
+    assert.ok(count >= 1);
+
+    const searchAfter = await client.documents.search({
+      texts: ["giraffewords"],
+    });
+    assert.ok(searchAfter.data.some((d) => d.id === id));
+
+    const linkRowsAfter = await client.db
+      .select()
+      .from(schema.documentLinks)
+      .where(eq(schema.documentLinks.documentId, id));
+    const imageRowsAfter = await client.db
+      .select()
+      .from(schema.imageLinks)
+      .where(eq(schema.imageLinks.documentId, id));
+    const tagRowsAfter = await client.db
+      .select()
+      .from(schema.documentTags)
+      .where(eq(schema.documentTags.documentId, id));
+
+    assert.deepStrictEqual(
+      linkRowsAfter.map((r) => ({
+        targetId: r.targetId,
+        targetJournal: r.targetJournal,
+      })),
+      linkRowsBefore.map((r) => ({
+        targetId: r.targetId,
+        targetJournal: r.targetJournal,
+      })),
+    );
+    assert.deepStrictEqual(
+      imageRowsAfter.map((r) => r.imagePath),
+      imageRowsBefore.map((r) => r.imagePath),
+    );
+    // Tags are canonical, not derived — untouched by rebuildDerived.
+    assert.deepStrictEqual(tagRowsAfter, tagRowsBefore);
+  });
+});

@@ -17,9 +17,8 @@ function createClient() {
       replace: vi.fn(),
       all: vi.fn(),
     },
-    indexer: {
-      index: vi.fn(),
-      needsFullReindex: vi.fn(),
+    documents: {
+      rebuildDerived: vi.fn(),
     },
   } as any;
 }
@@ -40,8 +39,9 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
       settingsDir: "/tmp/settings",
       saveImmediate: vi.fn(),
     },
-    indexer: {
-      index: vi.fn(),
+    maintenance: {
+      isRepairing: false,
+      repair: vi.fn(),
     },
     ...overrides,
   } as any;

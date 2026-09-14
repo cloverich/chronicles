@@ -19,8 +19,11 @@ after(() => {
 
 describe("factory", () => {
   test("migrations run and tables exist", async () => {
+    // ensureDefault() runs at the end of createClient(), so a fresh db has
+    // exactly the default journal it creates.
     const result = await client.db.select().from(journals);
-    assert.deepStrictEqual(result, []);
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].name, "default_journal");
   });
 
   test("documents table is queryable", async () => {

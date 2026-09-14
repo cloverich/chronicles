@@ -2,8 +2,8 @@ import React from "react";
 import { BulkOperationsStore } from "./stores/BulkOperationsStore";
 import type { IApplicationState } from "./stores/application";
 import { ApplicationStore } from "./stores/application";
-import { IndexerStore } from "./stores/indexer";
 import { JournalsStore } from "./stores/journals";
+import { MaintenanceStore } from "./stores/maintenance";
 import useClient from "./useClient";
 import { usePreferencesSetup } from "./usePreferences";
 
@@ -17,7 +17,8 @@ export function useAppLoader(): IApplicationState {
   const [journalsStore, setJournalsStore] = React.useState<JournalsStore>();
   const [bulkOperationsStore, setBulkOperationsStore] =
     React.useState<BulkOperationsStore>();
-  const [indexerStore, setIndexerStore] = React.useState<IndexerStore>();
+  const [maintenanceStore, setMaintenanceStore] =
+    React.useState<MaintenanceStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
   const client = useClient();
@@ -40,17 +41,15 @@ export function useAppLoader(): IApplicationState {
     async function load() {
       try {
         const journalStore = await JournalsStore.init(client);
-        const indexerStoreInstance = new IndexerStore(client, journalStore);
-
-        indexerStoreInstance.index().catch((err) => {
-          // Error already logged and toasted by IndexerStore
-          console.error("Background index failed at startup:", err);
-        });
+        const maintenanceStoreInstance = new MaintenanceStore(
+          client,
+          journalStore,
+        );
 
         if (!isEffectMounted) return; // :thinkies?
 
         setJournalsStore(journalStore);
-        setIndexerStore(indexerStoreInstance);
+        setMaintenanceStore(maintenanceStoreInstance);
         setBulkOperationsStore(new BulkOperationsStore(client.bulkOperations));
         setLoading(false);
       } catch (err: any) {
@@ -72,7 +71,7 @@ export function useAppLoader(): IApplicationState {
       loading ||
       loadingErr ||
       !journalsStore ||
-      !indexerStore ||
+      !maintenanceStore ||
       !preferences ||
       !bulkOperationsStore
     )
@@ -83,11 +82,11 @@ export function useAppLoader(): IApplicationState {
       new ApplicationStore(
         preferences,
         journalsStore,
-        indexerStore,
+        maintenanceStore,
         bulkOperationsStore,
       ),
     );
-  }, [loading, loadingErr, journalsStore, indexerStore, preferences]);
+  }, [loading, loadingErr, journalsStore, maintenanceStore, preferences]);
 
   return {
     loading: loading,

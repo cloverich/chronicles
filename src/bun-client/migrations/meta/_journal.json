@@ -15,6 +15,13 @@
       "when": 1789396785295,
       "tag": "0001_sqlite_source_of_truth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789398214373,
+      "tag": "0002_drop_sync",
+      "breakpoints": true
     }
   ]
 }

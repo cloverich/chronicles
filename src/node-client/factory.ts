@@ -12,7 +12,6 @@ import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { NodeFilesClient } from "./files";
 import { ImporterClient } from "./importer";
-import { IndexerClient } from "./indexer";
 import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
 import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
@@ -68,7 +67,6 @@ export interface NodeClient {
   journals: JournalsClient;
   documents: DocumentsClient;
   files: NodeFilesClient;
-  indexer: IndexerClient;
   bulkOperations: BulkOperationsClient;
   tags: TagsClient;
   importer: ImporterClient;
@@ -167,13 +165,6 @@ export async function createClient(
   const files = new NodeFilesClient(opts.notesDir);
   const journals = new JournalsClient(db, files, preferences);
   const documents = new DocumentsClient(db, files);
-  const indexer = new IndexerClient(
-    db,
-    journals,
-    documents,
-    files,
-    preferences,
-  );
   const bulkOperations = new BulkOperationsClient(db, documents);
   const tags = new TagsClient(db);
   const importer = new ImporterClient(
@@ -184,6 +175,8 @@ export async function createClient(
     opts.notesDir,
   );
 
+  await journals.ensureDefault();
+
   return {
     db,
     sqlite,
@@ -192,7 +185,6 @@ export async function createClient(
     journals,
     documents,
     files,
-    indexer,
     bulkOperations,
     tags,
     importer,

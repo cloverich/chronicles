@@ -14,7 +14,7 @@ import {
 } from "../../components/Dialog";
 import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
 import useClient from "../../hooks/useClient";
-import { useIndexerStore } from "../../hooks/useIndexerStore";
+import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
 import { usePreferences } from "../../hooks/usePreferences";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
@@ -30,7 +30,7 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
-  const indexerStore = useIndexerStore();
+  const maintenanceStore = useMaintenanceStore();
   const client = useClient();
   const [store, _] = React.useState(() =>
     observable({
@@ -87,10 +87,8 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
-      // Save preference immediately before index (bypasses 1-second debounce)
+      // Save preference immediately (bypasses 1-second debounce)
       await preferences.saveImmediate({ notesDir: result.value });
-      // Full reindex when changing directories
-      indexerStore.index(true);
     } catch (e) {
       store.loading = false;
       toast.error("Failed to set new directory");
@@ -708,35 +706,23 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
-                  title="Rebuild Index"
-                  sub="Rebuild the document index from the filesystem"
+                  title="Repair"
+                  sub="Regenerate search index, note links, and image references"
                 />
                 <p className="mb-2 max-w-[500px]">
-                  Chronicles builds an index of all documents and journals
-                  (folders) in <code>notesDir</code> to power its search and
-                  general operation. When the index is out of sync with the
-                  filesystem, this can cause issues such as missing documents,
-                  tags, or journals.
-                </p>
-                <p className="mb-2 max-w-[500px]">
-                  Rebuilding the index will re-scan the filesystem, ensuring
-                  that all documents, journals, and tags are correctly indexed.
-                  This should be done anytime you make changes to the filesystem
-                  outside of the app, including from another device (if the{" "}
-                  <code>notesDir</code> is synced via a cloud service).
-                </p>
-                <p className="mb-2 max-w-[500px]">
-                  The current Chronicles index is located at{" "}
-                  <code>{preferences.databaseUrl}</code>
+                  Your notes live in the SQLite database at{" "}
+                  <code>{preferences.databaseUrl}</code>. Repair regenerates the
+                  search index, note links, and image references from those
+                  stored notes — use it if search results look wrong.
                 </p>
                 <div className="mt-4 flex">
                   <Button
                     variant="ghost"
-                    loading={indexerStore.isIndexing}
-                    disabled={indexerStore.isIndexing}
-                    onClick={() => indexerStore.index(true)}
+                    loading={maintenanceStore.isRepairing}
+                    disabled={maintenanceStore.isRepairing}
+                    onClick={() => maintenanceStore.repair()}
                   >
-                    Rebuild Index
+                    Repair
                   </Button>
                 </div>
               </Section>

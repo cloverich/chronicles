@@ -2,9 +2,9 @@ import React from "react";
 import { ApplicationContext } from "./useApplicationStore";
 
 /**
- * Simple helper for accessing the indexer store
+ * Simple helper for accessing the maintenance store
  */
-export function useIndexerStore() {
+export function useMaintenanceStore() {
   const applicationStore = React.useContext(ApplicationContext)!;
-  return applicationStore.indexer;
+  return applicationStore.maintenance;
 }

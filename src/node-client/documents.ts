@@ -1,5 +1,3 @@
-import fs from "fs";
-
 import {
   and,
   eq,
@@ -12,13 +10,10 @@ import {
 } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
-import { mdastToString, parseMarkdown } from "../markdown";
-import { splitFrontMatter } from "../preload/client/importer/frontmatter";
 import type {
   CreateRequest,
   FrontMatter,
   GetDocumentResponse,
-  IndexRequest,
   SearchItem,
   SearchRequest,
   SearchResponse,
@@ -28,7 +23,7 @@ import { createId } from "../preload/client/util";
 import { derive } from "./derive";
 import type { NodeFilesClient } from "./files";
 import * as schema from "./schema";
-import { documents, documentTags } from "./schema";
+import { documentLinks, documents, documentTags, imageLinks } from "./schema";
 
 export type IDocumentsClient = DocumentsClient;
 
@@ -375,90 +370,33 @@ export class DocumentsClient {
   };
 
   /**
-   * Read raw document contents from disk.
-   * Used by the indexer (task 4 rework pending) to discover on-disk documents.
+   * Maintenance command: regenerates document_links, image_links, and the
+   * FTS index for every row in `documents`, from stored content. Tags are
+   * canonical (not derived), so `document_tags` is left untouched.
    */
-  readDocRaw = async (filePath: string) => {
-    const rawContents = await this.files.readDocument(filePath);
-    return { rawContents };
-  };
-
-  /**
-   * Parse raw markdown contents into mdast body + frontMatter.
-   * Uses micromark → mdast → splitFrontMatter pipeline.
-   */
-  parseDoc = (rawContents: string, stats: fs.Stats) => {
-    const mdast = parseMarkdown(rawContents);
-    const { frontMatter, bodyMdast } = splitFrontMatter(mdast, stats);
-    return { mdast: bodyMdast, frontMatter };
-  };
-
-  /**
-   * Create or update a document index entry from a parsed mdast tree.
-   * This is the "slow path" used by the indexer after parsing a changed file.
-   * Handles documents table, tags, derived rows (links, images, FTS5), in a
-   * single transaction.
-   */
-  createIndex = async ({
-    id,
-    journal,
-    mdast,
-    frontMatter,
-  }: IndexRequest): Promise<string> => {
-    if (!id) throw new Error("id required to create document index");
-
-    const content = mdastToString(mdast);
-    const userKeys = stripColumnOwnedKeys(frontMatter);
+  rebuildDerived = async (): Promise<{ count: number }> => {
+    let count = 0;
 
     this.db.transaction((trx) => {
-      // Check if document already exists
-      const [existing] = trx
-        .select({ id: documents.id })
+      trx.delete(documentLinks).run();
+      trx.delete(imageLinks).run();
+      trx.run(sql`DELETE FROM documents_fts`);
+
+      const rows = trx
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+        })
         .from(documents)
-        .where(eq(documents.id, id))
         .all();
 
-      if (existing) {
-        trx
-          .update(documents)
-          .set({
-            journal,
-            title: frontMatter.title,
-            updatedAt: frontMatter.updatedAt,
-            frontmatter: JSON.stringify(userKeys),
-            content,
-          })
-          .where(eq(documents.id, id))
-          .run();
-      } else {
-        trx
-          .insert(documents)
-          .values({
-            id,
-            journal,
-            title: frontMatter.title,
-            createdAt: frontMatter.createdAt,
-            updatedAt: frontMatter.updatedAt,
-            frontmatter: JSON.stringify(userKeys),
-            content,
-          })
-          .run();
+      for (const row of rows) {
+        derive(trx, { id: row.id, title: row.title, content: row.content });
+        count++;
       }
-
-      // Clear and re-insert tags
-      trx.delete(documentTags).where(eq(documentTags.documentId, id)).run();
-      if (frontMatter.tags.length > 0) {
-        trx
-          .insert(documentTags)
-          .values(
-            frontMatter.tags.map((tag: string) => ({ documentId: id, tag })),
-          )
-          .run();
-      }
-
-      derive(trx, { id, title: frontMatter.title, content });
     });
 
-    return id;
+    return { count };
   };
 }

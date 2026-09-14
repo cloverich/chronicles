@@ -100,8 +100,6 @@ describe("Notion import", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-notion-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    // The indexer reads notesDir from preferences; set it so indexer.index() works
-    await client.preferences.set("notesDir", notesDir);
 
     fixtureDir = prepareFixtureDir();
     const notionImportDir = path.join(fixtureDir, "notion");
@@ -221,7 +219,6 @@ describe("Generic markdown import", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-other-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    await client.preferences.set("notesDir", notesDir);
 
     fixtureDir = prepareFixtureDir();
     const otherImportDir = path.join(fixtureDir, "other");
@@ -322,7 +319,6 @@ describe("import error handling and table management", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-mgmt-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    await client.preferences.set("notesDir", notesDir);
     fixtureDir = prepareFixtureDir();
   });
 
@@ -419,7 +415,6 @@ describe("sequential Notion then Other import", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-seq-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    await client.preferences.set("notesDir", notesDir);
     fixtureDir = prepareFixtureDir();
 
     // Import Notion first

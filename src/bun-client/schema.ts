@@ -108,18 +108,6 @@ export const imageLinks = sqliteTable(
   ],
 );
 
-// ---------- sync ----------
-export const sync = sqliteTable("sync", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  startedAt: text("startedAt")
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  completedAt: text("completedAt"),
-  syncedCount: integer("syncedCount"),
-  errorCount: integer("errorCount"),
-  durationMs: integer("durationMs"),
-});
-
 // ---------- imports ----------
 export const imports = sqliteTable("imports", {
   id: text("id").primaryKey().notNull(),
