@@ -86,34 +86,9 @@ export class NodeFilesClient implements IJournalFolderOps {
     return fs.promises.readFile(filepath, "utf8");
   };
 
-  uploadDocument = async (
-    document: { id: string; content: string },
-    journal: string,
-  ): Promise<string> => {
-    const journalPath = path.join(this.notesDir, journal);
-    const docPath = path.join(journalPath, `${document.id}.md`);
-
-    // Guard against path traversal
-    if (!path.resolve(docPath).startsWith(path.resolve(journalPath))) {
-      throw new Error("Invalid path: Directory traversal attempt detected.");
-    }
-
-    await fs.promises.mkdir(journalPath, { recursive: true });
-    await fs.promises.writeFile(docPath, document.content);
-    return docPath;
-  };
-
   copyFile = async (src: string, dest: string): Promise<string> => {
     await fs.promises.copyFile(src, dest);
     return dest;
-  };
-
-  deleteDocument = async (
-    documentId: string,
-    journal: string,
-  ): Promise<void> => {
-    const docPath = path.join(this.notesDir, journal, `${documentId}.md`);
-    await fs.promises.unlink(docPath);
   };
 
   validFile = async (

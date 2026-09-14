@@ -168,14 +168,6 @@ export class IndexerClient {
       );
     }
 
-    // Delete documents that no longer exist on disk
-    const seenIds = new Set(seenDocumentIds.keys());
-    // Include duplicate IDs so they aren't treated as orphaned
-    for (const id of duplicateDocumentIds.keys()) {
-      seenIds.add(id);
-    }
-    await this.documents.deleteOrphanedDocuments(seenIds);
-
     // Clean up orphaned journals
     await this.cleanupOrphanedJournals(journalsOnDisk);
 

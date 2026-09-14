@@ -77,7 +77,7 @@ function useCreateDocument() {
           },
         };
 
-        const [id, _] = await client.documents.createDocument(document);
+        const id = await client.documents.createDocument(document);
 
         if (!isMounted) return;
 

@@ -1,6 +1,4 @@
-import crypto from "crypto";
 import fs from "fs";
-import yaml from "yaml";
 
 import {
   and,
@@ -27,29 +25,38 @@ import type {
   UpdateRequest,
 } from "../preload/client/types";
 import { createId } from "../preload/client/util";
+import { derive } from "./derive";
 import type { NodeFilesClient } from "./files";
 import * as schema from "./schema";
 import { documents, documentTags } from "./schema";
 
 export type IDocumentsClient = DocumentsClient;
 
+// Front-matter keys that are canonical columns on `documents` / `documentTags`.
+// The `frontmatter` JSON column only holds arbitrary user-supplied keys.
+const COLUMN_OWNED_FRONTMATTER_KEYS = [
+  "title",
+  "tags",
+  "createdAt",
+  "updatedAt",
+] as const;
+
+/** Strip column-owned keys from a FrontMatter object, leaving only user keys. */
+function stripColumnOwnedKeys(
+  frontMatter: Record<string, any>,
+): Record<string, any> {
+  const userKeys = { ...frontMatter };
+  for (const key of COLUMN_OWNED_FRONTMATTER_KEYS) {
+    delete userKeys[key];
+  }
+  return userKeys;
+}
+
 export class DocumentsClient {
   constructor(
     private db: BetterSQLite3Database<typeof schema>,
     private files: NodeFilesClient,
-    private notesDir: string,
   ) {}
-
-  /**
-   * Serializes title, tags, etc, into markdown front-matter to be embedded into the final file content
-   */
-  private prependFrontMatter(
-    content: string,
-    frontMatter: Record<string, any>,
-  ): string {
-    const fm = ["---", yaml.stringify(frontMatter), "---"].join("\n");
-    return `${fm}\n\n${content}`;
-  }
 
   private beforeTokenFormat(input: string): "date" | "id" | "unknown" {
     const dateRegex = /^(?:\d{4}(?:-\d{2}(?:-\d{2})?)?)$/;
@@ -58,10 +65,6 @@ export class DocumentsClient {
     if (dateRegex.test(input)) return "date";
     if (idRegex.test(input)) return "id";
     return "unknown";
-  }
-
-  private computeHash(content: string): string {
-    return crypto.createHash("sha256").update(content).digest("hex");
   }
 
   findById = async ({ id }: { id: string }): Promise<GetDocumentResponse> => {
@@ -84,10 +87,6 @@ export class DocumentsClient {
     const userKeys: Record<string, any> = row.frontmatter
       ? JSON.parse(row.frontmatter)
       : {};
-    delete userKeys.title;
-    delete userKeys.tags;
-    delete userKeys.createdAt;
-    delete userKeys.updatedAt;
 
     const frontMatter: FrontMatter = {
       ...userKeys,
@@ -105,7 +104,7 @@ export class DocumentsClient {
     };
   };
 
-  createDocument = async (args: CreateRequest): Promise<[string, string]> => {
+  createDocument = async (args: CreateRequest): Promise<string> => {
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
     args.frontMatter.createdAt =
       args.frontMatter.createdAt || new Date().toISOString();
@@ -113,11 +112,7 @@ export class DocumentsClient {
       args.frontMatter.updatedAt || new Date().toISOString();
 
     const id = args.id || createId(Date.parse(args.frontMatter.createdAt));
-    const content = this.prependFrontMatter(args.content, args.frontMatter);
-    const docPath = await this.files.uploadDocument(
-      { id, content },
-      args.journal,
-    );
+    const userKeys = stripColumnOwnedKeys(args.frontMatter);
 
     this.db.transaction((trx) => {
       trx
@@ -128,7 +123,7 @@ export class DocumentsClient {
           title: args.frontMatter.title,
           createdAt: args.frontMatter.createdAt,
           updatedAt: args.frontMatter.updatedAt,
-          frontmatter: JSON.stringify(args.frontMatter),
+          frontmatter: JSON.stringify(userKeys),
           content: args.content,
         })
         .run();
@@ -145,47 +140,43 @@ export class DocumentsClient {
           .run();
       }
 
-      // Index into FTS5 for full-text search
-      trx.run(
-        sql`INSERT INTO documents_fts (id, title, content) VALUES (${id}, ${args.frontMatter.title || ""}, ${args.content})`,
-      );
+      derive(trx, {
+        id,
+        title: args.frontMatter.title,
+        content: args.content,
+      });
     });
 
-    return [id, docPath];
+    return id;
   };
 
   updateDocument = async (args: UpdateRequest): Promise<void> => {
     if (!args.id) throw new Error("id required to update document");
 
-    const origJournal = (await this.findById({ id: args.id })).journal;
-
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
     args.frontMatter.updatedAt =
       args.frontMatter.updatedAt || new Date().toISOString();
 
-    const content = this.prependFrontMatter(args.content, args.frontMatter);
-    const docPath = await this.files.uploadDocument(
-      { id: args.id, content },
-      args.journal,
-    );
-
-    // If journal changed, immediately delete old document.
-    // NOTE: If create completes but delete errors, there will be duplicates; we could auto-clean
-    // up on re-index and build intelligence around that but using files as source of truth + nesting
-    // documents in /journal1/<docid>.md + /journal2/<docid2>.md is flawed. IMO best to move back to
-    // a DB-first approach and rely on DB provided referential integrity/atomic operations (etc).
-    if (args.journal !== origJournal) {
-      await this.files.deleteDocument(args.id, origJournal);
-    }
+    const userKeys = stripColumnOwnedKeys(args.frontMatter);
 
     this.db.transaction((trx) => {
+      const [existing] = trx
+        .select({ id: documents.id })
+        .from(documents)
+        .where(eq(documents.id, args.id))
+        .all();
+
+      if (!existing) {
+        throw new Error(`[DOCUMENT_NOT_FOUND] Document ${args.id} not found`);
+      }
+
       trx
         .update(documents)
         .set({
           journal: args.journal,
           title: args.frontMatter.title,
           updatedAt: args.frontMatter.updatedAt,
-          frontmatter: JSON.stringify(args.frontMatter),
+          frontmatter: JSON.stringify(userKeys),
           content: args.content,
         })
         .where(eq(documents.id, args.id))
@@ -208,16 +199,15 @@ export class DocumentsClient {
           .run();
       }
 
-      // Update FTS index (delete + re-insert; FTS5 doesn't support UPDATE well)
-      trx.run(sql`DELETE FROM documents_fts WHERE id = ${args.id}`);
-      trx.run(
-        sql`INSERT INTO documents_fts (id, title, content) VALUES (${args.id}, ${args.frontMatter.title || ""}, ${args.content})`,
-      );
+      derive(trx, {
+        id: args.id,
+        title: args.frontMatter.title,
+        content: args.content,
+      });
     });
   };
 
-  del = async (id: string, journal: string): Promise<void> => {
-    await this.files.deleteDocument(id, journal);
+  del = async (id: string): Promise<void> => {
     this.db.transaction((trx) => {
       trx.delete(documents).where(eq(documents.id, id)).run();
       trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
@@ -375,47 +365,22 @@ export class DocumentsClient {
     return Number(result?.count || 0);
   };
 
-  deleteOrphanedDocuments = async (seenIds: Set<string>): Promise<number> => {
-    const seenIdsArray = Array.from(seenIds);
-    const orphaned = await this.db
-      .select({ id: documents.id })
-      .from(documents)
-      .where(
-        seenIdsArray.length > 0
-          ? notInArray(documents.id, seenIdsArray)
-          : sql`1=1`,
-      );
-
-    if (orphaned.length > 0) {
-      const orphanIds = orphaned.map((d) => d.id);
-      await this.db.delete(documents).where(inArray(documents.id, orphanIds));
-      this.db.run(
-        sql`DELETE FROM documents_fts WHERE id IN (${sql.join(
-          orphanIds.map((id) => sql`${id}`),
-          sql`, `,
-        )})`,
-      );
-    }
-
-    return orphaned.length;
-  };
-
   deindexJournal = async (journal: string): Promise<void> => {
-    // Bulk-delete FTS entries via subquery before removing documents rows
-    this.db.run(
-      sql`DELETE FROM documents_fts WHERE id IN (SELECT id FROM documents WHERE journal = ${journal})`,
-    );
-    await this.db.delete(documents).where(eq(documents.journal, journal));
+    this.db.transaction((trx) => {
+      trx.run(
+        sql`DELETE FROM documents_fts WHERE id IN (SELECT id FROM documents WHERE journal = ${journal})`,
+      );
+      trx.delete(documents).where(eq(documents.journal, journal)).run();
+    });
   };
 
   /**
-   * Read raw document contents from disk and compute content hash.
-   * Used by the indexer for incremental sync (hash comparison).
+   * Read raw document contents from disk.
+   * Used by the indexer (task 4 rework pending) to discover on-disk documents.
    */
   readDocRaw = async (filePath: string) => {
     const rawContents = await this.files.readDocument(filePath);
-    const contentHash = this.computeHash(rawContents);
-    return { rawContents, contentHash };
+    return { rawContents };
   };
 
   /**
@@ -431,7 +396,8 @@ export class DocumentsClient {
   /**
    * Create or update a document index entry from a parsed mdast tree.
    * This is the "slow path" used by the indexer after parsing a changed file.
-   * Handles documents table, tags, FTS5, in a single transaction.
+   * Handles documents table, tags, derived rows (links, images, FTS5), in a
+   * single transaction.
    */
   createIndex = async ({
     id,
@@ -442,7 +408,7 @@ export class DocumentsClient {
     if (!id) throw new Error("id required to create document index");
 
     const content = mdastToString(mdast);
-    const title = frontMatter.title || "";
+    const userKeys = stripColumnOwnedKeys(frontMatter);
 
     this.db.transaction((trx) => {
       // Check if document already exists
@@ -459,7 +425,7 @@ export class DocumentsClient {
             journal,
             title: frontMatter.title,
             updatedAt: frontMatter.updatedAt,
-            frontmatter: JSON.stringify(frontMatter),
+            frontmatter: JSON.stringify(userKeys),
             content,
           })
           .where(eq(documents.id, id))
@@ -473,7 +439,7 @@ export class DocumentsClient {
             title: frontMatter.title,
             createdAt: frontMatter.createdAt,
             updatedAt: frontMatter.updatedAt,
-            frontmatter: JSON.stringify(frontMatter),
+            frontmatter: JSON.stringify(userKeys),
             content,
           })
           .run();
@@ -490,11 +456,7 @@ export class DocumentsClient {
           .run();
       }
 
-      // Update FTS index (delete + re-insert)
-      trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
-      trx.run(
-        sql`INSERT INTO documents_fts (id, title, content) VALUES (${id}, ${title}, ${content})`,
-      );
+      derive(trx, { id, title: frontMatter.title, content });
     });
 
     return id;

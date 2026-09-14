@@ -150,29 +150,6 @@ describe("indexer — incremental sync", () => {
 });
 
 describe("indexer — deletion and cleanup", () => {
-  test("deleted file is removed from DB on next index", async () => {
-    const id4 = makeId(4);
-    writeDoc("journal-one", id4, {
-      title: "To Delete",
-      content: "This will be removed from disk",
-    });
-
-    await client.indexer.index(true);
-
-    // Verify it exists
-    let res = await client.documents.search({ texts: ["removed"] });
-    assert.ok(res.data.some((d) => d.id === id4));
-
-    // Delete from disk
-    fs.unlinkSync(path.join(notesDir, "journal-one", `${id4}.md`));
-
-    // Re-index — orphan cleanup should remove it
-    await client.indexer.index(true);
-
-    res = await client.documents.search({ texts: ["removed"] });
-    assert.ok(!res.data.some((d) => d.id === id4));
-  });
-
   test("empty journal directory is cleaned up", async () => {
     // Create a journal with one doc, index, delete doc, re-index
     const id5 = makeId(5);

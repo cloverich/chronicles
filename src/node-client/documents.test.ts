@@ -1,10 +1,11 @@
-import { mkdtempSync, rmSync } from "fs";
+import { eq } from "drizzle-orm";
+import { existsSync, mkdtempSync, rmSync } from "fs";
 import assert from "node:assert/strict";
-import { open } from "node:fs/promises";
 import { after, before, describe, test } from "node:test";
 import { tmpdir } from "os";
 import path from "path";
 import { createClient } from "./factory";
+import * as schema from "./schema";
 
 let client: Awaited<ReturnType<typeof createClient>>;
 let notesDir: string;
@@ -25,7 +26,7 @@ after(() => {
 
 describe("createDocument / findById", () => {
   test("create doc is retrievable by id", async () => {
-    const [id] = await client.documents.createDocument({
+    const id = await client.documents.createDocument({
       journal: journalName,
       content: "Hello world",
       frontMatter: {
@@ -51,7 +52,7 @@ describe("createDocument / findById", () => {
   });
 
   test("findById reads from the database only — no .md file required", async () => {
-    const [id] = await client.documents.createDocument({
+    const id = await client.documents.createDocument({
       journal: journalName,
       content: "No file needed",
       frontMatter: {
@@ -63,9 +64,9 @@ describe("createDocument / findById", () => {
       },
     });
 
-    // Prove there is no filesystem dependency: delete the .md file entirely.
+    // createDocument no longer writes markdown files at all.
     const filepath = path.join(notesDir, journalName, `${id}.md`);
-    rmSync(filepath);
+    assert.strictEqual(existsSync(filepath), false);
 
     const doc = await client.documents.findById({ id });
     assert.strictEqual(doc.id, id);
@@ -79,7 +80,7 @@ describe("createDocument / findById", () => {
   });
 
   test("findById omits title when the document has none", async () => {
-    const [id] = await client.documents.createDocument({
+    const id = await client.documents.createDocument({
       journal: journalName,
       content: "Untitled body",
       frontMatter: {
@@ -103,7 +104,7 @@ describe("updateDocument", () => {
   });
 
   test("update changes content and frontMatter", async () => {
-    const [id] = await client.documents.createDocument({
+    const id = await client.documents.createDocument({
       journal: journalName,
       content: "Original content",
       frontMatter: {
@@ -132,11 +133,8 @@ describe("updateDocument", () => {
     assert.deepStrictEqual(doc.frontMatter.tags, ["tagB"]);
   });
 
-  // The write path still mirrors documents to disk (task 3 removes that), so the
-  // old file should still be cleaned up on journal move. findById no longer exposes
-  // a filepath, so we compute the on-disk path the same way the client does.
-  test("changing journal name removes old document from disk", async () => {
-    const [id] = await client.documents.createDocument({
+  test("changing journal updates the row and search reflects it", async () => {
+    const id = await client.documents.createDocument({
       journal: journalName,
       content: "Original content",
       frontMatter: {
@@ -147,11 +145,10 @@ describe("updateDocument", () => {
       },
     });
 
-    const originalFilepath = path.join(notesDir, journalName, `${id}.md`);
-    await assert.doesNotReject(
-      open(originalFilepath),
-      "Document should exist on disk at originalFilePath",
-    );
+    let resultsOrig = await client.documents.search({
+      journals: [journalName],
+    });
+    assert.ok(resultsOrig.data.some((d) => d.id === id));
 
     await client.documents.updateDocument({
       id,
@@ -168,16 +165,35 @@ describe("updateDocument", () => {
     const doc = await client.documents.findById({ id });
     assert.strictEqual(doc.journal, journal2Name);
 
+    resultsOrig = await client.documents.search({ journals: [journalName] });
+    assert.ok(!resultsOrig.data.some((d) => d.id === id));
+
+    const resultsNew = await client.documents.search({
+      journals: [journal2Name],
+    });
+    assert.ok(resultsNew.data.some((d) => d.id === id));
+  });
+
+  test("updateDocument of an unknown id rejects with [DOCUMENT_NOT_FOUND]", async () => {
     await assert.rejects(
-      open(originalFilepath),
-      "Original file path should no longer exist",
+      client.documents.updateDocument({
+        id: "does-not-exist",
+        journal: journalName,
+        content: "content",
+        frontMatter: {
+          tags: [],
+          createdAt: "2024-02-01T00:00:00.000Z",
+          updatedAt: "2024-02-01T00:00:00.000Z",
+        },
+      }),
+      /\[DOCUMENT_NOT_FOUND\]/,
     );
   });
 });
 
 describe("del", () => {
-  test("deleted doc is not retrievable", async () => {
-    const [id] = await client.documents.createDocument({
+  test("deleted doc is not retrievable and removed from FTS", async () => {
+    const id = await client.documents.createDocument({
       journal: journalName,
       content: "To be deleted",
       frontMatter: {
@@ -188,12 +204,146 @@ describe("del", () => {
       },
     });
 
-    await client.documents.del(id, journalName);
+    await client.documents.del(id);
 
     await assert.rejects(
       client.documents.findById({ id }),
       /\[DOCUMENT_NOT_FOUND\]/,
     );
+
+    const ftsRow = client.sqlite
+      .prepare("SELECT id FROM documents_fts WHERE id = ?")
+      .get(id);
+    assert.strictEqual(ftsRow, undefined);
+  });
+});
+
+describe("derived rows (links, images, FTS)", () => {
+  test("note links and images produce document_links and image_links rows", async () => {
+    const targetJournal = "link-target-journal";
+    await client.journals.create({ name: targetJournal });
+    const targetId = "target-note-id";
+
+    const content =
+      "See [related note](../link-target-journal/target-note-id.md) and " +
+      "![an image](chronicles://../_attachments/a.png)";
+
+    const id = await client.documents.createDocument({
+      journal: journalName,
+      content,
+      frontMatter: {
+        title: "Links and images",
+        tags: [],
+        createdAt: "2024-05-01T00:00:00.000Z",
+        updatedAt: "2024-05-01T00:00:00.000Z",
+      },
+    });
+
+    const linkRows = await client.db
+      .select()
+      .from(schema.documentLinks)
+      .where(eq(schema.documentLinks.documentId, id));
+    assert.strictEqual(linkRows.length, 1);
+    assert.strictEqual(linkRows[0].targetId, targetId);
+    assert.strictEqual(linkRows[0].targetJournal, targetJournal);
+
+    const imageRows = await client.db
+      .select()
+      .from(schema.imageLinks)
+      .where(eq(schema.imageLinks.documentId, id));
+    assert.strictEqual(imageRows.length, 1);
+    assert.strictEqual(
+      imageRows[0].imagePath,
+      "chronicles://../_attachments/a.png",
+    );
+
+    // Removing the link and image on update clears the derived rows.
+    await client.documents.updateDocument({
+      id,
+      journal: journalName,
+      content: "No more links or images here",
+      frontMatter: {
+        title: "Links and images",
+        tags: [],
+        createdAt: "2024-05-01T00:00:00.000Z",
+        updatedAt: "2024-05-02T00:00:00.000Z",
+      },
+    });
+
+    const linkRowsAfter = await client.db
+      .select()
+      .from(schema.documentLinks)
+      .where(eq(schema.documentLinks.documentId, id));
+    assert.strictEqual(linkRowsAfter.length, 0);
+
+    const imageRowsAfter = await client.db
+      .select()
+      .from(schema.imageLinks)
+      .where(eq(schema.imageLinks.documentId, id));
+    assert.strictEqual(imageRowsAfter.length, 0);
+
+    // del removes the row and its FTS entry.
+    await client.documents.del(id);
+    await assert.rejects(
+      client.documents.findById({ id }),
+      /\[DOCUMENT_NOT_FOUND\]/,
+    );
+    const ftsRow = client.sqlite
+      .prepare("SELECT id FROM documents_fts WHERE id = ?")
+      .get(id);
+    assert.strictEqual(ftsRow, undefined);
+  });
+});
+
+describe("atomicity", () => {
+  test("createDocument into a nonexistent journal rejects and leaves no partial state", async () => {
+    const id = "atomic-fk-fail-id";
+
+    await assert.rejects(
+      client.documents.createDocument({
+        id,
+        journal: "journal-does-not-exist",
+        content: "orphan content",
+        frontMatter: {
+          title: "Should not persist",
+          tags: ["should-not-persist"],
+          createdAt: "2024-06-01T00:00:00.000Z",
+          updatedAt: "2024-06-01T00:00:00.000Z",
+        },
+      }),
+    );
+
+    const ftsRow = client.sqlite
+      .prepare("SELECT id FROM documents_fts WHERE id = ?")
+      .get(id);
+    assert.strictEqual(ftsRow, undefined);
+
+    const tagRow = client.sqlite
+      .prepare("SELECT * FROM document_tags WHERE documentId = ?")
+      .get(id);
+    assert.strictEqual(tagRow, undefined);
+  });
+});
+
+describe("frontmatter column ownership", () => {
+  test("frontmatter JSON column holds only user keys", async () => {
+    const id = await client.documents.createDocument({
+      journal: journalName,
+      content: "some content",
+      frontMatter: {
+        title: "Has Column Owned Keys",
+        tags: ["a", "b"],
+        createdAt: "2024-07-01T00:00:00.000Z",
+        updatedAt: "2024-07-01T00:00:00.000Z",
+        mood: "x",
+      },
+    });
+
+    const row = client.sqlite
+      .prepare("SELECT frontmatter FROM documents WHERE id = ?")
+      .get(id) as { frontmatter: string };
+
+    assert.deepStrictEqual(JSON.parse(row.frontmatter), { mood: "x" });
   });
 });
 
@@ -202,7 +352,7 @@ describe("search", () => {
     const otherJournal = "other-journal";
     await client.journals.create({ name: otherJournal });
 
-    const [idA] = await client.documents.createDocument({
+    const idA = await client.documents.createDocument({
       journal: journalName,
       content: "Doc in test-journal",
       frontMatter: {
@@ -213,7 +363,7 @@ describe("search", () => {
       },
     });
 
-    const [idB] = await client.documents.createDocument({
+    const idB = await client.documents.createDocument({
       journal: otherJournal,
       content: "Doc in other-journal",
       frontMatter: {
@@ -237,7 +387,7 @@ describe("search", () => {
     const journal = "sort-journal";
     await client.journals.create({ name: journal });
 
-    const [idOld] = await client.documents.createDocument({
+    const idOld = await client.documents.createDocument({
       journal,
       content: "Older",
       frontMatter: {
@@ -248,7 +398,7 @@ describe("search", () => {
       },
     });
 
-    const [idNew] = await client.documents.createDocument({
+    const idNew = await client.documents.createDocument({
       journal,
       content: "Newer",
       frontMatter: {

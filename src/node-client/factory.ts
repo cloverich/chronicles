@@ -166,7 +166,7 @@ export async function createClient(
   const preferences = new PreferencesClient(conf);
   const files = new NodeFilesClient(opts.notesDir);
   const journals = new JournalsClient(db, files, preferences);
-  const documents = new DocumentsClient(db, files, opts.notesDir);
+  const documents = new DocumentsClient(db, files);
   const indexer = new IndexerClient(
     db,
     journals,
@@ -181,7 +181,6 @@ export async function createClient(
     documents,
     files,
     preferences,
-    indexer,
     opts.notesDir,
   );
 

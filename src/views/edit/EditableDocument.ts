@@ -176,6 +176,6 @@ export class EditableDocument {
   del = async () => {
     // overload saving for deleting
     this.saving = true;
-    await this.client.documents.del(this.id, this.journal);
+    await this.client.documents.del(this.id);
   };
 }

@@ -20,7 +20,6 @@ import { PathStatsFile, walk } from "../preload/utils/fs-utils";
 import type { IDocumentsClient } from "./documents";
 import type { NodeFilesClient } from "./files";
 import { FilesImportResolver } from "./files-import-resolver";
-import type { IIndexerClient } from "./indexer";
 import {
   MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
   validateJournalName,
@@ -88,7 +87,6 @@ export class ImporterClient {
     private documents: IDocumentsClient,
     private files: NodeFilesClient,
     private preferences: PreferencesClient,
-    private indexer: IIndexerClient,
     private notesDir: string,
   ) {}
 
@@ -451,9 +449,7 @@ export class ImporterClient {
         .where(eq(schema.imports.id, importerId));
     }
 
-    console.log("import complete; calling indexer to update indexes");
-
-    await this.indexer.index(true);
+    console.log("import complete");
   };
 
   // Ensure a journal row exists in the DB before inserting a document that references it.

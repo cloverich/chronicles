@@ -209,7 +209,7 @@ describe("journal filter", () => {
 
 describe("FTS updated on document changes", () => {
   test("update doc updates FTS index", async () => {
-    const [id] = await client.documents.createDocument({
+    const id = await client.documents.createDocument({
       journal: "journal-a",
       content: "Original elephants roam the savanna",
       frontMatter: {
@@ -247,7 +247,7 @@ describe("FTS updated on document changes", () => {
   });
 
   test("delete doc removes from FTS index", async () => {
-    const [id] = await client.documents.createDocument({
+    const id = await client.documents.createDocument({
       journal: "journal-a",
       content: "Unique kangaroo content for deletion test",
       frontMatter: {
@@ -261,7 +261,7 @@ describe("FTS updated on document changes", () => {
     let res = await client.documents.search({ texts: ["kangaroo"] });
     assert.ok(res.data.some((d) => d.id === id));
 
-    await client.documents.del(id, "journal-a");
+    await client.documents.del(id);
 
     res = await client.documents.search({ texts: ["kangaroo"] });
     assert.ok(!res.data.some((d) => d.id === id));
