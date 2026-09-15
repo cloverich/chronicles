@@ -343,6 +343,16 @@ describe("import error handling and table management", () => {
     );
   });
 
+  test("import allows a sibling dir whose name shares the notesDir prefix", async () => {
+    const sibling = notesDir + "-sample";
+    mkdirSync(sibling, { recursive: true });
+    try {
+      await client.importer.import(sibling, SourceType.Other);
+    } finally {
+      rmSync(sibling, { recursive: true, force: true });
+    }
+  });
+
   test("clearImportTables() removes all import records", async () => {
     const otherDir = path.join(fixtureDir, "other");
     await client.importer.import(otherDir, SourceType.Other);

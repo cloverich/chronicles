@@ -20,6 +20,7 @@ import { PathStatsFile, walk } from "../preload/utils/fs-utils";
 import type { IDocumentsClient } from "./documents";
 import type { NodeFilesClient } from "./files";
 import { FilesImportResolver } from "./files-import-resolver";
+import { isSameOrInside } from "./fs-guards";
 import {
   importChroniclesTree,
   type ChroniclesImportOptions,
@@ -132,7 +133,7 @@ export class ImporterClient {
     await this.files.ensureDir(importDir);
 
     // Confirm its not a sub-directory of the notes root `rootDir`
-    if (importDir.startsWith(chroniclesRoot)) {
+    if (isSameOrInside(importDir, chroniclesRoot)) {
       throw new Error(
         "Import directory must not reside within the chronicles root directory",
       );
