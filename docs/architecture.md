@@ -39,7 +39,7 @@ src/
 
 ## Storage
 
-SQLite is the source of truth for notes — `documents` (including a `content` column with the Markdown body) and `document_tags` are canonical; `document_links`, `image_links`, and `documents_fts` are derived from `content` on every write (see [docs/indexer.md](indexer.md)). Journals are DB-only rows, not directories. `notesDir` on disk holds only `_attachments/` and the settings/themes files (see `src/electron/settings.ts`). Markdown files reappear only at the file-format boundary: import, export, and backup (`src/node-client/importer*.ts`, `export.ts`, `backup.ts`).
+SQLite is the source of truth for notes — `documents` (including a `content` column with the Markdown body) and `document_tags` are canonical; `document_links`, `image_links`, and `documents_fts` are derived from `content` on every write (see [docs/indexer.md](indexer.md)). Journals are DB-only rows, not directories; names are unique ignoring case (`Features` and `features` are the same journal — create/rename reject collisions, imports merge into the existing name, and `in:` search matches ignoring case). `notesDir` on disk holds only `_attachments/` and the settings/themes files (see `src/electron/settings.ts`). Markdown files reappear only at the file-format boundary: import, export, and backup (`src/node-client/importer*.ts`, `export.ts`, `backup.ts`).
 
 Database: Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/` (generate with `bunx drizzle-kit generate`, config at `drizzle.config.ts`), applied via `src/node-client/factory.ts`.
 

@@ -702,3 +702,37 @@ describe("Chronicles import - replace on re-import", () => {
     assert.ok(!restored.content.includes("this was edited directly in the db"));
   });
 });
+
+describe("Chronicles import journal case", () => {
+  let client: Awaited<ReturnType<typeof createClient>>;
+  let notesDir: string;
+  let importDir: string;
+
+  before(async () => {
+    notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-case-test-"));
+    client = await createClient({ dbPath: ":memory:", notesDir });
+    importDir = mkdtempSync(path.join(tmpdir(), "chronicles-case-import-"));
+    mkdirSync(path.join(importDir, "Features"));
+    writeFileSync(
+      path.join(importDir, "Features", "03amo4vrpsn7tgcqd8fof4z1c.md"),
+      '---\ntitle: Case\ncreatedAt: "2024-01-01T00:00:00.000Z"\nupdatedAt: "2024-01-01T00:00:00.000Z"\n---\n\nbody\n',
+    );
+  });
+
+  after(() => {
+    rmSync(notesDir, { recursive: true, force: true });
+    rmSync(importDir, { recursive: true, force: true });
+  });
+
+  test("a tree directory merges into an existing journal differing only by case", async () => {
+    await client.journals.create({ name: "features" });
+    await client.importer.import(importDir, SourceType.Chronicles);
+
+    const journals = await client.journals.list();
+    assert.ok(!journals.some((j) => j.name === "Features"));
+    const doc = await client.documents.findById({
+      id: "03amo4vrpsn7tgcqd8fof4z1c",
+    });
+    assert.equal(doc.journal, "features");
+  });
+});

@@ -28,6 +28,7 @@ import {
 } from "./importer-chronicles";
 import {
   MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
+  findJournalIgnoringCase,
   validateJournalName,
 } from "./journals";
 import type { PreferencesClient } from "./preferences";
@@ -368,7 +369,7 @@ export class ImporterClient {
       );
 
     // Track which journals have been ensured to avoid redundant DB/FS work
-    const ensuredJournals = new Set<string>();
+    const ensuredJournals = new Map<string, string>();
 
     // First pass: update all file links in notes (marks files as "referenced")
     const mdastTrees = new Map<string, mdast.Root>();
@@ -405,14 +406,16 @@ export class ImporterClient {
       // with updated links we can now save the document
       try {
         // Ensure journal row exists in DB (FK constraint) before inserting document.
-        if (!ensuredJournals.has(item.journal)) {
-          await this.ensureJournal(item.journal);
-          ensuredJournals.add(item.journal);
+        // Journal names are unique ignoring case; merge into an existing match.
+        let journal = ensuredJournals.get(item.journal);
+        if (!journal) {
+          journal = await this.ensureJournal(item.journal);
+          ensuredJournals.set(item.journal, journal);
         }
 
         await this.documents.createDocument({
           id: item.chroniclesId,
-          journal: item.journal, // using name as id
+          journal, // using name as id
           content: mdastToString(mdastTree),
           frontMatter,
         });
@@ -477,7 +480,10 @@ export class ImporterClient {
   // During import, journals are inferred from folder names and may not yet exist in the DB.
   // The indexer will later reconcile journal rows with the filesystem, so this just ensures
   // the FK constraint is satisfied.
-  private ensureJournal = async (journalName: string) => {
+  private ensureJournal = async (journalName: string): Promise<string> => {
+    const existing = findJournalIgnoringCase(this.db, journalName);
+    if (existing) return existing;
+
     const timestamp = new Date().toISOString();
     await this.db
       .insert(schema.journals)
@@ -490,6 +496,7 @@ export class ImporterClient {
     if (!(journalName in archived)) {
       await this.preferences.set(`archivedJournals.${journalName}`, false);
     }
+    return journalName;
   };
 
   // probably shouldn't make it to final version

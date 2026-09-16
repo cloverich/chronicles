@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import path from "path";
 
@@ -76,6 +76,10 @@ export class JournalsClient {
 
   create = async (journal: { name: string }): Promise<JournalResponse> => {
     const name = validateJournalName(journal.name);
+    const existing = findJournalIgnoringCase(this.db, name);
+    if (existing) {
+      throw new Error(`Journal "${existing}" already exists.`);
+    }
     return this.index(name);
   };
 
@@ -112,6 +116,12 @@ export class JournalsClient {
     newName: string,
   ): Promise<JournalResponse> => {
     newName = validateJournalName(newName);
+
+    // Allow re-casing the same journal (features → Features); reject collisions.
+    const existing = findJournalIgnoringCase(this.db, newName);
+    if (existing && existing !== journal.name) {
+      throw new Error(`Journal "${existing}" already exists.`);
+    }
 
     const timestamp = new Date().toISOString();
 
@@ -189,6 +199,23 @@ export class JournalsClient {
 }
 
 export const MAX_NAME_LENGTH = 25;
+
+/**
+ * Journal names are unique ignoring case. Returns the stored name matching
+ * `name` case-insensitively, if any. Uses SQLite's lower(), which only folds
+ * ASCII without ICU — non-ASCII names still compare byte-for-byte.
+ */
+export const findJournalIgnoringCase = (
+  db: BetterSQLite3Database<typeof schema>,
+  name: string,
+): string | undefined => {
+  const [row] = db
+    .select({ name: journalsTable.name })
+    .from(journalsTable)
+    .where(sql`lower(${journalsTable.name}) = lower(${name})`)
+    .all();
+  return row?.name;
+};
 
 export const validateJournalName = (name: string): string => {
   name = name?.trim() || "";

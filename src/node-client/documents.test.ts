@@ -544,3 +544,27 @@ describe("deleteAll", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 });
+
+describe("search journal filter", () => {
+  test("in: matches journal names ignoring case", async () => {
+    await client.journals.create({ name: "Features" });
+    const id = await client.documents.createDocument({
+      journal: "Features",
+      content: "case test",
+      frontMatter: {
+        title: "Case",
+        tags: [],
+        createdAt: "2024-03-01T00:00:00.000Z",
+        updatedAt: "2024-03-01T00:00:00.000Z",
+      },
+    });
+
+    const included = await client.documents.search({ journals: ["features"] });
+    assert.ok(included.data.some((d) => d.id === id));
+
+    const excluded = await client.documents.search({
+      exclude: { journals: ["FEATURES"] },
+    });
+    assert.ok(!excluded.data.some((d) => d.id === id));
+  });
+});

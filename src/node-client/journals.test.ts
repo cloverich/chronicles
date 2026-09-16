@@ -148,3 +148,24 @@ test("ensureDefault: resets defaultJournal preference when it names a missing jo
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("journal names are unique ignoring case", async () => {
+  await client.journals.create({ name: "casefold" });
+  await assert.rejects(
+    client.journals.create({ name: "CaseFold" }),
+    /"casefold" already exists/,
+  );
+
+  await client.journals.create({ name: "other-case" });
+  const list = await client.journals.list();
+  const other = list.find((j) => j.name === "other-case")!;
+  await assert.rejects(
+    client.journals.rename(other, "CASEFOLD"),
+    /"casefold" already exists/,
+  );
+
+  // Re-casing the same journal is allowed
+  const casefold = list.find((j) => j.name === "casefold")!;
+  const renamed = await client.journals.rename(casefold, "CaseFold");
+  assert.equal(renamed.name, "CaseFold");
+});

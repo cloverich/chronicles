@@ -9,6 +9,7 @@ import { readChroniclesTree } from "./chronicles-tree";
 import type { IDocumentsClient } from "./documents";
 import { stripColumnOwnedKeys } from "./documents";
 import type { IFilesClientForImport } from "./files-import-resolver";
+import { findJournalIgnoringCase } from "./journals";
 import type { IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
 
@@ -153,10 +154,19 @@ export async function importChroniclesTree(
   const attachmentsDestDir = path.join(notesDir, "_attachments");
   await fs.promises.mkdir(attachmentsDestDir, { recursive: true });
 
-  const ensuredJournals = new Set<string>();
-  const ensureJournal = async (journalName: string) => {
-    if (ensuredJournals.has(journalName)) return;
-    ensuredJournals.add(journalName);
+  // Journal names are unique ignoring case: a tree directory "Features"
+  // merges into an existing "features" journal. Returns the stored name.
+  const ensuredJournals = new Map<string, string>();
+  const ensureJournal = async (journalName: string): Promise<string> => {
+    const cached = ensuredJournals.get(journalName);
+    if (cached) return cached;
+
+    const existing = findJournalIgnoringCase(db, journalName);
+    if (existing) {
+      ensuredJournals.set(journalName, existing);
+      return existing;
+    }
+    ensuredJournals.set(journalName, journalName);
 
     const timestamp = new Date().toISOString();
     const result = db
@@ -174,13 +184,14 @@ export async function importChroniclesTree(
     if (!(journalName in archived)) {
       await preferences.set(`archivedJournals.${journalName}`, false);
     }
+    return journalName;
   };
 
   const { notes, report: treeReport } = readChroniclesTree(importDir);
 
   for await (const note of notes) {
     try {
-      await ensureJournal(note.journal);
+      const journal = await ensureJournal(note.journal);
 
       const images = selectImageLinks(note.mdast);
       for (const image of images) {
@@ -202,7 +213,7 @@ export async function importChroniclesTree(
       const result = await documents.importDocument(
         {
           id: note.id,
-          journal: note.journal,
+          journal,
           title: note.frontMatter.title,
           createdAt: note.frontMatter.createdAt,
           updatedAt: note.frontMatter.updatedAt,

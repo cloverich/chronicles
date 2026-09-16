@@ -306,12 +306,23 @@ export class DocumentsClient {
       conditions.push(inArray(documents.id, q.ids));
     }
 
+    // Journal names are unique ignoring case, so match ignoring case too.
     if (q?.journals?.length) {
-      conditions.push(inArray(documents.journal, q.journals));
+      conditions.push(
+        inArray(
+          sql`lower(${documents.journal})`,
+          q.journals.map((j) => j.toLowerCase()),
+        ),
+      );
     }
 
     if (q?.exclude?.journals?.length) {
-      conditions.push(notInArray(documents.journal, q.exclude.journals));
+      conditions.push(
+        notInArray(
+          sql`lower(${documents.journal})`,
+          q.exclude.journals.map((j) => j.toLowerCase()),
+        ),
+      );
     }
 
     if (q?.date) {
