@@ -75,9 +75,11 @@ export class BulkOperationsStore {
   }): Promise<void> => {
     const { type, search, params, label } = config;
 
-    // Note: toast.loading cannot be user-dismissed in sonner; adding that
-    // behavior requires custom toast rendering with an action button
-    const toastId = toast.loading(label, { duration: Infinity });
+    // sonner defers mounting new toasts via setTimeout but applies dismiss()
+    // synchronously. With sqlite the whole operation can finish before that
+    // timer fires, so dismiss+new-toast leaves the loading toast orphaned.
+    // Updating the toast in place by id is queued after the mount instead.
+    const toastId = toast.loading(label);
 
     runInAction(() => {
       this.status = "processing";
@@ -98,8 +100,7 @@ export class BulkOperationsStore {
 
       await this.client.process(operationId);
 
-      toast.dismiss(toastId);
-      toast.success(`${label} complete`);
+      toast.success(`${label} complete`, { id: toastId });
 
       if (this.latestOperationId === operationId) {
         runInAction(() => {
@@ -108,10 +109,9 @@ export class BulkOperationsStore {
       }
     } catch (err) {
       console.error("Bulk operation failed:", err);
-      toast.dismiss(toastId);
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
-      toast.error(`${label} failed: ${errorMessage}`);
+      toast.error(`${label} failed: ${errorMessage}`, { id: toastId });
 
       if (operationId && this.latestOperationId === operationId) {
         runInAction(() => {

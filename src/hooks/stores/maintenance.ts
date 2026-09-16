@@ -69,14 +69,15 @@ export class MaintenanceStore {
       // Refresh journals to pick up any changes
       await this.journalsStore.refresh();
 
-      toast.dismiss(toastId);
-      toast.success("Repair complete");
+      // Update in place; see BulkOperationsStore for why dismiss() races here
+      toast.success("Repair complete", { id: toastId });
     } catch (err: any) {
       console.error("Error during repair:", err);
       this.error = err;
 
-      if (toastId) toast.dismiss(toastId);
-      toast.error("Failed to repair search index");
+      toast.error("Failed to repair search index", {
+        id: toastId ?? undefined,
+      });
 
       throw err;
     } finally {
