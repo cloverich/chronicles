@@ -22,7 +22,8 @@ updates:
       - dependency-name: better-sqlite3
         update-types: ["version-update:semver-major"]
       - dependency-name: sharp
-        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+        update-types:
+          ["version-update:semver-minor", "version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

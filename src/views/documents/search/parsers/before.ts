@@ -36,7 +36,7 @@ export class BeforeTokenParser {
     }
   };
 
-  remove = (tokens: SearchToken[], token: BeforeToken) => {
+  remove = (tokens: SearchToken[], token: BeforeToken): SearchToken[] => {
     return tokens.filter((t) => {
       // since we can have only one before token; keep
       // everything that isn't an before token

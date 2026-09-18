@@ -14,4 +14,4 @@ if [[ "${1:-}" == "--fix" ]]; then
 fi
 
 bunx prettier@3.2.4 . $PRETTIER_MODE
-bunx tsc@5.3.3 --noEmit --skipLibCheck
+bunx tsc@5.9.3 --noEmit --skipLibCheck
