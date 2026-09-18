@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- 2026-09-18 5c42e5d Added an in-app changelog view to Preferences and the welcome screen. <!-- commits: 5c42e5d7a2403d39ff2c0ec9d387d99ff9f755ca -->
 - 2026-09-18 e8bf0d2 Added Archivo as a bundled font option in Preferences. <!-- commits: e8bf0d265b24bbbe1d927c18b82a113d05ddef21 -->
 - 2026-09-16 6020222 Made journal names unique regardless of capitalization. <!-- commits: 6020222480ed008d3b8e4f60e601dbb542a7a961 -->
 - 2026-09-16 052c3b2 Kept loading notifications attached to fast SQLite operations. <!-- commits: 052c3b2a59b96870566fe107aad13754f0f6256c -->
@@ -43,4 +44,4 @@
 - 2026-03-02 2519f40 Added a toggle to search suggestions and stopped them opening unexpectedly. <!-- commits: 2519f403dbd61977922900cf925b0157ebd34073 -->
 - 2026-03-02 e3de053 Increased content density while preserving useful element spacing. <!-- commits: e3de0534e28a6efbb248995c323a6030d4b4d266 -->
 
-<!-- changelog-cursor: e8bf0d265b24bbbe1d927c18b82a113d05ddef21 -->
+<!-- changelog-cursor: 5c42e5d7a2403d39ff2c0ec9d387d99ff9f755ca -->
