@@ -6,9 +6,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// A hacky "migration" script after bailing on Prisma and realizing
-// better-sqlite3 is not compatible with knex yet :|
-// https://github.com/knex/knex/issues/4511
+// A hacky "migration" script (bailed on Prisma and knex early on).
 // todo: real migrations, backup database while migrating
 export default function (dbUrl: string) {
   const db = DB(dbUrl);

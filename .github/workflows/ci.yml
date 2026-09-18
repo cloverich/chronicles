@@ -11,17 +11,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --ignore-scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: yarn
+      - uses: oven-sh/setup-bun@v2 # scripts/lint.sh uses bunx for pinned prettier/tsc
+      - run: yarn install --frozen-lockfile --ignore-scripts
       - run: bash scripts/lint.sh
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: bun install --ignore-scripts
+          cache: yarn
+      # postinstall runs electron-rebuild; test:node runs under Electron's Node
+      # (ELECTRON_RUN_AS_NODE) and needs both the Electron binary and a
+      # better-sqlite3 built against it.
+      - run: yarn install --frozen-lockfile
       - name: Run tests
-        run: bun run test
+        run: yarn test
