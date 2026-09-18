@@ -2,6 +2,7 @@ import { FolderOpen, Trash2 } from "lucide-react";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Label } from "../../components";
 import { Button } from "../../components/Button";
@@ -31,6 +32,7 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
+  const navigate = useNavigate();
   const maintenanceStore = useMaintenanceStore();
   const journalsStore = useJournals();
   const client = useClient();
@@ -860,6 +862,23 @@ const PreferencesPane = observer((props: Props) => {
                     onClick={() => maintenanceStore.repair()}
                   >
                     Repair
+                  </Button>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="About Chronicles"
+                  sub="Version details and user-visible changes"
+                />
+                <div className="mt-4 flex">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      props.onClose();
+                      navigate("/changelog");
+                    }}
+                  >
+                    View changelog
                   </Button>
                 </div>
               </Section>

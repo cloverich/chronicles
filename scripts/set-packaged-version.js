@@ -7,8 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const inferVersionFromEnv = () => {
-  const tag = process.env.GIT_TAG || "0.0.0";
+  const lastTag = process.env.GIT_TAG || "0.0.0";
+  const tag = lastTag.replace(/^v/, "");
   const commitSha = process.env.GIT_COMMIT_SHA || "unknown";
+  const fullCommitSha = process.env.GIT_COMMIT_FULL_SHA || commitSha;
   const commitCount = process.env.GIT_COMMIT_COUNT || "0";
   const date =
     process.env.BUILD_DATE ||
@@ -30,22 +32,26 @@ const inferVersionFromEnv = () => {
     }
   }
 
-  return { version, commitSha };
+  return {
+    version,
+    commit: fullCommitSha,
+    shortCommit: commitSha,
+    lastTag,
+    commitsAfterTag: Number(commitCount),
+    buildDate: date.replace(/^(\d{4})(\d{2})(\d{2})$/, "$1-$2-$3"),
+    dirty: process.env.GIT_UNCOMMITTED_CHANGES === "true",
+  };
 };
 
-const setVersionInPackageJson = (version, commitSha) => {
+const setVersionInPackageJson = (metadata) => {
   const packageJsonPath = path.join(__dirname, "../dist", "package.json");
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
-  packageJson.version = version;
-  packageJson.buildMetadata = {
-    version,
-    commit: commitSha,
-  };
+  packageJson.version = metadata.version;
+  packageJson.buildMetadata = metadata;
 
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-  console.log(`Updated version to ${version}`);
+  console.log(`Updated version to ${metadata.version}`);
 };
 
-const { version, commitSha } = inferVersionFromEnv();
-setVersionInPackageJson(version, commitSha);
+setVersionInPackageJson(inferVersionFromEnv());
