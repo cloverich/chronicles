@@ -3251,7 +3251,7 @@ class-variance-authority@^0.7.1:
 
 cli-truncate@^4.0.0:
   version "4.0.0"
-  resolved "https://registry.npmjs.org/cli-truncate/-/cli-truncate-4.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/cli-truncate/-/cli-truncate-4.0.0.tgz#6cc28a2924fee9e25ce91e973db56c7066e6172a"
   integrity sha512-nPdaFdQ0h/GEigbPClz11D0v/ZJEwxmeVZGeMo3Z5StPtUTkA9o1lD6QwoirYiSDzbcwn2XcjwmCp68W1IS4TA==
   dependencies:
     slice-ansi "^5.0.0"
@@ -3556,10 +3556,10 @@ drizzle-orm@^0.45.1:
   resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.45.2.tgz#37eb5e4e6bd1309cb8d5414de09632d8f82d8a65"
   integrity sha512-kY0BSaTNYWnoDMVoyY8uxmyHjpJW1geOmBMdSSicKo9CIIWkSxMIj2rkeSR51b8KAPB7m+qysjuHme5nKP+E5Q==
 
-electron-context-menu@^4.0.4:
-  version "4.1.1"
-  resolved "https://registry.npmjs.org/electron-context-menu/-/electron-context-menu-4.1.1.tgz"
-  integrity sha512-kebXha4K2DmR7zrKpO8muzXlUAdhgqQIT7DpPeT4cAKZugwCB/NbuEuT+1SDjOH9vXJYjWK2UQuFvnVw0u0lHg==
+electron-context-menu@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/electron-context-menu/-/electron-context-menu-5.0.0.tgz#0a6fbe961f033dc58ffab2deeaa11aa64e891da6"
+  integrity sha512-rgFpRtwY0/rhsRCoz9rE6VM4WueEsLbIpca7ucOhERVrbGB2dQrxa9xwBNLplU54jRgPuv6nTEbxoplE5bzy2A==
   dependencies:
     cli-truncate "^4.0.0"
     electron-dl "^4.0.0"
@@ -3567,7 +3567,7 @@ electron-context-menu@^4.0.4:
 
 electron-dl@^4.0.0:
   version "4.0.0"
-  resolved "https://registry.npmjs.org/electron-dl/-/electron-dl-4.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/electron-dl/-/electron-dl-4.0.0.tgz#413929460cb6bf91257378d262e904787d10e03d"
   integrity sha512-USiB9816d2JzKv0LiSbreRfTg5lDk3lWh0vlx/gugCO92ZIJkHVH0UM18EHvKeadErP6Xn4yiTphWzYfbA2Ong==
   dependencies:
     ext-name "^5.0.0"
@@ -3576,7 +3576,7 @@ electron-dl@^4.0.0:
 
 electron-is-dev@^3.0.1:
   version "3.0.1"
-  resolved "https://registry.npmjs.org/electron-is-dev/-/electron-is-dev-3.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/electron-is-dev/-/electron-is-dev-3.0.1.tgz#1cbc79b1dd046787903acd357efdfab6549dc17a"
   integrity sha512-8TjjAh8Ec51hUi3o4TaU0mD3GMTOESi866oRNavj9A3IQJ7pmv+MJVmdZBFGw4GFT36X7bkqnuDNYvkQgvyI8Q==
 
 electron-store@^10.1.0:
