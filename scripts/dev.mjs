@@ -4,6 +4,12 @@ import esbuild from "esbuild";
 import lodash from "lodash";
 import { createServer } from "vite";
 
+// CommonJS deps bundled into an ESM output (e.g. yaml's require("process"))
+// need a real require; esbuild only emits a throwing shim otherwise.
+const cjsRequireBanner = {
+  js: 'import { createRequire } from "module"; const require = createRequire(import.meta.url);',
+};
+
 const vite = await createServer({ configFile: "./vite.config.ts" });
 await vite.listen();
 const VITE_DEV_SERVER_URL =
@@ -101,6 +107,7 @@ async function watchPreload() {
     bundle: true,
     platform: "node",
     format: "esm",
+    banner: cjsRequireBanner,
     external: [
       "knex",
       "electron",
@@ -123,6 +130,7 @@ async function watchMain() {
     bundle: true,
     platform: "node",
     format: "esm",
+    banner: cjsRequireBanner,
     external: ["electron", "electron-store", "better-sqlite3"],
     plugins: [startElectronPlugin("main")],
   });
