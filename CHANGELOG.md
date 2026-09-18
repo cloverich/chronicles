@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 2026-09-18 7ff7c36 Updated to Electron 44 with current Chromium and Node security fixes. <!-- commits: 7ff7c3651dc683281cf4bdbd2bd593f4120ee0d8 e57dbacbb6edadf7d32806cff9837dfc697f58e8 -->
+- 2026-09-18 908fa1f Updated image processing (sharp 0.35) used when pasting or uploading images. <!-- commits: 908fa1f94b10a218cb64933503367f304cca6057 -->
 - 2026-09-18 5c42e5d Added an in-app changelog view to Preferences and the welcome screen. <!-- commits: 5c42e5d7a2403d39ff2c0ec9d387d99ff9f755ca -->
 - 2026-09-18 e8bf0d2 Added Archivo as a bundled font option in Preferences. <!-- commits: e8bf0d265b24bbbe1d927c18b82a113d05ddef21 -->
 - 2026-09-16 6020222 Made journal names unique regardless of capitalization. <!-- commits: 6020222480ed008d3b8e4f60e601dbb542a7a961 -->
