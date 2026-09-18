@@ -36,7 +36,7 @@ function validate(source) {
 
   for (const [index, line] of lines.entries()) {
     if (!line.startsWith("- ")) continue;
-    const visible = line.replace(/\s*<!--.*?-->\s*$/, "");
+    const visible = line.replace(/\s*<!--[\s\S]*?-->\s*$/, "");
     if (!entryPattern.test(visible)) {
       throw new Error(`Invalid changelog entry on line ${index + 1}: ${line}`);
     }

@@ -62,7 +62,7 @@ export function parseChangelog(source: string): ChangelogRelease[] {
         `Changelog entry precedes a release heading on line ${index + 1}`,
       );
     }
-    const visible = line.replace(/\s*<!--.*?-->\s*$/, "");
+    const visible = line.replace(/\s*<!--[\s\S]*?-->\s*$/, "");
     const match = entryPattern.exec(visible);
     if (!match) {
       throw new Error(`Invalid changelog entry on line ${index + 1}`);
