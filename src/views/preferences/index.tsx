@@ -895,6 +895,7 @@ function Section(props: PropsWithChildren<any>) {
 const BUNDLED_FONT_OPTIONS = [
   "Hubot Sans (bundled)",
   "Mona Sans (bundled)",
+  "Archivo (bundled)",
   "IBM Plex Mono (bundled)",
 ];
 
@@ -910,6 +911,8 @@ const FONT_OPTION_VALUES: Record<string, string> = {
     '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   "Mona Sans (bundled)":
     '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  "Archivo (bundled)":
+    '"Archivo", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   "IBM Plex Mono (bundled)":
     '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
 };

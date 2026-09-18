@@ -3,7 +3,7 @@ import path from "path";
 import { pathToFileURL } from "url";
 
 const SUPPORTED_FONT_EXTENSIONS = new Set([".ttf", ".otf", ".woff2"]);
-const VARIABLE_FONT_FAMILIES = new Set(["Mona Sans", "Hubot Sans"]);
+const VARIABLE_FONT_FAMILIES = new Set(["Mona Sans", "Hubot Sans", "Archivo"]);
 const FONT_CSS_FILENAME = "fonts.css";
 const CHRONICLES_SETTINGS_FONTS_PREFIX = "chronicles://../_settings/fonts";
 
