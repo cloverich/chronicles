@@ -15,7 +15,6 @@ jobs:
         with:
           node-version: 22.x
           cache: yarn
-      - uses: oven-sh/setup-bun@v2 # scripts/lint.sh uses bunx for pinned prettier/tsc
       - run: yarn install --frozen-lockfile --ignore-scripts
       - run: bash scripts/lint.sh
   test:

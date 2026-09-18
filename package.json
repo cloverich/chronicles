@@ -108,7 +108,7 @@
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
+    "typescript": "5.9.3",
     "vite": "^7.3.6",
     "vitest": "^4.0.18",
     "yaml": "^2.5.1"
