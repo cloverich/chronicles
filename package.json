@@ -93,7 +93,7 @@
     "micromark-extension-frontmatter": "^2.0.0",
     "micromark-extension-gfm": "^3.0.0",
     "mobx": "^6",
-    "mobx-react-lite": "^3",
+    "mobx-react-lite": "^4",
     "prettier": "3.2.4",
     "prettier-plugin-organize-imports": "^4.0.0",
     "prettier-plugin-tailwindcss": "^0.7.2",
