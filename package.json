@@ -26,7 +26,7 @@
     "@moritzrs/micromark-extension-ofm-tag": "^0.0.1",
     "@moritzrs/micromark-extension-ofm-wikilink": "^0.0.1",
     "ajv": "^8.6.2",
-    "ajv-formats": "^2.1.0",
+    "ajv-formats": "^3.0.1",
     "better-sqlite3": "^12.11.1",
     "conf": "^14.0.0",
     "drizzle-orm": "^0.45.1",
