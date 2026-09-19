@@ -2,4 +2,5 @@
 export enum SourceType {
   Notion = "notion",
   Other = "other",
+  Chronicles = "chronicles",
 }

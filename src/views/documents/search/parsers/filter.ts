@@ -36,7 +36,7 @@ export class FilterTokenParser {
   add = (tokens: SearchToken[], token: FilterToken) => {
     // there can be only one...
     // This isn't the right place to put this
-    const filtered = tokens.filter((t) => t.type !== "filter");
+    const filtered: SearchToken[] = tokens.filter((t) => t.type !== "filter");
     filtered.push(token);
 
     return filtered;

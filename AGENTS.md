@@ -2,15 +2,15 @@
 
 ## Current Plan
 
-1. Make SQLite the authoritative note store, with import of the existing notes tree and Markdown export — [docs/designs/sqlite-source-of-truth.md](docs/designs/sqlite-source-of-truth.md).
-2. Extract a clean platform-neutral `NotesClient` contract.
-3. Finish remaining Electron note-taking features against that contract.
-4. Later, selectively reintroduce useful web-spike ideas using the cleaner contract.
+1. Extract a clean platform-neutral `NotesClient` contract.
+2. Finish remaining Electron note-taking features against that contract.
+3. Later, selectively reintroduce useful web-spike ideas using the cleaner contract.
 
 The `web-local-phase1` branch is an archived architectural spike and reference, not active work. Documentation that conflicts with this direction is tracked in [docs/plans/pending/documentation-cleanup.md](docs/plans/pending/documentation-cleanup.md).
 
 ## Completed Projects
 
+- [docs/designs/sqlite-source-of-truth.md](docs/designs/sqlite-source-of-truth.md) — SQLite as the authoritative note store, with Chronicles-tree import/export/backup (complete)
 - [docs/designs/lexical-evaluation.md](docs/designs/lexical-evaluation.md) — Lexical editor migration (complete; Plate + Slate transformer removed, Lexical is the sole editor)
 - [docs/features/theming.md](docs/features/theming.md) — theming system (#443; deferred: FOUC, per-journal themes, visualizer, CLI validation)
 - [docs/plans/completed/vitest-renderer.md](docs/plans/completed/vitest-renderer.md) — Vitest renderer tests (complete; jsdom + RTL, Lexical covered in jsdom, no Electron test runner)
@@ -47,6 +47,7 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [docs/bulk-operations.md](docs/bulk-operations.md): Batch import/export flows. Read when touching import or bulk edit logic.
 - [docs/features/theming.md](docs/features/theming.md): Token architecture, theme file format, creating/managing custom themes. Read when touching colors or adding themed UI.
 - [docs/testing.md](docs/testing.md): Current test infrastructure, what works, what's missing, and where things are headed.
+- [docs/changelog-style.md](docs/changelog-style.md): Date-first changelog format, release grouping, and retroactive catch-up workflow.
 
 ## Skills
 

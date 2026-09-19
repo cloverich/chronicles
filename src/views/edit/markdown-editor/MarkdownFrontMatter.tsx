@@ -29,10 +29,6 @@ export const MarkdownFrontMatter = observer(
             <span className="font-mono font-medium">ID:</span> {document.id}
           </div>
           <div>
-            <span className="font-mono font-medium">Filepath:</span>{" "}
-            {document.filepath}
-          </div>
-          <div>
             <span className="font-mono font-medium">Title:</span>{" "}
             {document.title || "Untitled"}
           </div>

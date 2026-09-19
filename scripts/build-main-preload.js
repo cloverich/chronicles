@@ -1,5 +1,11 @@
 import esbuild from "esbuild";
 
+// CommonJS deps bundled into an ESM output (e.g. yaml's require("process"))
+// need a real require; esbuild only emits a throwing shim otherwise.
+const cjsRequireBanner = {
+  js: 'import { createRequire } from "module"; const require = createRequire(import.meta.url);',
+};
+
 function afterBuild(name) {
   return {
     name: `after-build-${name}`,
@@ -22,6 +28,7 @@ await esbuild.build({
   bundle: true,
   platform: "node",
   format: "esm",
+  banner: cjsRequireBanner,
   external: ["knex", "electron", "electron-store", "better-sqlite3", "sharp"],
   plugins: [afterBuild("preload")],
 });
@@ -31,6 +38,7 @@ await esbuild.build({
   outfile: "src/main.bundle.mjs",
   bundle: true,
   format: "esm",
+  banner: cjsRequireBanner,
   platform: "node",
   external: ["electron", "electron-store", "better-sqlite3"],
   plugins: [afterBuild("main")],

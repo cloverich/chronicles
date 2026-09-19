@@ -280,7 +280,7 @@ const cases = {
 describe("Frontmatter parsing", () => {
   for (const sourceType of Object.keys(cases)) {
     describe(sourceType, () => {
-      for (const testCase of cases[sourceType as SourceType]) {
+      for (const testCase of cases[sourceType as keyof typeof cases]) {
         test(testCase.name, () => {
           const parsed = parseTitleAndFrontMatterForImport(
             dedent(testCase.input),

@@ -72,13 +72,15 @@ test("remove journal → gone from list", async () => {
 });
 
 test("attempting to remove last journal throws", async () => {
-  // Create a fresh client with only one journal
+  // Fresh client: ensureDefault() has already created the sole journal
+  // (default_journal) at createClient() time.
   const dir = mkdtempSync(tmpdir() + "/chronicles-single-journal-");
   try {
     const solo = await createClient({ dbPath: ":memory:", notesDir: dir });
-    await solo.journals.create({ name: "only-one" });
+    const list = await solo.journals.list();
+    assert.strictEqual(list.length, 1);
     await assert.rejects(
-      solo.journals.remove("only-one"),
+      solo.journals.remove(list[0].name),
       /Cannot delete the last journal/,
     );
   } finally {
@@ -109,4 +111,61 @@ test("name validation: _attachments throws", async () => {
 
 test("name validation: path-traversal throws", async () => {
   await assert.rejects(client.journals.create({ name: "../escape" }));
+});
+
+test("ensureDefault: fresh client gets a single default_journal, set as defaultJournal preference", async () => {
+  const dir = mkdtempSync(tmpdir() + "/chronicles-ensure-default-");
+  try {
+    const fresh = await createClient({ dbPath: ":memory:", notesDir: dir });
+    const list = await fresh.journals.list();
+    assert.deepStrictEqual(
+      list.map((j) => j.name),
+      ["default_journal"],
+    );
+    assert.strictEqual(
+      await fresh.preferences.get("defaultJournal"),
+      "default_journal",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ensureDefault: resets defaultJournal preference when it names a missing journal", async () => {
+  const dir = mkdtempSync(tmpdir() + "/chronicles-ensure-default-reset-");
+  try {
+    const fresh = await createClient({ dbPath: ":memory:", notesDir: dir });
+    // Simulate a stale preference pointing at a journal that no longer exists.
+    await fresh.preferences.set("defaultJournal", "does-not-exist");
+    await fresh.journals.ensureDefault();
+
+    const list = await fresh.journals.list();
+    assert.strictEqual(
+      await fresh.preferences.get("defaultJournal"),
+      list[0].name,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("journal names are unique ignoring case", async () => {
+  await client.journals.create({ name: "casefold" });
+  await assert.rejects(
+    client.journals.create({ name: "CaseFold" }),
+    /"casefold" already exists/,
+  );
+
+  await client.journals.create({ name: "other-case" });
+  const list = await client.journals.list();
+  const other = list.find((j) => j.name === "other-case")!;
+  await assert.rejects(
+    client.journals.rename(other, "CASEFOLD"),
+    /"casefold" already exists/,
+  );
+
+  // Re-casing the same journal is allowed
+  const casefold = list.find((j) => j.name === "casefold")!;
+  const renamed = await client.journals.rename(casefold, "CaseFold");
+  assert.equal(renamed.name, "CaseFold");
 });

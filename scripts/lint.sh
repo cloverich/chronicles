@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Lint script — single source of truth for pinned tool versions.
-# Used by package.json scripts and CI so they always run identically.
+# Lint script — used by package.json scripts and CI so they always run identically.
+# Tool versions come from package.json/yarn.lock (prettier and typescript are
+# exact pins), so this never fetches anything from the registry.
 #
 # Usage:
 #   scripts/lint.sh          # check only (used by CI and lint:check)
@@ -13,5 +14,5 @@ if [[ "${1:-}" == "--fix" ]]; then
   PRETTIER_MODE="--write"
 fi
 
-bunx prettier@3.2.4 . $PRETTIER_MODE
-bunx tsc@5.3.3 --noEmit --skipLibCheck
+node_modules/.bin/prettier . $PRETTIER_MODE
+node_modules/.bin/tsc --noEmit --skipLibCheck

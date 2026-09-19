@@ -1,8 +1,9 @@
+import { BackupClient } from "../../node-client/backup";
 import { IBulkOperationsClient } from "../../node-client/bulk-operations";
 import { IDocumentsClient } from "../../node-client/documents";
+import { ExportClient } from "../../node-client/export";
 import { NodeFilesClient } from "../../node-client/files";
 import { IImporterClient } from "../../node-client/importer";
-import { IIndexerClient } from "../../node-client/indexer";
 import { IJournalsClient } from "../../node-client/journals";
 import { IPreferencesClient } from "../../node-client/preferences";
 import { ITagsClient } from "../../node-client/tags";
@@ -17,9 +18,10 @@ export interface IClient {
   documents: IDocumentsClient;
   preferences: IPreferencesClient;
   files: NodeFilesClient;
-  indexer: IIndexerClient;
   importer: IImporterClient;
   bulkOperations: IBulkOperationsClient;
+  export: ExportClient;
+  backup: BackupClient;
 }
 
 export type JournalResponse = {
@@ -31,7 +33,6 @@ export type JournalResponse = {
 
 export interface GetDocumentResponse {
   id: string;
-  filepath: string;
   content: string;
   journal: string;
   frontMatter: FrontMatter;
@@ -140,24 +141,6 @@ export interface FrontMatter {
   createdAt: string;
   updatedAt: string;
   [key: string]: any;
-}
-
-import type * as mdast from "mdast";
-
-export interface IndexRequest {
-  id: string;
-  journal: string;
-  /** Parsed mdast body (frontmatter already removed) */
-  mdast: mdast.Root;
-  frontMatter: FrontMatter;
-  rootDir: string;
-  /** File sync metadata for incremental sync */
-  syncMeta?: {
-    mtime: number;
-    size: number;
-    /** SHA-256 hash of full file contents */
-    contentHash: string;
-  };
 }
 
 // Nobody would put node_modules in their note directory... right?

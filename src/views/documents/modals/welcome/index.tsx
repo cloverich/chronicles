@@ -44,15 +44,15 @@ export default function Welcome({ onComplete }: { onComplete: () => void }) {
               </ul>
 
               <p>
-                The application is still in development, you can{" "}
+                The application is still in development. You can{" "}
                 <a
                   className="font-medium underline underline-offset-4"
-                  href="https://github.com/cloverich/chronicles/releases"
+                  href="#/changelog"
                 >
-                  follow releases
+                  read what changed
                 </a>
-                &nbsp; for updates. If you have feedback, feel free to open an
-                issue on the Github repository - but check&nbsp;
+                . If you have feedback, feel free to open an issue on the Github
+                repository - but check&nbsp;
                 <a
                   className="font-medium underline underline-offset-4"
                   href="https://github.com/cloverich/chronicles/issues/160"

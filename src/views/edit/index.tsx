@@ -107,7 +107,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
 
   async function deleteDocument() {
     if (!confirm("Are you sure you want to delete this note?")) return;
-    await client.documents.del(document.id, document.journal);
+    await client.documents.del(document.id);
     searchStore.updateSearch(document, "del");
     navigate("/documents");
   }

@@ -6,8 +6,8 @@ HEADLESS=true yarn start          # dev mode; renderer logs in terminal as [REND
 yarn test                         # vitest renderer tests + node-client backend tests
 yarn test:node                    # node:test suites (backend, markdown, stores, themes) under Electron's ABI
 yarn test:watch                   # vitest in watch mode
-bun run lint                      # prettier (autofix) + tsc --noEmit; matches CI exactly
-bun run lint:check                # same but prettier in check mode (no writes)
+yarn lint                         # prettier (autofix) + tsc --noEmit; matches CI exactly
+yarn lint:check                   # same but prettier in check mode (no writes)
 yarn build                        # production build (electron-packager)
 ```
 
@@ -29,15 +29,14 @@ test scripts: it rebuilds for system Node and breaks the app until the next
 1. Evaluate task (tracked in Engram)
 2. Write code
 3. `HEADLESS=true yarn start` to verify
-4. `bun run lint && bun run test`
+4. `yarn lint && yarn test`
 5. Commit
 
 ## Key Directories
 
 ```
 src/electron/        Main process (app lifecycle, settings, IPC wiring)
-src/node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import)
-src/bun-client/      Drizzle SQL migrations (src/bun-client/migrations/)
+src/node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import, migrations/)
 src/preload/         IPC bridge, client API types (src/preload/client/types.ts)
 src/views/           React views (documents, edit, preferences)
 src/components/      Reusable UI (Radix-based)
@@ -66,7 +65,7 @@ Bullet points communicate key changes, not dev practices (i.e. "added search by 
 
 ## Conventions
 
-- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/bun-client/migrations/`
+- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`; generate new ones with `yarn drizzle-kit generate` (config: `drizzle.config.ts` at repo root)
 - **IPC**: All renderer<->main communication through `src/preload/`
 - **State**: MobX stores in `src/hooks/stores/`
 - **Styling**: Tailwind CSS v4 + Radix UI primitives

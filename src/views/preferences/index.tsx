@@ -2,6 +2,7 @@ import { FolderOpen, Trash2 } from "lucide-react";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Label } from "../../components";
 import { Button } from "../../components/Button";
@@ -14,7 +15,8 @@ import {
 } from "../../components/Dialog";
 import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
 import useClient from "../../hooks/useClient";
-import { useIndexerStore } from "../../hooks/useIndexerStore";
+import { useJournals } from "../../hooks/useJournals";
+import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
 import { usePreferences } from "../../hooks/usePreferences";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
@@ -30,12 +32,15 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
-  const indexerStore = useIndexerStore();
+  const navigate = useNavigate();
+  const maintenanceStore = useMaintenanceStore();
+  const journalsStore = useJournals();
   const client = useClient();
   const [store, _] = React.useState(() =>
     observable({
       loading: false,
       sourceType: SourceType.Other,
+      replaceExisting: false,
     }),
   );
   const preferences = usePreferences();
@@ -87,10 +92,8 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
-      // Save preference immediately before index (bypasses 1-second debounce)
+      // Save preference immediately (bypasses 1-second debounce)
       await preferences.saveImmediate({ notesDir: result.value });
-      // Full reindex when changing directories
-      indexerStore.index(true);
     } catch (e) {
       store.loading = false;
       toast.error("Failed to set new directory");
@@ -173,12 +176,35 @@ const PreferencesPane = observer((props: Props) => {
       }
 
       toast.info("Importing directory...this may take a few minutes");
-      await client.importer.import(result.value, store.sourceType);
+      const report = await client.importer.import(
+        result.value,
+        store.sourceType,
+        store.sourceType === SourceType.Chronicles
+          ? { onConflict: store.replaceExisting ? "replace" : "skip" }
+          : undefined,
+      );
 
-      // Import calls sync internally, so just refresh the journals store
-      // and show success notification
-      // await jstore.refresh();
-      toast.success("Import completed");
+      await journalsStore.refresh();
+
+      if (report) {
+        console.warn("Chronicles import report", report);
+        toast.success(
+          `Import completed: created ${report.created}, skipped ${report.skipped}, replaced ${report.replaced}, errored ${report.errored.length}`,
+        );
+
+        const duplicateCount = Object.keys(report.duplicates).length;
+        if (
+          report.errored.length > 0 ||
+          duplicateCount > 0 ||
+          report.attachments.missing.length > 0
+        ) {
+          toast.warning(
+            `Import had issues: ${report.errored.length} errored, ${duplicateCount} duplicate ids, ${report.attachments.missing.length} missing attachments. See console for details.`,
+          );
+        }
+      } else {
+        toast.success("Import completed");
+      }
       store.loading = false;
 
       // Navigate to main view to show newly imported documents
@@ -190,17 +216,79 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
-  async function clearImportTable() {
+  function timestampForDirName(): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate(),
+    )}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  }
+
+  async function exportNotes() {
     store.loading = true;
     try {
-      await client.importer.clearImportTables();
-      store.loading = false;
-      toast.success("Import table cleared");
+      const result = await window.chronicles.openDialogSelectDir();
+      if (!result?.value) {
+        store.loading = false;
+        return;
+      }
+
+      const destDir = `${result.value}/chronicles-export-${timestampForDirName()}`;
+
+      toast.info("Exporting notes...this may take a few minutes");
+      const report = await client.export.export(destDir);
+
+      toast.success(
+        `Export completed: ${report.notes} notes, ${report.attachments.copied} attachments copied to ${report.destDir}`,
+      );
+      if (report.attachments.missing.length > 0) {
+        toast.warning(
+          `Export had ${report.attachments.missing.length} missing attachments. See console for details.`,
+        );
+        console.warn("Export missing attachments", report.attachments.missing);
+      }
     } catch (e) {
-      console.error("Error clearing import table", e);
+      console.error("Error exporting notes", e);
+      toast.error("Failed to export notes");
+    } finally {
       store.loading = false;
-      toast.error("Failed to clear import table");
     }
+  }
+
+  async function backupNotes() {
+    store.loading = true;
+    try {
+      const result = await window.chronicles.openDialogSelectDir();
+      if (!result?.value) {
+        store.loading = false;
+        return;
+      }
+
+      const destDir = `${result.value}/chronicles-backup-${timestampForDirName()}`;
+
+      toast.info("Backing up...this may take a few minutes");
+      const report = await client.backup.backup(destDir);
+
+      const databaseMb = (report.databaseBytes / (1024 * 1024)).toFixed(2);
+      toast.success(
+        `Backup completed: ${databaseMb} MB database, ${report.attachments.files} attachments, saved to ${report.destDir}`,
+      );
+    } catch (e) {
+      console.error("Error backing up notes", e);
+      toast.error("Failed to back up notes");
+    } finally {
+      store.loading = false;
+    }
+  }
+
+  async function resetNotes() {
+    if (
+      !confirm(
+        "Delete ALL notes, journals, and import records? Attachments are kept. This cannot be undone.",
+      )
+    )
+      return;
+    await maintenanceStore.resetNotes();
   }
 
   return (
@@ -662,8 +750,27 @@ const PreferencesPane = observer((props: Props) => {
                   >
                     <option value={SourceType.Notion}>Notion</option>
                     <option value={SourceType.Other}>Other</option>
+                    <option value={SourceType.Chronicles}>Chronicles</option>
                   </NativeSelect>
                 </div>
+                {store.sourceType === SourceType.Chronicles && (
+                  <div className="my-4 flex max-w-[500px] items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="replace-existing"
+                      checked={store.replaceExisting}
+                      onChange={(e) =>
+                        (store.replaceExisting = e.target.checked)
+                      }
+                    />
+                    <Label.Base
+                      htmlFor="replace-existing"
+                      className="text-sm leading-none font-medium"
+                    >
+                      Replace existing notes with the same ID
+                    </Label.Base>
+                  </div>
+                )}
                 <div className="mt-4 flex">
                   {/* todo: https://stackoverflow.com/questions/8579055/how-do-i-move-files-in-node-js/29105404#29105404 */}
                   <Button
@@ -679,64 +786,99 @@ const PreferencesPane = observer((props: Props) => {
               </Section>
               <Section>
                 <SectionTitle
-                  title="Clear import table"
-                  sub="Clearing import tables and syncing cache"
+                  title="Export notes"
+                  sub="Export every note as Markdown, with frontmatter and referenced attachments"
                 />
                 <p className="mb-2 max-w-[500px]">
-                  <strong>(Advanced)</strong> Re-running import from same
-                  location will skip previously imported files. To fully re-run
-                  the import, you can clear the import tables by clicking below,
-                  but this will result in duplicate files unless the prior
-                  imported files are removed (<strong>manually, by you</strong>)
-                  from root directory.
+                  Writes every note as{" "}
+                  <code>&lt;journal&gt;/&lt;id&gt;.md</code> with full
+                  frontmatter, plus a manifest and copies of referenced
+                  attachments. Suitable for backing up with Git, or re-importing
+                  later.
                 </p>
                 <p className="mb-2 max-w-[500px]">
-                  Note that ids are generated and tracked in the import table
-                  prior to creating the files, so these can be used to
-                  (manually) link imported files to their location in
-                  Chronicles.
+                  A backup is a snapshot of the database plus all attachments;
+                  restore by replacing the database file and{" "}
+                  <code>_attachments</code> directory while the app is closed.
                 </p>
-                <div className="mt-4 flex">
+                <div className="mt-4 flex gap-2">
                   <Button
-                    variant="destructive"
-                    onClick={clearImportTable}
+                    variant="ghost"
+                    loading={store.loading}
                     disabled={store.loading}
+                    onClick={exportNotes}
+                    size="sm"
                   >
-                    Clear import table
+                    Export notes…
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    loading={store.loading}
+                    disabled={store.loading}
+                    onClick={backupNotes}
+                    size="sm"
+                  >
+                    Back up…
                   </Button>
                 </div>
               </Section>
               <Section>
                 <SectionTitle
-                  title="Rebuild Index"
-                  sub="Rebuild the document index from the filesystem"
+                  title="Reset notes"
+                  sub="Delete every note, journal, and import record"
                 />
                 <p className="mb-2 max-w-[500px]">
-                  Chronicles builds an index of all documents and journals
-                  (folders) in <code>notesDir</code> to power its search and
-                  general operation. When the index is out of sync with the
-                  filesystem, this can cause issues such as missing documents,
-                  tags, or journals.
+                  <strong>(Advanced)</strong> Wipes the database so an import
+                  can be re-run from scratch. Files in <code>_attachments</code>{" "}
+                  are left in place; a re-import skips attachments that already
+                  exist. Back up first.
                 </p>
+                <div className="mt-4 flex">
+                  <Button
+                    variant="destructive"
+                    onClick={resetNotes}
+                    disabled={store.loading || maintenanceStore.isRepairing}
+                  >
+                    Reset notes
+                  </Button>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="Repair"
+                  sub="Regenerate search index, note links, and image references"
+                />
                 <p className="mb-2 max-w-[500px]">
-                  Rebuilding the index will re-scan the filesystem, ensuring
-                  that all documents, journals, and tags are correctly indexed.
-                  This should be done anytime you make changes to the filesystem
-                  outside of the app, including from another device (if the{" "}
-                  <code>notesDir</code> is synced via a cloud service).
-                </p>
-                <p className="mb-2 max-w-[500px]">
-                  The current Chronicles index is located at{" "}
-                  <code>{preferences.databaseUrl}</code>
+                  Your notes live in the SQLite database at{" "}
+                  <code>{preferences.databaseUrl}</code>. Repair regenerates the
+                  search index, note links, and image references from those
+                  stored notes — use it if search results look wrong.
                 </p>
                 <div className="mt-4 flex">
                   <Button
                     variant="ghost"
-                    loading={indexerStore.isIndexing}
-                    disabled={indexerStore.isIndexing}
-                    onClick={() => indexerStore.index(true)}
+                    loading={maintenanceStore.isRepairing}
+                    disabled={maintenanceStore.isRepairing}
+                    onClick={() => maintenanceStore.repair()}
                   >
-                    Rebuild Index
+                    Repair
+                  </Button>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="About Chronicles"
+                  sub="Version details and user-visible changes"
+                />
+                <div className="mt-4 flex">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      props.onClose();
+                      navigate("/changelog");
+                    }}
+                  >
+                    View changelog
                   </Button>
                 </div>
               </Section>
@@ -772,6 +914,7 @@ function Section(props: PropsWithChildren<any>) {
 const BUNDLED_FONT_OPTIONS = [
   "Hubot Sans (bundled)",
   "Mona Sans (bundled)",
+  "Archivo (bundled)",
   "IBM Plex Mono (bundled)",
 ];
 
@@ -787,6 +930,8 @@ const FONT_OPTION_VALUES: Record<string, string> = {
     '"Hubot Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   "Mona Sans (bundled)":
     '"Mona Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  "Archivo (bundled)":
+    '"Archivo", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   "IBM Plex Mono (bundled)":
     '"IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", "Courier New", monospace',
 };

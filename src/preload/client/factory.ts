@@ -18,8 +18,9 @@ export async function createClient({ store }: ClientFactoryParams) {
     tags: nodeClient.tags,
     preferences: nodeClient.preferences,
     files: nodeClient.files,
-    indexer: nodeClient.indexer,
     importer: nodeClient.importer,
     bulkOperations: nodeClient.bulkOperations,
+    export: nodeClient.export,
+    backup: nodeClient.backup,
   };
 }

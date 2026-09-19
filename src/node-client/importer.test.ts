@@ -1,4 +1,12 @@
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
+import { eq } from "drizzle-orm";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { tmpdir } from "os";
@@ -100,8 +108,6 @@ describe("Notion import", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-notion-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    // The indexer reads notesDir from preferences; set it so indexer.index() works
-    await client.preferences.set("notesDir", notesDir);
 
     fixtureDir = prepareFixtureDir();
     const notionImportDir = path.join(fixtureDir, "notion");
@@ -221,7 +227,6 @@ describe("Generic markdown import", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-other-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    await client.preferences.set("notesDir", notesDir);
 
     fixtureDir = prepareFixtureDir();
     const otherImportDir = path.join(fixtureDir, "other");
@@ -322,7 +327,6 @@ describe("import error handling and table management", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-mgmt-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    await client.preferences.set("notesDir", notesDir);
     fixtureDir = prepareFixtureDir();
   });
 
@@ -337,6 +341,16 @@ describe("import error handling and table management", () => {
       client.importer.import(nestedDir, SourceType.Other),
       /chronicles root directory/,
     );
+  });
+
+  test("import allows a sibling dir whose name shares the notesDir prefix", async () => {
+    const sibling = notesDir + "-sample";
+    mkdirSync(sibling, { recursive: true });
+    try {
+      await client.importer.import(sibling, SourceType.Other);
+    } finally {
+      rmSync(sibling, { recursive: true, force: true });
+    }
   });
 
   test("clearImportTables() removes all import records", async () => {
@@ -419,7 +433,6 @@ describe("sequential Notion then Other import", () => {
   before(async () => {
     notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-seq-test-"));
     client = await createClient({ dbPath: ":memory:", notesDir });
-    await client.preferences.set("notesDir", notesDir);
     fixtureDir = prepareFixtureDir();
 
     // Import Notion first
@@ -462,5 +475,264 @@ describe("sequential Notion then Other import", () => {
     assert.ok(tags.includes("review")); // from Notion Portland Drive
     assert.ok(tags.includes("devlog")); // from Other documents
     assert.ok(tags.includes("customtag")); // from inline #customtag in Document 2
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Chronicles import suite
+// ---------------------------------------------------------------------------
+
+const CHRONICLES_FIXTURE_DIR = path.join(FIXTURE_DIR, "chronicles-tree");
+
+const IDS = {
+  noteA: "03amo4vrpsn7tgcqd8fof4z1b",
+  noteB: "03amo4vvxp0nltw0rlqaanfi3",
+  noteC: "03amo4w05ldwfjekgw9uczy75",
+  noteD: "03amo4w4dhqvc426x8itmkjx6",
+  noteE: "03amo4w8lecmfoziwmkbl77wj",
+  noteEmpty: "03amo4wtowbe2jekoi9j7bdnd",
+  noteUnicode: "03amo4wxwst3dd1kw52joznu9",
+  dup: "03amo4wh176jmiy75qjzhdbw5",
+  linkTarget: "03amo4wctakugt9rsf6x5pz6f",
+  noteEncodedSpace: "03amo4y43szmxkyzcsnd1z2g7",
+};
+
+describe("Chronicles import", () => {
+  let client: Awaited<ReturnType<typeof createClient>>;
+  let notesDir: string;
+  let report: Awaited<ReturnType<typeof client.importer.import>>;
+
+  before(async () => {
+    notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-chron-test-"));
+    client = await createClient({ dbPath: ":memory:", notesDir });
+
+    report = (await client.importer.import(
+      CHRONICLES_FIXTURE_DIR,
+      SourceType.Chronicles,
+    )) as any;
+  });
+
+  after(() => {
+    rmSync(notesDir, { recursive: true, force: true });
+  });
+
+  test("report: 9 distinct notes created, none skipped/replaced/errored", () => {
+    assert.strictEqual(report!.created, 10);
+    assert.strictEqual(report!.skipped, 0);
+    assert.strictEqual(report!.replaced, 0);
+    assert.deepStrictEqual(report!.errored, []);
+  });
+
+  test("report: duplicate id recorded, only one copy imported", () => {
+    assert.ok(IDS.dup in report!.duplicates);
+    assert.strictEqual(report!.duplicates[IDS.dup].length, 1);
+  });
+
+  test("report: both journals created", () => {
+    assert.deepStrictEqual([...report!.journalsCreated].sort(), [
+      "journal-one",
+      "journal-two",
+    ]);
+  });
+
+  test("report: attachments copied and missing tracked", () => {
+    assert.strictEqual(report!.attachments.copied, 3);
+    assert.strictEqual(report!.attachments.existing, 0);
+    assert.deepStrictEqual(report!.attachments.missing, ["does-not-exist.png"]);
+  });
+
+  test("all 10 documents are searchable", async () => {
+    const result = await client.documents.search({});
+    assert.strictEqual(result.data.length, 10);
+  });
+
+  test("Note A: tags, extra frontmatter keys, timestamps preserved", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteA });
+    assert.strictEqual(doc.journal, "journal-one");
+    assert.deepStrictEqual(doc.frontMatter.tags, ["alpha", "beta"]);
+    assert.strictEqual(doc.frontMatter.source, "import-test");
+    assert.strictEqual(doc.frontMatter.priority, 3);
+    assert.strictEqual(doc.frontMatter.createdAt, "2024-01-15T00:00:00.000Z");
+    assert.strictEqual(doc.frontMatter.updatedAt, "2024-01-16T00:00:00.000Z");
+  });
+
+  test("Note A: image url normalized to ../_attachments/<file>", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteA });
+    assert.ok(doc.content.includes("../_attachments/pixel.png"));
+
+    const imageRows = await client.db
+      .select()
+      .from(schema.imageLinks)
+      .where(eq(schema.imageLinks.documentId, IDS.noteA));
+    assert.ok(doc.content.includes("https://example.com/remote.png"));
+    assert.ok(
+      imageRows.some((r) => r.imagePath === "https://example.com/remote.png"),
+    );
+    assert.ok(
+      imageRows.some((r) => r.imagePath === "../_attachments/pixel.png"),
+    );
+  });
+
+  test("Note A: note link verbatim and present in document_links", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteA });
+    assert.ok(doc.content.includes(`../journal-two/${IDS.linkTarget}.md`));
+
+    const linkRows = await client.db
+      .select()
+      .from(schema.documentLinks)
+      .where(eq(schema.documentLinks.documentId, IDS.noteA));
+    assert.strictEqual(linkRows.length, 1);
+    assert.strictEqual(linkRows[0].targetId, IDS.linkTarget);
+    assert.strictEqual(linkRows[0].targetJournal, "journal-two");
+  });
+
+  test("Note B: missing tags key defaults to empty array", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteB });
+    assert.deepStrictEqual(doc.frontMatter.tags, []);
+  });
+
+  test("Note C: timezone-offset timestamps preserved verbatim", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteC });
+    assert.strictEqual(doc.frontMatter.createdAt, "2024-01-18T10:00:00-05:00");
+    assert.strictEqual(doc.frontMatter.updatedAt, "2024-01-19T10:00:00-05:00");
+  });
+
+  test("Note D: ../_attachments form also normalized and copied", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteD });
+    assert.ok(doc.content.includes("../_attachments/note.txt"));
+  });
+
+  test("Note Encoded Space: percent-encoded filename is decoded and copied", async () => {
+    const doc = await client.documents.findById({
+      id: IDS.noteEncodedSpace,
+    });
+    assert.ok(doc.content.includes("../_attachments/spaced name.txt"));
+
+    const attachmentsDir = path.join(notesDir, "_attachments");
+    const files = readdirSync(attachmentsDir);
+    assert.ok(files.includes("spaced name.txt"));
+  });
+
+  test("Note E: missing attachment url still rewritten", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteE });
+    assert.ok(doc.content.includes("../_attachments/does-not-exist.png"));
+  });
+
+  test("Note Empty: empty body imports with content === ''", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteEmpty });
+    assert.strictEqual(doc.content, "");
+  });
+
+  test("Note Unicode: title and body preserved", async () => {
+    const doc = await client.documents.findById({ id: IDS.noteUnicode });
+    assert.strictEqual(doc.frontMatter.title, "笔记 🎉");
+    assert.ok(doc.content.includes("你好, world! Émoji: 🚀"));
+  });
+
+  test("duplicate id: only one journal's copy exists, matching the report", async () => {
+    const doc = await client.documents.findById({ id: IDS.dup });
+    const otherJournal =
+      doc.journal === "journal-one" ? "journal-two" : "journal-one";
+    assert.deepStrictEqual(report!.duplicates[IDS.dup], [otherJournal]);
+  });
+
+  test("invalid-id and skippable files are not imported", async () => {
+    // 10 total documents accounts for all valid notes; invalid id file,
+    // .DS_Store, and _notes.md would push this higher if they leaked through.
+    const result = await client.documents.search({});
+    assert.strictEqual(result.data.length, 10);
+  });
+
+  test("attachments copied to <notesDir>/_attachments/", () => {
+    const attachmentsDir = path.join(notesDir, "_attachments");
+    const files = readdirSync(attachmentsDir);
+    assert.ok(files.includes("pixel.png"));
+    assert.ok(files.includes("note.txt"));
+  });
+
+  test("re-import with skip (default): everything skipped, nothing changed", async () => {
+    const secondReport = await client.importer.import(
+      CHRONICLES_FIXTURE_DIR,
+      SourceType.Chronicles,
+    );
+    assert.strictEqual(secondReport!.created, 0);
+    assert.strictEqual(secondReport!.skipped, 10);
+    assert.strictEqual(secondReport!.replaced, 0);
+  });
+});
+
+describe("Chronicles import - replace on re-import", () => {
+  let client: Awaited<ReturnType<typeof createClient>>;
+  let notesDir: string;
+
+  before(async () => {
+    notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-chron-replace-"));
+    client = await createClient({ dbPath: ":memory:", notesDir });
+
+    await client.importer.import(CHRONICLES_FIXTURE_DIR, SourceType.Chronicles);
+  });
+
+  after(() => {
+    rmSync(notesDir, { recursive: true, force: true });
+  });
+
+  test("editing a note then re-importing with replace restores fixture content", async () => {
+    const before = await client.documents.findById({ id: IDS.noteA });
+
+    await client.documents.updateDocument({
+      id: IDS.noteA,
+      journal: before.journal,
+      content: "this was edited directly in the db",
+      frontMatter: before.frontMatter,
+    });
+
+    const edited = await client.documents.findById({ id: IDS.noteA });
+    assert.strictEqual(edited.content, "this was edited directly in the db");
+
+    const report = await client.importer.import(
+      CHRONICLES_FIXTURE_DIR,
+      SourceType.Chronicles,
+      { onConflict: "replace" },
+    );
+    assert.strictEqual(report!.replaced, 10);
+    assert.strictEqual(report!.created, 0);
+
+    const restored = await client.documents.findById({ id: IDS.noteA });
+    assert.ok(restored.content.includes("../_attachments/pixel.png"));
+    assert.ok(!restored.content.includes("this was edited directly in the db"));
+  });
+});
+
+describe("Chronicles import journal case", () => {
+  let client: Awaited<ReturnType<typeof createClient>>;
+  let notesDir: string;
+  let importDir: string;
+
+  before(async () => {
+    notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-case-test-"));
+    client = await createClient({ dbPath: ":memory:", notesDir });
+    importDir = mkdtempSync(path.join(tmpdir(), "chronicles-case-import-"));
+    mkdirSync(path.join(importDir, "Features"));
+    writeFileSync(
+      path.join(importDir, "Features", "03amo4vrpsn7tgcqd8fof4z1c.md"),
+      '---\ntitle: Case\ncreatedAt: "2024-01-01T00:00:00.000Z"\nupdatedAt: "2024-01-01T00:00:00.000Z"\n---\n\nbody\n',
+    );
+  });
+
+  after(() => {
+    rmSync(notesDir, { recursive: true, force: true });
+    rmSync(importDir, { recursive: true, force: true });
+  });
+
+  test("a tree directory merges into an existing journal differing only by case", async () => {
+    await client.journals.create({ name: "features" });
+    await client.importer.import(importDir, SourceType.Chronicles);
+
+    const journals = await client.journals.list();
+    assert.ok(!journals.some((j) => j.name === "Features"));
+    const doc = await client.documents.findById({
+      id: "03amo4vrpsn7tgcqd8fof4z1c",
+    });
+    assert.equal(doc.journal, "features");
   });
 });

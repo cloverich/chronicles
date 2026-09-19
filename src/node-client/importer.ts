@@ -20,9 +20,15 @@ import { PathStatsFile, walk } from "../preload/utils/fs-utils";
 import type { IDocumentsClient } from "./documents";
 import type { NodeFilesClient } from "./files";
 import { FilesImportResolver } from "./files-import-resolver";
-import type { IIndexerClient } from "./indexer";
+import { isSameOrInside } from "./fs-guards";
+import {
+  importChroniclesTree,
+  type ChroniclesImportOptions,
+  type ChroniclesImportReport,
+} from "./importer-chronicles";
 import {
   MAX_NAME_LENGTH as MAX_JOURNAL_NAME_LENGTH,
+  findJournalIgnoringCase,
   validateJournalName,
 } from "./journals";
 import type { PreferencesClient } from "./preferences";
@@ -88,7 +94,6 @@ export class ImporterClient {
     private documents: IDocumentsClient,
     private files: NodeFilesClient,
     private preferences: PreferencesClient,
-    private indexer: IIndexerClient,
     private notesDir: string,
   ) {}
 
@@ -120,23 +125,38 @@ export class ImporterClient {
   import = async (
     importDir: string,
     sourceType: SourceType = SourceType.Other,
-  ) => {
-    // await this.clearImportTables();
+    opts?: ChroniclesImportOptions,
+  ): Promise<ChroniclesImportReport | void> => {
     importDir = path.resolve(importDir);
-
-    await this.clearIncomplete();
-    const importerId = createId();
     const chroniclesRoot = this.notesDir;
 
     // Ensure `importDir` is a directory and can be accessed
     await this.files.ensureDir(importDir);
 
     // Confirm its not a sub-directory of the notes root `rootDir`
-    if (importDir.startsWith(chroniclesRoot)) {
+    if (isSameOrInside(importDir, chroniclesRoot)) {
       throw new Error(
         "Import directory must not reside within the chronicles root directory",
       );
     }
+
+    if (sourceType === SourceType.Chronicles) {
+      return importChroniclesTree(
+        {
+          db: this.db,
+          documents: this.documents,
+          files: this.files,
+          preferences: this.preferences,
+          notesDir: this.notesDir,
+        },
+        importDir,
+        opts,
+      );
+    }
+
+    // await this.clearImportTables();
+    await this.clearIncomplete();
+    const importerId = createId();
 
     // track, so if we have errors and want to re-run to fix remaining pending items,
     // we can. This is mostly for debugging.
@@ -349,7 +369,7 @@ export class ImporterClient {
       );
 
     // Track which journals have been ensured to avoid redundant DB/FS work
-    const ensuredJournals = new Set<string>();
+    const ensuredJournals = new Map<string, string>();
 
     // First pass: update all file links in notes (marks files as "referenced")
     const mdastTrees = new Map<string, mdast.Root>();
@@ -386,14 +406,16 @@ export class ImporterClient {
       // with updated links we can now save the document
       try {
         // Ensure journal row exists in DB (FK constraint) before inserting document.
-        if (!ensuredJournals.has(item.journal)) {
-          await this.ensureJournal(item.journal);
-          ensuredJournals.add(item.journal);
+        // Journal names are unique ignoring case; merge into an existing match.
+        let journal = ensuredJournals.get(item.journal);
+        if (!journal) {
+          journal = await this.ensureJournal(item.journal);
+          ensuredJournals.set(item.journal, journal);
         }
 
         await this.documents.createDocument({
           id: item.chroniclesId,
-          journal: item.journal, // using name as id
+          journal, // using name as id
           content: mdastToString(mdastTree),
           frontMatter,
         });
@@ -451,25 +473,22 @@ export class ImporterClient {
         .where(eq(schema.imports.id, importerId));
     }
 
-    console.log("import complete; calling indexer to update indexes");
-
-    await this.indexer.index(true);
+    console.log("import complete");
   };
 
   // Ensure a journal row exists in the DB before inserting a document that references it.
   // During import, journals are inferred from folder names and may not yet exist in the DB.
   // The indexer will later reconcile journal rows with the filesystem, so this just ensures
   // the FK constraint is satisfied.
-  private ensureJournal = async (journalName: string) => {
+  private ensureJournal = async (journalName: string): Promise<string> => {
+    const existing = findJournalIgnoringCase(this.db, journalName);
+    if (existing) return existing;
+
     const timestamp = new Date().toISOString();
     await this.db
       .insert(schema.journals)
       .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
       .onConflictDoNothing();
-
-    // Ensure the journal directory exists on disk
-    const journalDir = `${this.notesDir}/${journalName}`;
-    await this.files.ensureDir(journalDir);
 
     // Track in preferences (archivedJournals) if not already present
     const archived: Record<string, boolean> =
@@ -477,6 +496,7 @@ export class ImporterClient {
     if (!(journalName in archived)) {
       await this.preferences.set(`archivedJournals.${journalName}`, false);
     }
+    return journalName;
   };
 
   // probably shouldn't make it to final version

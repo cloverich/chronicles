@@ -24,7 +24,7 @@ Backend and pure logic: `node-client` (Drizzle + better-sqlite3 against a temp D
 
 These run under Electron's own Node (`ELECTRON_RUN_AS_NODE=1 electron --import tsx --test …`) so `better-sqlite3` is loaded with the same ABI the app uses. See [development.md](development.md#native-modules-and-the-single-abi-test-setup) — do not add a rebuild step to the test scripts.
 
-`src/bun-client/` is excluded; only its `migrations/` directory is live.
+`src/bun-client/` has been removed; schema and migrations now live directly in `src/node-client/`.
 
 ## What is deliberately not here
 

@@ -20,7 +20,7 @@ before(async () => {
   await client.journals.create({ name: "test-journal" });
 
   // Create three test documents
-  const [id1] = await client.documents.createDocument({
+  const id1 = await client.documents.createDocument({
     journal: "test-journal",
     content: "This is test document 1.",
     frontMatter: {
@@ -32,7 +32,7 @@ before(async () => {
   });
   doc1Id = id1;
 
-  const [id2] = await client.documents.createDocument({
+  const id2 = await client.documents.createDocument({
     journal: "test-journal",
     content: "This is test document 2.",
     frontMatter: {
@@ -44,7 +44,7 @@ before(async () => {
   });
   doc2Id = id2;
 
-  const [id3] = await client.documents.createDocument({
+  const id3 = await client.documents.createDocument({
     journal: "test-journal",
     content: "This is test document 3.",
     frontMatter: {

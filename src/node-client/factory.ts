@@ -8,11 +8,12 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { BackupClient } from "./backup";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
+import { ExportClient } from "./export";
 import { NodeFilesClient } from "./files";
 import { ImporterClient } from "./importer";
-import { IndexerClient } from "./indexer";
 import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
 import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
@@ -31,25 +32,25 @@ const projectRoot: string | undefined =
 /**
  * Resolve the Drizzle migrations folder. Works in three contexts:
  * - CHRONICLES_PROJECT_ROOT set: explicit path (production bundle)
- * - Unbundled (vitest): __dirname is src/node-client/, so ../bun-client/migrations
- * - Bundled (esbuild → src/preload.bundle.mjs): __dirname is src/, so bun-client/migrations
+ * - Unbundled (vitest): __dirname is src/node-client/, so ./migrations
+ * - Bundled (esbuild → src/preload.bundle.mjs): __dirname is src/, so node-client/migrations
  */
 function resolveMigrationsFolder(): string {
   if (projectRoot) {
-    return path.resolve(projectRoot, "src/bun-client/migrations");
+    return path.resolve(projectRoot, "src/node-client/migrations");
   }
   // Try the unbundled path first (vitest, running from src/node-client/)
-  const fromSource = path.resolve(__dirname, "../bun-client/migrations");
+  const fromSource = path.resolve(__dirname, "migrations");
   if (fs.existsSync(path.join(fromSource, "meta"))) {
     return fromSource;
   }
   // Bundled by esbuild into src/preload.bundle.mjs — __dirname is src/
-  const fromBundle = path.resolve(__dirname, "bun-client/migrations");
+  const fromBundle = path.resolve(__dirname, "node-client/migrations");
   if (fs.existsSync(path.join(fromBundle, "meta"))) {
     return fromBundle;
   }
   // Last resort: resolve from cwd
-  return path.resolve(process.cwd(), "src/bun-client/migrations");
+  return path.resolve(process.cwd(), "src/node-client/migrations");
 }
 
 export interface CreateClientOptions {
@@ -68,10 +69,11 @@ export interface NodeClient {
   journals: JournalsClient;
   documents: DocumentsClient;
   files: NodeFilesClient;
-  indexer: IndexerClient;
   bulkOperations: BulkOperationsClient;
   tags: TagsClient;
   importer: ImporterClient;
+  export: ExportClient;
+  backup: BackupClient;
 }
 
 /**
@@ -119,11 +121,21 @@ export async function createClient(
   if (hasExistingTables && (!migrationCount || migrationCount.c === 0)) {
     // Schema exists but Drizzle doesn't know about it — stamp the initial
     // migration as applied so it doesn't try to re-create everything.
+    // Use the 0000 entry's own journal timestamp (not Date.now()) so that
+    // later migrations — whose journal `when` is necessarily greater than
+    // 0000's — still get picked up by Drizzle's "when > last created_at" check.
     console.log(
       "[node-client] Existing schema detected, stamping Drizzle migration journal",
     );
+    const journal = JSON.parse(
+      fs.readFileSync(
+        path.join(migrationsFolder, "meta/_journal.json"),
+        "utf-8",
+      ),
+    ) as { entries: { tag: string; when: number }[] };
+    const initialEntry = journal.entries[0];
     sqlite.exec(
-      `INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('0000_demonic_avengers', ${Date.now()})`,
+      `INSERT INTO __drizzle_migrations (hash, created_at) VALUES ('${initialEntry.tag}', ${initialEntry.when})`,
     );
   }
 
@@ -155,15 +167,8 @@ export async function createClient(
   });
   const preferences = new PreferencesClient(conf);
   const files = new NodeFilesClient(opts.notesDir);
-  const journals = new JournalsClient(db, files, preferences);
-  const documents = new DocumentsClient(db, files, opts.notesDir);
-  const indexer = new IndexerClient(
-    db,
-    journals,
-    documents,
-    files,
-    preferences,
-  );
+  const journals = new JournalsClient(db, preferences);
+  const documents = new DocumentsClient(db, files);
   const bulkOperations = new BulkOperationsClient(db, documents);
   const tags = new TagsClient(db);
   const importer = new ImporterClient(
@@ -171,9 +176,12 @@ export async function createClient(
     documents,
     files,
     preferences,
-    indexer,
     opts.notesDir,
   );
+  const exportClient = new ExportClient(db, opts.notesDir);
+  const backupClient = new BackupClient(sqlite, opts.notesDir);
+
+  await journals.ensureDefault();
 
   return {
     db,
@@ -183,9 +191,10 @@ export async function createClient(
     journals,
     documents,
     files,
-    indexer,
     bulkOperations,
     tags,
     importer,
+    export: exportClient,
+    backup: backupClient,
   };
 }

@@ -1,8 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import path from "path";
 
-import type { IJournalFolderOps } from "./files";
 import type { IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
 import {
@@ -26,7 +25,6 @@ export type IJournalsClient = JournalsClient;
 export class JournalsClient {
   constructor(
     private db: BetterSQLite3Database<typeof schema>,
-    private files: IJournalFolderOps,
     private preferences: IPreferencesClient,
   ) {}
 
@@ -78,7 +76,10 @@ export class JournalsClient {
 
   create = async (journal: { name: string }): Promise<JournalResponse> => {
     const name = validateJournalName(journal.name);
-    await this.files.createFolder(name);
+    const existing = findJournalIgnoringCase(this.db, name);
+    if (existing) {
+      throw new Error(`Journal "${existing}" already exists.`);
+    }
     return this.index(name);
   };
 
@@ -115,7 +116,12 @@ export class JournalsClient {
     newName: string,
   ): Promise<JournalResponse> => {
     newName = validateJournalName(newName);
-    await this.files.renameFolder(journal.name, newName);
+
+    // Allow re-casing the same journal (features → Features); reject collisions.
+    const existing = findJournalIgnoringCase(this.db, newName);
+    if (existing && existing !== journal.name) {
+      throw new Error(`Journal "${existing}" already exists.`);
+    }
 
     const timestamp = new Date().toISOString();
 
@@ -148,7 +154,6 @@ export class JournalsClient {
       );
     }
 
-    await this.files.removeFolder(journal);
     await this.preferences.delete(`archivedJournals.${journal}`);
     await this.db.delete(journalsTable).where(eq(journalsTable.name, journal));
 
@@ -170,9 +175,47 @@ export class JournalsClient {
     await this.preferences.set(`archivedJournals.${journal}`, false);
     return this.list();
   };
+
+  /**
+   * Ensures a usable default journal exists. Called once at startup
+   * (see `createClient` in ./factory.ts):
+   * - If no journals exist, creates `default_journal`.
+   * - If the `defaultJournal` preference is unset or names a journal that
+   *   no longer exists, resets it to the first journal (by name).
+   */
+  ensureDefault = async (): Promise<void> => {
+    let journals = await this.list();
+
+    if (journals.length === 0) {
+      await this.create({ name: "default_journal" });
+      journals = await this.list();
+    }
+
+    const defaultJournal = await this.preferences.get("defaultJournal");
+    if (!defaultJournal || !journals.some((j) => j.name === defaultJournal)) {
+      await this.preferences.set("defaultJournal", journals[0].name);
+    }
+  };
 }
 
 export const MAX_NAME_LENGTH = 25;
+
+/**
+ * Journal names are unique ignoring case. Returns the stored name matching
+ * `name` case-insensitively, if any. Uses SQLite's lower(), which only folds
+ * ASCII without ICU — non-ASCII names still compare byte-for-byte.
+ */
+export const findJournalIgnoringCase = (
+  db: BetterSQLite3Database<typeof schema>,
+  name: string,
+): string | undefined => {
+  const [row] = db
+    .select({ name: journalsTable.name })
+    .from(journalsTable)
+    .where(sql`lower(${journalsTable.name}) = lower(${name})`)
+    .all();
+  return row?.name;
+};
 
 export const validateJournalName = (name: string): string => {
   name = name?.trim() || "";

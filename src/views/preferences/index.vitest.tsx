@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import React from "react";
+import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
 import { ClientContext } from "../../hooks/useClient";
@@ -17,9 +18,8 @@ function createClient() {
       replace: vi.fn(),
       all: vi.fn(),
     },
-    indexer: {
-      index: vi.fn(),
-      needsFullReindex: vi.fn(),
+    documents: {
+      rebuildDerived: vi.fn(),
     },
   } as any;
 }
@@ -40,8 +40,9 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
       settingsDir: "/tmp/settings",
       saveImmediate: vi.fn(),
     },
-    indexer: {
-      index: vi.fn(),
+    maintenance: {
+      isRepairing: false,
+      repair: vi.fn(),
     },
     ...overrides,
   } as any;
@@ -55,11 +56,13 @@ function renderPreferences({
   applicationStore?: any;
 } = {}) {
   return render(
-    <ClientContext.Provider value={client}>
-      <ApplicationContext.Provider value={applicationStore}>
-        <Preferences isOpen={true} onClose={vi.fn()} />
-      </ApplicationContext.Provider>
-    </ClientContext.Provider>,
+    <MemoryRouter>
+      <ClientContext.Provider value={client}>
+        <ApplicationContext.Provider value={applicationStore}>
+          <Preferences isOpen={true} onClose={vi.fn()} />
+        </ApplicationContext.Provider>
+      </ClientContext.Provider>
+    </MemoryRouter>,
   );
 }
 
@@ -105,6 +108,9 @@ describe("Preferences surface", () => {
     expect(screen.getByText("Notes directory")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Import directory" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "View changelog" }),
     ).toBeInTheDocument();
   });
 });

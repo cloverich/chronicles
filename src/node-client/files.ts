@@ -39,34 +39,8 @@ function getSharpWarning(error: unknown): UploadImageWarning {
   return { code: "process_failed", message };
 }
 
-/**
- * Minimal folder-management interface used by JournalsClient.
- * Node.js-compatible replacement for the electron-store-backed FilesClient.
- */
-export interface IJournalFolderOps {
-  createFolder(name: string): Promise<void>;
-  renameFolder(oldName: string, newName: string): Promise<void>;
-  removeFolder(name: string): Promise<void>;
-}
-
-export class NodeFilesClient implements IJournalFolderOps {
+export class NodeFilesClient {
   constructor(private notesDir: string) {}
-
-  createFolder = async (name: string): Promise<void> => {
-    const newPath = path.join(this.notesDir, name);
-    await fs.promises.mkdir(newPath, { recursive: true });
-  };
-
-  renameFolder = async (oldName: string, newName: string): Promise<void> => {
-    const oldPath = path.join(this.notesDir, oldName);
-    const newPath = path.join(this.notesDir, newName);
-    await fs.promises.rename(oldPath, newPath);
-  };
-
-  removeFolder = async (name: string): Promise<void> => {
-    const folderPath = path.join(this.notesDir, name);
-    await fs.promises.rm(folderPath, { recursive: true, force: true });
-  };
 
   /**
    * Ensure a directory exists, creating it recursively if needed.
@@ -86,34 +60,9 @@ export class NodeFilesClient implements IJournalFolderOps {
     return fs.promises.readFile(filepath, "utf8");
   };
 
-  uploadDocument = async (
-    document: { id: string; content: string },
-    journal: string,
-  ): Promise<string> => {
-    const journalPath = path.join(this.notesDir, journal);
-    const docPath = path.join(journalPath, `${document.id}.md`);
-
-    // Guard against path traversal
-    if (!path.resolve(docPath).startsWith(path.resolve(journalPath))) {
-      throw new Error("Invalid path: Directory traversal attempt detected.");
-    }
-
-    await fs.promises.mkdir(journalPath, { recursive: true });
-    await fs.promises.writeFile(docPath, document.content);
-    return docPath;
-  };
-
   copyFile = async (src: string, dest: string): Promise<string> => {
     await fs.promises.copyFile(src, dest);
     return dest;
-  };
-
-  deleteDocument = async (
-    documentId: string,
-    journal: string,
-  ): Promise<void> => {
-    const docPath = path.join(this.notesDir, journal, `${documentId}.md`);
-    await fs.promises.unlink(docPath);
   };
 
   validFile = async (
