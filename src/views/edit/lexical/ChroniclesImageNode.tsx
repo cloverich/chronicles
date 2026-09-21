@@ -27,11 +27,11 @@ export class ChroniclesImageNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(
-    serializedNode: SerializedChroniclesImageNode,
+    serializedNode: SerializedLexicalNode & Record<string, unknown>,
   ): ChroniclesImageNode {
     return $createChroniclesImageNode(
-      serializedNode.src,
-      serializedNode.altText,
+      typeof serializedNode.src === "string" ? serializedNode.src : "",
+      typeof serializedNode.altText === "string" ? serializedNode.altText : "",
     ).updateFromJSON(serializedNode);
   }
 
