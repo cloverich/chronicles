@@ -299,6 +299,52 @@ describe("lexical migration spike", () => {
     expect(table.querySelectorAll("tbody tr")).toHaveLength(1);
   });
 
+  it("keeps escaped pipes and alignment when displaying a table", async () => {
+    const markdown = [
+      "| Name | Value |",
+      "| :--- | ---: |",
+      "| a\\|b | `code` and [site](https://example.com) |",
+    ].join("\n");
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
+    renderEditorWithRoutes(markdown);
+    const table = await screen.findByRole("table");
+    expect(table.querySelector("td")?.textContent).toBe("a|b");
+    expect(table.querySelector("code")?.textContent).toBe("code");
+    expect(table.querySelector("a")?.getAttribute("href")).toBe(
+      "https://example.com",
+    );
+    expect(table.querySelectorAll("th")[1]?.style.textAlign).toBe("right");
+  });
+
+  it("opens a Chronicles note link from a table cell", async () => {
+    const markdown = [
+      "| Note |",
+      "| --- |",
+      "| [Related](../research/target-note.md) |",
+    ].join("\n");
+    renderEditorWithRoutes(markdown);
+    const link = await screen.findByRole("link", { name: "Related" });
+    expect(link.getAttribute("data-chronicles-note-link")).toBe("true");
+    fireEvent.click(link);
+    await waitFor(() =>
+      expect(screen.getByTestId("router-location").textContent).toBe(
+        "/documents/edit/target-note",
+      ),
+    );
+  });
+
+  it("does not alter a terminal table when the editor adds a following paragraph", async () => {
+    const onMarkdownChange = vi.fn();
+    const markdown = [
+      "| Name | Value |",
+      "| --- | --- |",
+      "| One | two |",
+    ].join("\n");
+    renderEditorWithRoutes(markdown, onMarkdownChange);
+    await screen.findByRole("table");
+    expect(onMarkdownChange).not.toHaveBeenCalled();
+  });
+
   it("imports a plain-text markdown table on paste", async () => {
     const onMarkdownChange = vi.fn();
     let lexicalEditor: LexicalEditor | null = null;
@@ -321,6 +367,28 @@ describe("lexical migration spike", () => {
     });
     await screen.findByRole("table");
     expect(onMarkdownChange.mock.calls.at(-1)?.[0]).toContain(markdown);
+  });
+
+  it("leaves ordinary plain-text paste to Lexical", async () => {
+    let lexicalEditor: LexicalEditor | null = null;
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown=""
+          onMarkdownChange={vi.fn()}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(lexicalEditor).not.toBeNull());
+    expect(
+      lexicalEditor!.dispatchCommand(
+        PASTE_COMMAND,
+        createPasteEvent("ordinary words"),
+      ),
+    ).toBe(false);
   });
 
   it("normalizes chronicles image URLs back to markdown-relative paths", () => {

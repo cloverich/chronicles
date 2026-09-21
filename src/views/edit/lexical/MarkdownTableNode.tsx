@@ -6,6 +6,7 @@ import {
   type SerializedLexicalNode,
 } from "lexical";
 import React, { type ReactNode } from "react";
+import { parseNoteLink } from "../../../markdown/noteLinks";
 
 interface SerializedTableNode extends SerializedLexicalNode {
   source: string;
@@ -47,6 +48,13 @@ function inline(source: string): ReactNode[] {
     const link = part.match(/^\[([^\]]+)\]\(([^\s)]+)\)$/);
     if (link) {
       const url = link[2];
+      if (parseNoteLink(url)) {
+        return (
+          <a key={index} href={url} data-chronicles-note-link="true">
+            {link[1]}
+          </a>
+        );
+      }
       return /^https?:\/\/|^\//.test(url) ? (
         <a key={index} href={url}>
           {link[1]}
