@@ -11,6 +11,7 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import React from "react";
+import { DecoratorBoundaryPlugin } from "./DecoratorBoundaryPlugin";
 import { LexicalBlockShortcutsPlugin } from "./LexicalBlockShortcutsPlugin";
 import { LexicalCheckListShortcutPlugin } from "./LexicalCheckListShortcutPlugin";
 import { LexicalCodeHighlightPlugin } from "./LexicalCodeHighlightPlugin";
@@ -21,6 +22,7 @@ import { LexicalLinkToolbarPlugin } from "./LexicalLinkToolbarPlugin";
 import { LexicalListBehaviorPlugin } from "./LexicalListBehaviorPlugin";
 import { LexicalNoteLinkPlugin } from "./LexicalNoteLinkPlugin";
 import { LexicalPasteLinkPlugin } from "./LexicalPasteLinkPlugin";
+import { MarkdownPastePlugin } from "./MarkdownPastePlugin";
 import {
   $exportMarkdownFromLexical,
   $loadMarkdownIntoLexical,
@@ -139,7 +141,9 @@ export function LexicalBasedEditor({
         <LexicalListBehaviorPlugin />
         <LexicalCheckListShortcutPlugin />
         <LexicalImageUploadPlugin />
+        <DecoratorBoundaryPlugin />
         <LexicalPasteLinkPlugin />
+        <MarkdownPastePlugin />
         <LexicalLinkToolbarPlugin />
         <OnChangePlugin
           ignoreSelectionChange
