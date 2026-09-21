@@ -11,6 +11,8 @@ export default defineConfig({
       commitsAfterTag: 3,
       buildDate: "2026-09-18",
       dirty: false,
+      raw: ["2026-09-18 a1b2c3d Example raw commit"],
+      truncated: false,
     }),
   },
   resolve: {

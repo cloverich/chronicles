@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import changelogSource from "../../../CHANGELOG.md?raw";
 import { parseChangelog, type ChangelogPart } from "../../changelog";
@@ -48,6 +48,7 @@ function BuildFingerprint() {
 
 export default function Changelog() {
   const navigate = useNavigate();
+  const [view, setView] = useState<"curated" | "raw">("curated");
 
   return (
     <Base.Container>
@@ -67,42 +68,77 @@ export default function Changelog() {
             Changelog
           </h1>
           <BuildFingerprint />
-          {releases.map((release, releaseIndex) => (
-            <section className="mb-10" key={release.title}>
-              <h2 className="text-foreground-strong mb-3 text-lg font-medium">
-                {releaseIndex === 0 && release.title === "Unreleased"
-                  ? "Unreleased in this build"
-                  : release.title}
-              </h2>
-              {release.entries.length === 0 ? (
-                <p className="text-muted-foreground font-mono text-sm">
-                  No changes recorded.
+          <div
+            className="mb-6 flex gap-2"
+            role="group"
+            aria-label="Changelog view"
+          >
+            <button
+              className={`font-mono text-sm ${view === "curated" ? "text-foreground-strong underline" : "text-muted-foreground"}`}
+              type="button"
+              aria-pressed={view === "curated"}
+              onClick={() => setView("curated")}
+            >
+              Curated
+            </button>
+            <button
+              className={`font-mono text-sm ${view === "raw" ? "text-foreground-strong underline" : "text-muted-foreground"}`}
+              type="button"
+              aria-pressed={view === "raw"}
+              onClick={() => setView("raw")}
+            >
+              Raw commits
+            </button>
+          </div>
+          {view === "raw" ? (
+            <section>
+              <ul className="m-0 list-none p-0 font-mono text-sm leading-6">
+                {__CHRONICLES_BUILD__.raw.map((line, index) => (
+                  <li key={`${index}-${line}`}>{line}</li>
+                ))}
+              </ul>
+              {__CHRONICLES_BUILD__.truncated && (
+                <p className="text-muted-foreground mt-4 text-xs">
+                  Earlier commits are not included in this build.
                 </p>
-              ) : (
-                <ul className="m-0 list-none space-y-0 p-0 font-mono text-sm leading-6">
-                  {release.entries.map((entry, index) => (
-                    <li
-                      className="m-0 min-w-0 p-0"
-                      key={`${entry.sha}-${index}`}
-                    >
-                      <time
-                        className="text-muted-foreground"
-                        dateTime={entry.date}
-                      >
-                        {entry.date}
-                      </time>{" "}
-                      <code className="text-muted-foreground bg-transparent p-0">
-                        {entry.sha}
-                      </code>{" "}
-                      <span className="min-w-0">
-                        <InlineEntry parts={entry.parts} />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
               )}
             </section>
-          ))}
+          ) : (
+            releases.map((release) => (
+              <section className="mb-10" key={release.title}>
+                <h2 className="text-foreground-strong mb-3 text-lg font-medium">
+                  {release.title}
+                </h2>
+                {release.entries.length === 0 ? (
+                  <p className="text-muted-foreground font-mono text-sm">
+                    No changes recorded.
+                  </p>
+                ) : (
+                  <ul className="m-0 list-none space-y-0 p-0 font-mono text-sm leading-6">
+                    {release.entries.map((entry, index) => (
+                      <li
+                        className="m-0 min-w-0 p-0"
+                        key={`${entry.sha}-${index}`}
+                      >
+                        <time
+                          className="text-muted-foreground"
+                          dateTime={entry.date}
+                        >
+                          {entry.date}
+                        </time>{" "}
+                        <code className="text-muted-foreground bg-transparent p-0">
+                          {entry.sha}
+                        </code>{" "}
+                        <span className="min-w-0">
+                          <InlineEntry parts={entry.parts} />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ))
+          )}
         </main>
       </Base.ScrollContainer>
     </Base.Container>
