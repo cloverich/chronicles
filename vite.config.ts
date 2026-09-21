@@ -17,6 +17,12 @@ function git(...args: string[]): string {
 }
 
 function buildMetadata() {
+  const changelog = JSON.parse(
+    execFileSync("node", ["scripts/changelog.mjs", "--build-info"], {
+      cwd: __dirname,
+      encoding: "utf8",
+    }),
+  ) as { raw: string[]; truncated: boolean };
   const lastTag = git("describe", "--tags", "--abbrev=0") || null;
   const commit = git("rev-parse", "HEAD") || "unknown";
   const shortCommit = commit === "unknown" ? commit : commit.slice(0, 7);
@@ -42,6 +48,8 @@ function buildMetadata() {
     commitsAfterTag,
     buildDate,
     dirty,
+    raw: changelog.raw,
+    truncated: changelog.truncated,
   };
 }
 

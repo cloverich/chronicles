@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const changelogPath = resolve(repository, "CHANGELOG.md");
-const cursorPattern = /<!-- changelog-cursor: ([0-9a-f]{40}) -->/;
-const entryPattern = /^- (\d{4}-\d{2}-\d{2}) ([0-9a-f]{7}) (.+)$/;
-const coveragePattern = /<!-- commits: ([0-9a-f ]+) -->/g;
-const ignoredTypes = new Set(["build", "chore", "ci", "docs", "style", "test"]);
+const entryPattern = /^- (\d{4}-\d{2}-\d{2}) ([0-9a-f]{7}) (\S.*)$/;
+const limit = 50;
 
 function git(...args) {
   return execFileSync("git", args, {
@@ -20,128 +18,117 @@ function git(...args) {
   }).trim();
 }
 
-function validate(source) {
-  const lines = source.split("\n");
-  if (lines[0] !== "# Changelog") {
-    throw new Error("CHANGELOG.md must begin with '# Changelog'");
-  }
-  if (!source.includes("## Unreleased")) {
-    throw new Error("CHANGELOG.md must contain '## Unreleased'");
-  }
-  const cursorMatches =
-    source.match(new RegExp(cursorPattern.source, "g")) ?? [];
-  if (cursorMatches.length !== 1) {
-    throw new Error("CHANGELOG.md must contain exactly one changelog cursor");
-  }
-
-  for (const [index, line] of lines.entries()) {
-    if (!line.startsWith("- ")) continue;
-    const visible = line.replace(/\s*<!--[\s\S]*?-->\s*$/, "");
-    if (!entryPattern.test(visible)) {
-      throw new Error(`Invalid changelog entry on line ${index + 1}: ${line}`);
-    }
-  }
+function subject(text) {
+  const plain = text.replace(/^[a-z]+(?:\([^)]+\))?!?:\s*/i, "").trim();
+  return plain ? plain[0].toUpperCase() + plain.slice(1) : text;
 }
 
-function sentence(subject) {
-  const withoutType = subject
-    .replace(/^[a-z]+(?:\([^)]+\))?!?:\s*/i, "")
-    .trim();
-  if (!withoutType) return subject;
-  const text = withoutType[0].toUpperCase() + withoutType.slice(1);
-  return /[.!?]$/.test(text) ? text : `${text}.`;
-}
-
-function coveredCommits(source) {
-  const covered = new Set();
-  for (const match of source.matchAll(coveragePattern)) {
-    for (const sha of match[1].split(/\s+/)) covered.add(sha);
-  }
-  return covered;
-}
-
-function candidatesSince(ref, covered) {
-  const format = "%H%x1f%cs%x1f%s%x1e";
+function commits(args) {
   const output = git(
     "log",
-    "--reverse",
-    "--no-merges",
-    `--format=${format}`,
-    `${ref}..HEAD`,
+    "--date=short",
+    "--format=%H%x1f%ad%x1f%s",
+    ...args,
   );
-  if (!output) return [];
-
   return output
-    .split("\x1e")
-    .map((record) => record.trim())
-    .filter(Boolean)
-    .map((record) => {
-      const [sha, date, subject] = record.split("\x1f");
-      return { sha, date, subject };
-    })
-    .filter(({ sha }) => !covered.has(sha))
-    .filter(({ subject }) => {
-      const match = /^([a-z]+)(?:\([^)]+\))?!?:\s+/i.exec(subject);
-      return !match || !ignoredTypes.has(match[1].toLowerCase());
-    });
+    ? output.split("\n").map((line) => {
+        const [sha, date, message] = line.split("\x1f");
+        return { sha, line: `${date} ${sha.slice(0, 7)} ${subject(message)}` };
+      })
+    : [];
 }
 
-function catchUp(source, explicitRef) {
-  const cursor = cursorPattern.exec(source)?.[1];
-  if (!cursor) throw new Error("Missing changelog cursor");
-  const ref = explicitRef ?? cursor;
-  git("cat-file", "-e", `${ref}^{commit}`);
-
-  const candidates = candidatesSince(ref, coveredCommits(source));
-  const head = git("rev-parse", "HEAD");
-  const entries = candidates
-    .reverse()
-    .map(
-      ({ sha, date, subject }) =>
-        `- ${date} ${sha.slice(0, 7)} ${sentence(subject)} <!-- commits: ${sha} -->`,
-    );
-  const unreleasedPattern =
-    /(## Unreleased\n\n)([\s\S]*?)(?=\n## |\n<!-- changelog-cursor:)/;
-  const unreleased = unreleasedPattern.exec(source);
-  if (!unreleased) throw new Error("Could not find the Unreleased section");
-  const existingEntries = unreleased[2].split("\n").filter(Boolean);
-  const mergedEntries = [...entries, ...existingEntries].sort((left, right) =>
-    right.slice(2, 12).localeCompare(left.slice(2, 12)),
-  );
-  const next = source
-    .replace(
-      unreleasedPattern,
-      `$1${mergedEntries.length > 0 ? `${mergedEntries.join("\n")}\n` : ""}`,
+function check(source) {
+  const lines = source.split("\n");
+  if (lines[0] !== "# Changelog")
+    throw new Error("CHANGELOG.md must begin with '# Changelog'");
+  if (!lines.includes("## Unreleased"))
+    throw new Error("CHANGELOG.md needs ## Unreleased");
+  if (source.includes("<!--"))
+    throw new Error("CHANGELOG.md contains hidden metadata");
+  const shas = [];
+  for (const [index, line] of lines.entries()) {
+    if (
+      line.startsWith("## ") &&
+      line !== "## Unreleased" &&
+      !/^## v?\d+\.\d+(?:\.\d+)? — \d{4}-\d{2}-\d{2}$/.test(line)
     )
-    .replace(cursorPattern, `<!-- changelog-cursor: ${head} -->`);
-  return { source: next, added: candidates.length };
-}
-
-const args = process.argv.slice(2);
-const command = args[0] === "check" ? "check" : "catchup";
-const sinceIndex = args.indexOf("--since");
-const explicitRef = sinceIndex >= 0 ? args[sinceIndex + 1] : undefined;
-if (sinceIndex >= 0 && !explicitRef) {
-  console.error("--since requires a tag or commit");
-  process.exit(1);
-}
-
-const source = readFileSync(changelogPath, "utf8");
-try {
-  validate(source);
-  if (command === "check") {
-    console.log("CHANGELOG.md format is valid.");
-  } else {
-    const result = catchUp(source, explicitRef);
-    if (result.source === source) {
-      console.log("CHANGELOG.md is already caught up.");
-    } else {
-      validate(result.source);
-      writeFileSync(changelogPath, result.source);
-      console.log(
-        `Caught up CHANGELOG.md with ${result.added} candidate ${result.added === 1 ? "entry" : "entries"}.`,
-      );
+      throw new Error(`Invalid heading on line ${index + 1}`);
+    if (!line.startsWith("- ")) continue;
+    const match = entryPattern.exec(line);
+    if (!match || line.includes("<!--"))
+      throw new Error(`Invalid changelog entry on line ${index + 1}`);
+    shas.push(match[2]);
+  }
+  if (shas.length === 0) throw new Error("CHANGELOG.md has no entries");
+  const result = spawnSync(
+    "git",
+    ["merge-base", "--is-ancestor", shas[0], "HEAD"],
+    { cwd: repository },
+  );
+  if (result.status !== 0)
+    throw new Error(`Top curated SHA ${shas[0]} is not an ancestor of HEAD`);
+  for (let index = 1; index < shas.length; index++) {
+    const order = spawnSync(
+      "git",
+      ["merge-base", "--is-ancestor", shas[index], shas[index - 1]],
+      { cwd: repository },
+    );
+    if (order.status !== 0)
+      throw new Error(`Curated SHA ${shas[index]} is out of order`);
+  }
+  const headTags = git("tag", "--points-at", "HEAD")
+    .split("\n")
+    .filter(Boolean);
+  for (const tag of headTags) {
+    if (!/^v?\d+\.\d+\.\d+$/.test(tag)) continue;
+    const version = tag.replace(/^v/, "");
+    if (!lines.some((line) => line.startsWith(`## ${version} — `))) {
+      throw new Error(`Release ${tag} needs a matching changelog heading`);
     }
+  }
+  return shas[0];
+}
+
+function rawSince(top) {
+  return commits([`${top}..HEAD`]).map(({ line }) => line);
+}
+
+function buildInfo() {
+  const all = commits(["-n", String(limit + 1)]);
+  return {
+    commit: git("rev-parse", "--short=7", "HEAD"),
+    date: new Date().toISOString().slice(0, 10),
+    dirty: Boolean(git("status", "--porcelain")),
+    raw: all.slice(0, limit).map(({ line }) => line),
+    truncated:
+      all.length > limit ||
+      git("rev-parse", "--is-shallow-repository") === "true",
+  };
+}
+
+try {
+  const source = readFileSync(changelogPath, "utf8");
+  const top = check(source);
+  const mode = process.argv[2];
+  if (mode === "--check" || mode === "check") {
+    // Validation above is the entire check.
+  } else if (mode === "--raw") {
+    const lines = rawSince(top);
+    if (lines.length) process.stdout.write(`${lines.join("\n")}\n`);
+  } else if (mode === "--build-info") {
+    process.stdout.write(`${JSON.stringify(buildInfo())}\n`);
+  } else if (mode === undefined) {
+    const lines = rawSince(top);
+    if (lines.length) {
+      const marker = "## Unreleased\n";
+      const entries = lines.map((line) => `- ${line}`).join("\n");
+      const updated = source.replace(marker, `${marker}\n${entries}\n`);
+      check(updated);
+      writeFileSync(changelogPath, updated);
+    }
+  } else {
+    throw new Error("Usage: changelog [--check | --raw | --build-info]");
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

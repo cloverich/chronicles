@@ -82,6 +82,8 @@ rm -rf dist/renderer
 # copy package.json, required by electron to know how to start
 cp package.json dist/
 cp yarn.lock dist/
+node scripts/changelog.mjs --build-info > dist/build-info.json
+cp CHANGELOG.md dist/
 
 # Most recent tag, and commits / count since tag to help version script determine if this is
 # a release (tag), pre-release (commits since), or dev (uncommited) build

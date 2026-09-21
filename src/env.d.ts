@@ -8,4 +8,6 @@ declare const __CHRONICLES_BUILD__: {
   commitsAfterTag: number;
   buildDate: string;
   dirty: boolean;
+  raw: string[];
+  truncated: boolean;
 };
