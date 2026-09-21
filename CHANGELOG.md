@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- 2026-09-21 45e0f7d Route Chronicles note links in tables and validate changelog entries.
 - 2026-09-21 b50ba0c Preserve markdown tables in lexical editor.
 - 2026-09-21 fa488d9 Upgrade lexical to 0.48.
 - 2026-09-21 f44247b Add curated and raw changelog views.
