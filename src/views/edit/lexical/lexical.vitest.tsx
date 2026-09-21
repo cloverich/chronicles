@@ -277,6 +277,52 @@ describe("lexical migration spike", () => {
     expect(roundtripped).toContain("![two](../_attachments/two.png)");
   });
 
+  it("preserves a markdown table through import and export", () => {
+    const markdown = [
+      "Before",
+      "",
+      "| Name | Value |",
+      "| :--- | ---: |",
+      "| One | **two** |",
+      "",
+      "After",
+    ].join("\n");
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
+  });
+
+  it("renders a markdown table with inline formatting", async () => {
+    renderEditorWithRoutes(
+      ["| Name | Value |", "| --- | --- |", "| One | **two** |"].join("\n"),
+    );
+    const table = await screen.findByRole("table");
+    expect(table.querySelector("strong")?.textContent).toBe("two");
+    expect(table.querySelectorAll("tbody tr")).toHaveLength(1);
+  });
+
+  it("imports a plain-text markdown table on paste", async () => {
+    const onMarkdownChange = vi.fn();
+    let lexicalEditor: LexicalEditor | null = null;
+    render(
+      <MemoryRouter>
+        <LexicalBasedEditor
+          initialMarkdown="Before"
+          onMarkdownChange={onMarkdownChange}
+          onEditorReady={(editor) => {
+            lexicalEditor = editor;
+          }}
+        />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(lexicalEditor).not.toBeNull());
+    const markdown = ["| A | B |", "| --- | --- |", "| 1 | 2 |"].join("\n");
+    await act(async () => {
+      fireEvent.focus(screen.getByLabelText("Editor"));
+      lexicalEditor!.dispatchCommand(PASTE_COMMAND, createPasteEvent(markdown));
+    });
+    await screen.findByRole("table");
+    expect(onMarkdownChange.mock.calls.at(-1)?.[0]).toContain(markdown);
+  });
+
   it("normalizes chronicles image URLs back to markdown-relative paths", () => {
     const markdown = "![A tidy desk](chronicles://../_attachments/desk.png)";
     expect(roundtripLexicalMarkdown(markdown)).toBe(

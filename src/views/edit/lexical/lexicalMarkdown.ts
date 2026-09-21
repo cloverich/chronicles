@@ -7,7 +7,9 @@ import {
   CHECK_LIST,
   LINK,
   TRANSFORMERS,
+  isTableRowDivider,
   type ElementTransformer,
+  type MultilineElementTransformer,
   type TextMatchTransformer,
   type Transformer,
 } from "@lexical/markdown";
@@ -32,6 +34,11 @@ import {
   $isChroniclesNoteLinkNode,
   ChroniclesNoteLinkNode,
 } from "./ChroniclesNoteLinkNode";
+import {
+  $createMarkdownTableNode,
+  $isMarkdownTableNode,
+  MarkdownTableNode,
+} from "./MarkdownTableNode";
 
 const IMAGE_ELEMENT_REGEXP = /^!\[([^[\]]*)\]\(([^()\s]+)\)\s?$/;
 const NOTE_LINK_IMPORT_REGEXP =
@@ -130,6 +137,24 @@ export const CHRONICLES_NOTE_LINK_TRANSFORMER: TextMatchTransformer = {
   type: "text-match",
 };
 
+const TABLE_ROW = /^\|.*\|\s*$/;
+export const TABLE_TRANSFORMER: MultilineElementTransformer = {
+  dependencies: [MarkdownTableNode],
+  export: (node) => ($isMarkdownTableNode(node) ? node.getSource() : null),
+  regExpStart: TABLE_ROW,
+  handleImportAfterStartMatch: ({ lines, rootNode, startLineIndex }) => {
+    if (!isTableRowDivider(lines[startLineIndex + 1] ?? "")) return null;
+    let end = startLineIndex + 2;
+    while (end < lines.length && TABLE_ROW.test(lines[end])) end++;
+    rootNode.append(
+      $createMarkdownTableNode(lines.slice(startLineIndex, end).join("\n")),
+    );
+    return [true, end - 1];
+  },
+  replace: () => false,
+  type: "multiline-element",
+};
+
 export const lexicalNodes: Array<Klass<LexicalNode>> = [
   HeadingNode,
   QuoteNode,
@@ -141,10 +166,12 @@ export const lexicalNodes: Array<Klass<LexicalNode>> = [
   AutoLinkNode,
   ChroniclesImageNode,
   ChroniclesNoteLinkNode,
+  MarkdownTableNode,
 ];
 
 export const chroniclesLexicalTransformers: Transformer[] = [
   CHRONICLES_IMAGE_TRANSFORMER,
+  TABLE_TRANSFORMER,
   CHRONICLES_NOTE_LINK_TRANSFORMER,
   CHECK_LIST,
   ...TRANSFORMERS,
