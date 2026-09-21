@@ -35,6 +35,7 @@ Both directions go through `@lexical/markdown`'s `$convertFromMarkdownString` / 
 
 - **`CHRONICLES_IMAGE_TRANSFORMER`**: `ChroniclesImageNode` ↔ `![alt](url)` markdown image syntax
 - **`CHRONICLES_NOTE_LINK_TRANSFORMER`**: `ChroniclesNoteLinkNode` ↔ `[text](../journal/note-id.md)` links — detected via `parseNoteLink`, which matches the `../<journal>/<noteId>.md` shape
+- **`TABLE_TRANSFORMER`**: stores pipe tables as read-only decorator nodes and exports their original markdown unchanged. Edit table cells in raw markdown mode. Links to Chronicles notes in table cells use the normal note-navigation handler.
 
 ## Extending
 

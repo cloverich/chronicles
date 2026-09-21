@@ -24,18 +24,20 @@ From `@lexical/react`:
 
 Located in `src/views/edit/lexical/`, one plugin per file:
 
-| Plugin                             | Purpose                                                                                                |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `LexicalBlockShortcutsPlugin`      | Block-level keyboard shortcuts (e.g. code block entry/exit behavior)                                   |
-| `LexicalCheckListShortcutPlugin`   | Converts `[ ] `/`[x] ` typed in a bullet list into a checklist item                                    |
-| `LexicalCodeHighlightPlugin`       | Registers syntax highlighting for code blocks                                                          |
-| `LexicalCodeLanguagePlugin`        | Floating language picker + copy button for code blocks (portal pattern)                                |
-| `LexicalFormattingShortcutsPlugin` | Cmd-based text formatting shortcuts                                                                    |
-| `LexicalListBehaviorPlugin`        | Tab/Shift-Tab indent/outdent behavior for lists                                                        |
-| `LexicalImageUploadPlugin`         | Drag-drop and paste image upload                                                                       |
-| `LexicalPasteLinkPlugin`           | Turns pasted URLs into links over the current selection                                                |
-| `LexicalLinkToolbarPlugin`         | Floating edit/unlink toolbar for links (portal pattern)                                                |
-| `LexicalNoteLinkPlugin`            | `@`-triggered note search dropdown + note-link node interactions (portal pattern, keyboard navigation) |
+| Plugin                             | Purpose                                                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `LexicalBlockShortcutsPlugin`      | Block-level keyboard shortcuts (e.g. code block entry/exit behavior)                                                     |
+| `LexicalCheckListShortcutPlugin`   | Converts `[ ] `/`[x] ` typed in a bullet list into a checklist item                                                      |
+| `LexicalCodeHighlightPlugin`       | Registers syntax highlighting for code blocks                                                                            |
+| `LexicalCodeLanguagePlugin`        | Floating language picker + copy button for code blocks (portal pattern)                                                  |
+| `LexicalFormattingShortcutsPlugin` | Cmd-based text formatting shortcuts                                                                                      |
+| `LexicalListBehaviorPlugin`        | Tab/Shift-Tab indent/outdent behavior for lists                                                                          |
+| `LexicalImageUploadPlugin`         | Drag-drop and paste image upload                                                                                         |
+| `LexicalPasteLinkPlugin`           | Turns pasted URLs into links over the current selection                                                                  |
+| `LexicalLinkToolbarPlugin`         | Floating edit/unlink toolbar for links (portal pattern)                                                                  |
+| `LexicalNoteLinkPlugin`            | `@`-triggered note search dropdown + note-link node interactions (portal pattern, keyboard navigation)                   |
+| `MarkdownPastePlugin`              | Converts plain-text markdown with block markers into editor nodes; file and rich HTML paste keep their existing handlers |
+| `DecoratorBoundaryPlugin`          | Keeps a writable paragraph after a terminal image or table                                                               |
 
 ## Custom Nodes
 
@@ -43,6 +45,7 @@ Located alongside the plugins in `src/views/edit/lexical/`:
 
 - **`ChroniclesNoteLinkNode`** (`ChroniclesNoteLinkNode.ts`): internal note links, parsed via `parseNoteLink` from `src/markdown/noteLinks.ts`
 - **`ChroniclesImageNode`** (`ChroniclesImageNode.tsx`): images/local file references
+- **`MarkdownTableNode`** (`MarkdownTableNode.tsx`): read-only pipe table with verbatim markdown source
 
 ## Adding a New Plugin
 

@@ -2,15 +2,15 @@
 
 ## Unreleased
 
-- 2026-09-21 b50ba0c Preserve markdown tables in lexical editor
-- 2026-09-21 fa488d9 Upgrade lexical to 0.48
-- 2026-09-21 f44247b Add curated and raw changelog views
-- 2026-09-18 c5af0d9 Give ESM main/preload bundles a real require (yaml 2.9 requires 'process')
-- 2026-09-18 c0c115d Changelog comment-stripping regex matches across newlines (CodeQL)
-- 2026-09-18 3f8c889 Lint runs lockfile-pinned prettier/tsc from node_modules; bun out of CI
-- 2026-09-18 3b4f26b Drop unused knex; run CI with yarn so test:node actually executes
-- 2026-09-18 8dc688d Changelog entries for Electron 44 and sharp 0.35
-- 2026-09-18 b344373 Re-resolve yaml and @babel/runtime to patched versions
+- 2026-09-21 b50ba0c Preserve markdown tables in lexical editor.
+- 2026-09-21 fa488d9 Upgrade lexical to 0.48.
+- 2026-09-21 f44247b Add curated and raw changelog views.
+- 2026-09-18 c5af0d9 Give ESM main/preload bundles a real require (yaml 2.9 requires 'process').
+- 2026-09-18 c0c115d Changelog comment-stripping regex matches across newlines (CodeQL).
+- 2026-09-18 3f8c889 Lint runs lockfile-pinned prettier/tsc from node_modules; bun out of CI.
+- 2026-09-18 3b4f26b Drop unused knex; run CI with yarn so test:node actually executes.
+- 2026-09-18 8dc688d Changelog entries for Electron 44 and sharp 0.35.
+- 2026-09-18 b344373 Re-resolve yaml and @babel/runtime to patched versions.
 
 - 2026-09-18 908fa1f Updated image processing (sharp 0.35) used when pasting or uploading images.
 - 2026-09-18 e57dbac Updated to Electron 44 with current Chromium and Node security fixes.

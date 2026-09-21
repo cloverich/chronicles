@@ -56,7 +56,7 @@ function check(source) {
       throw new Error(`Invalid heading on line ${index + 1}`);
     if (!line.startsWith("- ")) continue;
     const match = entryPattern.exec(line);
-    if (!match || line.includes("<!--"))
+    if (!match || line.includes("<!--") || !line.endsWith("."))
       throw new Error(`Invalid changelog entry on line ${index + 1}`);
     shas.push(match[2]);
   }
@@ -122,7 +122,9 @@ try {
     const lines = rawSince(top);
     if (lines.length) {
       const marker = "## Unreleased\n";
-      const entries = lines.map((line) => `- ${line}`).join("\n");
+      const entries = lines
+        .map((line) => `- ${line.endsWith(".") ? line : `${line}.`}`)
+        .join("\n");
       const updated = source.replace(marker, `${marker}\n${entries}\n`);
       check(updated);
       writeFileSync(changelogPath, updated);
