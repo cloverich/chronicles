@@ -2,29 +2,29 @@
 
 ## Unreleased
 
-- 2026-09-21 45e0f7d Route Chronicles note links in tables and validate changelog entries.
-- 2026-09-21 b50ba0c Preserve markdown tables in lexical editor.
-- 2026-09-21 fa488d9 Upgrade lexical to 0.48.
-- 2026-09-21 f44247b Add curated and raw changelog views.
-- 2026-09-18 c5af0d9 Give ESM main/preload bundles a real require (yaml 2.9 requires 'process').
-- 2026-09-18 c0c115d Changelog comment-stripping regex matches across newlines (CodeQL).
-- 2026-09-18 3f8c889 Lint runs lockfile-pinned prettier/tsc from node_modules; bun out of CI.
-- 2026-09-18 3b4f26b Drop unused knex; run CI with yarn so test:node actually executes.
-- 2026-09-18 8dc688d Changelog entries for Electron 44 and sharp 0.35.
-- 2026-09-18 b344373 Re-resolve yaml and @babel/runtime to patched versions.
+- 2026-09-21 148a80c Route Chronicles note links in tables and validate changelog entries.
+- 2026-09-21 af8484b Preserve markdown tables in lexical editor.
+- 2026-09-21 8a55376 Upgrade lexical to 0.48.
+- 2026-09-21 e0cb459 Add curated and raw changelog views.
+- 2026-09-18 5ce69fa Give ESM main/preload bundles a real require (yaml 2.9 requires 'process').
+- 2026-09-18 5ce69fa Changelog comment-stripping regex matches across newlines (CodeQL).
+- 2026-09-18 5ce69fa Lint runs lockfile-pinned prettier/tsc from node_modules; bun out of CI.
+- 2026-09-18 5ce69fa Drop unused knex; run CI with yarn so test:node actually executes.
+- 2026-09-18 5ce69fa Changelog entries for Electron 44 and sharp 0.35.
+- 2026-09-18 5ce69fa Re-resolve yaml and @babel/runtime to patched versions.
 
-- 2026-09-18 908fa1f Updated image processing (sharp 0.35) used when pasting or uploading images.
-- 2026-09-18 e57dbac Updated to Electron 44 with current Chromium and Node security fixes.
-- 2026-09-18 5c42e5d Added an in-app changelog view to Preferences and the welcome screen.
-- 2026-09-18 e8bf0d2 Added Archivo as a bundled font option in Preferences.
-- 2026-09-16 6020222 Made journal names unique regardless of capitalization.
-- 2026-09-16 052c3b2 Kept loading notifications attached to fast SQLite operations.
-- 2026-09-15 f3dd738 Prevented imports from escaping their selected directory through matching path prefixes.
-- 2026-09-14 77ad1b2 Added a maintenance action for resetting notes.
-- 2026-09-14 9ddc475 Added verified SQLite database backups.
-- 2026-09-14 54c9d4d Added Markdown-tree export with referenced attachments.
-- 2026-09-14 42334e3 Added import for Chronicles Markdown trees.
-- 2026-09-14 d884b52 Made SQLite the source of truth for note content and journals.
+- 2026-09-18 5ce69fa Updated image processing (sharp 0.35) used when pasting or uploading images.
+- 2026-09-18 5ce69fa Updated to Electron 44 with current Chromium and Node security fixes.
+- 2026-09-18 5ce69fa Added an in-app changelog view to Preferences and the welcome screen.
+- 2026-09-18 5ce69fa Added Archivo as a bundled font option in Preferences.
+- 2026-09-16 5ce69fa Made journal names unique regardless of capitalization.
+- 2026-09-16 5ce69fa Kept loading notifications attached to fast SQLite operations.
+- 2026-09-15 5ce69fa Prevented imports from escaping their selected directory through matching path prefixes.
+- 2026-09-14 5ce69fa Added a maintenance action for resetting notes.
+- 2026-09-14 5ce69fa Added verified SQLite database backups.
+- 2026-09-14 5ce69fa Added Markdown-tree export with referenced attachments.
+- 2026-09-14 5ce69fa Added import for Chronicles Markdown trees.
+- 2026-09-14 5ce69fa Made SQLite the source of truth for note content and journals.
 - 2026-07-14 acfe4ba Restored Control-E end-of-line behavior on macOS.
 - 2026-07-13 372c9bf Removed the old Markdown file after moving a note to another journal.
 - 2026-04-05 5804ba6 Updated the date picker and aligned it with application themes.
