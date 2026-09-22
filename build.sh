@@ -109,3 +109,11 @@ cd ../
 # package the application
 # npx electron-packager dist/ --out $outdir
 node package.js dist/ $outdir
+
+# Prune old builds: keep only the newest 3 numbered build directories.
+# Each one is a full ~300MB app bundle and Spotlight indexes all of them.
+KEEP=3
+for old in $(ls packaged | grep -E '^[0-9]+$' | sort -rn | tail -n +$((KEEP+1))); do
+  echo "Removing old build: packaged/$old"
+  rm -rf "packaged/$old"
+done
