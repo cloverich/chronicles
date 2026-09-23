@@ -2,12 +2,12 @@
 
 ## Unreleased
 
-- 2026-09-23 6929af6 Added a Backups page that keeps verified daily snapshots of notes and attachments in a folder you choose, with tiered history and restore.
 - 2026-09-23 aef1632 Prevented choosing a notes folder inside iCloud Drive, Google Drive, Dropbox, or OneDrive.
-- 2026-09-21 148a80c Route Chronicles note links in tables and validate changelog entries.
-- 2026-09-21 af8484b Preserve markdown tables in lexical editor.
-- 2026-09-21 8a55376 Upgrade lexical to 0.48.
-- 2026-09-21 e0cb459 Add curated and raw changelog views.
+- 2026-09-23 6929af6 Added a Backups page that keeps verified daily snapshots of notes and attachments in a folder you choose, with tiered history and restore.
+- 2026-09-21 74984d8 Route Chronicles note links in tables and validate changelog entries.
+- 2026-09-21 905d293 Preserve markdown tables in lexical editor.
+- 2026-09-21 d7609b5 Upgrade lexical to 0.48.
+- 2026-09-21 48a4b87 Add curated and raw changelog views.
 - 2026-09-18 5ce69fa Give ESM main/preload bundles a real require (yaml 2.9 requires 'process').
 - 2026-09-18 5ce69fa Changelog comment-stripping regex matches across newlines (CodeQL).
 - 2026-09-18 5ce69fa Lint runs lockfile-pinned prettier/tsc from node_modules; bun out of CI.
