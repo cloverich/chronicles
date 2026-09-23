@@ -69,4 +69,6 @@
     "skipLibCheck": true /* Skip type checking of declaration files. */,
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */,
   },
+  // Build output (build.sh copies src/electron into dist/) is not source.
+  "exclude": ["node_modules", "dist", "packaged"],
 }
