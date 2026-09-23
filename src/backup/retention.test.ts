@@ -27,8 +27,92 @@ interface Case {
   keep: string[];
 }
 
-// Keep this table identical to Engram's retention tests.
+// The shared test vectors from code/docs/backup-format.md; every app's
+// retention tests run these unchanged.
+const d = (day: string, time: string) => `${day}T${time}`;
+const sharedVectors: Case[] = [
+  { name: "empty", now: "2026-09-23T12:00:00Z", snapshots: [], keep: [] },
+  {
+    name: "one old snapshot",
+    now: "2026-09-23T12:00:00Z",
+    snapshots: ["2020-01-01T00:00:00Z"],
+    keep: ["2020-01-01T00:00:00Z"],
+  },
+  {
+    name: "thirty daily",
+    now: "2026-09-23T12:00:00Z",
+    snapshots: daily("2026-08-25", "2026-09-23"),
+    keep: [
+      "2026-08-31",
+      "2026-09-13",
+      "2026-09-19",
+      "2026-09-20",
+      "2026-09-21",
+      "2026-09-22",
+      "2026-09-23",
+    ].map((day) => d(day, "10:00:00Z")),
+  },
+  {
+    name: "quiet stretch",
+    now: "2026-09-23T12:00:00Z",
+    snapshots: [
+      "2025-11-02",
+      "2025-12-15",
+      "2026-01-10",
+      "2026-02-01",
+      "2026-02-03",
+      "2026-03-05",
+      "2026-03-06",
+    ].map((day) => d(day, "09:00:00Z")),
+    keep: [
+      "2026-01-10",
+      "2026-02-01",
+      "2026-02-03",
+      "2026-03-05",
+      "2026-03-06",
+    ].map((day) => d(day, "09:00:00Z")),
+  },
+  {
+    name: "everything today survives",
+    now: "2026-09-23T12:00:00Z",
+    snapshots: [
+      "2026-09-10T08:00:00Z",
+      "2026-09-22T23:00:00Z",
+      "2026-09-23T01:00:00Z",
+      "2026-09-23T05:00:00Z",
+      "2026-09-23T11:00:00Z",
+    ],
+    keep: [
+      "2026-09-10T08:00:00Z",
+      "2026-09-22T23:00:00Z",
+      "2026-09-23T01:00:00Z",
+      "2026-09-23T05:00:00Z",
+      "2026-09-23T11:00:00Z",
+    ],
+  },
+  {
+    name: "ISO weeks cross the year",
+    now: "2026-01-10T12:00:00Z",
+    policy: { days: 0, weeks: 2, months: 0 },
+    snapshots: ["2025-12-28", "2025-12-29", "2026-01-01"].map((day) =>
+      d(day, "12:00:00Z"),
+    ),
+    keep: ["2025-12-28", "2026-01-01"].map((day) => d(day, "12:00:00Z")),
+  },
+  {
+    name: "unsorted input",
+    now: "2026-09-23T12:00:00Z",
+    policy: { days: 1, weeks: 0, months: 0 },
+    snapshots: ["2026-09-01", "2026-09-03", "2026-09-02"].map((day) =>
+      d(day, "00:00:00Z"),
+    ),
+    keep: ["2026-09-03T00:00:00Z"],
+  },
+];
+
+// Additional Chronicles cases.
 const cases: Case[] = [
+  ...sharedVectors,
   {
     name: "no snapshots",
     snapshots: [],
@@ -165,8 +249,8 @@ describe("retain", () => {
     });
   }
 
-  test("reports every tier a snapshot satisfies", () => {
-    const snapshots = daily("2026-07-01", "2026-09-23").map((s) => new Date(s));
+  test("reports every tier a snapshot satisfies (shared: thirty daily)", () => {
+    const snapshots = daily("2026-08-25", "2026-09-23").map((s) => new Date(s));
     const kept = retain(
       snapshots,
       DEFAULT_RETENTION,
@@ -183,6 +267,7 @@ describe("retain", () => {
       "week",
     ] satisfies RetentionTier[]);
     assert.deepEqual(tiersOf("2026-09-20T10:00:00Z"), ["day", "week"]);
+    assert.deepEqual(tiersOf("2026-09-13T10:00:00Z"), ["week"]);
     assert.deepEqual(tiersOf("2026-08-31T10:00:00Z"), ["month"]);
   });
 
