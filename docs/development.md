@@ -35,6 +35,7 @@ test scripts: it rebuilds for system Node and breaks the app until the next
 ## Key Directories
 
 ```
+src/backup/          Snapshot backups, retention, restore (main process; see docs/features/backups.md)
 src/electron/        Main process (app lifecycle, settings, IPC wiring)
 src/node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import, migrations/)
 src/preload/         IPC bridge, client API types (src/preload/client/types.ts)

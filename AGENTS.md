@@ -45,6 +45,7 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [docs/search.md](docs/search.md): FTS implementation and query syntax. Read when modifying search.
 - [docs/indexer.md](docs/indexer.md): Background document indexing pipeline. Read when changing how documents are indexed.
 - [docs/bulk-operations.md](docs/bulk-operations.md): Batch import/export flows. Read when touching import or bulk edit logic.
+- [docs/features/backups.md](docs/features/backups.md): Snapshot backups, restore-at-startup, and the picker-only destination. Read when touching backups, the database lifecycle, or notesDir.
 - [docs/features/theming.md](docs/features/theming.md): Token architecture, theme file format, creating/managing custom themes. Read when touching colors or adding themed UI.
 - [docs/testing.md](docs/testing.md): Current test infrastructure, what works, what's missing, and where things are headed.
 - [docs/changelog-style.md](docs/changelog-style.md): Date-first changelog format, release grouping, and retroactive catch-up workflow.

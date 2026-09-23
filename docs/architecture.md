@@ -11,7 +11,7 @@ Chronicles is a local-first, markdown-based journaling app built with Electron +
 | State     | MobX                                    |
 | Bundler   | Vite (renderer), esbuild (main/preload) |
 | Styling   | Tailwind CSS v4, Radix UI               |
-| Database  | better-sqlite3 + Knex migrations        |
+| Database  | better-sqlite3 + Drizzle migrations     |
 | Markdown  | micromark, MDAST, unified/remark        |
 
 ## Process Model
@@ -28,6 +28,7 @@ Communication flows through `src/preload/`; shared types live in `src/preload/cl
 
 ```
 src/
+  backup/          Snapshot backups, retention, and restore (main process)
   electron/        Main process (app lifecycle, settings, IPC wiring)
   node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import, migrations/)
   preload/         IPC bridge + client API definitions
@@ -39,7 +40,9 @@ src/
 
 ## Storage
 
-SQLite is the source of truth for notes — `documents` (including a `content` column with the Markdown body) and `document_tags` are canonical; `document_links`, `image_links`, and `documents_fts` are derived from `content` on every write (see [docs/indexer.md](indexer.md)). Journals are DB-only rows, not directories; names are unique ignoring case (`Features` and `features` are the same journal — create/rename reject collisions, imports merge into the existing name, and `in:` search matches ignoring case). `notesDir` on disk holds only `_attachments/` and the settings/themes files (see `src/electron/settings.ts`). Markdown files reappear only at the file-format boundary: import, export, and backup (`src/node-client/importer*.ts`, `export.ts`, `backup.ts`).
+SQLite is the source of truth for notes — `documents` (including a `content` column with the Markdown body) and `document_tags` are canonical; `document_links`, `image_links`, and `documents_fts` are derived from `content` on every write (see [docs/indexer.md](indexer.md)). Journals are DB-only rows, not directories; names are unique ignoring case (`Features` and `features` are the same journal — create/rename reject collisions, imports merge into the existing name, and `in:` search matches ignoring case). `notesDir` on disk holds only `_attachments/` and the settings/themes files (see `src/electron/settings.ts`). Markdown files reappear only at the file-format boundary: import and export (`src/node-client/importer*.ts`, `export.ts`).
+
+Backups are verified SQLite snapshots plus a content-addressed attachment pool in a folder the user picks, run from the main process (`src/backup/`); see [docs/features/backups.md](features/backups.md).
 
 Database: Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/` (generate with `bunx drizzle-kit generate`, config at `drizzle.config.ts`), applied via `src/node-client/factory.ts`.
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 2026-09-23 6929af6 Added a Backups page that keeps verified daily snapshots of notes and attachments in a folder you choose, with tiered history and restore.
+- 2026-09-23 aef1632 Prevented choosing a notes folder inside iCloud Drive, Google Drive, Dropbox, or OneDrive.
 - 2026-09-21 148a80c Route Chronicles note links in tables and validate changelog entries.
 - 2026-09-21 af8484b Preserve markdown tables in lexical editor.
 - 2026-09-21 8a55376 Upgrade lexical to 0.48.
