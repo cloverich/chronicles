@@ -1,4 +1,5 @@
 import Conf from "conf";
+import { syncFolderContaining } from "./sync-folders";
 
 import {
   IPreferences,
@@ -16,6 +17,22 @@ export type { IPreferences };
  */
 export class PreferencesClient {
   constructor(private conf: Conf<IPreferences>) {}
+
+  /**
+   * The live notes directory must not live in a sync-service folder: those
+   * services lock, evict, and conflict-copy files modified after they are
+   * written. Only checked when the value changes, so an existing setting
+   * keeps working. Backups belong there instead (see the Backups page).
+   */
+  private assertNotesDir = (next: unknown) => {
+    if (typeof next !== "string" || next === this.conf.get("notesDir")) return;
+    const service = syncFolderContaining(next);
+    if (service) {
+      throw new Error(
+        `[NOTES_DIR_IN_SYNC_FOLDER] The notes folder cannot be inside ${service}. Choose a local folder, and point backups at ${service} instead.`,
+      );
+    }
+  };
 
   settingsPath = (): string => this.conf.path;
 
@@ -37,10 +54,12 @@ export class PreferencesClient {
   };
 
   replace = async (prefs: IPreferences): Promise<void> => {
+    this.assertNotesDir(prefs.notesDir);
     this.conf.store = prefs;
   };
 
   setMultiple = async (prefs: Partial<IPreferences>): Promise<void> => {
+    this.assertNotesDir(prefs.notesDir);
     this.conf.set(prefs as IPreferences);
     // Note: no document.dispatchEvent — not a browser environment
   };
@@ -49,6 +68,7 @@ export class PreferencesClient {
     key: T | string,
     value: any,
   ): Promise<void> => {
+    if (key === "notesDir") this.assertNotesDir(value);
     this.conf.set(key as string, value);
     // Note: no document.dispatchEvent — not a browser environment
   };

@@ -96,7 +96,11 @@ const PreferencesPane = observer((props: Props) => {
       await preferences.saveImmediate({ notesDir: result.value });
     } catch (e) {
       store.loading = false;
-      toast.error("Failed to set new directory");
+      toast.error(
+        e instanceof Error && e.message.includes("NOTES_DIR_IN_SYNC_FOLDER")
+          ? e.message.replace(/^.*\[NOTES_DIR_IN_SYNC_FOLDER\] /, "")
+          : "Failed to set new directory",
+      );
     } finally {
       store.loading = false;
     }

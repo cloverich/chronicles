@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "fs";
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { tmpdir } from "os";
+import { homedir, tmpdir } from "os";
 import path from "path";
 import { createClient } from "./factory";
 
@@ -70,4 +70,28 @@ test("replace overwrites the entire preferences object", async () => {
 test("settings file is written under notesDir by default", () => {
   const expectedPath = path.join(notesDir, "settings.json");
   assert.strictEqual(client.preferences.settingsPath(), expectedPath);
+});
+
+test("refuses a notesDir inside a sync-service folder", async () => {
+  const icloud = path.join(
+    homedir(),
+    "Library",
+    "Mobile Documents",
+    "com~apple~CloudDocs",
+    "chronicles-test-never-created",
+  );
+  const before = await client.preferences.get("notesDir");
+  await assert.rejects(
+    client.preferences.setMultiple({ notesDir: icloud }),
+    /NOTES_DIR_IN_SYNC_FOLDER/,
+  );
+  await assert.rejects(
+    client.preferences.set("notesDir", icloud),
+    /NOTES_DIR_IN_SYNC_FOLDER/,
+  );
+  assert.strictEqual(await client.preferences.get("notesDir"), before);
+
+  const local = path.join(notesDir, "elsewhere");
+  await client.preferences.setMultiple({ notesDir: local });
+  assert.strictEqual(await client.preferences.get("notesDir"), local);
 });

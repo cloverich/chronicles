@@ -131,14 +131,15 @@ export class Preferences implements IPreferences {
    * @param prefs - Partial preferences object to save
    */
   saveImmediate = async (prefs: Partial<IPreferences>): Promise<void> => {
+    // Save to disk immediately (bypassing debounce). First, so a rejected
+    // value (e.g. a notesDir inside a sync folder) never reaches the store.
+    await this.client.setMultiple(prefs);
+
     // Update MobX observables
     Object.assign(this, prefs);
 
     // Update last synced to prevent debounced reaction from re-saving
     Object.assign(this._lastSynced, prefs);
-
-    // Save to disk immediately (bypassing debounce)
-    await this.client.setMultiple(prefs);
   };
 
   refresh = async () => {

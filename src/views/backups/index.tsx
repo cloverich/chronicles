@@ -157,6 +157,14 @@ export default function Backups() {
             </p>
           )}
 
+          {status?.liveDataInSyncFolder && (
+            <p className="text-destructive mb-6 max-w-[600px] text-sm">
+              Your notes are stored inside {status.liveDataInSyncFolder}. Sync
+              services can lock, evict, or conflict-copy a live database; move
+              the notes folder somewhere local and keep only backups there.
+            </p>
+          )}
+
           <dl className="mb-6 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
             <Row label="Destination">
               {status?.destination ? (

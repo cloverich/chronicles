@@ -66,6 +66,7 @@ window.chronicles = {
       pendingRestore: null,
       changedSinceLastSnapshot: null,
       newest: null,
+      liveDataInSyncFolder: null,
     })),
     list: vi.fn(async () => []),
     pickDestination: vi.fn(),

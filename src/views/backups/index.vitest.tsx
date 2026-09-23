@@ -30,6 +30,7 @@ const status: BackupStatus = {
   pendingRestore: null,
   changedSinceLastSnapshot: true,
   newest: snapshot,
+  liveDataInSyncFolder: null,
 };
 
 function renderPage() {
@@ -48,6 +49,7 @@ const unset: BackupStatus = {
   pendingRestore: null,
   changedSinceLastSnapshot: null,
   newest: null,
+  liveDataInSyncFolder: null,
 };
 
 describe("Backups page", () => {

@@ -13,6 +13,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { isSameOrInside } from "../node-client/fs-guards";
+import { syncFolderContaining } from "../node-client/sync-folders";
 import {
   assertClosed,
   DatabaseQueries,
@@ -390,6 +391,9 @@ export function createBackups(host: BackupHost): Backups {
         pendingRestore: state.pendingRestore ?? null,
         changedSinceLastSnapshot: changed,
         newest,
+        liveDataInSyncFolder:
+          syncFolderContaining(path.dirname(host.databasePath)) ??
+          syncFolderContaining(host.attachmentsDir()),
       };
     },
 

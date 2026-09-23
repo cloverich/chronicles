@@ -49,6 +49,8 @@ export interface BackupStatus {
   /** Null when there is no snapshot to compare against. */
   changedSinceLastSnapshot: boolean | null;
   newest: SnapshotSummary | null;
+  /** Sync service holding the live database or attachments, if any. */
+  liveDataInSyncFolder: string | null;
 }
 
 export type RunResult =
