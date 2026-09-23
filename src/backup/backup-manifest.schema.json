@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pinecoder.dev/schemas/backup-manifest-1.json",
+  "title": "Backup snapshot manifest, format 1",
+  "description": "manifest.json inside <picked>/<app>/snapshots/<UTC stamp>/. Written last; a snapshot directory without a manifest that parses is invalid. See backup-format.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "app",
+    "appVersion",
+    "createdAt",
+    "trigger",
+    "fingerprint",
+    "database",
+    "attachments"
+  ],
+  "properties": {
+    "format": { "const": 1 },
+    "app": {
+      "description": "App directory name under the picked folder, e.g. engram or chronicles.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "appVersion": {
+      "description": "Free-form build identifier (version, commit, or date).",
+      "type": "string",
+      "minLength": 1
+    },
+    "createdAt": {
+      "description": "UTC, second precision, RFC 3339 with a Z suffix. The snapshot directory name is this value with ':' replaced by '-'.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "trigger": {
+      "enum": ["activity", "manual", "install", "pre-restore"]
+    },
+    "fingerprint": {
+      "description": "Opaque, app-defined summary of the live data at snapshot time. Only compared for equality by the same app.",
+      "type": "string"
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "bytes", "sha256", "integrity", "counts"],
+      "properties": {
+        "file": { "const": "db.sqlite3" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "integrity": {
+          "description": "Result of PRAGMA integrity_check on the snapshot. Only verified snapshots are published.",
+          "const": "ok"
+        },
+        "counts": {
+          "description": "App-defined row counts; keys are free-form.",
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "attachments": {
+      "description": "Every attachment at snapshot time. Each blob lives at attachments/<sha256[0:2]>/<sha256> beside snapshots/.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "sha256", "bytes"],
+        "properties": {
+          "name": {
+            "description": "Path relative to the app's attachments directory, '/'-separated. Readers must reject '..' segments.",
+            "type": "string",
+            "pattern": "^[^/\\\\]+(/[^/\\\\]+)*$"
+          },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "bytes": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "description": "Lowercase hex SHA-256.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
