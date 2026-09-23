@@ -1,4 +1,5 @@
 import { contextBridge } from "electron";
+import { backups } from "./backups";
 import { getClient, initClient } from "./client";
 import "./utils.electron";
 import {
@@ -24,6 +25,7 @@ initClient().catch((err) => {
 
 contextBridge.exposeInMainWorld("chronicles", {
   getClient,
+  backups,
   openDialogSelectDir,
   selectThemeFile,
   importThemeFile,
@@ -43,6 +45,7 @@ declare global {
   interface Window {
     chronicles: {
       getClient: typeof getClient;
+      backups: typeof backups;
       openDialogSelectDir: typeof openDialogSelectDir;
       selectThemeFile: typeof selectThemeFile;
       importThemeFile: typeof importThemeFile;

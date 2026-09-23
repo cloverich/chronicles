@@ -53,6 +53,10 @@ export default function (dbUrl: string) {
   } catch (err) {
     console.error("Error running migrations!", err);
     throw err;
+  } finally {
+    // The preload owns the app's connection; the main process must not hold
+    // one open, or a restore at the next startup would see it as in use.
+    db.close();
   }
 }
 

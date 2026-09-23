@@ -255,32 +255,6 @@ const PreferencesPane = observer((props: Props) => {
     }
   }
 
-  async function backupNotes() {
-    store.loading = true;
-    try {
-      const result = await window.chronicles.openDialogSelectDir();
-      if (!result?.value) {
-        store.loading = false;
-        return;
-      }
-
-      const destDir = `${result.value}/chronicles-backup-${timestampForDirName()}`;
-
-      toast.info("Backing up...this may take a few minutes");
-      const report = await client.backup.backup(destDir);
-
-      const databaseMb = (report.databaseBytes / (1024 * 1024)).toFixed(2);
-      toast.success(
-        `Backup completed: ${databaseMb} MB database, ${report.attachments.files} attachments, saved to ${report.destDir}`,
-      );
-    } catch (e) {
-      console.error("Error backing up notes", e);
-      toast.error("Failed to back up notes");
-    } finally {
-      store.loading = false;
-    }
-  }
-
   async function resetNotes() {
     if (
       !confirm(
@@ -796,11 +770,6 @@ const PreferencesPane = observer((props: Props) => {
                   attachments. Suitable for backing up with Git, or re-importing
                   later.
                 </p>
-                <p className="mb-2 max-w-[500px]">
-                  A backup is a snapshot of the database plus all attachments;
-                  restore by replacing the database file and{" "}
-                  <code>_attachments</code> directory while the app is closed.
-                </p>
                 <div className="mt-4 flex gap-2">
                   <Button
                     variant="ghost"
@@ -811,14 +780,27 @@ const PreferencesPane = observer((props: Props) => {
                   >
                     Export notes…
                   </Button>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="Backups"
+                  sub="Verified snapshots of notes and attachments, kept in a folder you choose"
+                />
+                <p className="mb-2 max-w-[500px]">
+                  Chronicles snapshots your notes once a day when they change,
+                  keeps a tiered history, and can restore any snapshot.
+                </p>
+                <div className="mt-4 flex">
                   <Button
                     variant="ghost"
-                    loading={store.loading}
-                    disabled={store.loading}
-                    onClick={backupNotes}
                     size="sm"
+                    onClick={() => {
+                      props.onClose();
+                      navigate("/backups");
+                    }}
                   >
-                    Back up…
+                    Open backups
                   </Button>
                 </div>
               </Section>

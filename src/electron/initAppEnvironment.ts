@@ -8,12 +8,14 @@ import { initUserFilesDir } from "./userFilesInit.js";
  *
  * @param {string} fallbackDir - Directory for user files/settings (typically Electron's app.getPath('userData'))
  * @param {string} [databaseUrl] - Optional database file path. If not provided, defaults to `${userDataDir}/chronicles.db`
+ * @param beforeDatabaseOpen - Runs before anything opens the database (e.g. a scheduled backup restore)
  * @returns {{ databaseUrl: string, notesDir: string }}
  */
-export function initAppEnvironment(
+export async function initAppEnvironment(
   settings: Settings,
   fallbackDir: string,
   databaseUrl?: string,
+  beforeDatabaseOpen?: (databaseUrl: string) => Promise<void>,
 ) {
   // 1. Initialize user files directories
   initUserFilesDir(settings, fallbackDir);
@@ -30,7 +32,10 @@ export function initAppEnvironment(
     settings.set("databaseUrl", dbUrl);
   }
 
-  // 4. Run migrations
+  // 4. Nothing has opened the database yet
+  await beforeDatabaseOpen?.(dbUrl);
+
+  // 5. Run migrations
   migrate(dbUrl);
 
   return { databaseUrl: dbUrl, notesDir };

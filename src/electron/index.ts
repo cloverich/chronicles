@@ -11,6 +11,12 @@ import contextMenu from "electron-context-menu";
 import fs from "fs";
 import path from "path";
 import url, { fileURLToPath } from "url";
+import {
+  applyPendingRestore,
+  createAppBackups,
+  registerBackupIpc,
+  startActivityBackups,
+} from "./backups.js";
 import { ensureDir } from "./ensureDir.js";
 import { initAppEnvironment } from "./initAppEnvironment.js";
 import settings from "./settings.js";
@@ -18,15 +24,27 @@ import settings from "./settings.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Consolidated user files and database setup
-const { databaseUrl: dbUrl, notesDir } = initAppEnvironment(
+// Used by createWindow, but needed in database routine because of the filepicker call
+let mainWindow: BrowserWindow | null = null;
+
+const userDataDir = process.env.CHRONICLES_USER_DATA || app.getPath("userData");
+const databasePath = path.join(userDataDir, "chronicles.db");
+const backups = createAppBackups({
+  userDataDir,
+  databasePath,
   settings,
-  process.env.CHRONICLES_USER_DATA || app.getPath("userData"),
+  getWindow: () => mainWindow,
+});
+
+// Consolidated user files and database setup. A restore scheduled from the
+// Backups page runs first, before migrations or the window open the database.
+await initAppEnvironment(settings, userDataDir, databasePath, () =>
+  applyPendingRestore(backups),
 );
 console.log("application settings at startup:", settings.store);
 
-// Used by createWindow, but needed in database routine because of the filepicker call
-let mainWindow: BrowserWindow | null = null;
+registerBackupIpc(backups);
+app.whenReady().then(() => startActivityBackups(backups));
 
 // Allow files in <img> and <video> tags to load using the "chronicles://" protocol
 // https://www.electronjs.org/docs/api/protocol

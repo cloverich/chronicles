@@ -21,6 +21,5 @@ export async function createClient({ store }: ClientFactoryParams) {
     importer: nodeClient.importer,
     bulkOperations: nodeClient.bulkOperations,
     export: nodeClient.export,
-    backup: nodeClient.backup,
   };
 }

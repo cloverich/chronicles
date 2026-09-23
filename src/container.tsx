@@ -10,6 +10,7 @@ import { useAppLoader } from "./hooks/useApplicationLoader";
 import { ApplicationContext } from "./hooks/useApplicationStore";
 import Titlebar from "./titlebar/macos";
 import { StyleWatcher } from "./views/StyleWatcher";
+import Backups from "./views/backups";
 import Changelog from "./views/changelog";
 import DocumentCreator from "./views/create";
 import Documents from "./views/documents";
@@ -72,6 +73,7 @@ export default observer(function Container() {
           onClose={() => applicationStore.togglePreferences(false)}
         />
         <Routes>
+          <Route path="backups" element={<Backups />} />
           <Route path="changelog" element={<Changelog />} />
           <Route path="documents" element={<SearchProvider />}>
             <Route index element={<Documents />} />
