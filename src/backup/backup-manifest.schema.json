@@ -59,7 +59,7 @@
       }
     },
     "attachments": {
-      "description": "Every attachment at snapshot time. Each blob lives at attachments/<sha256[0:2]>/<sha256> beside snapshots/.",
+      "description": "Every attachment at snapshot time. Each blob lives at attachments/<sha256[0:2]>/<sha256><ext> beside snapshots/, where <ext> is the lowercased extension of name if it matches ^\\.[a-z0-9]{1,10}$, else empty.",
       "type": "array",
       "items": {
         "type": "object",

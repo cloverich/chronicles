@@ -42,6 +42,8 @@ import {
   stampFor,
 } from "./manifest";
 import {
+  adoptBareBlobs,
+  blobFileName,
   collectGarbage,
   hashFile,
   ingestAttachments,
@@ -208,10 +210,10 @@ export function createBackups(host: BackupHost): Backups {
       }
     }
 
-    const referenced = new Set(
-      survivors.flatMap((l) => l.manifest.attachments.map((a) => a.sha256)),
-    );
-    await collectGarbage(path.join(appDir, POOL_DIR), referenced);
+    const poolDir = path.join(appDir, POOL_DIR);
+    const referenced = survivors.flatMap((l) => l.manifest.attachments);
+    await adoptBareBlobs(poolDir, referenced);
+    await collectGarbage(poolDir, new Set(referenced.map(blobFileName)));
   }
 
   /** Writes, verifies, and publishes one snapshot. Caller holds the lock. */

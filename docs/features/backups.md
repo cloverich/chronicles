@@ -38,6 +38,14 @@ and manifest are defined there.
 - **Fingerprint** is `max(updatedAt)` and row counts over documents and
   journals, plus the tag count. Activity runs compare it with the newest
   manifest, whose fingerprint is computed from the snapshot itself.
+- **Pool file names** are `<sha256><ext>` (see `blobExtension` in
+  `src/backup/pool.ts`), so Finder and Quick Look can preview the pool. The
+  first build wrote bare `<sha256>` blobs. Before GC, every prune renames a
+  bare blob that a surviving manifest still references to its derived name;
+  if another extension already took it, the blob is copied. So snapshots from
+  that build keep their attachments even when the file is gone from
+  `notesDir`. GC then deletes bare blobs nothing references, and restore also
+  falls back to a bare name.
 - **Sync-folder guard.** `notesDir` cannot be changed to a path under
   `~/Library/Mobile Documents` or `~/Library/CloudStorage/*` (symlinks
   resolved). Existing settings keep working; the Backups page warns instead.

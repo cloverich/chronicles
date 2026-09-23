@@ -9,7 +9,12 @@ import { fileURLToPath } from "url";
 import { backupQueries } from "../node-client/backup-queries";
 import { createClient, NodeClient } from "../node-client/factory";
 import { BackupHost, Backups, createBackups } from "./index";
-import { blobPath } from "./pool";
+import {
+  bareBlobPath,
+  blobExtension,
+  blobPath,
+  materializeAttachments,
+} from "./pool";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -238,7 +243,7 @@ describe("backups", () => {
       assert.equal(listPool(f.appDir).length, 2);
       for (const a of manifest.attachments) {
         assert.ok(
-          fs.existsSync(blobPath(path.join(f.appDir, "attachments"), a.sha256)),
+          fs.existsSync(blobPath(path.join(f.appDir, "attachments"), a)),
         );
       }
 
@@ -252,7 +257,7 @@ describe("backups", () => {
       await f.backups.run("manual");
       const blob = blobPath(
         path.join(f.appDir, "attachments"),
-        readManifest(f, "2026-09-23T12-00-00Z").attachments[1].sha256,
+        readManifest(f, "2026-09-23T12-00-00Z").attachments[1],
       );
       const before = fs.statSync(blob).mtimeMs;
       fs.utimesSync(blob, new Date(0), new Date(0));
@@ -344,9 +349,10 @@ describe("backups", () => {
       // Day 1 has an attachment that is deleted before day 2.
       fs.writeFileSync(path.join(f.attachmentsDir, "gone.bin"), "short-lived");
       await f.backups.run("manual");
-      const goneSha = readManifest(f, "2026-09-23T12-00-00Z").attachments.find(
-        (a: any) => a.name === "gone.bin",
-      ).sha256;
+      const goneSha =
+        readManifest(f, "2026-09-23T12-00-00Z").attachments.find(
+          (a: any) => a.name === "gone.bin",
+        ).sha256 + ".bin";
       fs.rmSync(path.join(f.attachmentsDir, "gone.bin"));
 
       for (let day = 1; day <= 40; day++) {
@@ -461,7 +467,7 @@ describe("backups", () => {
       const pixel = manifest.attachments.find(
         (a: any) => a.name === "pixel.png",
       );
-      fs.rmSync(blobPath(path.join(f.appDir, "attachments"), pixel.sha256));
+      fs.rmSync(blobPath(path.join(f.appDir, "attachments"), pixel));
       const result = await f.backups.restore(snapshotId);
       assert.deepEqual(result.attachments.missing, ["pixel.png"]);
     });
@@ -510,6 +516,134 @@ describe("backups", () => {
       const status = await f.backups.status();
       assert.equal(status.pendingRestore, null);
       assert.match(status.lastRestore?.error ?? "", /BACKUP_DB_OPEN/);
+    });
+  });
+
+  describe("pool file names", () => {
+    const pool = () => path.join(f.appDir, "attachments");
+
+    /** Rewrites the pool the way builds before the extension change left it. */
+    function toBare(): string[] {
+      const bare: string[] = [];
+      for (const prefix of fs.readdirSync(pool())) {
+        for (const name of fs.readdirSync(path.join(pool(), prefix))) {
+          const sha = name.slice(0, 64);
+          if (name === sha) continue;
+          const to = bareBlobPath(pool(), sha);
+          fs.renameSync(path.join(pool(), prefix, name), to);
+          fs.utimesSync(to, new Date(0), new Date(0));
+          bare.push(sha);
+        }
+      }
+      return bare;
+    }
+
+    beforeEach(async () => {
+      await f.backups.pickDestination();
+    });
+
+    test("derives the extension from the attachment name", () => {
+      const cases: [string, string][] = [
+        ["photo.png", ".png"],
+        ["IMG_0001.JPG", ".jpg"],
+        ["nested/dir/clip.WebM", ".webm"],
+        ["archive.tar.gz", ".gz"],
+        ["dir.v2/noext", ""],
+        ["noext", ""],
+        [".hidden", ""],
+        ["trailing.", ""],
+        ["spaced.jp g", ""],
+        ["unicode.pñg", ""],
+        ["dash.tar-gz", ""],
+        ["ten.abcdefghij", ".abcdefghij"],
+        ["eleven.abcdefghijk", ""],
+      ];
+      for (const [name, ext] of cases) {
+        assert.equal(blobExtension(name), ext, name);
+      }
+    });
+
+    test("blobs keep the extension; identical bytes under two extensions are stored twice", async () => {
+      fs.writeFileSync(path.join(f.attachmentsDir, "pixel-copy.gif"), PIXEL);
+      await f.backups.run("manual");
+      const files = listPool(f.appDir);
+      const pixelSha = readManifest(f, "2026-09-23T12-00-00Z").attachments.find(
+        (a: any) => a.name === "pixel.png",
+      ).sha256;
+      assert.ok(files.includes(`${pixelSha}.png`));
+      assert.ok(files.includes(`${pixelSha}.gif`));
+      assert.ok(!files.includes(pixelSha));
+      assert.equal(files.length, 3); // .png, .gif, note .txt
+    });
+
+    test("renames bare blobs from earlier builds instead of rewriting them", async () => {
+      await f.backups.run("manual");
+      const bare = toBare();
+      assert.equal(bare.length, 2);
+
+      advance(f, HOUR);
+      await f.backups.run("manual");
+      for (const a of readManifest(f, "2026-09-23T13-00-00Z").attachments) {
+        const target = blobPath(pool(), a);
+        assert.equal(fs.statSync(target).mtimeMs, 0, `${a.name} renamed`);
+        assert.ok(!fs.existsSync(bareBlobPath(pool(), a.sha256)));
+      }
+    });
+
+    test("GC keeps bare blobs surviving snapshots need and deletes the rest", async () => {
+      fs.writeFileSync(path.join(f.attachmentsDir, "old.bin"), "only in 12:00");
+      await f.backups.run("manual");
+      const oldSha = readManifest(f, "2026-09-23T12-00-00Z").attachments.find(
+        (a: any) => a.name === "old.bin",
+      ).sha256;
+      toBare();
+      fs.rmSync(path.join(f.attachmentsDir, "old.bin"));
+      const stray = "ab".padEnd(64, "0");
+      fs.mkdirSync(path.join(pool(), "ab"), { recursive: true });
+      fs.writeFileSync(bareBlobPath(pool(), stray), "unreferenced");
+
+      advance(f, HOUR);
+      await f.backups.run("manual");
+
+      const files = listPool(f.appDir);
+      assert.ok(!files.includes(stray), "unreferenced bare blob deleted");
+      assert.ok(
+        files.includes(`${oldSha}.bin`),
+        "bare blob of a surviving snapshot adopted under its extension",
+      );
+      assert.ok(files.every((n) => /^[0-9a-f]{64}\.[a-z0-9]+$/.test(n)));
+    });
+
+    test("restore falls back to a bare blob", async () => {
+      await f.backups.run("manual");
+      const manifest = readManifest(f, "2026-09-23T12-00-00Z");
+      toBare();
+      const out = path.join(f.root, "restored");
+      const result = await materializeAttachments(
+        manifest.attachments,
+        pool(),
+        out,
+      );
+      assert.deepEqual(result, { written: 3, existing: 0, missing: [] });
+      assert.ok(fs.readFileSync(path.join(out, "pixel.png")).equals(PIXEL));
+      assert.equal(
+        fs.readFileSync(path.join(out, "nested", "note.txt"), "utf8"),
+        "hi",
+      );
+    });
+
+    test("a full restore works from a pool left by an earlier build", async () => {
+      await f.backups.run("manual");
+      toBare();
+      fs.rmSync(path.join(f.attachmentsDir, "pixel.png"));
+      closeClient(f);
+      advance(f, HOUR);
+      const result = await f.backups.restore("2026-09-23T12-00-00Z");
+      assert.deepEqual(result.attachments.missing, []);
+      assert.equal(result.attachments.written, 1);
+      assert.ok(
+        fs.readFileSync(path.join(f.attachmentsDir, "pixel.png")).equals(PIXEL),
+      );
     });
   });
 
