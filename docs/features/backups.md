@@ -3,7 +3,7 @@
 Chronicles implements the shared backup format in `code/docs/backup-format.md`
 (RFC: Engram note `03gx06dl2o6wrvohwa5z06kr9`, "Unified backup design"). This
 page records the Chronicles-specific decisions; the format, retention policy,
-and manifest are defined there.
+and manifest are defined there. Manual checks: [docs/qa/backups.md](../qa/backups.md).
 
 ## Where it lives
 
