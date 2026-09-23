@@ -35,6 +35,20 @@ export function formatAge(iso: string, now: Date): string {
   return `${Math.round(hours / 24)}d ago`;
 }
 
+/** Local calendar date, YYYY-MM-DD. */
+export function formatDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function formatTimestamp(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: "full",
+    timeStyle: "long",
+  });
+}
+
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     dateStyle: "medium",
@@ -278,8 +292,7 @@ export default function Backups() {
               <table className="w-full border-collapse text-left font-mono text-xs">
                 <thead className="text-muted-foreground">
                   <tr>
-                    <th className="py-1 pr-4 font-normal">Time</th>
-                    <th className="py-1 pr-4 font-normal">Age</th>
+                    <th className="py-1 pr-4 font-normal">Date</th>
                     <th className="py-1 pr-4 font-normal">Tier</th>
                     <th className="py-1 pr-4 font-normal">Size</th>
                     <th className="py-1 pr-4 font-normal">Counts</th>
@@ -293,13 +306,24 @@ export default function Backups() {
                 <tbody>
                   {snapshots.map((s) => (
                     <tr key={s.id} className="border-border border-t">
-                      <td className="py-1 pr-4 whitespace-nowrap" title={s.id}>
-                        {formatTime(s.createdAt)}
+                      <td
+                        className="py-1 pr-4 whitespace-nowrap"
+                        title={formatTimestamp(s.createdAt)}
+                      >
+                        {formatDate(s.createdAt)}
                       </td>
-                      <td className="py-1 pr-4 whitespace-nowrap">
-                        {formatAge(s.createdAt, now)}
+                      <td className="py-1 pr-4">
+                        {s.trigger === "pre-restore" ? (
+                          <span
+                            className="text-muted-foreground italic"
+                            title="State before the last restore. Kept outside the retention tiers until the next restore."
+                          >
+                            before restore
+                          </span>
+                        ) : (
+                          formatTiers(s.tiers)
+                        )}
                       </td>
-                      <td className="py-1 pr-4">{formatTiers(s.tiers)}</td>
                       <td
                         className="py-1 pr-4 whitespace-nowrap"
                         title={`database ${formatBytes(s.databaseBytes)}, ${s.attachmentCount} attachments ${formatBytes(s.attachmentBytes)}`}

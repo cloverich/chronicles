@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
-import Backups, { formatAge, formatBytes } from ".";
+import Backups, { formatAge, formatBytes, formatDate } from ".";
 import type { BackupStatus, SnapshotSummary } from "../../backup/types";
 
 const snapshot: SnapshotSummary = {
@@ -16,6 +16,17 @@ const snapshot: SnapshotSummary = {
   attachmentCount: 3,
   attachmentBytes: 512 * 1024,
   tiers: ["newest", "day"],
+};
+
+const preRestore: SnapshotSummary = {
+  ...snapshot,
+  id: "2026-09-23T09-00-00Z",
+  createdAt: "2026-09-23T09:00:00Z",
+  trigger: "pre-restore",
+  counts: { documents: 0, journals: 1, tags: 0 },
+  databaseBytes: 64 * 1024,
+  attachmentBytes: 0,
+  tiers: [],
 };
 
 const status: BackupStatus = {
@@ -62,7 +73,10 @@ describe("Backups page", () => {
 
   it("shows the destination, history, and snapshot list", async () => {
     vi.mocked(window.chronicles.backups.status).mockResolvedValue(status);
-    vi.mocked(window.chronicles.backups.list).mockResolvedValue([snapshot]);
+    vi.mocked(window.chronicles.backups.list).mockResolvedValue([
+      preRestore,
+      snapshot,
+    ]);
 
     renderPage();
 
@@ -70,6 +84,14 @@ describe("Backups page", () => {
     expect(screen.getByText(/BACKUP_BUSY/)).toBeInTheDocument();
     expect(screen.getByText("Yes")).toBeInTheDocument();
     expect(screen.getByText("newest, day")).toBeInTheDocument();
+    expect(screen.getByText("before restore")).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Date" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Age" })).toBeNull();
+    const date = screen.getByText(formatDate(snapshot.createdAt));
+    expect(date).toHaveAttribute("title");
+    expect(date.getAttribute("title")).toMatch(/2026/);
     expect(screen.getByText("2.5 MB")).toBeInTheDocument();
     expect(
       screen.getByText("12 documents, 2 journals, 4 tags, 3 attachments"),
@@ -117,5 +139,7 @@ describe("formatting", () => {
     expect(formatAge("2026-09-23T11:30:00Z", now)).toBe("30m ago");
     expect(formatAge("2026-09-22T12:00:00Z", now)).toBe("24h ago");
     expect(formatAge("2026-09-20T12:00:00Z", now)).toBe("3d ago");
+    const local = new Date(2026, 8, 22, 23, 30);
+    expect(formatDate(local.toISOString())).toBe("2026-09-22");
   });
 });
