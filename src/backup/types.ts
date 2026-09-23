@@ -20,7 +20,11 @@ export interface SnapshotSummary {
   databaseBytes: number;
   attachmentCount: number;
   attachmentBytes: number;
-  /** Retention tiers this snapshot satisfies right now. */
+  /**
+   * Retention tiers this snapshot satisfies right now. Always empty for
+   * pre-restore snapshots, which sit outside the tiers (the most recent one
+   * is kept).
+   */
   tiers: RetentionTier[];
 }
 
@@ -46,8 +50,9 @@ export interface BackupStatus {
   lastFailure: BackupOutcome | null;
   lastRestore: RestoreOutcome | null;
   pendingRestore: string | null;
-  /** Null when there is no snapshot to compare against. */
+  /** Against the newest regular snapshot; null when there is none. */
   changedSinceLastSnapshot: boolean | null;
+  /** The newest regular (not pre-restore) snapshot. */
   newest: SnapshotSummary | null;
   /** Sync service holding the live database or attachments, if any. */
   liveDataInSyncFolder: string | null;

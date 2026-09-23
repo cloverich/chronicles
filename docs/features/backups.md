@@ -38,6 +38,13 @@ and manifest are defined there.
 - **Fingerprint** is `max(updatedAt)` and row counts over documents and
   journals, plus the tag count. Activity runs compare it with the newest
   manifest, whose fingerprint is computed from the snapshot itself.
+- **Pre-restore snapshots sit outside retention.** `retain` and the
+  activity check see regular snapshots only (filtered before `retain`, which
+  stays pure); the most recent pre-restore snapshot is kept beside the tiered
+  set. Otherwise a same-day restore made the pre-restore snapshot (often an
+  empty, reset database) the day's newest, which pruned the restore source the
+  next day and suppressed activity snapshots for 24 hours. The Backups page
+  labels it "before restore" instead of a tier.
 - **Pool file names** are `<sha256><ext>` (see `blobExtension` in
   `src/backup/pool.ts`), so Finder and Quick Look can preview the pool. The
   first build wrote bare `<sha256>` blobs. Before GC, every prune renames a

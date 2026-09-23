@@ -50,7 +50,12 @@ import {
   materializeAttachments,
   tempName,
 } from "./pool";
-import { DEFAULT_RETENTION, retain, RetentionPolicy } from "./retention";
+import {
+  DEFAULT_RETENTION,
+  retain,
+  RetentionPolicy,
+  RetentionTier,
+} from "./retention";
 import { readState, updateState } from "./state";
 import type {
   BackupStatus,
@@ -150,12 +155,39 @@ export function createBackups(host: BackupHost): Backups {
     return out.sort((a, b) => (a.id < b.id ? 1 : -1));
   }
 
-  function summarize(located: Located[]): SnapshotSummary[] {
-    const kept = retain(
-      located.map((l) => parseStamp(l.id)!),
+  const isRegular = (l: Located) => l.manifest.trigger !== "pre-restore";
+
+  /**
+   * What retention keeps, by snapshot id. Tiers apply to regular snapshots
+   * only; `retain` stays pure, so pre-restore snapshots are filtered out
+   * first. The most recent pre-restore snapshot is kept beside the tiers and
+   * never counts as newest, so a same-day restore cannot push out its source.
+   */
+  function keepSet(located: Located[]): Map<string, RetentionTier[]> {
+    const regular = located.filter(isRegular);
+    const tiers = retain(
+      regular.map((l) => parseStamp(l.id)!),
       policy,
       now(),
     );
+    const kept = new Map<string, RetentionTier[]>();
+    for (const l of regular) {
+      const t = tiers.get(parseStamp(l.id)!.getTime());
+      if (t) kept.set(l.id, t);
+    }
+    // `located` is newest first.
+    const preRestore = located.find((l) => !isRegular(l));
+    if (preRestore) kept.set(preRestore.id, []);
+    return kept;
+  }
+
+  /** The newest snapshot the activity check and status compare against. */
+  function newestRegular(located: Located[]): Located | undefined {
+    return located.find(isRegular);
+  }
+
+  function summarize(located: Located[]): SnapshotSummary[] {
+    const kept = keepSet(located);
     return located.map(({ id, manifest: m }) => ({
       id,
       createdAt: m.createdAt,
@@ -166,7 +198,7 @@ export function createBackups(host: BackupHost): Backups {
       databaseBytes: m.database.bytes,
       attachmentCount: m.attachments.length,
       attachmentBytes: m.attachments.reduce((n, a) => n + a.bytes, 0),
-      tiers: kept.get(parseStamp(id)!.getTime()) ?? [],
+      tiers: kept.get(id) ?? [],
     }));
   }
 
@@ -196,14 +228,10 @@ export function createBackups(host: BackupHost): Backups {
       }
     }
 
-    const kept = retain(
-      valid.map((l) => parseStamp(l.id)!),
-      policy,
-      now(),
-    );
+    const kept = keepSet(valid);
     const survivors: Located[] = [];
     for (const l of valid) {
-      if (kept.has(parseStamp(l.id)!.getTime()) || protect.has(l.id)) {
+      if (kept.has(l.id) || protect.has(l.id)) {
         survivors.push(l);
       } else {
         await fs.promises.rm(l.dir, { recursive: true, force: true });
@@ -280,8 +308,7 @@ export function createBackups(host: BackupHost): Backups {
     }
 
     await prune(appDir, new Set([...protect, id]));
-    const published = (await readSnapshots(appDir)).filter((l) => l.id === id);
-    return summarize(published)[0];
+    return summarize(await readSnapshots(appDir)).find((s) => s.id === id)!;
   }
 
   async function record(
@@ -379,10 +406,11 @@ export function createBackups(host: BackupHost): Backups {
       if (handle) {
         const appDir = path.join(resolveHandle(handle), APP_DIR);
         const located = await readSnapshots(appDir).catch(() => []);
-        if (located.length > 0) {
-          newest = summarize(located)[0];
+        const latest = newestRegular(located);
+        if (latest) {
+          newest = summarize(located).find((s) => s.id === latest.id)!;
           const fp = liveFingerprint();
-          changed = fp === null ? null : fp !== located[0].manifest.fingerprint;
+          changed = fp === null ? null : fp !== latest.manifest.fingerprint;
         }
       }
       return {
@@ -429,7 +457,9 @@ export function createBackups(host: BackupHost): Backups {
           const handle = await destination();
           if (!handle) return { status: "skipped", reason: "no-destination" };
           const appDir = path.join(resolveHandle(handle), APP_DIR);
-          const newest = (await readSnapshots(appDir).catch(() => []))[0];
+          const newest = newestRegular(
+            await readSnapshots(appDir).catch(() => []),
+          );
           if (newest) {
             const age = now().getTime() - parseStamp(newest.id)!.getTime();
             if (age <= ACTIVITY_INTERVAL_MS) {

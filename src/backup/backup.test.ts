@@ -647,6 +647,78 @@ describe("backups", () => {
     });
   });
 
+  describe("pre-restore snapshots", () => {
+    const ids = (f: Fixture) =>
+      fs
+        .readdirSync(path.join(f.appDir, "snapshots"))
+        .filter((n) => !n.startsWith("."))
+        .sort();
+    const triggerOf = (f: Fixture, id: string) => readManifest(f, id).trigger;
+
+    // Regression: a same-day restore made the pre-restore snapshot (the reset,
+    // empty database) the newest. The next day it pruned the restore source
+    // and suppressed activity snapshots.
+    test("backup, reset, restore at startup, then a run the next day", async () => {
+      await f.backups.pickDestination();
+      const source = await f.backups.run("manual");
+      assert.equal(source.status, "created");
+      const sourceId = source.status === "created" ? source.snapshot.id : "";
+
+      advance(f, HOUR);
+      await f.client!.documents.deleteAll();
+      await f.backups.scheduleRestore(sourceId);
+      closeClient(f);
+
+      const startup = createBackups(f.host);
+      const restored = await startup.applyPendingRestore();
+      const preRestoreId = restored!.preRestoreSnapshot!;
+      assert.equal(triggerOf(f, preRestoreId), "pre-restore");
+      assert.deepEqual(titles(f.dbPath), ["First"]);
+
+      const status = await startup.status();
+      assert.equal(status.newest?.id, sourceId, "newest regular is the source");
+      assert.equal(status.changedSinceLastSnapshot, false);
+      const listed = await startup.list();
+      assert.deepEqual(
+        listed.find((s) => s.id === preRestoreId)?.tiers,
+        [],
+        "pre-restore takes no tier",
+      );
+
+      // Next day: the activity check compares against the source, not the
+      // empty pre-restore snapshot, so nothing redundant is taken.
+      f.clock.now = new Date("2026-09-24T14:00:00Z");
+      assert.deepEqual(await startup.run("activity"), {
+        status: "skipped",
+        reason: "unchanged",
+      });
+
+      // A run that prunes keeps the source and the one pre-restore snapshot.
+      const next = await startup.run("manual");
+      const nextId = next.status === "created" ? next.snapshot.id : "";
+      assert.deepEqual(ids(f), [sourceId, preRestoreId, nextId].sort());
+    });
+
+    test("only the most recent pre-restore snapshot is kept", async () => {
+      await f.backups.pickDestination();
+      const source = await f.backups.run("manual");
+      const sourceId = source.status === "created" ? source.snapshot.id : "";
+      closeClient(f);
+
+      advance(f, HOUR);
+      const first = await f.backups.restore(sourceId);
+      advance(f, HOUR);
+      const second = await f.backups.restore(sourceId);
+
+      const preRestores = ids(f).filter(
+        (id) => triggerOf(f, id) === "pre-restore",
+      );
+      assert.deepEqual(preRestores, [second.preRestoreSnapshot]);
+      assert.ok(!ids(f).includes(first.preRestoreSnapshot!));
+      assert.ok(ids(f).includes(sourceId));
+    });
+  });
+
   describe("manifest conformance", () => {
     const vendored = path.join(here, "backup-manifest.schema.json");
     const shared = path.resolve(
