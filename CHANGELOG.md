@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.13.0 — 2026-09-24
+
 - 2026-09-23 acdcd3c Showed backup dates as a single date column and labelled the snapshot saved before a restore.
 - 2026-09-23 e11f22e Fixed restoring a backup on the day it was taken, which could later prune the restored snapshot and pause daily backups.
 - 2026-09-23 aef1632 Prevented choosing a notes folder inside iCloud Drive, Google Drive, Dropbox, or OneDrive.
