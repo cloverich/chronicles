@@ -1,57 +1,62 @@
 ---
 name: release
-description: Creates a tagged GitHub draft release with AI-generated summary, signed DMG artifact, and auto-generated changelog. Use when the user wants to cut a new release.
+description: Cuts the changelog, tags, builds a signed DMG, and creates a GitHub release with concise AI-generated notes. Use when the user wants to cut a new release.
 ---
 
 # Release Workflow
 
-Produces a signed DMG, tags the repo, generates release notes, and opens a GitHub draft release for human review before publishing.
+`CHANGELOG.md` is the source for release notes (see `docs/changelog-style.md`). The changelog heading is cut and committed before tagging: the pre-commit hook and `yarn build` both refuse a tagged HEAD without a matching `## X.Y.Z — date` heading.
 
 ## Prerequisites
 
-- Clean git working tree on `master`, up-to-date with `origin`
-- `gh` CLI authenticated
-- Signing: automatic — `osxSign: true` is already set in `package.js`
-- Notarization: not yet enabled. To enable: add `osxNotarize: { tool: 'notarytool', keychainProfile: 'chronicles' }` to `package.js` and run `xcrun notarytool store-credentials "chronicles"` once. The build handles it automatically after that. See issue #442 for context.
+- Clean `master`, up-to-date with `origin`; `gh` authenticated
+- Signing is automatic (`osxSign: true` in `package.js`). Notarization is not enabled yet (issue #442).
 
 ## Steps
 
 ### 1. Preflight
 
-Run `scripts/preflight.sh`. Read its output — it validates git state, lists commits since the last tag, and suggests the next version.
+Run `scripts/preflight.sh`. It checks git state and lint, then prints the suggested version, merged PRs and non-docs commits since the last tag, the `## Unreleased` entries, and commits not yet in the changelog.
 
-### 2. Confirm version
+### 2. Confirm version and release type
 
-Show the user the suggested version and commit list. Ask for confirmation or override.
+Minor (`v0.x.0`) for feature work, patch only for a hotfix. Ask whether it is a pre-release and whether to publish or leave a draft (default: draft).
 
-- Default: bump minor (`v0.x.0`) for any feature work
-- Patch (`v0.x.y`) only if user says it's a hotfix
+### 3. Curate and cut the changelog
 
-### 3. Generate release summary
+- If uncurated commits are user-facing, run `yarn changelog`, rewrite the inserted lines per `docs/changelog-style.md`, and delete chores/docs.
+- Run `yarn changelog --release X.Y.Z`, then commit `docs: cut X.Y.Z changelog` and push.
 
-Analyze the commits from preflight output. Produce:
-- A short release theme (2–4 words, e.g. "Search & Layout")
-- 2–3 concise bullet points covering notable user-facing changes
+### 4. Write release notes
 
-Write the summary to `/tmp/chronicles-release-summary.md`.
+Write notes to a scratch file from the released changelog section, plus the PR/commit list for links. Keep them short:
 
-**Note:** This step is a good candidate for delegation to a smaller model (e.g. haiku) to preserve context. See issue #442.
+```md
+_These release notes are AI generated._
 
-### 4. Create the release
+- **Theme area**: one-line summary (2–4 bullets total)
 
-Run:
+## What's Changed
+
+**Features**
+* feat: one complete feature per line (#123, abc1234)
+
+**Fixes**
+* fix: one complete fix per line (#124)
+
+**Full Changelog**: https://github.com/cloverich/chronicles/compare/vPREV...vX.Y.Z
 ```
-scripts/create-release.sh <version> "<theme>" /tmp/chronicles-release-summary.md
+
+Group related PRs/commits into one line per feature or fix. Omit docs-only commits and superseded spikes. Pick a 2–4 word release theme for the title.
+
+### 5. Create the release
+
+```
+scripts/create-release.sh <version> "<theme>" <notes-file> [--prerelease] [--publish]
 ```
 
-This will:
-- Create and push the git tag
-- Build and sign the app (`yarn build` — verbose output suppressed, shown on failure)
-- Package a DMG via `hdiutil`
-- Create a draft GitHub release with the AI summary prepended to the auto-generated changelog
-- Attach the DMG
-- Open the draft in the browser
+It verifies the changelog heading and a clean, pushed HEAD, builds, verifies the signature, packages a DMG (app plus an Applications shortcut), then tags, pushes the tag, and creates the release with the DMG attached. Tagging happens last so a failed build leaves no stray tag.
 
-### 5. Done
+### 6. Done
 
-Tell the user the draft is open in their browser. They edit the narrative if needed and publish when ready.
+Give the user the release URL.

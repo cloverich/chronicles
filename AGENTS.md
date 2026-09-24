@@ -48,11 +48,11 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 - [docs/features/backups.md](docs/features/backups.md): Snapshot backups, restore-at-startup, and the picker-only destination. Read when touching backups, the database lifecycle, or notesDir.
 - [docs/features/theming.md](docs/features/theming.md): Token architecture, theme file format, creating/managing custom themes. Read when touching colors or adding themed UI.
 - [docs/testing.md](docs/testing.md): Current test infrastructure, what works, what's missing, and where things are headed.
-- [docs/changelog-style.md](docs/changelog-style.md): Date-first changelog format, release grouping, and retroactive catch-up workflow.
+- [docs/changelog-style.md](docs/changelog-style.md): Date-first changelog format, catch-up workflow, and cutting a release heading.
 
 ## Skills
 
 - [.claude/skills/local-install/SKILL.md](.claude/skills/local-install/SKILL.md): Automates building and installing the app locally on macOS.
-- [.claude/skills/release/SKILL.md](.claude/skills/release/SKILL.md): Creates a tagged GitHub draft release with signed DMG and AI-generated notes.
+- [.claude/skills/release/SKILL.md](.claude/skills/release/SKILL.md): Cuts the changelog, tags, and creates a GitHub release with a signed DMG and AI-generated notes.
 
 Skills live only in `.claude/skills/<name>/`. Put deterministic steps in `scripts/` and hide verbose output unless a step fails.

@@ -49,8 +49,20 @@ if [ "$LAST_TAG" != "none" ]; then
   NEXT_MINOR=$((MINOR + 1))
   echo "Suggested next version: v${MAJOR}.${NEXT_MINOR}.0  (or v${MAJOR}.${MINOR}.x for a hotfix)"
   echo ""
-  echo "Commits since $LAST_TAG:"
-  git log "${LAST_TAG}..HEAD" --oneline --no-merges
+  echo "Merged PRs since $LAST_TAG:"
+  gh pr list --state merged --search "merged:>=$(git log -1 --format=%as "$LAST_TAG")" \
+    -L 100 --json number,title -q '.[] | "#\(.number) \(.title)"'
+  echo ""
+  echo "Commits since $LAST_TAG (docs excluded):"
+  git log "${LAST_TAG}..HEAD" --oneline --no-merges | grep -v ' docs' || true
 else
   echo "No previous tags found. Please specify version manually."
 fi
+
+# Changelog state
+echo ""
+echo "CHANGELOG.md ## Unreleased:"
+awk '/^## Unreleased$/{on=1; next} /^## /{on=0} on && /^- /' CHANGELOG.md
+echo ""
+echo "Uncurated commits since the top changelog entry (curate with 'yarn changelog' if user-facing):"
+node scripts/changelog.mjs --raw
