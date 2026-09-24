@@ -22,5 +22,13 @@ Run `yarn changelog` to insert candidates since the top curated SHA,
 `yarn changelog:check` to validate the file. The build bundles raw history
 independently, including chores and curation commits.
 
+## Releasing
+
+`yarn changelog --release X.Y.Z` moves the `## Unreleased` entries under
+`## X.Y.Z — <today>`. Commit that cut before tagging: `yarn changelog:check`
+(run by the pre-commit hook and `yarn build`) fails when HEAD carries a release
+tag without a matching heading. GitHub release notes are written from the cut
+section; the `release` skill covers the rest.
+
 Install the tracked pre-commit check with
 `install -m 755 .githooks/pre-commit "$(git rev-parse --git-path hooks/pre-commit)"`.

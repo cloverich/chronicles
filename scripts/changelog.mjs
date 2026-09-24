@@ -129,8 +129,29 @@ try {
       check(updated);
       writeFileSync(changelogPath, updated);
     }
+  } else if (mode === "--release") {
+    const version = process.argv[3]?.replace(/^v/, "");
+    if (!version || !/^\d+\.\d+\.\d+$/.test(version))
+      throw new Error("Usage: changelog --release <version>");
+    if (source.includes(`\n## ${version} — `))
+      throw new Error(`CHANGELOG.md already has ${version}`);
+    const marker = "## Unreleased\n";
+    const start = source.indexOf(marker) + marker.length;
+    const next = source.indexOf("\n## ", start);
+    const unreleased = source.slice(start, next === -1 ? undefined : next);
+    if (!/^- /m.test(unreleased))
+      throw new Error("## Unreleased has no entries to release");
+    const date = new Date().toISOString().slice(0, 10);
+    const updated = source.replace(
+      marker,
+      `${marker}\n## ${version} — ${date}\n`,
+    );
+    check(updated);
+    writeFileSync(changelogPath, updated);
   } else {
-    throw new Error("Usage: changelog [--check | --raw | --build-info]");
+    throw new Error(
+      "Usage: changelog [--check | --raw | --build-info | --release <version>]",
+    );
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
