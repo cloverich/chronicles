@@ -20,7 +20,7 @@
     "test:node": "ELECTRON_RUN_AS_NODE=1 electron --import tsx --test 'src/{backup,node-client,markdown,views,themes,fonts,components,preload}/**/*.test.ts'"
   },
   "dependencies": {
-    "@ariakit/react": "^0.4.8",
+    "@ariakit/react": "^0.4.40",
     "@moritzrs/mdast-util-ofm-tag": "^0.0.1",
     "@moritzrs/mdast-util-ofm-wikilink": "^0.0.1",
     "@moritzrs/micromark-extension-ofm-tag": "^0.0.1",
@@ -32,7 +32,7 @@
     "drizzle-orm": "^0.45.1",
     "electron-store": "^10.1.0",
     "sharp": "^0.35.4",
-    "uuid25": "^0.1.5",
+    "uuid25": "^0.1.6",
     "uuidv7": "^0.6.3"
   },
   "devDependencies": {
