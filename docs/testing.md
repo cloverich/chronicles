@@ -33,4 +33,4 @@ These run under Electron's own Node (`ELECTRON_RUN_AS_NODE=1 electron --import t
 ## Gaps
 
 - Coverage is thin on interaction flows (save, journal move, bulk actions); most renderer tests are render/shell checks.
-- Tests write to a temp DB, but see the open issues about tests touching the dev settings file.
+- Tests write to a temp DB and do not load the Electron settings store; set `CHRONICLES_SETTINGS_DIR` to isolate settings when running the app from scripts.
