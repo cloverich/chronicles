@@ -1,18 +1,21 @@
+import crypto from "crypto";
 import { and, eq } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import mdast from "mdast";
 import path from "path";
+import {
+  attachmentUrl,
+  normalizeAttachmentExt,
+} from "../markdown/attachmentRefs";
 import { isNoteLink } from "../markdown/index";
-import { createId } from "../preload/client/util";
-import { PathStatsFile, mkdirp } from "../preload/utils/fs-utils";
+import { PathStatsFile } from "../preload/utils/fs-utils";
+import type { AttachmentStore } from "./attachments";
 import * as schema from "./schema";
 
-const ATTACHMENTS_DIR = "_attachments";
-
-// Minimal interface — only the method FilesImportResolver needs
+// Minimal interface — only what the importers need
 export interface IFilesClientForImport {
-  copyFile(src: string, dest: string): Promise<string>;
+  attachments: Pick<AttachmentStore, "putFile">;
 }
 
 // Manages the staging and moving of files during the import process, and
@@ -42,7 +45,7 @@ export class FilesImportResolver {
 
   // Resolve wikilink to markdown link (w/ chronicles id), and mark the staged
   // file as used (so it will be moved in the next step).
-  // [[2024-11-17-20241118102000781.webp]] -> ../_attachments/<chroniclesId>.webp
+  // [[2024-11-17-20241118102000781.webp]] -> chronicles://attachment/<sha256>.webp
   private resolveToChroniclesByName = async (
     name: string,
   ): Promise<string | undefined> => {
@@ -79,7 +82,7 @@ export class FilesImportResolver {
   // Resolve a file path (from a markdown link) from its original path to the
   // chronicles path, and mark the staged file as used (so it will be moved in
   // the next step).
-  // /path/to/file.jpg -> ../_attachments/<chroniclesId>.jpg
+  // /path/to/file.jpg -> chronicles://attachment/<sha256>.jpg
   private resolveToChroniclesByPath = async (
     filePath: string,
   ): Promise<string | undefined> => {
@@ -137,11 +140,15 @@ export class FilesImportResolver {
     return await this.resolveToChroniclesByPath(absPath);
   };
 
-  // Add a file to the import_files table, so it can be moved in the next step;
-  // generate a chronicles id so the future chronicles path can be resolved prior
-  // to moving the file.
+  // Add a file to the import_files table, so it can be moved in the next step.
+  // Attachments are content-addressed, so the file is hashed now and its
+  // sha256 stored as `chroniclesId`; links resolve before the file is copied.
   stageFile = async (filestats: PathStatsFile) => {
-    const ext = path.extname(filestats.path);
+    const ext = normalizeAttachmentExt(filestats.path);
+    const sha256 = crypto
+      .createHash("sha256")
+      .update(await fs.promises.readFile(filestats.path))
+      .digest("hex");
 
     try {
       await this.db.insert(schema.importFiles).values({
@@ -149,8 +156,8 @@ export class FilesImportResolver {
         // note: assumes here and later this is an absolute path; assumption
         // based on Files.walk behavior
         sourcePathResolved: filestats.path,
-        filename: path.basename(filestats.path, ext),
-        chroniclesId: createId(filestats.stats.birthtimeMs),
+        filename: path.basename(filestats.path, path.extname(filestats.path)),
+        chroniclesId: sha256,
         extension: ext,
       });
     } catch (err: any) {
@@ -176,12 +183,8 @@ export class FilesImportResolver {
     );
   };
 
-  //../_attachments/chroniclesId.ext
-  private makeDestinationFilePath = (
-    chroniclesId: string,
-    extension: string,
-  ) => {
-    return path.join("..", ATTACHMENTS_DIR, `${chroniclesId}${extension}`);
+  private makeDestinationFilePath = (sha256: string, extension: string) => {
+    return attachmentUrl(sha256, extension);
   };
 
   // use the previously generated list of staged files to update file links in the note,
@@ -258,9 +261,6 @@ export class FilesImportResolver {
         ),
       );
 
-    const attachmentsDir = path.join(chroniclesRoot, ATTACHMENTS_DIR);
-    await mkdirp(attachmentsDir);
-
     for (const file of files) {
       const { sourcePathResolved, extension, chroniclesId } = file;
 
@@ -284,14 +284,8 @@ export class FilesImportResolver {
         continue;
       }
 
-      const destinationFile = path.join(
-        chroniclesRoot,
-        ATTACHMENTS_DIR,
-        `${chroniclesId}${extension}`,
-      );
-
       try {
-        await this.filesclient.copyFile(sourcePathResolved, destinationFile);
+        await this.filesclient.attachments.putFile(sourcePathResolved);
         await this.db
           .update(schema.importFiles)
           .set({ status: "complete", error: null })

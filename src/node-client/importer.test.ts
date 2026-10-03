@@ -1,9 +1,11 @@
+import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import {
   cpSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "fs";
@@ -21,6 +23,12 @@ const __dirname = path.dirname(__filename);
 
 // Absolute path to the fixture directory (project root relative)
 const FIXTURE_DIR = path.resolve(__dirname, "../preload/client/importer/test");
+
+function poolFiles(notesDir: string): string[] {
+  return readdirSync(path.join(notesDir, "_attachments"), {
+    recursive: true,
+  }) as string[];
+}
 
 // Files referenced by the Notion markdown notes — we create minimal binary stubs
 // so the importer can find and copy them.
@@ -200,12 +208,19 @@ describe("Notion import", () => {
   });
 
   test("attachments are copied to _attachments directory", async () => {
-    const attachmentsDir = path.join(notesDir, "_attachments");
-    const files = await import("fs").then((fs) =>
-      fs.readdirSync(attachmentsDir),
+    // Six referenced files; identical bytes share one content-addressed blob.
+    const staged = await client.db
+      .select()
+      .from(schema.importFiles)
+      .where(eq(schema.importFiles.status, "complete"));
+    assert.strictEqual(staged.length, 6);
+    const blobs = poolFiles(notesDir).filter((f) => f.includes(path.sep));
+    const rows = await client.db.select().from(schema.attachments);
+    assert.strictEqual(blobs.length, rows.length);
+    assert.strictEqual(
+      new Set(staged.map((f) => f.chroniclesId)).size,
+      rows.length,
     );
-    // Six image files should have been copied
-    assert.strictEqual(files.length, 6);
   });
 
   test("tags from imported documents appear in client.tags.all()", async () => {
@@ -483,6 +498,15 @@ describe("sequential Notion then Other import", () => {
 
 const CHRONICLES_FIXTURE_DIR = path.join(FIXTURE_DIR, "chronicles-tree");
 
+/** The content-addressed reference a fixture attachment imports as. */
+function fixtureRef(name: string): string {
+  const bytes = readFileSync(
+    path.join(CHRONICLES_FIXTURE_DIR, "_attachments", name),
+  );
+  const sha = crypto.createHash("sha256").update(bytes).digest("hex");
+  return `chronicles://attachment/${sha}${path.extname(name)}`;
+}
+
 const IDS = {
   noteA: "03amo4vrpsn7tgcqd8fof4z1b",
   noteB: "03amo4vvxp0nltw0rlqaanfi3",
@@ -535,8 +559,9 @@ describe("Chronicles import", () => {
   });
 
   test("report: attachments copied and missing tracked", () => {
-    assert.strictEqual(report!.attachments.copied, 3);
-    assert.strictEqual(report!.attachments.existing, 0);
+    // note.txt and "spaced name.txt" have identical bytes: one blob.
+    assert.strictEqual(report!.attachments.copied, 2);
+    assert.strictEqual(report!.attachments.existing, 1);
     assert.deepStrictEqual(report!.attachments.missing, ["does-not-exist.png"]);
   });
 
@@ -555,9 +580,9 @@ describe("Chronicles import", () => {
     assert.strictEqual(doc.frontMatter.updatedAt, "2024-01-16T00:00:00.000Z");
   });
 
-  test("Note A: image url normalized to ../_attachments/<file>", async () => {
+  test("Note A: image stored by content hash", async () => {
     const doc = await client.documents.findById({ id: IDS.noteA });
-    assert.ok(doc.content.includes("../_attachments/pixel.png"));
+    assert.ok(doc.content.includes(`(${fixtureRef("pixel.png")})`));
 
     const imageRows = await client.db
       .select()
@@ -567,9 +592,7 @@ describe("Chronicles import", () => {
     assert.ok(
       imageRows.some((r) => r.imagePath === "https://example.com/remote.png"),
     );
-    assert.ok(
-      imageRows.some((r) => r.imagePath === "../_attachments/pixel.png"),
-    );
+    assert.ok(imageRows.some((r) => r.imagePath === fixtureRef("pixel.png")));
   });
 
   test("Note A: note link stored by id and present in document_links", async () => {
@@ -595,25 +618,23 @@ describe("Chronicles import", () => {
     assert.strictEqual(doc.frontMatter.updatedAt, "2024-01-19T10:00:00-05:00");
   });
 
-  test("Note D: ../_attachments form also normalized and copied", async () => {
+  test("Note D: ../_attachments form also stored by content hash", async () => {
     const doc = await client.documents.findById({ id: IDS.noteD });
-    assert.ok(doc.content.includes("../_attachments/note.txt"));
+    assert.ok(doc.content.includes(`(${fixtureRef("note.txt")})`));
   });
 
   test("Note Encoded Space: percent-encoded filename is decoded and copied", async () => {
     const doc = await client.documents.findById({
       id: IDS.noteEncodedSpace,
     });
-    assert.ok(doc.content.includes("../_attachments/spaced name.txt"));
-
-    const attachmentsDir = path.join(notesDir, "_attachments");
-    const files = readdirSync(attachmentsDir);
-    assert.ok(files.includes("spaced name.txt"));
+    const ref = fixtureRef("spaced name.txt");
+    assert.ok(doc.content.includes(`(${ref})`));
+    assert.ok(poolFiles(notesDir).some((f) => ref.endsWith(path.basename(f))));
   });
 
-  test("Note E: missing attachment url still rewritten", async () => {
+  test("Note E: missing attachment url left as written", async () => {
     const doc = await client.documents.findById({ id: IDS.noteE });
-    assert.ok(doc.content.includes("../_attachments/does-not-exist.png"));
+    assert.ok(doc.content.includes("(_attachments/does-not-exist.png)"));
   });
 
   test("Note Empty: empty body imports with content === ''", async () => {
@@ -641,11 +662,12 @@ describe("Chronicles import", () => {
     assert.strictEqual(result.data.length, 10);
   });
 
-  test("attachments copied to <notesDir>/_attachments/", () => {
-    const attachmentsDir = path.join(notesDir, "_attachments");
-    const files = readdirSync(attachmentsDir);
-    assert.ok(files.includes("pixel.png"));
-    assert.ok(files.includes("note.txt"));
+  test("attachments stored in the pool as <aa>/<sha><ext>", () => {
+    const files = poolFiles(notesDir);
+    for (const name of ["pixel.png", "note.txt"]) {
+      const sha = fixtureRef(name).split("/").pop()!;
+      assert.ok(files.includes(path.join(sha.slice(0, 2), sha)), name);
+    }
   });
 
   test("re-import with skip (default): everything skipped, nothing changed", async () => {
@@ -696,7 +718,7 @@ describe("Chronicles import - replace on re-import", () => {
     assert.strictEqual(report!.created, 0);
 
     const restored = await client.documents.findById({ id: IDS.noteA });
-    assert.ok(restored.content.includes("../_attachments/pixel.png"));
+    assert.ok(restored.content.includes(fixtureRef("pixel.png")));
     assert.ok(!restored.content.includes("this was edited directly in the db"));
   });
 });

@@ -9,8 +9,9 @@ implemented.
   life of the note, across devices and exports. **[now]**
 - **Journal ID** — uuid25, same scheme. Notes reference journals by ID; a
   rename changes only the journal. **[now]**
-- **Attachment ID** — lowercase hex sha256 of the stored bytes. **[v1]** Today
-  attachments have random `createId()` file names. **[now]**
+- **Attachment ID** — lowercase hex sha256 of the stored bytes (after any
+  upload processing, e.g. image resize). Identical bytes are one attachment.
+  **[now]**
 
 No identity is ever derived from a name or a path.
 
@@ -45,7 +46,7 @@ Timestamps are ISO 8601 strings in UTC with millisecond precision
 (`2024-01-02T03:04:05.678Z`) when Chronicles writes them. Imported values are
 preserved verbatim.
 
-### Attachment **[v1]**
+### Attachment
 
 | Field          | Type      | Notes                                    |
 | -------------- | --------- | ---------------------------------------- |
@@ -93,15 +94,19 @@ inside code spans and code blocks are text, not links.
 
 ### Attachment references
 
-| Form                                          | Where                             | Status    |
-| --------------------------------------------- | --------------------------------- | --------- |
-| `../_attachments/<name>`                      | stored content                    | **[now]** |
-| `chronicles://attachment/<sha256><ext>`       | stored content                    | **[v1]**  |
-| `../_attachments/<sha256[0:2]>/<sha256><ext>` | exported files, live store layout | **[v1]**  |
+| Form                                          | Where                                   |
+| --------------------------------------------- | --------------------------------------- |
+| `chronicles://attachment/<sha256><ext>`       | stored content (the only form written)  |
+| `../_attachments/<sha256[0:2]>/<sha256><ext>` | exported files                          |
+| `../_attachments/<name>`                      | legacy content and exports; import only |
 
-The editor renders a stored local reference by prefixing `chronicles://`; it
-never stores that prefix for the `../_attachments/` form. Remote (`http:`,
-`https:`) and `data:` URLs are not attachments.
+`<ext>` is the lowercased file extension with its dot (`.webp`), or empty.
+The live store and exports share one layout:
+`_attachments/<sha256[0:2]>/<sha256><ext>`. On import, any local image
+destination or link into `_attachments/` is resolved within the import tree,
+stored by content hash, and rewritten to the stored form; a reference whose
+file is missing is left as written. Remote (`http:`, `https:`) and `data:`
+URLs are not attachments.
 
 ## Markdown dialect
 

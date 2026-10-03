@@ -11,7 +11,8 @@ revision).
   manifest.json          canonical; byte-stable for unchanged data
   export-info.json       non-canonical: {"exportedAt": "<timestamp>"}
   <journal-dir>/<id>.md  one file per note
-  _attachments/<name>    attachments referenced by exported notes
+  _attachments/<aa>/<sha256><ext>
+                         attachments referenced by exported notes (aa = sha256[0:2])
 ```
 
 Two exports of unchanged data are byte-identical except `export-info.json`.
@@ -88,8 +89,12 @@ directory segment is percent-encoded only for U+0000–U+0020, `%`, `(`, `)`,
 to notes not in the export, links inside code, and remote URLs are untouched.
 Only the destination bytes change; the rest of the body is preserved.
 
-Readers map `../<journal-dir>/<id>.md` back to the stored form using the
-manifest's directory mapping.
+Writers rewrite `chronicles://attachment/<sha256><ext>` to
+`../_attachments/<aa>/<sha256><ext>` when the blob exists; a missing blob's
+reference is left in stored form and reported.
+
+Readers map both back to stored forms (see
+[data-model.md](data-model.md#reference-grammar)).
 
 ## Revision
 
@@ -113,7 +118,12 @@ keys in exactly this order:
     }
   ],
   "attachments": [
-    { "path": "_attachments/<name>", "sha256": "<sha256>", "byteSize": 68 }
+    {
+      "path": "_attachments/<aa>/<sha256><ext>",
+      "sha256": "<sha256>",
+      "ext": ".png",
+      "byteSize": 68
+    }
   ]
 }
 ```

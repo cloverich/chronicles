@@ -22,6 +22,8 @@ const PIXEL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
   "base64",
 );
+const PIXEL_SHA = crypto.createHash("sha256").update(PIXEL_PNG).digest("hex");
+const PIXEL_POOL = `_attachments/${PIXEL_SHA.slice(0, 2)}/${PIXEL_SHA}.png`;
 
 function sha256(contents: string): string {
   return crypto.createHash("sha256").update(contents, "utf8").digest("hex");
@@ -56,13 +58,13 @@ async function buildFixtureClient(prefix: string): Promise<Fixture> {
   await client.journals.create({ name: "journal-alpha" });
   await client.journals.create({ name: "journal-beta" });
 
-  fs.mkdirSync(path.join(notesDir, "_attachments"), { recursive: true });
-  writeFileSync(path.join(notesDir, "_attachments", "pixel.png"), PIXEL_PNG);
+  const pixel = await client.files.attachments.putBytes(PIXEL_PNG, {
+    ext: ".png",
+  });
 
   const noteA = await client.documents.createDocument({
     journal: "journal-alpha",
-    content:
-      "Hello world.\n\nAn attached image:\n\n![alt text](../_attachments/pixel.png)\n",
+    content: `Hello world.\n\nAn attached image:\n\n![alt text](${pixel.url})\n`,
     frontMatter: {
       title: "First Note",
       tags: ["alpha", "beta"],
@@ -84,7 +86,7 @@ async function buildFixtureClient(prefix: string): Promise<Fixture> {
 
   const noteMissingImage = await client.documents.createDocument({
     journal: "journal-alpha",
-    content: "![missing](../_attachments/does-not-exist.png)\n",
+    content: `![missing](chronicles://attachment/${"0".repeat(64)}.png)\n`,
     frontMatter: {
       title: "Missing Image",
       tags: [],
@@ -144,7 +146,9 @@ describe("ExportClient.export", () => {
     assert.strictEqual(report.destDir, destDir);
     assert.strictEqual(report.notes, 5);
     assert.strictEqual(report.attachments.copied, 1);
-    assert.deepStrictEqual(report.attachments.missing, ["does-not-exist.png"]);
+    assert.deepStrictEqual(report.attachments.missing, [
+      `${"0".repeat(64)}.png`,
+    ]);
 
     // ---- note files exist and frontmatter parses back ----
     const noteAPath = path.join(
@@ -162,7 +166,7 @@ describe("ExportClient.export", () => {
     assert.strictEqual(frontMatter.createdAt, "2024-01-15T00:00:00.000Z");
     assert.strictEqual(frontMatter.updatedAt, "2024-01-16T00:00:00.000Z");
     assert.strictEqual(frontMatter.source, "export-test");
-    assert.ok(noteARaw.includes("../_attachments/pixel.png"));
+    assert.ok(noteARaw.includes(`(../${PIXEL_POOL})`));
 
     // note with empty tags still serializes `tags: []`
     const noteBPath = path.join(
@@ -196,7 +200,7 @@ describe("ExportClient.export", () => {
     assert.strictEqual(noteUnicodeFrontMatter.title, "笔记 🎉");
 
     // ---- attachment copied ----
-    const attachmentPath = path.join(destDir, "_attachments", "pixel.png");
+    const attachmentPath = path.join(destDir, PIXEL_POOL);
     assert.ok(existsSync(attachmentPath));
     assert.ok(readFileSync(attachmentPath).equals(PIXEL_PNG));
 
@@ -220,8 +224,9 @@ describe("ExportClient.export", () => {
     assert.strictEqual(manifest.notes.length, 5);
     assert.deepStrictEqual(manifest.attachments, [
       {
-        path: "_attachments/pixel.png",
-        sha256: crypto.createHash("sha256").update(PIXEL_PNG).digest("hex"),
+        path: PIXEL_POOL,
+        sha256: PIXEL_SHA,
+        ext: ".png",
         byteSize: PIXEL_PNG.byteLength,
       },
     ]);
@@ -453,9 +458,7 @@ describe("ExportClient.export round-trip via Chronicles import", () => {
   });
 
   test("re-imported attachment content matches", () => {
-    const reimportedPixel = readFileSync(
-      path.join(secondNotesDir, "_attachments", "pixel.png"),
-    );
+    const reimportedPixel = readFileSync(path.join(secondNotesDir, PIXEL_POOL));
     assert.ok(reimportedPixel.equals(PIXEL_PNG));
   });
 });

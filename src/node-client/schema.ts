@@ -108,6 +108,20 @@ export const imageLinks = sqliteTable(
   ],
 );
 
+// ---------- attachments ----------
+/** Content-addressed blobs; see src/node-client/attachments.ts. */
+export const attachments = sqliteTable("attachments", {
+  sha256: text("sha256").primaryKey().notNull(),
+  /** Lowercase, with dot (".webp"), or "" */
+  ext: text("ext").notNull(),
+  mime: text("mime").notNull(),
+  byteSize: integer("byteSize").notNull(),
+  originalName: text("originalName"),
+  createdAt: text("createdAt")
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
 // ---------- imports ----------
 export const imports = sqliteTable("imports", {
   id: text("id").primaryKey().notNull(),

@@ -24,7 +24,7 @@
   ],
   "attachments": [
     {
-      "name": "pixel.png",
+      "ext": ".png",
       "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
     }
   ],
@@ -128,7 +128,7 @@
       "updatedAt": "2024-07-01T00:00:00.000Z",
       "tags": [],
       "frontMatter": {},
-      "content": "![pixel](../_attachments/pixel.png)\n\n![again](../_attachments/pixel.png)\n\n![missing](../_attachments/does-not-exist.png)\n\n![remote](https://example.com/x.png)\n"
+      "content": "![pixel](chronicles://attachment/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png)\n\n[same blob as a link](chronicles://attachment/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png)\n\n![missing blob](chronicles://attachment/0000000000000000000000000000000000000000000000000000000000000000.png)\n\n![legacy reference, untouched](../_attachments/legacy.png)\n\n![remote](https://example.com/x.png)\n"
     }
   ]
 }

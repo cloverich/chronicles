@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import { toStoredNoteLink } from "../markdown/noteLinks";
 import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
+import { AttachmentStore } from "./attachments";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { ExportClient } from "./export";
@@ -217,7 +218,9 @@ export async function createClient(
     defaults: PREFERENCES_DEFAULTS,
   });
   const preferences = new PreferencesClient(conf);
-  const files = new NodeFilesClient(opts.notesDir);
+  const attachments = new AttachmentStore(db, opts.notesDir);
+  await attachments.migrateLegacyLayout();
+  const files = new NodeFilesClient(opts.notesDir, attachments);
   const journals = new JournalsClient(db, preferences);
   const documents = new DocumentsClient(db, files);
   const bulkOperations = new BulkOperationsClient(db, documents);

@@ -24,7 +24,7 @@ const UPDATE = process.env.UPDATE_VECTORS === "1";
 
 interface ExportVectorInput {
   journals: { id: string; name: string }[];
-  attachments: { name: string; base64: string }[];
+  attachments: { ext: string; base64: string }[];
   notes: {
     id: string;
     journal: string;
@@ -70,12 +70,10 @@ async function loadExportInput(input: ExportVectorInput, notesDir: string) {
       .run();
     if (updated.changes === 0) await client.journals.index(j.name, j.id);
   }
-  fs.mkdirSync(path.join(notesDir, "_attachments"), { recursive: true });
   for (const a of input.attachments) {
-    fs.writeFileSync(
-      path.join(notesDir, "_attachments", a.name),
-      Buffer.from(a.base64, "base64"),
-    );
+    await client.files.attachments.putBytes(Buffer.from(a.base64, "base64"), {
+      ext: a.ext,
+    });
   }
   for (const n of input.notes) {
     await client.documents.importDocument({
