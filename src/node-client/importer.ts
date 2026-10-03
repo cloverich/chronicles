@@ -8,6 +8,7 @@ import {
   mdastToString,
   parseMarkdownForImportProcessing,
 } from "../markdown";
+import { noteLinkUrl } from "../markdown/noteLinks";
 import { SourceType } from "../preload/client/importer/SourceType";
 import { parseTitleAndFrontMatterForImport } from "../preload/client/importer/frontmatter";
 import {
@@ -579,8 +580,7 @@ export class ImporterClient {
       // came up only once in my 400 notes when the linked file did not exist1
       if (!mapped) return;
 
-      (mdastNode as mdast.Link).url =
-        `../${mapped.journal}/${mapped.chroniclesId}.md`;
+      (mdastNode as mdast.Link).url = noteLinkUrl(mapped.chroniclesId);
     }
 
     if (mdastNode.type === "ofmWikilink") {
@@ -591,7 +591,7 @@ export class ImporterClient {
 
       // NOTE: This updates the url, but assumes the node type
       // will be converted to regular link in later step
-      (mdastNode as any).url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
+      (mdastNode as any).url = noteLinkUrl(mapped.chroniclesId);
     }
 
     if ("children" in mdastNode) {

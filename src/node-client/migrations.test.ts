@@ -1,13 +1,12 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import assert from "node:assert/strict";
 import { after, describe, test } from "node:test";
 import { tmpdir } from "os";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createClient } from "./factory";
+import { createClient, runMigrations } from "./factory";
 
 /**
  * Upgrade tests: build a file-backed database at an older migration, seed it
@@ -33,8 +32,7 @@ function dbAtMigration(name: string, lastIdx: number) {
 
   const dbPath = path.join(scratch, `${name}.db`);
   const sqlite = new Database(dbPath);
-  sqlite.exec("PRAGMA foreign_keys = ON;");
-  migrate(drizzle(sqlite), { migrationsFolder: folder });
+  runMigrations(sqlite, drizzle(sqlite), folder);
   return { dbPath, sqlite };
 }
 
@@ -83,5 +81,54 @@ describe("0003_journal_ids", () => {
 
     const fk = client.sqlite.prepare("PRAGMA foreign_keys").get() as any;
     assert.strictEqual(fk.foreign_keys, 1);
+  });
+});
+
+describe("0004_id_only_note_links", () => {
+  test("rewrites path-form note links to chronicles://note/<id>, nothing else", async () => {
+    const { dbPath, sqlite } = dbAtMigration("note-links", 3);
+    const A = "03awvyp9xobkv9t1jmmtiz0bp";
+    const B = "03b3m6xaiod1fz6mvkjmvb3jc";
+    const content = [
+      `See [b](../work/${B}.md "Title") and [gone](../old/03zzzzzzzzzzzzzzzzzzzzzzz.md).`,
+      "",
+      `Code: \`[x](../work/${B}.md)\` and [web](https://example.com/a.md).`,
+      "",
+      "![img](../_attachments/a.png)",
+      "",
+    ].join("\n");
+    sqlite.exec(`
+      INSERT INTO journals (id, name) VALUES ('03aq5qh9copxys3mzz5l8q60f', 'work');
+      INSERT INTO documents (id, journalId, title, frontmatter, content) VALUES
+        ('${A}', '03aq5qh9copxys3mzz5l8q60f', 'A', '{}', '${content.replace(/'/g, "''")}'),
+        ('${B}', '03aq5qh9copxys3mzz5l8q60f', 'B', '{}', 'plain');
+      INSERT INTO document_links (documentId, targetId, targetJournal) VALUES ('${A}', '${B}', 'work');
+      INSERT INTO documents_fts (id, title, content) VALUES ('${A}', 'A', '${content.replace(/'/g, "''")}');
+    `);
+    sqlite.close();
+
+    const client = await openUpgraded("note-links", dbPath);
+    const doc = await client.documents.findById({ id: A });
+    assert.strictEqual(
+      doc.content,
+      content
+        .replace(`../work/${B}.md "Title"`, `chronicles://note/${B} "Title"`)
+        .replace(
+          "../old/03zzzzzzzzzzzzzzzzzzzzzzz.md",
+          "chronicles://note/03zzzzzzzzzzzzzzzzzzzzzzz",
+        ),
+    );
+
+    const fts = client.sqlite
+      .prepare("SELECT content FROM documents_fts WHERE id = ?")
+      .get(A) as { content: string };
+    assert.strictEqual(fts.content, doc.content);
+
+    const links = client.sqlite
+      .prepare("SELECT * FROM document_links WHERE documentId = ?")
+      .all(A);
+    assert.deepStrictEqual(links, [
+      { documentId: A, targetId: B, resolvedAt: null },
+    ]);
   });
 });

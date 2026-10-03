@@ -6,7 +6,7 @@ updatedAt: "2024-02-01T00:00:00.000Z"
 tags: []
 ---
 
-Links: [plain](../work/03awvyp9xobkv9t1jmmtiz0bp.md), [stale journal](../日記/03b9wsjvyu3t3ufq044kfzgru.md), [dangling](../work/03zzzzzzzzzzzzzzzzzzzzzzz.md), [web](https://example.com/a.md).
+Links: [plain](../work/03awvyp9xobkv9t1jmmtiz0bp.md), [legacy path form, stale journal](../日記/03b9wsjvyu3t3ufq044kfzgru.md), [dangling](chronicles://note/03zzzzzzzzzzzzzzzzzzzzzzz), [web](https://example.com/a.md).
 
 Inline code `[x](../work/03awvyp9xobkv9t1jmmtiz0bp.md)` and a fence:
 

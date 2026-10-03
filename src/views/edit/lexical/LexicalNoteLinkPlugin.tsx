@@ -15,7 +15,7 @@ import {
 import React from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { parseNoteLink } from "../../../markdown/noteLinks";
+import { noteLinkUrl, parseNoteLink } from "../../../markdown/noteLinks";
 import type { SearchItem } from "../../documents/SearchStore";
 import { $createChroniclesNoteLinkNode } from "./ChroniclesNoteLinkNode";
 
@@ -239,7 +239,7 @@ export function LexicalNoteLinkPlugin({
         const selectedNode =
           splitNodes[activeMatch.start === 0 ? 0 : 1] ?? splitNodes[0];
         const noteLinkNode = $createChroniclesNoteLinkNode(
-          `../${item.journal}/${item.id}.md`,
+          noteLinkUrl(item.id),
           { title: item.title || item.id },
         );
 

@@ -8,6 +8,8 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { toStoredNoteLink } from "../markdown/noteLinks";
+import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
@@ -53,17 +55,8 @@ function resolveMigrationsFolder(): string {
   return path.resolve(process.cwd(), "src/node-client/migrations");
 }
 
-/**
- * Apply pending Drizzle migrations with foreign keys off, per SQLite's
- * table-rebuild procedure: with them on, dropping a parent table (e.g.
- * `journals`) inside a migration cascade-deletes its children. Integrity is
- * verified with `foreign_key_check` before foreign keys are re-enabled.
- */
-function runMigrations(
-  sqlite: Database.Database,
-  db: BetterSQLite3Database<typeof schema>,
-  migrationsFolder: string,
-) {
+/** SQL functions that migrations call; register before running them. */
+export function registerMigrationFunctions(sqlite: Database.Database) {
   // Used by migrations that mint ids (e.g. 0003_journal_ids).
   sqlite.function(
     "chronicles_create_id",
@@ -73,6 +66,30 @@ function runMigrations(
       return createId(Number.isFinite(ms) && ms >= 0 ? ms : undefined);
     },
   );
+
+  // Used by 0004_id_only_note_links.
+  sqlite.function(
+    "chronicles_store_note_links",
+    { deterministic: true },
+    (content: unknown) =>
+      typeof content === "string" && content.includes(".md")
+        ? rewriteUrls(content, toStoredNoteLink).markdown
+        : content,
+  );
+}
+
+/**
+ * Apply pending Drizzle migrations with foreign keys off, per SQLite's
+ * table-rebuild procedure: with them on, dropping a parent table (e.g.
+ * `journals`) inside a migration cascade-deletes its children. Integrity is
+ * verified with `foreign_key_check` before foreign keys are re-enabled.
+ */
+export function runMigrations(
+  sqlite: Database.Database,
+  db: BetterSQLite3Database<typeof schema>,
+  migrationsFolder: string,
+) {
+  registerMigrationFunctions(sqlite);
 
   sqlite.exec("PRAGMA foreign_keys = OFF;");
   try {

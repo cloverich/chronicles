@@ -76,11 +76,16 @@ References appear as Markdown link and image destinations in `content`.
 
 ### Note links
 
-| Form                        | Where               | Status    |
-| --------------------------- | ------------------- | --------- |
-| `../<journal-name>/<id>.md` | stored content      | **[now]** |
-| `chronicles://note/<id>`    | stored content      | **[v1]**  |
-| `../<journal-dir>/<id>.md`  | exported files only | **[now]** |
+| Form                       | Where                                  |
+| -------------------------- | -------------------------------------- |
+| `chronicles://note/<id>`   | stored content (the only form written) |
+| `../<journal-dir>/<id>.md` | exported files; accepted on import     |
+
+Writers store only `chronicles://note/<id>`. Readers also accept the path form
+`../<anything>/<id>.md` (legacy content, exports, other tools) and convert it
+on import. The custom scheme was chosen over a bare ID: it is unambiguous to
+parse, and every host can intercept it (Electron protocol handler,
+`WKURLSchemeHandler`).
 
 A note link is a `link` node whose destination matches one of the forms above.
 Resolution is by `<id>` only; the journal segment is never trusted. Links

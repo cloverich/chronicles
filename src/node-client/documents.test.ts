@@ -245,7 +245,6 @@ describe("derived rows (links, images, FTS)", () => {
       .where(eq(schema.documentLinks.documentId, id));
     assert.strictEqual(linkRows.length, 1);
     assert.strictEqual(linkRows[0].targetId, targetId);
-    assert.strictEqual(linkRows[0].targetJournal, targetJournal);
 
     const imageRows = await client.db
       .select()
@@ -487,11 +486,9 @@ describe("rebuildDerived", () => {
     assert.deepStrictEqual(
       linkRowsAfter.map((r) => ({
         targetId: r.targetId,
-        targetJournal: r.targetJournal,
       })),
       linkRowsBefore.map((r) => ({
         targetId: r.targetId,
-        targetJournal: r.targetJournal,
       })),
     );
     assert.deepStrictEqual(

@@ -6,8 +6,7 @@
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "work"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         }
       ],
       "imageLinks": [],
@@ -18,18 +17,33 @@
     }
   },
   {
-    "name": "duplicate targets dedupe, first journal wins",
+    "name": "stored and path forms to the same note dedupe",
+    "title": null,
+    "markdown": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp) [b](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp) [b](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "duplicate targets dedupe",
     "title": null,
     "markdown": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md) [b](../other/03awvyp9xobkv9t1jmmtiz0bp.md) [c](../work/03b3m6xaiod1fz6mvkjmvb3jc.md)\n",
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "work"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         },
         {
-          "targetId": "03b3m6xaiod1fz6mvkjmvb3jc",
-          "targetJournal": "work"
+          "targetId": "03b3m6xaiod1fz6mvkjmvb3jc"
         }
       ],
       "imageLinks": [],
@@ -46,8 +60,7 @@
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "work"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         }
       ],
       "imageLinks": [],
@@ -64,8 +77,7 @@
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "my notes"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         }
       ],
       "imageLinks": [],
@@ -95,8 +107,7 @@
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "日記"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         }
       ],
       "imageLinks": [],
@@ -113,8 +124,7 @@
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "my%20notes"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         }
       ],
       "imageLinks": [],
@@ -255,15 +265,32 @@
     }
   },
   {
-    "name": "chronicles:// note link (future form) is not yet derived",
+    "name": "stored form chronicles://note/<id>",
     "title": null,
     "markdown": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)\n"
+      }
+    }
+  },
+  {
+    "name": "stored form with a path or extension is not a note link",
+    "title": null,
+    "markdown": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp.md) [b](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp/x)\n",
     "expected": {
       "noteLinks": [],
       "imageLinks": [],
       "fts": {
         "title": "",
-        "content": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)\n"
+        "content": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp.md) [b](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp/x)\n"
       }
     }
   },
@@ -274,12 +301,10 @@
     "expected": {
       "noteLinks": [
         {
-          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
-          "targetJournal": "work"
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp"
         },
         {
-          "targetId": "03b3m6xaiod1fz6mvkjmvb3jc",
-          "targetJournal": "work"
+          "targetId": "03b3m6xaiod1fz6mvkjmvb3jc"
         }
       ],
       "imageLinks": [],

@@ -74,7 +74,7 @@ async function buildFixtureClient(prefix: string): Promise<Fixture> {
 
   const noteB = await client.documents.createDocument({
     journal: "journal-beta",
-    content: `[First Note](../journal-alpha/${noteA}.md)\n`,
+    content: `[First Note](chronicles://note/${noteA})\n`,
     frontMatter: {
       tags: [],
       createdAt: "2024-02-01T00:00:00.000Z",
@@ -408,7 +408,6 @@ describe("ExportClient.export round-trip via Chronicles import", () => {
     const originalLinks = await fixture.client.db
       .select({
         targetId: schema.documentLinks.targetId,
-        targetJournal: schema.documentLinks.targetJournal,
       })
       .from(schema.documentLinks)
       .where(eq(schema.documentLinks.documentId, fixture.ids.noteB));
@@ -416,7 +415,6 @@ describe("ExportClient.export round-trip via Chronicles import", () => {
     const reimportedLinks = await secondClient.db
       .select({
         targetId: schema.documentLinks.targetId,
-        targetJournal: schema.documentLinks.targetJournal,
       })
       .from(schema.documentLinks)
       .where(eq(schema.documentLinks.documentId, fixture.ids.noteB));

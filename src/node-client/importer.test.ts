@@ -195,9 +195,8 @@ describe("Notion import", () => {
     });
     const roadTripId = roadTripSearch.data[0].id;
 
-    // The link should be remapped from the original relative Notion path to a
-    // chronicles-style relative path: ../notion/<id>.md
-    assert.ok(portlandDoc.content.includes(`../notion/${roadTripId}.md`));
+    // The original relative Notion path is remapped to an ID-only note link.
+    assert.ok(portlandDoc.content.includes(`chronicles://note/${roadTripId}`));
   });
 
   test("attachments are copied to _attachments directory", async () => {
@@ -290,7 +289,7 @@ describe("Generic markdown import", () => {
     const doc2Id = doc2Search.data[0].id;
 
     // Wikilink should be converted to a chronicles relative markdown link
-    assert.ok(doc1.content.includes(`../chronicles/${doc2Id}.md`));
+    assert.ok(doc1.content.includes(`chronicles://note/${doc2Id}`));
   });
 
   test("wikilink [[Document 1]] in Document 2 is converted to markdown link", async () => {
@@ -304,7 +303,7 @@ describe("Generic markdown import", () => {
     const doc2 = await client.documents.findById({ id: doc2Search.data[0].id });
     const doc1Id = doc1Search.data[0].id;
 
-    assert.ok(doc2.content.includes(`../chronicles/${doc1Id}.md`));
+    assert.ok(doc2.content.includes(`chronicles://note/${doc1Id}`));
   });
 
   test("tags from imported documents appear in client.tags.all()", async () => {
@@ -573,9 +572,9 @@ describe("Chronicles import", () => {
     );
   });
 
-  test("Note A: note link verbatim and present in document_links", async () => {
+  test("Note A: note link stored by id and present in document_links", async () => {
     const doc = await client.documents.findById({ id: IDS.noteA });
-    assert.ok(doc.content.includes(`../journal-two/${IDS.linkTarget}.md`));
+    assert.ok(doc.content.includes(`chronicles://note/${IDS.linkTarget}`));
 
     const linkRows = await client.db
       .select()
@@ -583,7 +582,6 @@ describe("Chronicles import", () => {
       .where(eq(schema.documentLinks.documentId, IDS.noteA));
     assert.strictEqual(linkRows.length, 1);
     assert.strictEqual(linkRows[0].targetId, IDS.linkTarget);
-    assert.strictEqual(linkRows[0].targetJournal, "journal-two");
   });
 
   test("Note B: missing tags key defaults to empty array", async () => {

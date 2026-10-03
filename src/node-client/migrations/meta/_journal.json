@@ -29,6 +29,13 @@
       "when": 1791044916809,
       "tag": "0003_journal_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791045403726,
+      "tag": "0004_id_only_note_links",
+      "breakpoints": true
     }
   ]
 }

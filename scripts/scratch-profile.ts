@@ -9,9 +9,9 @@
  */
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import path from "path";
+import { runMigrations } from "../src/node-client/factory";
 const [dir, idxStr] = process.argv.slice(2);
 const last = Number(idxStr);
 const MARKER = ".chronicles-scratch";
@@ -34,7 +34,7 @@ const j = JSON.parse(fs.readFileSync(jp, "utf8"));
 j.entries = j.entries.filter((e: any) => e.idx <= last);
 fs.writeFileSync(jp, JSON.stringify(j));
 const sqlite = new Database(path.join(dir, "userData/chronicles.db"));
-migrate(drizzle(sqlite), { migrationsFolder: folder });
+runMigrations(sqlite, drizzle(sqlite), folder);
 const A = "03awvyp9xobkv9t1jmmtiz0bp",
   B = "03b3m6xaiod1fz6mvkjmvb3jc";
 fs.writeFileSync(
