@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { JournalResponse } from "../../../hooks/useClient";
+import type { Journal } from "../../../contract/notes";
 import { EditableDocument } from "../EditableDocument";
 
 /**
@@ -13,7 +13,7 @@ export const MarkdownFrontMatter = observer(
     journals,
   }: {
     document: EditableDocument;
-    journals: JournalResponse[];
+    journals: Journal[];
   }) => {
     function getName(journalId?: string) {
       const journal = journals?.find((j) => j.id === journalId);

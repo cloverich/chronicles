@@ -1,6 +1,6 @@
 import React from "react";
-import { TagWithCount } from "../node-client/tags";
-import useClient from "./useClient";
+import type { TagCount } from "../contract/notes";
+import { useNotes } from "./useNotes";
 
 /**
  * Hook for loading tags.
@@ -9,7 +9,7 @@ export function useTags() {
   const [loading, setLoading] = React.useState(true);
   const [tags, setTags] = React.useState<string[]>([]);
   const [error, setError] = React.useState(null);
-  const client = useClient();
+  const notes = useNotes();
 
   React.useEffect(() => {
     let isEffectMounted = true;
@@ -17,7 +17,7 @@ export function useTags() {
 
     async function load() {
       try {
-        const tags = await client.tags.all();
+        const tags = (await notes.listTags()).tags.map((t) => t.tag);
         if (!isEffectMounted) return;
 
         setTags(tags);
@@ -44,9 +44,9 @@ export function useTags() {
  */
 export function useTagsWithCounts() {
   const [loading, setLoading] = React.useState(true);
-  const [tags, setTags] = React.useState<TagWithCount[]>([]);
+  const [tags, setTags] = React.useState<TagCount[]>([]);
   const [error, setError] = React.useState(null);
-  const client = useClient();
+  const notes = useNotes();
 
   React.useEffect(() => {
     let isEffectMounted = true;
@@ -54,7 +54,7 @@ export function useTagsWithCounts() {
 
     async function load() {
       try {
-        const tags = await client.tags.allWithCounts();
+        const { tags } = await notes.listTags();
         if (!isEffectMounted) return;
 
         setTags(tags);
