@@ -5,12 +5,23 @@ import { HashRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import Container from "./container";
 import { Preferences } from "./hooks/stores/preferences";
+import { hostNotesClient, NotesContext } from "./hooks/useNotes";
 import "./index.css";
 
 // todo: refactor and enforce actions on mobx stores
 configure({ enforceActions: "never" });
 
 const root = createRoot(document.getElementById("app")!);
+
+// The NotesClient is injected here, once. Without one the app can't run, so
+// fail at startup with the reason instead of failing later on first use.
+let notes: ReturnType<typeof hostNotesClient> | null = null;
+let notesError: Error | null = null;
+try {
+  notes = hostNotesClient();
+} catch (err) {
+  notesError = err as Error;
+}
 
 // Rely on localStorage to ensure the last used dark mode setting is applied
 // on launch. This avoids a flash of the wrong mode while the app stores
@@ -44,7 +55,13 @@ root.render(
           },
         }}
       />
-      <Container />
+      {notes ? (
+        <NotesContext.Provider value={notes}>
+          <Container />
+        </NotesContext.Provider>
+      ) : (
+        <pre className="p-8 text-sm">{String(notesError)}</pre>
+      )}
     </HashRouter>
   </>,
 );

@@ -15,9 +15,8 @@ export const MarkdownFrontMatter = observer(
     document: EditableDocument;
     journals: JournalResponse[];
   }) => {
-    // Find the journal name
-    function getName(journalName?: string) {
-      const journal = journals?.find((j) => j.name === journalName);
+    function getName(journalId?: string) {
+      const journal = journals?.find((j) => j.id === journalId);
       return journal ? journal.name : "Unknown journal";
     }
 
@@ -34,7 +33,7 @@ export const MarkdownFrontMatter = observer(
           </div>
           <div>
             <span className="font-mono font-medium">Journal:</span>{" "}
-            {getName(document.journal)}
+            {getName(document.journalId)}
           </div>
           <div>
             <span className="font-mono font-medium">Created:</span>{" "}

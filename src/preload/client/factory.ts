@@ -1,5 +1,6 @@
 import type { Settings } from "../../electron/settings";
 import { createClient as createNodeClient } from "../../node-client/factory";
+import { createNodeNotesClient } from "../../node-client/notes-adapter";
 
 interface ClientFactoryParams {
   store: Settings;
@@ -13,6 +14,7 @@ export async function createClient({ store }: ClientFactoryParams) {
   });
 
   return {
+    notes: createNodeNotesClient(nodeClient),
     journals: nodeClient.journals,
     documents: nodeClient.documents,
     tags: nodeClient.tags,

@@ -10,7 +10,7 @@ function makeDoc(overrides: Partial<Record<string, any>> = {}) {
   return observable({
     createdAt: "2026-03-25T00:00:00.000Z",
     title: "Test note",
-    journal: "work",
+    journalId: "j1",
     tags: [] as string[],
     save: vi.fn(),
     ...overrides,
@@ -28,7 +28,7 @@ const fakeAppStore = {
   },
 } as any;
 
-const journals = [{ name: "work", archived: false }] as any[];
+const journals = [{ id: "j1", name: "work", archived: false }] as any[];
 
 function renderFrontMatter(doc = makeDoc()) {
   return {

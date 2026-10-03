@@ -1,4 +1,6 @@
 import { contextBridge } from "electron";
+import type { NotesClient } from "../contract/notes";
+import { exposeNotesClient } from "../contract/transport";
 import { backups } from "./backups";
 import { getClient, initClient } from "./client";
 import "./utils.electron";
@@ -23,8 +25,11 @@ initClient().catch((err) => {
   console.error("[chronicles] Failed to initialize client:", err);
 });
 
+const notesClient = exposeNotesClient(() => getClient().notes);
+
 contextBridge.exposeInMainWorld("chronicles", {
   getClient,
+  getNotesClient: () => notesClient,
   backups,
   openDialogSelectDir,
   selectThemeFile,
@@ -45,6 +50,7 @@ declare global {
   interface Window {
     chronicles: {
       getClient: typeof getClient;
+      getNotesClient: () => NotesClient;
       backups: typeof backups;
       openDialogSelectDir: typeof openDialogSelectDir;
       selectThemeFile: typeof selectThemeFile;

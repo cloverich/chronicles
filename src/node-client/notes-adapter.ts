@@ -5,9 +5,10 @@ import {
   type NoteQuery,
   type NotesClient,
 } from "../contract/notes";
+import { parseAttachmentUrl } from "../markdown/attachmentRefs";
 import type { SearchRequest } from "../preload/client/types";
-import type { AttachmentStore } from "./attachments";
 import type { DocumentsClient } from "./documents";
+import type { NodeFilesClient } from "./files";
 import type { JournalsClient, JournalWithCount } from "./journals";
 import type { TagsClient } from "./tags";
 
@@ -20,9 +21,10 @@ export function createNodeNotesClient(deps: {
   documents: DocumentsClient;
   journals: JournalsClient;
   tags: TagsClient;
-  attachments: AttachmentStore;
+  files: NodeFilesClient;
 }): NotesClient {
-  const { documents, journals, tags, attachments } = deps;
+  const { documents, journals, tags, files } = deps;
+  const attachments = files.attachments;
 
   const allJournals = () => journals.listWithCounts();
   const toJournal = (j: JournalWithCount): Journal => ({
@@ -196,8 +198,17 @@ export function createNodeNotesClient(deps: {
 
     listTags: () => call(async () => ({ tags: await tags.allWithCounts() })),
 
-    putAttachment: ({ bytes, name }) =>
+    putAttachment: ({ bytes, name, optimizeImage }) =>
       call(async () => {
+        if (optimizeImage) {
+          const ab = bytes.buffer.slice(
+            bytes.byteOffset,
+            bytes.byteOffset + bytes.byteLength,
+          ) as ArrayBuffer;
+          const { url, warning } = await files.uploadImageBytes(ab, name);
+          const parsed = parseAttachmentUrl(url)!;
+          return { url, ...parsed, ...(warning ? { warning } : {}) };
+        }
         const stored = await attachments.putBytes(bytes, {
           ext: name.match(/(\.[A-Za-z0-9]+)$/)?.[1] ?? "",
           originalName: name,

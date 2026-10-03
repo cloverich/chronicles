@@ -1,3 +1,4 @@
+import type { NotesClient } from "../../contract/notes";
 import { IBulkOperationsClient } from "../../node-client/bulk-operations";
 import { IDocumentsClient } from "../../node-client/documents";
 import { ExportClient } from "../../node-client/export";
@@ -12,6 +13,8 @@ import { ITagsClient } from "../../node-client/tags";
 // trying (and failing) to bundle unrelated preload code, which expects
 // to be run in a node environment.
 export interface IClient {
+  /** The platform-neutral contract; prefer it over the services below. */
+  notes: NotesClient;
   journals: IJournalsClient;
   tags: ITagsClient;
   documents: IDocumentsClient;
@@ -23,6 +26,7 @@ export interface IClient {
 }
 
 export type JournalResponse = {
+  id: string;
   name: string;
   createdAt: string;
   updatedAt: string;

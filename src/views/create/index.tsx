@@ -2,9 +2,9 @@ import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import useClient from "../../hooks/useClient";
 import { useIsMounted } from "../../hooks/useIsMounted";
 import { useJournals } from "../../hooks/useJournals";
+import { useNotes } from "../../hooks/useNotes";
 import { SearchStoreContext } from "../documents/SearchStore";
 import { EditLoadingComponent } from "../edit/loading";
 
@@ -17,7 +17,7 @@ function useCreateDocument() {
   // in the root documents view. So better to keep it here for now.
   const searchStore = useContext(SearchStoreContext)!;
   const navigate = useNavigate();
-  const client = useClient();
+  const notes = useNotes();
   const isMounted = useIsMounted();
   const [error, setError] = useState<Error | null>(null);
 
@@ -66,6 +66,11 @@ function useCreateDocument() {
       }
 
       try {
+        const journalId = journalsStore.journals.find(
+          (j) => j.name === journal,
+        )?.id;
+        if (!journalId) throw new Error(`Journal ${journal} not found`);
+
         const document = {
           content: "",
           journal: journal,
@@ -73,11 +78,15 @@ function useCreateDocument() {
             title: undefined,
             tags: searchStore.selectedTags,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
           },
         };
 
-        const id = await client.documents.createDocument(document);
+        const { id } = await notes.createNote({
+          journalId,
+          content: document.content,
+          tags: document.frontMatter.tags,
+          createdAt: document.frontMatter.createdAt,
+        });
 
         if (!isMounted) return;
 

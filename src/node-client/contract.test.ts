@@ -6,12 +6,13 @@ import { tmpdir } from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createMemoryNotesClient } from "../contract/memory";
-import type { NotesClient } from "../contract/notes";
+import { isNotesError, type NotesClient } from "../contract/notes";
 import {
   runScenario,
   type ContractFixture,
   type ContractLibrary,
 } from "../contract/scenario";
+import { exposeNotesClient, hydrateNotesClient } from "../contract/transport";
 import { createClient } from "./factory";
 import { createNodeNotesClient } from "./notes-adapter";
 import * as schema from "./schema";
@@ -67,7 +68,7 @@ async function nodeAdapter(lib: ContractLibrary): Promise<NotesClient> {
     documents: client.documents,
     journals: client.journals,
     tags: client.tags,
-    attachments: client.files.attachments,
+    files: client.files,
   });
 }
 
@@ -121,4 +122,30 @@ test("src/contract imports nothing outside itself (runtime-free boundary)", () =
       assert.match(spec, /^\.\/[\w-]+$/, `${file} imports ${spec}`);
     }
   }
+});
+
+test("NotesError codes survive a message-only boundary (contextBridge)", async () => {
+  const host = await memoryAdapter(library("basic"));
+  const exposed = exposeNotesClient(() => host);
+  // Simulate contextBridge: only an error's message crosses.
+  const bridged = Object.fromEntries(
+    Object.entries(exposed).map(([op, fn]) => [
+      op,
+      (req: unknown) =>
+        (fn as (r: unknown) => Promise<unknown>)(req).catch((e: Error) => {
+          throw new Error(e.message);
+        }),
+    ]),
+  ) as unknown as NotesClient;
+  const ui = hydrateNotesClient(bridged);
+
+  await assert.rejects(ui.getNote({ id: "missing" }), (err: unknown) => {
+    assert.ok(isNotesError(err));
+    assert.strictEqual(err.code, "not_found");
+    return true;
+  });
+  assert.strictEqual(
+    (await ui.listJournals()).journals.length,
+    library("basic").journals.length,
+  );
 });

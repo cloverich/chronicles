@@ -136,6 +136,11 @@ export interface PutAttachmentRequest {
   bytes: Uint8Array;
   /** Original file name; its extension becomes the attachment's. */
   name: string;
+  /**
+   * Hosts may re-encode an image for size (Electron: rotate, ≤1600px, webp).
+   * The response always describes the bytes actually stored.
+   */
+  optimizeImage?: boolean;
 }
 
 // ---------- responses ----------
@@ -155,6 +160,8 @@ export interface PutAttachmentResponse {
   url: string;
   sha256: string;
   ext: string;
+  /** Set when optimization was requested but the original bytes were kept. */
+  warning?: { code: string; message: string };
 }
 
 // ---------- the client ----------
@@ -180,3 +187,19 @@ export interface NotesClient {
 
 /** Operation names, for bridges that dispatch by name. */
 export type NotesOperation = keyof NotesClient;
+
+export const NOTES_OPERATIONS = [
+  "getNote",
+  "searchNotes",
+  "countNotes",
+  "createNote",
+  "updateNote",
+  "deleteNote",
+  "listJournals",
+  "createJournal",
+  "renameJournal",
+  "setJournalArchived",
+  "deleteJournal",
+  "listTags",
+  "putAttachment",
+] as const satisfies readonly NotesOperation[];
