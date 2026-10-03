@@ -1,7 +1,7 @@
 ---
 id: "03awvyp9xobkv9t1jmmtiz0bp"
 title: "Plain note"
-journal: "work"
+journal: "03aq5qh9copxys3mzz5l8q60f"
 createdAt: "2024-01-01T00:00:00.000Z"
 updatedAt: "2024-01-02T03:04:05.678Z"
 tags: ["alpha","zeta"]

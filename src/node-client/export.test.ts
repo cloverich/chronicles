@@ -206,11 +206,17 @@ describe("ExportClient.export", () => {
     );
     assert.strictEqual(manifest.formatVersion, "2.0");
     assert.ok(!("exportedAt" in manifest));
-    assert.deepStrictEqual(manifest.journals, [
-      { name: "default_journal", dir: "default_journal" },
-      { name: "journal-alpha", dir: "journal-alpha" },
-      { name: "journal-beta", dir: "journal-beta" },
-    ]);
+    assert.deepStrictEqual(
+      manifest.journals.map(({ name, dir }: any) => ({ name, dir })),
+      [
+        { name: "default_journal", dir: "default_journal" },
+        { name: "journal-alpha", dir: "journal-alpha" },
+        { name: "journal-beta", dir: "journal-beta" },
+      ],
+    );
+    const alpha = (await fixture.client.journals.list()).find(
+      (j) => j.name === "journal-alpha",
+    )!;
     assert.strictEqual(manifest.notes.length, 5);
     assert.deepStrictEqual(manifest.attachments, [
       {
@@ -223,7 +229,8 @@ describe("ExportClient.export", () => {
     const manifestEntryA = manifest.notes.find(
       (n: any) => n.id === fixture.ids.noteA,
     );
-    assert.strictEqual(manifestEntryA.journal, "journal-alpha");
+    assert.strictEqual(manifestEntryA.journalId, alpha.id);
+    assert.ok(noteARaw.includes(`journal: "${alpha.id}"`));
     assert.strictEqual(manifestEntryA.revision, sha256(noteARaw));
 
     for (const entry of manifest.notes) {

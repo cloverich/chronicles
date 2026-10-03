@@ -22,8 +22,15 @@ import type {
 import { createId } from "../preload/client/util";
 import { derive } from "./derive";
 import type { NodeFilesClient } from "./files";
+import { resolveJournalId } from "./journals";
 import * as schema from "./schema";
-import { documentLinks, documents, documentTags, imageLinks } from "./schema";
+import {
+  documentLinks,
+  documents,
+  documentTags,
+  imageLinks,
+  journals,
+} from "./schema";
 
 export type IDocumentsClient = DocumentsClient;
 
@@ -66,8 +73,17 @@ export class DocumentsClient {
 
   findById = async ({ id }: { id: string }): Promise<GetDocumentResponse> => {
     const [row] = await this.db
-      .select()
+      .select({
+        id: documents.id,
+        journal: journals.name,
+        title: documents.title,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        frontmatter: documents.frontmatter,
+        content: documents.content,
+      })
       .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id))
       .where(eq(documents.id, id));
 
     if (!row) {
@@ -116,7 +132,7 @@ export class DocumentsClient {
         .insert(documents)
         .values({
           id,
-          journal: args.journal,
+          journalId: resolveJournalId(trx, args.journal),
           title: args.frontMatter.title,
           createdAt: args.frontMatter.createdAt,
           updatedAt: args.frontMatter.updatedAt,
@@ -170,7 +186,7 @@ export class DocumentsClient {
       trx
         .update(documents)
         .set({
-          journal: args.journal,
+          journalId: resolveJournalId(trx, args.journal),
           title: args.frontMatter.title,
           updatedAt: args.frontMatter.updatedAt,
           frontmatter: JSON.stringify(userKeys),
@@ -243,7 +259,7 @@ export class DocumentsClient {
         trx
           .update(documents)
           .set({
-            journal: args.journal,
+            journalId: resolveJournalId(trx, args.journal),
             title: args.title,
             createdAt: args.createdAt,
             updatedAt: args.updatedAt,
@@ -273,7 +289,7 @@ export class DocumentsClient {
         .insert(documents)
         .values({
           id: args.id,
-          journal: args.journal,
+          journalId: resolveJournalId(trx, args.journal),
           title: args.title,
           createdAt: args.createdAt,
           updatedAt: args.updatedAt,
@@ -312,7 +328,7 @@ export class DocumentsClient {
     if (q?.journals?.length) {
       conditions.push(
         inArray(
-          sql`lower(${documents.journal})`,
+          sql`lower(${journals.name})`,
           q.journals.map((j) => j.toLowerCase()),
         ),
       );
@@ -321,7 +337,7 @@ export class DocumentsClient {
     if (q?.exclude?.journals?.length) {
       conditions.push(
         notInArray(
-          sql`lower(${documents.journal})`,
+          sql`lower(${journals.name})`,
           q.exclude.journals.map((j) => j.toLowerCase()),
         ),
       );
@@ -387,10 +403,13 @@ export class DocumentsClient {
       id: documents.id,
       createdAt: documents.createdAt,
       title: documents.title,
-      journal: documents.journal,
+      journal: journals.name,
     };
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    let query = this.db.select(cols).from(documents);
+    let query = this.db
+      .select(cols)
+      .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id));
     const filtered = whereClause ? query.where(whereClause) : query;
     const ordered = filtered.orderBy(sql`${documents.createdAt} DESC`);
     const rows = await (q?.limit ? ordered.limit(q.limit) : ordered);
@@ -409,10 +428,10 @@ export class DocumentsClient {
       conditions.push(inArray(documents.id, q.ids));
     }
     if (q?.journals?.length) {
-      conditions.push(inArray(documents.journal, q.journals));
+      conditions.push(inArray(journals.name, q.journals));
     }
     if (q?.exclude?.journals?.length) {
-      conditions.push(notInArray(documents.journal, q.exclude.journals));
+      conditions.push(notInArray(journals.name, q.exclude.journals));
     }
     if (q?.date) {
       conditions.push(like(documents.createdAt, `${q.date}%`));
@@ -457,7 +476,8 @@ export class DocumentsClient {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const query = this.db
       .select({ count: sql<number>`count(*)` })
-      .from(documents);
+      .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id));
     const filtered = whereClause ? query.where(whereClause) : query;
     const [result] = await filtered;
     return Number(result?.count || 0);
@@ -466,9 +486,20 @@ export class DocumentsClient {
   deindexJournal = async (journal: string): Promise<void> => {
     this.db.transaction((trx) => {
       trx.run(
-        sql`DELETE FROM documents_fts WHERE id IN (SELECT id FROM documents WHERE journal = ${journal})`,
+        sql`DELETE FROM documents_fts WHERE id IN (SELECT d.id FROM documents d JOIN journals j ON j.id = d.journalId WHERE j.name = ${journal})`,
       );
-      trx.delete(documents).where(eq(documents.journal, journal)).run();
+      trx
+        .delete(documents)
+        .where(
+          inArray(
+            documents.journalId,
+            trx
+              .select({ id: journals.id })
+              .from(journals)
+              .where(eq(journals.name, journal)),
+          ),
+        )
+        .run();
     });
   };
 

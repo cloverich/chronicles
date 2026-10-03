@@ -2,18 +2,23 @@
   "description": "Export golden vector: frontmatter ordering and quoting, journal directory mapping, link rewriting, attachments, body normalization.",
   "journals": [
     {
+      "id": "03ckcy7vckbi9p65ykb1j0vkc",
       "name": "default_journal"
     },
     {
+      "id": "03aq5qh9copxys3mzz5l8q60f",
       "name": "work"
     },
     {
+      "id": "03aqdjryx3t7dd9h7lezzx83o",
       "name": "my notes"
     },
     {
+      "id": "03aqld2ohipshn721zlijp170",
       "name": "_private"
     },
     {
+      "id": "03aqt6de1xziesuws46rpwkh4",
       "name": "日記"
     }
   ],

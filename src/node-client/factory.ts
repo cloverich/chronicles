@@ -8,6 +8,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createId } from "../preload/client/util";
 import { BulkOperationsClient } from "./bulk-operations";
 import { DocumentsClient } from "./documents";
 import { ExportClient } from "./export";
@@ -50,6 +51,41 @@ function resolveMigrationsFolder(): string {
   }
   // Last resort: resolve from cwd
   return path.resolve(process.cwd(), "src/node-client/migrations");
+}
+
+/**
+ * Apply pending Drizzle migrations with foreign keys off, per SQLite's
+ * table-rebuild procedure: with them on, dropping a parent table (e.g.
+ * `journals`) inside a migration cascade-deletes its children. Integrity is
+ * verified with `foreign_key_check` before foreign keys are re-enabled.
+ */
+function runMigrations(
+  sqlite: Database.Database,
+  db: BetterSQLite3Database<typeof schema>,
+  migrationsFolder: string,
+) {
+  // Used by migrations that mint ids (e.g. 0003_journal_ids).
+  sqlite.function(
+    "chronicles_create_id",
+    { deterministic: false },
+    (timestamp: unknown) => {
+      const ms = typeof timestamp === "string" ? Date.parse(timestamp) : NaN;
+      return createId(Number.isFinite(ms) && ms >= 0 ? ms : undefined);
+    },
+  );
+
+  sqlite.exec("PRAGMA foreign_keys = OFF;");
+  try {
+    migrate(db, { migrationsFolder });
+    const violations = sqlite.prepare("PRAGMA foreign_key_check").all();
+    if (violations.length > 0) {
+      throw new Error(
+        `[MIGRATION_FK_VIOLATION] ${violations.length} foreign key violations after migration: ${JSON.stringify(violations.slice(0, 5))}`,
+      );
+    }
+  } finally {
+    sqlite.exec("PRAGMA foreign_keys = ON;");
+  }
 }
 
 export interface CreateClientOptions {
@@ -137,7 +173,7 @@ export async function createClient(
     );
   }
 
-  migrate(db, { migrationsFolder });
+  runMigrations(sqlite, db, migrationsFolder);
 
   // FTS5 virtual table — not expressible in Drizzle schema, so we create it
   // manually (idempotent).

@@ -1,7 +1,7 @@
 ---
 id: "03b9wsjvyu3t3ufq044kfzgru"
 title: "笔记 🎉 \"quoted\""
-journal: "日記"
+journal: "03aqt6de1xziesuws46rpwkh4"
 createdAt: "2024-03-01T00:00:00.000Z"
 updatedAt: "2024-03-01T00:00:00.000Z"
 tags: ["unicode","émoji"]

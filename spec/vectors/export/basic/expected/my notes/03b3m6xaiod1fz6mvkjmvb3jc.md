@@ -1,6 +1,6 @@
 ---
 id: "03b3m6xaiod1fz6mvkjmvb3jc"
-journal: "my notes"
+journal: "03aqdjryx3t7dd9h7lezzx83o"
 createdAt: "2024-02-01T00:00:00.000Z"
 updatedAt: "2024-02-01T00:00:00.000Z"
 tags: []

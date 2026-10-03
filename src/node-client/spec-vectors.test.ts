@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import fs from "fs";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
@@ -7,6 +8,7 @@ import { fileURLToPath } from "url";
 import { SourceType } from "../preload/client/importer/SourceType";
 import { deriveData } from "./derive";
 import { createClient } from "./factory";
+import * as schema from "./schema";
 
 /**
  * Runs the language-neutral vectors in `spec/vectors/`. Set
@@ -21,7 +23,7 @@ const SPEC_DIR = path.resolve(
 const UPDATE = process.env.UPDATE_VECTORS === "1";
 
 interface ExportVectorInput {
-  journals: { name: string }[];
+  journals: { id: string; name: string }[];
   attachments: { name: string; base64: string }[];
   notes: {
     id: string;
@@ -60,9 +62,13 @@ function assertSameTree(actualDir: string, expectedDir: string) {
 
 async function loadExportInput(input: ExportVectorInput, notesDir: string) {
   const client = await createClient({ dbPath: ":memory:", notesDir });
-  const existing = new Set((await client.journals.list()).map((j) => j.name));
   for (const j of input.journals) {
-    if (!existing.has(j.name)) await client.journals.create({ name: j.name });
+    const updated = client.db
+      .update(schema.journals)
+      .set({ id: j.id })
+      .where(eq(schema.journals.name, j.name))
+      .run();
+    if (updated.changes === 0) await client.journals.index(j.name, j.id);
   }
   fs.mkdirSync(path.join(notesDir, "_attachments"), { recursive: true });
   for (const a of input.attachments) {
