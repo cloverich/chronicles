@@ -46,13 +46,7 @@ export const AddTagModal = observer(
       if (!selectedTag) return;
 
       // Fire and forget - store handles the async operation
-      bulkOps.addTag(
-        {
-          journals: searchStore.selectedJournals,
-          tags: searchStore.selectedTags,
-        },
-        selectedTag,
-      );
+      bulkOps.addTag(searchStore.query, selectedTag);
 
       handleClose();
     };

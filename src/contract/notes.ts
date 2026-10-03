@@ -132,6 +132,17 @@ export interface UpdateNoteRequest {
   updatedAt?: Timestamp;
 }
 
+export type BulkOp =
+  | { type: "add_tag"; tag: string }
+  | { type: "remove_tag"; tag: string }
+  | { type: "change_journal"; journalId: string };
+
+/** Apply one change to every note matching `query`. */
+export interface BulkUpdateRequest {
+  query: NoteQuery;
+  op: BulkOp;
+}
+
 export interface PutAttachmentRequest {
   bytes: Uint8Array;
   /** Original file name; its extension becomes the attachment's. */
@@ -153,6 +164,14 @@ export interface SearchNotesResponse {
 export interface WriteNoteResponse {
   id: string;
   revision: string;
+}
+
+export interface BulkUpdateResponse {
+  /** Notes matching the query. */
+  matched: number;
+  /** Notes changed (a no-op change, e.g. adding a tag already present, counts). */
+  updated: number;
+  failed: { id: string; message: string }[];
 }
 
 export interface PutAttachmentResponse {
@@ -182,6 +201,8 @@ export interface NotesClient {
 
   listTags(): Promise<{ tags: TagCount[] }>;
 
+  bulkUpdate(req: BulkUpdateRequest): Promise<BulkUpdateResponse>;
+
   putAttachment(req: PutAttachmentRequest): Promise<PutAttachmentResponse>;
 }
 
@@ -201,5 +222,6 @@ export const NOTES_OPERATIONS = [
   "setJournalArchived",
   "deleteJournal",
   "listTags",
+  "bulkUpdate",
   "putAttachment",
 ] as const satisfies readonly NotesOperation[];

@@ -59,6 +59,11 @@ archived, noteCount}`. `NoteSummary` is `{id, journalId, title, createdAt}`.
   (`conflict`; re-casing a journal's own name is allowed). The last journal
   can be neither deleted nor archived (`invalid_input`). Lists are in
   code-point order of name.
+- **Bulk updates:** `op` is `{type: "add_tag" | "remove_tag", tag}` or
+  `{type: "change_journal", journalId}`. Every note matching `query` is
+  changed; `updatedAt` and `revision` checks are not applied (revisions are
+  recomputed). No matches is not an error. An empty tag or unknown journal is
+  `invalid_input`.
 - **Notes need a journal:** creating or moving a note into an unknown journal
   is `invalid_input`.
 - **Attachments:** stored verbatim and addressed by content

@@ -7,6 +7,7 @@ import {
 } from "../contract/notes";
 import { parseAttachmentUrl } from "../markdown/attachmentRefs";
 import type { SearchRequest } from "../preload/client/types";
+import type { BulkOperationsClient } from "./bulk-operations";
 import type { DocumentsClient } from "./documents";
 import type { NodeFilesClient } from "./files";
 import type { JournalsClient, JournalWithCount } from "./journals";
@@ -22,8 +23,9 @@ export function createNodeNotesClient(deps: {
   journals: JournalsClient;
   tags: TagsClient;
   files: NodeFilesClient;
+  bulkOperations: BulkOperationsClient;
 }): NotesClient {
-  const { documents, journals, tags, files } = deps;
+  const { documents, journals, tags, files, bulkOperations } = deps;
   const attachments = files.attachments;
 
   const allJournals = () => journals.listWithCounts();
@@ -197,6 +199,36 @@ export function createNodeNotesClient(deps: {
       }),
 
     listTags: () => call(async () => ({ tags: await tags.allWithCounts() })),
+
+    bulkUpdate: ({ query, op }) =>
+      call(async () => {
+        const tag = op.type === "change_journal" ? null : op.tag.trim();
+        if (tag === "") throw new NotesError("invalid_input", "Tag is empty");
+        const params =
+          op.type === "change_journal"
+            ? {
+                journal: (await journalById(op.journalId, "invalid_input"))
+                  .name,
+              }
+            : { tag: tag! };
+
+        const search = await toSearchRequest(query);
+        const matched = await documents.searchCount(search);
+        if (matched === 0) return { matched: 0, updated: 0, failed: [] };
+
+        // The bulk_operations tables keep a record of the run.
+        const id = await bulkOperations.create({
+          type: op.type,
+          search,
+          params,
+        });
+        await bulkOperations.process(id);
+        const { items } = await bulkOperations.get(id);
+        const failed = items
+          .filter((i) => i.status === "error")
+          .map((i) => ({ id: i.documentId, message: i.error ?? "" }));
+        return { matched, updated: items.length - failed.length, failed };
+      }),
 
     putAttachment: ({ bytes, name, optimizeImage }) =>
       call(async () => {

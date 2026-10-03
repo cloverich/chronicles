@@ -1,110 +1,67 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 import { toast } from "sonner";
-import type { IBulkOperationsClient } from "../../node-client/bulk-operations";
-import type { SearchRequest } from "../../preload/client/types";
+import type { BulkOp, NoteQuery, NotesClient } from "../../contract/notes";
 
 export type OperationStatus = "idle" | "processing" | "completed" | "error";
 
-export interface CurrentOperation {
-  id: string;
-  type: "add_tag" | "remove_tag" | "change_journal";
-  label: string; // Human-readable description (e.g., "Adding tag 'work'")
-}
-
 export class BulkOperationsStore {
   status: OperationStatus = "idle";
-  latestOperationId: string | null = null;
+  /** Guards status against an older run finishing after a newer one. */
+  private runId = 0;
 
-  constructor(private client: IBulkOperationsClient) {
+  constructor(private notes: NotesClient) {
     makeObservable(this, {
       status: observable,
-      latestOperationId: observable,
       addTag: action,
       removeTag: action,
       changeJournal: action,
     });
   }
 
-  /**
-   * Add a tag to all documents matching the search
-   */
-  addTag = async (search: SearchRequest, tag: string): Promise<void> => {
-    await this.executeOperation({
-      type: "add_tag",
-      search,
-      params: { tag },
-      label: `Adding tag "${tag}"`,
-    });
-  };
+  /** Add a tag to all notes matching the query. */
+  addTag = (query: NoteQuery, tag: string) =>
+    this.run(query, { type: "add_tag", tag }, `Adding tag "${tag}"`);
 
-  /**
-   * Remove a tag from all documents matching the search
-   */
-  removeTag = async (search: SearchRequest, tag: string): Promise<void> => {
-    await this.executeOperation({
-      type: "remove_tag",
-      search,
-      params: { tag },
-      label: `Removing tag "${tag}"`,
-    });
-  };
+  /** Remove a tag from all notes matching the query. */
+  removeTag = (query: NoteQuery, tag: string) =>
+    this.run(query, { type: "remove_tag", tag }, `Removing tag "${tag}"`);
 
-  /**
-   * Change the journal of all documents matching the search
-   */
-  changeJournal = async (
-    search: SearchRequest,
-    journal: string,
+  /** Move all notes matching the query to a journal. */
+  changeJournal = (query: NoteQuery, journal: { id: string; name: string }) =>
+    this.run(
+      query,
+      { type: "change_journal", journalId: journal.id },
+      `Moving to "${journal.name}"`,
+    );
+
+  private run = async (
+    query: NoteQuery,
+    op: BulkOp,
+    label: string,
   ): Promise<void> => {
-    await this.executeOperation({
-      type: "change_journal",
-      search,
-      params: { journal },
-      label: `Moving to "${journal}"`,
-    });
-  };
-
-  /**
-   * Execute any bulk operation
-   */
-  private executeOperation = async (config: {
-    type: "add_tag" | "remove_tag" | "change_journal";
-    search: SearchRequest;
-    params: { tag?: string; journal?: string };
-    label: string;
-  }): Promise<void> => {
-    const { type, search, params, label } = config;
-
     // sonner defers mounting new toasts via setTimeout but applies dismiss()
     // synchronously. With sqlite the whole operation can finish before that
     // timer fires, so dismiss+new-toast leaves the loading toast orphaned.
     // Updating the toast in place by id is queued after the mount instead.
     const toastId = toast.loading(label);
-
+    const runId = ++this.runId;
     runInAction(() => {
       this.status = "processing";
     });
 
-    let operationId: string | null = null;
-
     try {
-      operationId = await this.client.create({
-        type,
-        search,
-        params,
-      });
-
-      runInAction(() => {
-        this.latestOperationId = operationId;
-      });
-
-      await this.client.process(operationId);
-
-      toast.success(`${label} complete`, { id: toastId });
-
-      if (this.latestOperationId === operationId) {
+      const result = await this.notes.bulkUpdate({ query, op });
+      if (result.failed.length > 0) {
+        toast.error(
+          `${label}: ${result.failed.length} of ${result.matched} notes failed`,
+          { id: toastId },
+        );
+      } else {
+        toast.success(`${label} complete`, { id: toastId });
+      }
+      if (runId === this.runId) {
         runInAction(() => {
-          this.status = "completed";
+          this.status = result.failed.length > 0 ? "error" : "completed";
         });
       }
     } catch (err) {
@@ -112,8 +69,7 @@ export class BulkOperationsStore {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
       toast.error(`${label} failed: ${errorMessage}`, { id: toastId });
-
-      if (operationId && this.latestOperationId === operationId) {
+      if (runId === this.runId) {
         runInAction(() => {
           this.status = "error";
         });

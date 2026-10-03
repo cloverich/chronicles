@@ -25,13 +25,7 @@ export const RemoveTagModal = observer(
       if (!selectedTag) return;
 
       // Fire and forget - store handles the async operation
-      bulkOps.removeTag(
-        {
-          journals: searchStore.selectedJournals,
-          tags: searchStore.selectedTags,
-        },
-        selectedTag,
-      );
+      bulkOps.removeTag(searchStore.query, selectedTag);
 
       handleClose();
     };
