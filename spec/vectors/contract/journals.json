@@ -1,0 +1,247 @@
+{
+  "description": "Journal list, create, rename, archive, delete, and their rules.",
+  "scenarios": [
+    {
+      "name": "list with counts",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "listJournals",
+          "response": {
+            "journals": [
+              {
+                "id": "03aqdjryx3t7dd9h7lezzx83o",
+                "name": "personal",
+                "archived": false,
+                "noteCount": 1
+              },
+              {
+                "id": "03aq5qh9copxys3mzz5l8q60f",
+                "name": "work",
+                "archived": false,
+                "noteCount": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "create and name rules",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "createJournal",
+          "request": {
+            "name": "  travel  "
+          },
+          "response": {
+            "id": "$capture:travel",
+            "name": "travel",
+            "archived": false,
+            "noteCount": 0
+          }
+        },
+        {
+          "op": "createJournal",
+          "request": {
+            "name": "WORK"
+          },
+          "error": {
+            "code": "conflict"
+          }
+        },
+        {
+          "op": "createJournal",
+          "request": {
+            "name": ""
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        },
+        {
+          "op": "createJournal",
+          "request": {
+            "name": "_attachments"
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        },
+        {
+          "op": "createJournal",
+          "request": {
+            "name": "a/b"
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        },
+        {
+          "op": "createJournal",
+          "request": {
+            "name": "xxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        }
+      ]
+    },
+    {
+      "name": "rename keeps notes; collisions conflict",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "renameJournal",
+          "request": {
+            "id": "03aq5qh9copxys3mzz5l8q60f",
+            "name": "Job"
+          },
+          "response": {
+            "id": "03aq5qh9copxys3mzz5l8q60f",
+            "name": "Job",
+            "archived": false,
+            "noteCount": 2
+          }
+        },
+        {
+          "op": "renameJournal",
+          "request": {
+            "id": "03aq5qh9copxys3mzz5l8q60f",
+            "name": "JOB"
+          },
+          "response": {
+            "id": "03aq5qh9copxys3mzz5l8q60f",
+            "name": "JOB",
+            "archived": false,
+            "noteCount": 2
+          }
+        },
+        {
+          "op": "renameJournal",
+          "request": {
+            "id": "03aq5qh9copxys3mzz5l8q60f",
+            "name": "Personal"
+          },
+          "error": {
+            "code": "conflict"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp"
+          },
+          "response": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "$any",
+            "content": "$any",
+            "tags": "$any",
+            "createdAt": "$any",
+            "updatedAt": "$any",
+            "frontMatter": "$any",
+            "revision": "$any"
+          }
+        },
+        {
+          "op": "renameJournal",
+          "request": {
+            "id": "03zzzzzzzzzzzzzzzzzzzzzzz",
+            "name": "nope"
+          },
+          "error": {
+            "code": "not_found"
+          }
+        }
+      ]
+    },
+    {
+      "name": "archive and unarchive",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "setJournalArchived",
+          "request": {
+            "id": "03aqdjryx3t7dd9h7lezzx83o",
+            "archived": true
+          },
+          "response": {
+            "id": "03aqdjryx3t7dd9h7lezzx83o",
+            "name": "personal",
+            "archived": true,
+            "noteCount": 1
+          }
+        },
+        {
+          "op": "setJournalArchived",
+          "request": {
+            "id": "03aqdjryx3t7dd9h7lezzx83o",
+            "archived": false
+          },
+          "response": {
+            "id": "03aqdjryx3t7dd9h7lezzx83o",
+            "name": "personal",
+            "archived": false,
+            "noteCount": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "delete a journal deletes its notes; the last journal stays",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "deleteJournal",
+          "request": {
+            "id": "03aq5qh9copxys3mzz5l8q60f"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp"
+          },
+          "error": {
+            "code": "not_found"
+          }
+        },
+        {
+          "op": "listJournals",
+          "response": {
+            "journals": [
+              {
+                "id": "03aqdjryx3t7dd9h7lezzx83o",
+                "name": "personal",
+                "archived": false,
+                "noteCount": 1
+              }
+            ]
+          }
+        },
+        {
+          "op": "deleteJournal",
+          "request": {
+            "id": "03aqdjryx3t7dd9h7lezzx83o"
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        },
+        {
+          "op": "setJournalArchived",
+          "request": {
+            "id": "03aqdjryx3t7dd9h7lezzx83o",
+            "archived": true
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        }
+      ]
+    }
+  ]
+}

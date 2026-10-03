@@ -1,0 +1,300 @@
+{
+  "description": "searchNotes and countNotes filters and ordering.",
+  "scenarios": [
+    {
+      "name": "everything, newest first",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "searchNotes",
+          "request": {},
+          "response": {
+            "items": [
+              {
+                "id": "03b9wsjvyu3t3ufq044kfzgru",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Gamma",
+                "createdAt": "2024-03-05T09:00:00.000Z"
+              },
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              },
+              {
+                "id": "03awvyp9xobkv9t1jmmtiz0bp",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Alpha meeting",
+                "createdAt": "2024-01-10T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "countNotes",
+          "request": {},
+          "response": {
+            "count": 3
+          }
+        }
+      ]
+    },
+    {
+      "name": "journal filters",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "searchNotes",
+          "request": {
+            "journalIds": [
+              "03aq5qh9copxys3mzz5l8q60f"
+            ]
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b9wsjvyu3t3ufq044kfzgru",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Gamma",
+                "createdAt": "2024-03-05T09:00:00.000Z"
+              },
+              {
+                "id": "03awvyp9xobkv9t1jmmtiz0bp",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Alpha meeting",
+                "createdAt": "2024-01-10T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "excludeJournalIds": [
+              "03aq5qh9copxys3mzz5l8q60f"
+            ]
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "journalIds": [
+              "03zzzzzzzzzzzzzzzzzzzzzzz"
+            ]
+          },
+          "response": {
+            "items": []
+          }
+        },
+        {
+          "op": "countNotes",
+          "request": {
+            "journalIds": [
+              "03aq5qh9copxys3mzz5l8q60f"
+            ]
+          },
+          "response": {
+            "count": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "tag filters",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "searchNotes",
+          "request": {
+            "tags": [
+              "ideas",
+              "meeting"
+            ]
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              },
+              {
+                "id": "03awvyp9xobkv9t1jmmtiz0bp",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Alpha meeting",
+                "createdAt": "2024-01-10T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "excludeTags": [
+              "work"
+            ]
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b9wsjvyu3t3ufq044kfzgru",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Gamma",
+                "createdAt": "2024-03-05T09:00:00.000Z"
+              },
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "title, text, and date filters",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "searchNotes",
+          "request": {
+            "titles": [
+              "BETA"
+            ]
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "texts": [
+              "roadmap"
+            ]
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b9wsjvyu3t3ufq044kfzgru",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Gamma",
+                "createdAt": "2024-03-05T09:00:00.000Z"
+              },
+              {
+                "id": "03awvyp9xobkv9t1jmmtiz0bp",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Alpha meeting",
+                "createdAt": "2024-01-10T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "date": "2024-02"
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "paging with before and limit",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "searchNotes",
+          "request": {
+            "limit": 2
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b9wsjvyu3t3ufq044kfzgru",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Gamma",
+                "createdAt": "2024-03-05T09:00:00.000Z"
+              },
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "before": "2024-03"
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              },
+              {
+                "id": "03awvyp9xobkv9t1jmmtiz0bp",
+                "journalId": "03aq5qh9copxys3mzz5l8q60f",
+                "title": "Alpha meeting",
+                "createdAt": "2024-01-10T09:00:00.000Z"
+              }
+            ]
+          }
+        },
+        {
+          "op": "searchNotes",
+          "request": {
+            "before": "03b9wsjvyu3t3ufq044kfzgru",
+            "limit": 1
+          },
+          "response": {
+            "items": [
+              {
+                "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+                "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+                "title": "Beta notes",
+                "createdAt": "2024-02-20T09:00:00.000Z"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

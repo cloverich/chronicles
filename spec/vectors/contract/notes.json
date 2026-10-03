@@ -1,0 +1,311 @@
+{
+  "description": "getNote, createNote, updateNote, deleteNote, including revisions and conflicts.",
+  "scenarios": [
+    {
+      "name": "get a note",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp"
+          },
+          "response": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Alpha meeting",
+            "content": "Discussed the roadmap with [Beta](chronicles://note/03b3m6xaiod1fz6mvkjmvb3jc).\n",
+            "tags": [
+              "meeting",
+              "work"
+            ],
+            "createdAt": "2024-01-10T09:00:00.000Z",
+            "updatedAt": "2024-01-10T10:00:00.000Z",
+            "frontMatter": {},
+            "revision": "12fc46846ebfdb5bc670cde2287a4a5550fb093b8b790a0385b4b2884d89dd4c"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru"
+          },
+          "response": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Gamma",
+            "content": "Roadmap follow-up.\n",
+            "tags": [],
+            "createdAt": "2024-03-05T09:00:00.000Z",
+            "updatedAt": "2024-03-06T09:00:00.000Z",
+            "frontMatter": {
+              "source": "fixture",
+              "priority": 2
+            },
+            "revision": "37ce1574eaf2e10224987e216874cc6851ff4b9072371451ee351850afb3c395"
+          }
+        }
+      ]
+    },
+    {
+      "name": "get a missing note",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03zzzzzzzzzzzzzzzzzzzzzzz"
+          },
+          "error": {
+            "code": "not_found"
+          }
+        }
+      ]
+    },
+    {
+      "name": "create then read",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "createNote",
+          "request": {
+            "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+            "title": "Delta",
+            "content": "New note.\n",
+            "tags": [
+              "b",
+              "a",
+              "b"
+            ],
+            "frontMatter": {
+              "mood": "good"
+            },
+            "createdAt": "2024-05-01T00:00:00.000Z"
+          },
+          "response": {
+            "id": "$capture:delta",
+            "revision": "$any"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "$ref:delta"
+          },
+          "response": {
+            "id": "$ref:delta",
+            "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+            "title": "Delta",
+            "content": "New note.\n",
+            "tags": [
+              "a",
+              "b"
+            ],
+            "createdAt": "2024-05-01T00:00:00.000Z",
+            "updatedAt": "2024-05-01T00:00:00.000Z",
+            "frontMatter": {
+              "mood": "good"
+            },
+            "revision": "$any"
+          }
+        }
+      ]
+    },
+    {
+      "name": "create in a missing journal",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "createNote",
+          "request": {
+            "journalId": "03zzzzzzzzzzzzzzzzzzzzzzz",
+            "content": "x"
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update with the current revision, then a stale one conflicts",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru"
+          },
+          "response": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Gamma",
+            "content": "Roadmap follow-up.\n",
+            "tags": [],
+            "createdAt": "2024-03-05T09:00:00.000Z",
+            "updatedAt": "2024-03-06T09:00:00.000Z",
+            "frontMatter": {
+              "source": "fixture",
+              "priority": 2
+            },
+            "revision": "$capture:r0"
+          }
+        },
+        {
+          "op": "updateNote",
+          "request": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "baseRevision": "$ref:r0",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Gamma",
+            "content": "Roadmap follow-up, revised.\n",
+            "tags": [
+              "revised"
+            ],
+            "frontMatter": {
+              "priority": 2,
+              "source": "fixture"
+            },
+            "updatedAt": "2024-03-07T00:00:00.000Z"
+          },
+          "response": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "revision": "20bb35b21831287a94feb73b75205f4b7406ab47366f24b37e0b83938104a8e7"
+          }
+        },
+        {
+          "op": "updateNote",
+          "note": "second editor still holds r0",
+          "request": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "baseRevision": "$ref:r0",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Gamma",
+            "content": "A stale edit.\n",
+            "tags": [],
+            "updatedAt": "2024-03-08T00:00:00.000Z"
+          },
+          "error": {
+            "code": "conflict"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru"
+          },
+          "response": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Gamma",
+            "content": "Roadmap follow-up, revised.\n",
+            "tags": [
+              "revised"
+            ],
+            "createdAt": "2024-03-05T09:00:00.000Z",
+            "updatedAt": "2024-03-07T00:00:00.000Z",
+            "frontMatter": {
+              "priority": 2,
+              "source": "fixture"
+            },
+            "revision": "20bb35b21831287a94feb73b75205f4b7406ab47366f24b37e0b83938104a8e7"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update without baseRevision always applies; moving journals",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "updateNote",
+          "request": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp",
+            "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+            "title": "Alpha meeting",
+            "content": "Moved.\n",
+            "tags": [
+              "work"
+            ],
+            "updatedAt": "2024-04-01T00:00:00.000Z"
+          },
+          "response": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp",
+            "revision": "e0153d247ceb65f93ca501cc544952a0b4a7b0be1ddf5a8bd265ba13e787cd23"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp"
+          },
+          "response": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp",
+            "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+            "title": "Alpha meeting",
+            "content": "Moved.\n",
+            "tags": [
+              "work"
+            ],
+            "createdAt": "2024-01-10T09:00:00.000Z",
+            "updatedAt": "2024-04-01T00:00:00.000Z",
+            "frontMatter": {},
+            "revision": "e0153d247ceb65f93ca501cc544952a0b4a7b0be1ddf5a8bd265ba13e787cd23"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update a missing note",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "updateNote",
+          "request": {
+            "id": "03zzzzzzzzzzzzzzzzzzzzzzz",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "content": "x",
+            "tags": []
+          },
+          "error": {
+            "code": "not_found"
+          }
+        }
+      ]
+    },
+    {
+      "name": "delete is idempotent",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "deleteNote",
+          "request": {
+            "id": "03b3m6xaiod1fz6mvkjmvb3jc"
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03b3m6xaiod1fz6mvkjmvb3jc"
+          },
+          "error": {
+            "code": "not_found"
+          }
+        },
+        {
+          "op": "deleteNote",
+          "request": {
+            "id": "03b3m6xaiod1fz6mvkjmvb3jc"
+          }
+        },
+        {
+          "op": "countNotes",
+          "request": {},
+          "response": {
+            "count": 2
+          }
+        }
+      ]
+    }
+  ]
+}

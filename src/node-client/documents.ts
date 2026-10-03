@@ -486,7 +486,10 @@ export class DocumentsClient {
       .from(documents)
       .innerJoin(journals, eq(documents.journalId, journals.id));
     const filtered = whereClause ? query.where(whereClause) : query;
-    const ordered = filtered.orderBy(sql`${documents.createdAt} DESC`);
+    const ordered = filtered.orderBy(
+      sql`${documents.createdAt} DESC`,
+      sql`${documents.id} DESC`,
+    );
     const rows = await (q?.limit ? ordered.limit(q.limit) : ordered);
 
     return { data: rows as SearchItem[] };
