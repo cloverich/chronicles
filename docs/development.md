@@ -66,7 +66,7 @@ Bullet points communicate key changes, not dev practices (i.e. "added search by 
 
 ## Conventions
 
-- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`; generate new ones with `yarn drizzle-kit generate` (config: `drizzle.config.ts` at repo root)
+- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`; generate new ones with `yarn drizzle-kit generate` (config: `drizzle.config.ts` at repo root). `generate` prompts interactively for column renames and can't mint ids or rewrite content, so data-transforming migrations (0003+) are hand-written SQL plus a hand-edited `meta/*_snapshot.json`; afterwards `drizzle-kit generate` must report "No schema changes". Upgrade tests live in `src/node-client/migrations.test.ts`; `scripts/scratch-profile.ts` seeds a disposable profile at an older migration for an in-app check
 - **IPC**: All renderer<->main communication through `src/preload/`
 - **State**: MobX stores in `src/hooks/stores/`
 - **Styling**: Tailwind CSS v4 + Radix UI primitives
