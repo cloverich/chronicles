@@ -76,7 +76,6 @@ export class JournalsStore {
       await this.assertNotDefault(journal.name);
 
       await this.client.journals.remove(journal.name);
-      await this.client.documents.deindexJournal(journal.name);
       this.journals = this.journals.filter((j) => j.name !== journal.name);
     } catch (err: any) {
       console.error("Error removing journal:", err);

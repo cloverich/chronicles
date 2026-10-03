@@ -23,7 +23,7 @@ const SPEC_DIR = path.resolve(
 const UPDATE = process.env.UPDATE_VECTORS === "1";
 
 interface ExportVectorInput {
-  journals: { id: string; name: string }[];
+  journals: { id: string; name: string; archivedAt: string | null }[];
   attachments: { ext: string; base64: string }[];
   notes: {
     id: string;
@@ -65,10 +65,17 @@ async function loadExportInput(input: ExportVectorInput, notesDir: string) {
   for (const j of input.journals) {
     const updated = client.db
       .update(schema.journals)
-      .set({ id: j.id })
+      .set({ id: j.id, archivedAt: j.archivedAt })
       .where(eq(schema.journals.name, j.name))
       .run();
-    if (updated.changes === 0) await client.journals.index(j.name, j.id);
+    if (updated.changes === 0) {
+      await client.journals.index(j.name, j.id);
+      client.db
+        .update(schema.journals)
+        .set({ archivedAt: j.archivedAt })
+        .where(eq(schema.journals.id, j.id))
+        .run();
+    }
   }
   for (const a of input.attachments) {
     await client.files.attachments.putBytes(Buffer.from(a.base64, "base64"), {

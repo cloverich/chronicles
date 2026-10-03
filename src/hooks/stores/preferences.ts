@@ -10,7 +10,6 @@ export class Preferences implements IPreferences {
 
   databaseUrl!: string;
   defaultJournal!: string | null;
-  archivedJournals!: Record<string, boolean>;
   notesDir!: string;
   settingsDir!: string;
   onboarding!: "new" | "complete";
@@ -47,7 +46,6 @@ export class Preferences implements IPreferences {
     makeObservable(this, {
       databaseUrl: observable,
       defaultJournal: observable,
-      archivedJournals: observable,
       notesDir: observable,
       settingsDir: observable,
       onboarding: observable,
@@ -68,8 +66,6 @@ export class Preferences implements IPreferences {
       () => ({
         databaseUrl: this.databaseUrl,
         defaultJournal: this.defaultJournal,
-        // todo: add test for archived journals syncing with settings store
-        archivedJournals: toJS(this.archivedJournals),
         notesDir: this.notesDir,
         settingsDir: this.settingsDir,
         onboarding: this.onboarding,

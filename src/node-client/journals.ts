@@ -1,11 +1,11 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import path from "path";
 
 import { createId } from "../preload/client/util";
 import type { Trx } from "./derive";
 import { tombstoneNotes } from "./documents";
-import type { IPreferencesClient } from "./preferences";
+import type { IPreferences, IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
 import {
   documents as documentsTable,
@@ -26,6 +26,16 @@ export interface JournalWithCount extends JournalResponse {
 
 export type IJournalsClient = JournalsClient;
 
+const toResponse = (
+  row: typeof journalsTable.$inferSelect,
+): JournalResponse => ({
+  id: row.id,
+  name: row.name,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+  archived: row.archivedAt != null,
+});
+
 export class JournalsClient {
   constructor(
     private db: BetterSQLite3Database<typeof schema>,
@@ -38,26 +48,7 @@ export class JournalsClient {
       .from(journalsTable)
       .orderBy(journalsTable.name);
 
-    const archived: Record<string, boolean> =
-      (await this.preferences.get("archivedJournals")) ?? {};
-
-    const results: JournalResponse[] = [];
-    for (const j of rows) {
-      if (!(j.name in archived)) {
-        // patch missing entry
-        await this.preferences.set(`archivedJournals.${j.name}`, false);
-        archived[j.name] = false;
-      }
-      results.push({
-        id: j.id,
-        name: j.name,
-        createdAt: j.createdAt,
-        updatedAt: j.updatedAt,
-        archived: archived[j.name] || false,
-      });
-    }
-
-    return results;
+    return rows.map(toResponse);
   };
 
   listWithCounts = async (): Promise<JournalWithCount[]> => {
@@ -91,17 +82,6 @@ export class JournalsClient {
     journalName: string,
     id: string = createId(),
   ): Promise<JournalResponse> => {
-    const archivedPrefs: Record<string, boolean> =
-      (await this.preferences.get("archivedJournals")) ?? {};
-
-    let isArchived: boolean;
-    if (!(journalName in archivedPrefs)) {
-      await this.preferences.set(`archivedJournals.${journalName}`, false);
-      isArchived = false;
-    } else {
-      isArchived = archivedPrefs[journalName];
-    }
-
     const timestamp = new Date().toISOString();
 
     await this.db.insert(journalsTable).values({
@@ -116,7 +96,7 @@ export class JournalsClient {
       .from(journalsTable)
       .where(eq(journalsTable.name, journalName));
 
-    return { ...row, archived: isArchived };
+    return toResponse(row);
   };
 
   rename = async (
@@ -140,18 +120,12 @@ export class JournalsClient {
 
     // Documents reference the journal by id; nothing else changes.
 
-    await this.preferences.delete(`archivedJournals.${journal.name}`);
-    await this.preferences.set(
-      `archivedJournals.${newName}`,
-      journal.archived ?? false,
-    );
-
     const [row] = await this.db
       .select()
       .from(journalsTable)
       .where(eq(journalsTable.name, newName));
 
-    return { ...row, archived: journal.archived ?? false };
+    return toResponse(row);
   };
 
   remove = async (journal: string): Promise<JournalResponse[]> => {
@@ -195,8 +169,6 @@ export class JournalsClient {
         .onConflictDoNothing()
         .run();
     });
-    await this.preferences.delete(`archivedJournals.${journal}`);
-
     return this.list();
   };
 
@@ -207,13 +179,42 @@ export class JournalsClient {
         "Cannot archive the last journal. Create a new journal first.",
       );
     }
-    await this.preferences.set(`archivedJournals.${journal}`, true);
+    await this.setArchived(journal, new Date().toISOString());
     return this.list();
   };
 
   unarchive = async (journal: string): Promise<JournalResponse[]> => {
-    await this.preferences.set(`archivedJournals.${journal}`, false);
+    await this.setArchived(journal, null);
     return this.list();
+  };
+
+  private setArchived = async (journal: string, archivedAt: string | null) => {
+    await this.db
+      .update(journalsTable)
+      .set({ archivedAt })
+      .where(eq(journalsTable.name, journal));
+  };
+
+  /**
+   * One-time move of archived state from the `archivedJournals` preference
+   * (a name → boolean map) to `journals.archivedAt`. Deletes the preference
+   * afterwards, so it runs once.
+   */
+  migrateArchivedPreference = async (): Promise<void> => {
+    const archived: IPreferences["archivedJournals"] =
+      await this.preferences.get("archivedJournals");
+    if (!archived) return;
+    const now = new Date().toISOString();
+    for (const [name, isArchived] of Object.entries(archived)) {
+      if (!isArchived) continue;
+      await this.db
+        .update(journalsTable)
+        .set({ archivedAt: now })
+        .where(
+          and(eq(journalsTable.name, name), isNull(journalsTable.archivedAt)),
+        );
+    }
+    await this.preferences.delete("archivedJournals");
   };
 
   /**

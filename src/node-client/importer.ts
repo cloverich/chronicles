@@ -496,12 +496,6 @@ export class ImporterClient {
       })
       .onConflictDoNothing();
 
-    // Track in preferences (archivedJournals) if not already present
-    const archived: Record<string, boolean> =
-      (await this.preferences.get("archivedJournals")) ?? {};
-    if (!(journalName in archived)) {
-      await this.preferences.set(`archivedJournals.${journalName}`, false);
-    }
     return journalName;
   };
 

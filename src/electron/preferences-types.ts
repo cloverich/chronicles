@@ -9,7 +9,8 @@ import { APPEARANCE_DEFAULTS } from "./appearance-defaults";
 export interface IPreferences {
   databaseUrl: string;
   defaultJournal: string | null;
-  archivedJournals: Record<string, boolean>;
+  /** Legacy: moved to journals.archivedAt at startup, then deleted. */
+  archivedJournals?: Record<string, boolean>;
   notesDir: string;
   settingsDir: string;
   onboarding: "new" | "complete";
@@ -49,7 +50,6 @@ export interface IPreferences {
 export const PREFERENCES_DEFAULTS: IPreferences = {
   databaseUrl: "",
   defaultJournal: null,
-  archivedJournals: {},
   notesDir: "",
   settingsDir: "",
   onboarding: "new",

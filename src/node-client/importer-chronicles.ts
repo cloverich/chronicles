@@ -166,6 +166,7 @@ export async function importChroniclesTree(
   const ensureJournal = async (
     journalName: string,
     journalId?: string,
+    archivedAt: string | null = null,
   ): Promise<string> => {
     const cacheKey = journalId ?? journalName;
     const cached = ensuredJournals.get(cacheKey);
@@ -212,24 +213,18 @@ export async function importChroniclesTree(
           name: journalName,
           createdAt: timestamp,
           updatedAt: timestamp,
+          archivedAt,
         })
         .run();
       report.journalsCreated.push(journalName);
       return journalName;
     });
     ensuredJournals.set(cacheKey, resolved);
-    if (resolved !== journalName) return resolved;
-
-    const archived: Record<string, boolean> =
-      (await preferences.get("archivedJournals")) ?? {};
-    if (!(journalName in archived)) {
-      await preferences.set(`archivedJournals.${journalName}`, false);
-    }
-    return journalName;
+    return resolved;
   };
 
   for (const j of manifest?.journals ?? []) {
-    await ensureJournal(j.name, j.id);
+    await ensureJournal(j.name, j.id, j.archivedAt ?? null);
   }
 
   const { notes, report: treeReport } = readChroniclesTree(importDir);

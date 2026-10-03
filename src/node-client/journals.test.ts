@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync } from "fs";
 import assert from "node:assert/strict";
-import { after, before, test } from "node:test";
+import { after, before, describe, test } from "node:test";
 import { tmpdir } from "os";
+import path from "path";
 import { createClient } from "./factory";
 
 let client: Awaited<ReturnType<typeof createClient>>;
@@ -168,4 +169,45 @@ test("journal names are unique ignoring case", async () => {
   const casefold = list.find((j) => j.name === "casefold")!;
   const renamed = await client.journals.rename(casefold, "CaseFold");
   assert.equal(renamed.name, "CaseFold");
+});
+
+describe("archived state", () => {
+  test("moves the archivedJournals preference into journals.archivedAt once", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "chronicles-archived-"));
+    try {
+      const first = await createClient({
+        dbPath: path.join(dir, "db.sqlite"),
+        notesDir: dir,
+      });
+      await first.journals.create({ name: "old" });
+      await first.journals.create({ name: "current" });
+      await first.preferences.set("archivedJournals", {
+        old: true,
+        current: false,
+      });
+      first.sqlite.close();
+
+      const second = await createClient({
+        dbPath: path.join(dir, "db.sqlite"),
+        notesDir: dir,
+      });
+      const byName = Object.fromEntries(
+        (await second.journals.list()).map((j) => [j.name, j.archived]),
+      );
+      assert.strictEqual(byName.old, true);
+      assert.strictEqual(byName.current, false);
+      assert.strictEqual(
+        await second.preferences.get("archivedJournals"),
+        undefined,
+      );
+
+      await second.journals.unarchive("old");
+      assert.strictEqual(
+        (await second.journals.list()).find((j) => j.name === "old")!.archived,
+        false,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
