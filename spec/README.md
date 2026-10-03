@@ -17,11 +17,10 @@ Node code.
 
 ## Status
 
-Draft. The data model is migrating to data spec v1 (stable journal IDs, ID-only
-note links, content-addressed attachments, revisions, tombstones). Each
-document marks which rules are already implemented. Vectors always reflect the
-current implementation exactly; when a migration changes behavior, its commit
-regenerates the vectors and the diff shows the change.
+Draft, implementing data spec v1 (stable journal IDs, ID-only note links,
+content-addressed attachments, revisions, tombstones) and export format 2.0.
+Vectors always reflect the current implementation exactly; a change in
+behavior regenerates them, and the diff shows the change.
 
 ## Vectors
 

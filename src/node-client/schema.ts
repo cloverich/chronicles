@@ -124,6 +124,16 @@ export const attachments = sqliteTable("attachments", {
     .default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ---------- tombstones ----------
+/** Records deletes so another device can learn of them; content is gone. */
+export const tombstones = sqliteTable("tombstones", {
+  id: text("id").primaryKey().notNull(),
+  kind: text("kind", { enum: ["note", "journal"] }).notNull(),
+  deletedAt: text("deletedAt").notNull(),
+  /** A note's revision when deleted. */
+  lastRevision: text("lastRevision"),
+});
+
 // ---------- imports ----------
 export const imports = sqliteTable("imports", {
   id: text("id").primaryKey().notNull(),

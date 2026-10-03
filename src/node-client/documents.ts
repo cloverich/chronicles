@@ -83,6 +83,32 @@ export function refreshRevision(trx: Trx, id: string): string {
   return revision;
 }
 
+/** Record deletes of notes (inside the deleting transaction). */
+export function tombstoneNotes(trx: Trx, ids: string[]): void {
+  if (ids.length === 0) return;
+  const deletedAt = new Date().toISOString();
+  const rows = trx
+    .select({ id: documents.id, revision: documents.revision })
+    .from(documents)
+    .where(inArray(documents.id, ids))
+    .all();
+  for (const row of rows) {
+    trx
+      .insert(schema.tombstones)
+      .values({
+        id: row.id,
+        kind: "note",
+        deletedAt,
+        lastRevision: row.revision,
+      })
+      .onConflictDoUpdate({
+        target: schema.tombstones.id,
+        set: { deletedAt, lastRevision: row.revision },
+      })
+      .run();
+  }
+}
+
 export class DocumentsClient {
   constructor(
     private db: BetterSQLite3Database<typeof schema>,
@@ -157,6 +183,7 @@ export class DocumentsClient {
     const userKeys = stripColumnOwnedKeys(args.frontMatter);
 
     this.db.transaction((trx) => {
+      trx.delete(schema.tombstones).where(eq(schema.tombstones.id, id)).run();
       trx
         .insert(documents)
         .values({
@@ -328,6 +355,10 @@ export class DocumentsClient {
       }
 
       trx
+        .delete(schema.tombstones)
+        .where(eq(schema.tombstones.id, args.id))
+        .run();
+      trx
         .insert(documents)
         .values({
           id: args.id,
@@ -355,6 +386,7 @@ export class DocumentsClient {
 
   del = async (id: string): Promise<void> => {
     this.db.transaction((trx) => {
+      tombstoneNotes(trx, [id]);
       trx.delete(documents).where(eq(documents.id, id)).run();
       trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
     });
@@ -561,6 +593,7 @@ export class DocumentsClient {
       trx.run(sql`DELETE FROM documents_fts`);
       trx.delete(documents).run();
       trx.delete(schema.journals).run();
+      trx.delete(schema.tombstones).run();
       trx.delete(schema.importNotes).run();
       trx.delete(schema.importFiles).run();
       trx.delete(schema.imports).run();

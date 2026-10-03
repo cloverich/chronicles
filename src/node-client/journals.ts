@@ -4,6 +4,7 @@ import path from "path";
 
 import { createId } from "../preload/client/util";
 import type { Trx } from "./derive";
+import { tombstoneNotes } from "./documents";
 import type { IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
 import {
@@ -161,8 +162,40 @@ export class JournalsClient {
       );
     }
 
+    this.db.transaction((trx) => {
+      const [row] = trx
+        .select({ id: journalsTable.id })
+        .from(journalsTable)
+        .where(eq(journalsTable.name, journal))
+        .all();
+      if (!row) return;
+
+      const noteIds = trx
+        .select({ id: documentsTable.id })
+        .from(documentsTable)
+        .where(eq(documentsTable.journalId, row.id))
+        .all()
+        .map((d) => d.id);
+      tombstoneNotes(trx, noteIds);
+      for (const id of noteIds) {
+        trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
+      }
+      trx
+        .delete(documentsTable)
+        .where(eq(documentsTable.journalId, row.id))
+        .run();
+      trx.delete(journalsTable).where(eq(journalsTable.id, row.id)).run();
+      trx
+        .insert(schema.tombstones)
+        .values({
+          id: row.id,
+          kind: "journal",
+          deletedAt: new Date().toISOString(),
+        })
+        .onConflictDoNothing()
+        .run();
+    });
     await this.preferences.delete(`archivedJournals.${journal}`);
-    await this.db.delete(journalsTable).where(eq(journalsTable.name, journal));
 
     return this.list();
   };

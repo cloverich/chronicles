@@ -1,6 +1,6 @@
 # Data model
 
-Status markers: **[now]** implemented; **[v1]** target of data spec v1, not yet
+Status markers: **[now]** implemented. Everything in data spec v1 is now
 implemented.
 
 ## Identifiers
@@ -71,10 +71,13 @@ Every write recomputes it. An update may carry `baseRevision`; if it differs
 from the stored revision the update fails with a conflict and nothing is
 written. Revisions give equality, not order. **[now]**
 
-### Tombstone **[v1]**
+### Tombstone
 
 `{id, kind: "note" | "journal", deletedAt, lastRevision?}`. Deleting removes
-all content; the tombstone lets another device learn of the delete.
+all content, tags, derived rows, and search entries; the tombstone lets
+another device learn of the delete. Deleting a journal tombstones it and every
+note in it. Re-creating an ID (e.g. by import) removes its tombstone. Exports
+do not carry tombstones yet; compaction is defined with sync. **[now]**
 
 ## Reference grammar
 
