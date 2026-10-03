@@ -629,3 +629,80 @@ describe("revisions", () => {
     }
   });
 });
+
+describe("tombstones", () => {
+  test("deleting notes and journals leaves tombstones and no FTS rows", async () => {
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-tombstone-"));
+    const client = await createClient({ dbPath: ":memory:", notesDir });
+    try {
+      const fm = () => ({
+        tags: [],
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+      await client.journals.create({ name: "doomed" });
+      const kept = await client.documents.createDocument({
+        journal: "default_journal",
+        content: "kept",
+        frontMatter: fm(),
+      });
+      const single = await client.documents.createDocument({
+        journal: "default_journal",
+        content: "deleted alone",
+        frontMatter: fm(),
+      });
+      const inJournal = await client.documents.createDocument({
+        journal: "doomed",
+        content: "deleted with journal",
+        frontMatter: fm(),
+      });
+      const singleRevision = (await client.documents.findById({ id: single }))
+        .revision;
+      const doomed = (await client.journals.list()).find(
+        (j) => j.name === "doomed",
+      )!;
+
+      await client.documents.del(single);
+      await client.journals.remove("doomed");
+
+      const stones = await client.db.select().from(schema.tombstones);
+      assert.deepStrictEqual(
+        stones
+          .map(({ deletedAt, ...t }) => t)
+          .sort((a, b) => a.id.localeCompare(b.id)),
+        [
+          { id: single, kind: "note", lastRevision: singleRevision },
+          {
+            id: inJournal,
+            kind: "note",
+            lastRevision: stones.find((s) => s.id === inJournal)!.lastRevision,
+          },
+          { id: doomed.id, kind: "journal", lastRevision: null },
+        ].sort((a, b) => a.id.localeCompare(b.id)),
+      );
+
+      const fts = client.sqlite
+        .prepare("SELECT id FROM documents_fts")
+        .all() as { id: string }[];
+      assert.deepStrictEqual(
+        fts.map((r) => r.id),
+        [kept],
+      );
+
+      // Re-creating a deleted id (e.g. by import) clears its tombstone.
+      await client.documents.importDocument({
+        id: single,
+        journal: "default_journal",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        tags: [],
+        content: "back",
+        frontMatter: {},
+      });
+      const after = await client.db.select().from(schema.tombstones);
+      assert.ok(!after.some((t) => t.id === single));
+    } finally {
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+});
