@@ -3,11 +3,15 @@ import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
 
-import { mdastToString, selectImageLinks } from "../markdown";
+import { parseMarkdown, selectImageLinks } from "../markdown";
+import { parseNoteLink } from "../markdown/noteLinks";
+import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
 import { readChroniclesTree } from "./chronicles-tree";
 import type { IDocumentsClient } from "./documents";
 import { stripColumnOwnedKeys } from "./documents";
+import type { Manifest } from "./export";
+import { decodeLinkSegment, EXPORT_FORMAT_MAJOR } from "./export-layout";
 import type { IFilesClientForImport } from "./files-import-resolver";
 import { findJournalIgnoringCase } from "./journals";
 import type { IPreferencesClient } from "./preferences";
@@ -120,6 +124,25 @@ async function resolveAndCopyImage(
 }
 
 /**
+ * Read `manifest.json` when the tree is a v2+ export. Legacy (v1) exports and
+ * plain notes directories have no usable manifest and import by directory
+ * name. An unknown major version is rejected rather than guessed at.
+ */
+async function readManifest(importDir: string): Promise<Manifest | null> {
+  const manifestPath = path.join(importDir, "manifest.json");
+  if (!fs.existsSync(manifestPath)) return null;
+  const raw = JSON.parse(await fs.promises.readFile(manifestPath, "utf8"));
+  if (raw?.formatVersion == null) return null; // v1: `version: 1`
+  const major = parseInt(String(raw.formatVersion).split(".")[0], 10);
+  if (major !== EXPORT_FORMAT_MAJOR) {
+    throw new Error(
+      `[IMPORT_UNSUPPORTED_FORMAT] Export format ${raw.formatVersion} is not supported (expected ${EXPORT_FORMAT_MAJOR}.x)`,
+    );
+  }
+  return raw as Manifest;
+}
+
+/**
  * Imports a Chronicles-tree export (`<importDir>/<journal>/<id>.md`,
  * frontmatter + a sibling `_attachments/`) into the database, preserving
  * ids, timestamps, journal, tags, note links, and attachments. Re-import of
@@ -132,6 +155,12 @@ export async function importChroniclesTree(
 ): Promise<ChroniclesImportReport> {
   const { db, documents, files, preferences, notesDir } = deps;
   importDir = path.resolve(importDir);
+
+  const manifest = await readManifest(importDir);
+  const journalByDir = new Map(
+    (manifest?.journals ?? []).map((j) => [j.dir, j.name]),
+  );
+  const dirToJournal = (dir: string) => journalByDir.get(dir) ?? dir;
 
   const report: ChroniclesImportReport = {
     created: 0,
@@ -187,27 +216,47 @@ export async function importChroniclesTree(
     return journalName;
   };
 
+  for (const j of manifest?.journals ?? []) {
+    await ensureJournal(j.name);
+  }
+
   const { notes, report: treeReport } = readChroniclesTree(importDir);
 
   for await (const note of notes) {
     try {
-      const journal = await ensureJournal(note.journal);
+      if (note.frontMatter.id != null && note.frontMatter.id !== note.id) {
+        throw new Error(
+          `frontmatter id ${note.frontMatter.id} does not match filename`,
+        );
+      }
+      const journal = await ensureJournal(dirToJournal(note.journal));
 
-      const images = selectImageLinks(note.mdast);
-      for (const image of images) {
-        if (isExternalImageUrl(image.url)) continue;
-        image.url = await resolveAndCopyImage(
+      const imageUrls = new Map<string, string>();
+      for (const image of selectImageLinks(parseMarkdown(note.body))) {
+        if (isExternalImageUrl(image.url) || imageUrls.has(image.url)) {
+          continue;
+        }
+        imageUrls.set(
           image.url,
-          note.path,
-          importDir,
-          attachmentsDestDir,
-          files,
-          report,
-          missingAttachments,
+          await resolveAndCopyImage(
+            image.url,
+            note.path,
+            importDir,
+            attachmentsDestDir,
+            files,
+            report,
+            missingAttachments,
+          ),
         );
       }
 
-      const content = mdastToString(note.mdast);
+      const content = rewriteUrls(note.body, (url, node) => {
+        if (node.type === "image") return imageUrls.get(url);
+        const link = parseNoteLink(decodeLinkSegment(url));
+        if (!link || !journalByDir.has(link.journalName)) return undefined;
+        return `../${journalByDir.get(link.journalName)}/${link.noteId}.md`;
+      }).markdown;
+
       const userKeys = stripColumnOwnedKeys(note.frontMatter);
 
       const result = await documents.importDocument(

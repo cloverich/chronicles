@@ -30,6 +30,8 @@ export type IDocumentsClient = DocumentsClient;
 // Front-matter keys that are canonical columns on `documents` / `documentTags`.
 // The `frontmatter` JSON column only holds arbitrary user-supplied keys.
 const COLUMN_OWNED_FRONTMATTER_KEYS = [
+  "id",
+  "journal",
   "title",
   "tags",
   "createdAt",

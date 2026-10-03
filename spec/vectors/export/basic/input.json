@@ -1,0 +1,129 @@
+{
+  "description": "Export golden vector: frontmatter ordering and quoting, journal directory mapping, link rewriting, attachments, body normalization.",
+  "journals": [
+    {
+      "name": "default_journal"
+    },
+    {
+      "name": "work"
+    },
+    {
+      "name": "my notes"
+    },
+    {
+      "name": "_private"
+    },
+    {
+      "name": "日記"
+    }
+  ],
+  "attachments": [
+    {
+      "name": "pixel.png",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    }
+  ],
+  "notes": [
+    {
+      "id": "03awvyp9xobkv9t1jmmtiz0bp",
+      "journal": "work",
+      "title": "Plain note",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-02T03:04:05.678Z",
+      "tags": [
+        "zeta",
+        "alpha",
+        "alpha"
+      ],
+      "frontMatter": {},
+      "content": "Hello world.\n\nA second paragraph with **bold** and _emphasis_.\n"
+    },
+    {
+      "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+      "journal": "my notes",
+      "title": null,
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "updatedAt": "2024-02-01T00:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": "Links: [plain](../work/03awvyp9xobkv9t1jmmtiz0bp.md), [stale journal](../old-name/03b9wsjvyu3t3ufq044kfzgru.md), [dangling](../work/03zzzzzzzzzzzzzzzzzzzzzzz.md), [web](https://example.com/a.md).\n\nInline code `[x](../work/03awvyp9xobkv9t1jmmtiz0bp.md)` and a fence:\n\n```md\n[fenced](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n```\n"
+    },
+    {
+      "id": "03b9wsjvyu3t3ufq044kfzgru",
+      "journal": "日記",
+      "title": "笔记 🎉 \"quoted\"",
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-01T00:00:00.000Z",
+      "tags": [
+        "unicode",
+        "émoji"
+      ],
+      "frontMatter": {},
+      "content": "你好, world! Émoji: 🚀\n\nBack to [spaced journal](<../my notes/03b3m6xaiod1fz6mvkjmvb3jc.md>).\n"
+    },
+    {
+      "id": "03bgn0rwju13kzyxhez49oxf3",
+      "journal": "work",
+      "title": "Frontmatter variety",
+      "createdAt": "2024-04-01T00:00:00.000Z",
+      "updatedAt": "2024-04-01T00:00:00.000Z",
+      "tags": [
+        "meta"
+      ],
+      "frontMatter": {
+        "zebra": "last",
+        "source": "vector",
+        "count": 3,
+        "ratio": 0.5,
+        "draft": true,
+        "nothing": null,
+        "nested": {
+          "b": [
+            1,
+            "two",
+            {
+              "z": 1,
+              "a": 2
+            }
+          ],
+          "a": "x"
+        },
+        "my key": "spaced",
+        "yes": "reserved word",
+        "Ünïcode": "key",
+        "multi": "line one\nline two"
+      },
+      "content": "Body after frontmatter.\n"
+    },
+    {
+      "id": "03bn5fp7keqa3yooxua9rlndm",
+      "journal": "work",
+      "title": "Empty",
+      "createdAt": "2024-05-01T00:00:00.000Z",
+      "updatedAt": "2024-05-01T00:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": ""
+    },
+    {
+      "id": "03btvnx85ev892j5n93i9v5si",
+      "journal": "_private",
+      "title": "Normalization",
+      "createdAt": "2024-06-01T00:00:00.000Z",
+      "updatedAt": "2024-06-01T00:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": "\nLeading blank line kept.\r\nCRLF becomes LF.\n\n---\n\nA thematic break above.\n\n\n\n"
+    },
+    {
+      "id": "03c0e2uj5zhktbgav50jzbth4",
+      "journal": "work",
+      "title": "Attachments",
+      "createdAt": "2024-07-01T00:00:00.000Z",
+      "updatedAt": "2024-07-01T00:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": "![pixel](../_attachments/pixel.png)\n\n![again](../_attachments/pixel.png)\n\n![missing](../_attachments/does-not-exist.png)\n\n![remote](https://example.com/x.png)\n"
+    }
+  ]
+}
