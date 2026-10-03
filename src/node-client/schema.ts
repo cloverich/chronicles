@@ -9,7 +9,10 @@ import {
 
 // ---------- journals ----------
 export const journals = sqliteTable("journals", {
-  name: text("name").primaryKey().notNull(),
+  /** uuid25; stable across renames and devices. */
+  id: text("id").primaryKey().notNull(),
+  /** Unique ignoring ASCII case (enforced by the app; see findJournalIgnoringCase). */
+  name: text("name").notNull().unique(),
   createdAt: text("createdAt")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -31,12 +34,9 @@ export const documents = sqliteTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
     title: text("title"),
-    journal: text("journal")
+    journalId: text("journalId")
       .notNull()
-      .references(() => journals.name, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      }),
+      .references(() => journals.id, { onDelete: "cascade" }),
     frontmatter: text("frontmatter").notNull(),
     /** Markdown body, frontmatter stripped. SQLite is the source of truth for content. */
     content: text("content").notNull().default(""),
@@ -44,6 +44,7 @@ export const documents = sqliteTable(
   (table) => [
     index("documents_title_idx").on(table.title),
     index("documents_createdat_idx").on(table.createdAt),
+    index("documents_journalid_idx").on(table.journalId),
   ],
 );
 

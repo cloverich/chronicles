@@ -28,13 +28,14 @@ export interface ExportReport {
 }
 
 export interface ManifestJournal {
+  id: string;
   name: string;
   dir: string;
 }
 
 export interface ManifestNote {
   id: string;
-  journal: string;
+  journalId: string;
   path: string;
   revision: string;
 }
@@ -103,13 +104,15 @@ export class ExportClient {
   ): Promise<Omit<ExportReport, "destDir">> => {
     const notesAttachmentsDir = path.join(this.notesDir, "_attachments");
 
-    const journalRows = await this.db
-      .select({ name: journals.name })
-      .from(journals);
-    const dirs = assignJournalDirs(journalRows.map((j) => j.name));
+    const journalRows = await this.db.select().from(journals);
+    const dirsByName = assignJournalDirs(journalRows.map((j) => j.name));
+    // journal id → export directory
+    const dirs = new Map(
+      journalRows.map((j) => [j.id, dirsByName.get(j.name)!]),
+    );
 
     const rows = await this.db.select().from(documents).orderBy(documents.id);
-    const journalOf = new Map(rows.map((r) => [r.id, r.journal]));
+    const journalOf = new Map(rows.map((r) => [r.id, r.journalId]));
 
     const manifestNotes: ManifestNote[] = [];
     const attachments = new Map<string, ManifestAttachment>();
@@ -133,7 +136,7 @@ export class ExportClient {
       const fileContents = serializeNote({
         id: row.id,
         title: row.title,
-        journal: row.journal,
+        journal: row.journalId,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         tags: tagRows.map((t) => t.tag),
@@ -141,8 +144,9 @@ export class ExportClient {
         content,
       });
 
-      const relPath = `${dirs.get(row.journal)}/${row.id}.md`;
-      await fs.promises.mkdir(path.join(tmpDir, dirs.get(row.journal)!), {
+      const dir = dirs.get(row.journalId)!;
+      const relPath = `${dir}/${row.id}.md`;
+      await fs.promises.mkdir(path.join(tmpDir, dir), {
         recursive: true,
       });
       await fs.promises.writeFile(
@@ -152,7 +156,7 @@ export class ExportClient {
       );
       manifestNotes.push({
         id: row.id,
-        journal: row.journal,
+        journalId: row.journalId,
         path: relPath,
         revision: noteRevision(fileContents),
       });
@@ -192,7 +196,9 @@ export class ExportClient {
 
     const manifest: Manifest = {
       formatVersion: EXPORT_FORMAT_VERSION,
-      journals: Array.from(dirs, ([name, dir]) => ({ name, dir })),
+      journals: journalRows
+        .map((j) => ({ id: j.id, name: j.name, dir: dirsByName.get(j.name)! }))
+        .sort((a, b) => compareCodePoints(a.name, b.name)),
       notes: manifestNotes,
       attachments: Array.from(attachments.values()).sort((a, b) =>
         compareCodePoints(a.path, b.path),

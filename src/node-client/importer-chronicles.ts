@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
@@ -158,9 +158,8 @@ export async function importChroniclesTree(
 
   const manifest = await readManifest(importDir);
   const journalByDir = new Map(
-    (manifest?.journals ?? []).map((j) => [j.dir, j.name]),
+    (manifest?.journals ?? []).map((j) => [j.dir, j]),
   );
-  const dirToJournal = (dir: string) => journalByDir.get(dir) ?? dir;
 
   const report: ChroniclesImportReport = {
     created: 0,
@@ -183,30 +182,68 @@ export async function importChroniclesTree(
   const attachmentsDestDir = path.join(notesDir, "_attachments");
   await fs.promises.mkdir(attachmentsDestDir, { recursive: true });
 
-  // Journal names are unique ignoring case: a tree directory "Features"
-  // merges into an existing "features" journal. Returns the stored name.
+  // Match by journal id first, then by name ignoring case (a tree directory
+  // "Features" merges into an existing "features" journal). An existing
+  // same-name journal with no notes adopts the imported id, so a fresh
+  // library's default journal doesn't fork the identity of an exported one.
+  // Returns the stored name.
   const ensuredJournals = new Map<string, string>();
-  const ensureJournal = async (journalName: string): Promise<string> => {
-    const cached = ensuredJournals.get(journalName);
+  const ensureJournal = async (
+    journalName: string,
+    journalId?: string,
+  ): Promise<string> => {
+    const cacheKey = journalId ?? journalName;
+    const cached = ensuredJournals.get(cacheKey);
     if (cached) return cached;
 
-    const existing = findJournalIgnoringCase(db, journalName);
-    if (existing) {
-      ensuredJournals.set(journalName, existing);
-      return existing;
-    }
-    ensuredJournals.set(journalName, journalName);
+    const resolved = db.transaction((trx) => {
+      if (journalId) {
+        const [byId] = trx
+          .select({ name: schema.journals.name })
+          .from(schema.journals)
+          .where(eq(schema.journals.id, journalId))
+          .all();
+        if (byId) return byId.name;
+      }
 
-    const timestamp = new Date().toISOString();
-    const result = db
-      .insert(schema.journals)
-      .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
-      .onConflictDoNothing()
-      .run();
+      const existing = findJournalIgnoringCase(trx, journalName);
+      if (existing) {
+        if (journalId) {
+          const [{ count }] = trx
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.documents)
+            .innerJoin(
+              schema.journals,
+              eq(schema.documents.journalId, schema.journals.id),
+            )
+            .where(eq(schema.journals.name, existing))
+            .all();
+          if (count === 0) {
+            trx
+              .update(schema.journals)
+              .set({ id: journalId })
+              .where(eq(schema.journals.name, existing))
+              .run();
+          }
+        }
+        return existing;
+      }
 
-    if (result.changes > 0) {
+      const timestamp = new Date().toISOString();
+      trx
+        .insert(schema.journals)
+        .values({
+          id: journalId ?? createId(),
+          name: journalName,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        })
+        .run();
       report.journalsCreated.push(journalName);
-    }
+      return journalName;
+    });
+    ensuredJournals.set(cacheKey, resolved);
+    if (resolved !== journalName) return resolved;
 
     const archived: Record<string, boolean> =
       (await preferences.get("archivedJournals")) ?? {};
@@ -217,7 +254,7 @@ export async function importChroniclesTree(
   };
 
   for (const j of manifest?.journals ?? []) {
-    await ensureJournal(j.name);
+    await ensureJournal(j.name, j.id);
   }
 
   const { notes, report: treeReport } = readChroniclesTree(importDir);
@@ -229,7 +266,10 @@ export async function importChroniclesTree(
           `frontmatter id ${note.frontMatter.id} does not match filename`,
         );
       }
-      const journal = await ensureJournal(dirToJournal(note.journal));
+      const manifestJournal = journalByDir.get(note.journal);
+      const journal = manifestJournal
+        ? await ensureJournal(manifestJournal.name, manifestJournal.id)
+        : await ensureJournal(note.journal);
 
       const imageUrls = new Map<string, string>();
       for (const image of selectImageLinks(parseMarkdown(note.body))) {
@@ -253,8 +293,9 @@ export async function importChroniclesTree(
       const content = rewriteUrls(note.body, (url, node) => {
         if (node.type === "image") return imageUrls.get(url);
         const link = parseNoteLink(decodeLinkSegment(url));
-        if (!link || !journalByDir.has(link.journalName)) return undefined;
-        return `../${journalByDir.get(link.journalName)}/${link.noteId}.md`;
+        const target = link && journalByDir.get(link.journalName);
+        if (!target) return undefined;
+        return `../${target.name}/${link!.noteId}.md`;
       }).markdown;
 
       const userKeys = stripColumnOwnedKeys(note.frontMatter);

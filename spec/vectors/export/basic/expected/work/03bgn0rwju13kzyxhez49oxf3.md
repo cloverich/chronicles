@@ -1,7 +1,7 @@
 ---
 id: "03bgn0rwju13kzyxhez49oxf3"
 title: "Frontmatter variety"
-journal: "work"
+journal: "03aq5qh9copxys3mzz5l8q60f"
 createdAt: "2024-04-01T00:00:00.000Z"
 updatedAt: "2024-04-01T00:00:00.000Z"
 tags: ["meta"]

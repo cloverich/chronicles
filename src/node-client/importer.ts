@@ -487,7 +487,12 @@ export class ImporterClient {
     const timestamp = new Date().toISOString();
     await this.db
       .insert(schema.journals)
-      .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
+      .values({
+        id: createId(),
+        name: journalName,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
       .onConflictDoNothing();
 
     // Track in preferences (archivedJournals) if not already present

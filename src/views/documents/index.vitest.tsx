@@ -73,6 +73,7 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
     createClient() as IClient,
     [
       {
+        id: "03awvyp9xobkv9t1jmmtiz0bp",
         name: "work",
         archived: false,
         count: 2,

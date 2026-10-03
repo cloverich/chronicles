@@ -56,7 +56,8 @@ Order:
 
 1. `id`
 2. `title` — omitted when absent; present (possibly `""`) otherwise
-3. `journal` — journal name
+3. `journal` — journal ID (not the name, so a journal rename does not change
+   the revision of every note in it)
 4. `createdAt`
 5. `updatedAt`
 6. `tags` — deduplicated, sorted by code point; `[]` when empty
@@ -102,11 +103,11 @@ keys in exactly this order:
 ```json
 {
   "formatVersion": "2.0",
-  "journals": [{ "name": "work", "dir": "work" }],
+  "journals": [{ "id": "<uuid25>", "name": "work", "dir": "work" }],
   "notes": [
     {
       "id": "…",
-      "journal": "work",
+      "journalId": "<uuid25>",
       "path": "work/<id>.md",
       "revision": "<sha256>"
     }
@@ -136,7 +137,11 @@ directories remain importable.
 ## Import
 
 1. Read `manifest.json` if present; reject an unknown major version.
-2. Create every manifest journal, then walk `<dir>/<id>.md` files.
+2. Create every manifest journal, then walk `<dir>/<id>.md` files; a note's
+   journal is its directory's manifest journal. Journals match an existing
+   journal by ID, then by name ignoring ASCII case. A same-name journal with
+   no notes adopts the imported ID; one with notes keeps its own ID and the
+   imported notes merge into it.
 3. A frontmatter `id` must equal the file name.
 4. Body bytes are kept verbatim except rewritten reference destinations.
 5. Existing IDs are skipped or replaced per the caller's explicit choice.

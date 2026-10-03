@@ -2,22 +2,27 @@
   "formatVersion": "2.0",
   "journals": [
     {
+      "id": "03aqld2ohipshn721zlijp170",
       "name": "_private",
       "dir": "j_private"
     },
     {
+      "id": "03ckcy7vckbi9p65ykb1j0vkc",
       "name": "default_journal",
       "dir": "default_journal"
     },
     {
+      "id": "03aqdjryx3t7dd9h7lezzx83o",
       "name": "my notes",
       "dir": "my notes"
     },
     {
+      "id": "03aq5qh9copxys3mzz5l8q60f",
       "name": "work",
       "dir": "work"
     },
     {
+      "id": "03aqt6de1xziesuws46rpwkh4",
       "name": "日記",
       "dir": "日記"
     }
@@ -25,45 +30,45 @@
   "notes": [
     {
       "id": "03awvyp9xobkv9t1jmmtiz0bp",
-      "journal": "work",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
       "path": "work/03awvyp9xobkv9t1jmmtiz0bp.md",
-      "revision": "3d513b419994748a1843f64a7e6baee5f6c472aa1da0a05d3a8cbbbf56baa22f"
+      "revision": "cdb2cbca3fe00d7e1cb00849ece9b7331148094a97ecdd7bf33e9aab9a53964f"
     },
     {
       "id": "03b3m6xaiod1fz6mvkjmvb3jc",
-      "journal": "my notes",
+      "journalId": "03aqdjryx3t7dd9h7lezzx83o",
       "path": "my notes/03b3m6xaiod1fz6mvkjmvb3jc.md",
-      "revision": "97697a378ab914004ee22ef629bae76e061603ea56e1c11a23e4a5ed3e19e951"
+      "revision": "8df1ca80bfd6d21bf22699e4f43e98d93a0460e9d45b193a4360894c66e4fb35"
     },
     {
       "id": "03b9wsjvyu3t3ufq044kfzgru",
-      "journal": "日記",
+      "journalId": "03aqt6de1xziesuws46rpwkh4",
       "path": "日記/03b9wsjvyu3t3ufq044kfzgru.md",
-      "revision": "7b6cfc74ae9d0719cbb3a2984dcaa7a39608f9f43f2cac72d6c1cd3ff3d7b5a4"
+      "revision": "c299b95ac32e5fc3a1a7daa4451f8414b439b97dbad1bef82631ab16b8a5f03e"
     },
     {
       "id": "03bgn0rwju13kzyxhez49oxf3",
-      "journal": "work",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
       "path": "work/03bgn0rwju13kzyxhez49oxf3.md",
-      "revision": "b0f828e0449f40cfa905cad7ece8b5222cf50434b5d37b2ea84c474056082fc7"
+      "revision": "8fa8f94134450959fe2f9c4c781624e225a0c35b0325e2b223ce6e203551c4cd"
     },
     {
       "id": "03bn5fp7keqa3yooxua9rlndm",
-      "journal": "work",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
       "path": "work/03bn5fp7keqa3yooxua9rlndm.md",
-      "revision": "f2490447f2500b7f67ad1d2db77e3d07775bb4babc68342174d2ea9f7619de17"
+      "revision": "09f32e9cdd8e36133f313b0eee48e370840656467e48d3c8da9be954624e52be"
     },
     {
       "id": "03btvnx85ev892j5n93i9v5si",
-      "journal": "_private",
+      "journalId": "03aqld2ohipshn721zlijp170",
       "path": "j_private/03btvnx85ev892j5n93i9v5si.md",
-      "revision": "309866dbce8d75c2a2c370f847070acceb9cdf4d6ca3f56a61e052a76ff3688d"
+      "revision": "8c7185308540497c5b99c005051db722c1c1b0d4654c6581530d2b60c47a6af1"
     },
     {
       "id": "03c0e2uj5zhktbgav50jzbth4",
-      "journal": "work",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
       "path": "work/03c0e2uj5zhktbgav50jzbth4.md",
-      "revision": "9e6070586854f82b9d79446bfce476dee10aee6260db68664295d1536cc6d503"
+      "revision": "a3fad379955375425b45503f11aa74073f719252680307ac114c20fed64895ef"
     }
   ],
   "attachments": [

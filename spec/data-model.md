@@ -7,8 +7,8 @@ implemented.
 
 - **Note ID** — uuidv7 encoded as uuid25 (25 chars, `[0-9a-z]`). Stable for the
   life of the note, across devices and exports. **[now]**
-- **Journal ID** — uuid25, same scheme. **[v1]** Today journals are keyed by
-  name. **[now]**
+- **Journal ID** — uuid25, same scheme. Notes reference journals by ID; a
+  rename changes only the journal. **[now]**
 - **Attachment ID** — lowercase hex sha256 of the stored bytes. **[v1]** Today
   attachments have random `createId()` file names. **[now]**
 
@@ -27,16 +27,16 @@ No identity is ever derived from a name or a path.
 
 ### Note
 
-| Field         | Type        | Notes                                                |
-| ------------- | ----------- | ---------------------------------------------------- |
-| `id`          | uuid25      |                                                      |
-| `journal`     | journal ref | Journal name **[now]**; journal ID **[v1]**          |
-| `title`       | string?     | Absent ≠ empty string                                |
-| `createdAt`   | timestamp   |                                                      |
-| `updatedAt`   | timestamp   |                                                      |
-| `tags`        | string[]    | A set: unique; canonical order is code-point order   |
-| `frontMatter` | object      | User keys only; never a column-owned key (see below) |
-| `content`     | string      | Markdown body without frontmatter                    |
+| Field         | Type       | Notes                                                |
+| ------------- | ---------- | ---------------------------------------------------- |
+| `id`          | uuid25     |                                                      |
+| `journal`     | journal ID | **[now]**                                            |
+| `title`       | string?    | Absent ≠ empty string                                |
+| `createdAt`   | timestamp  |                                                      |
+| `updatedAt`   | timestamp  |                                                      |
+| `tags`        | string[]   | A set: unique; canonical order is code-point order   |
+| `frontMatter` | object     | User keys only; never a column-owned key (see below) |
+| `content`     | string     | Markdown body without frontmatter                    |
 
 Column-owned keys: `id`, `title`, `journal`, `createdAt`, `updatedAt`, `tags`.
 They live in their own fields and are stripped from `frontMatter` on write.

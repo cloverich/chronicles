@@ -2,6 +2,8 @@ import { eq, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import path from "path";
 
+import { createId } from "../preload/client/util";
+import type { Trx } from "./derive";
 import type { IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
 import {
@@ -10,6 +12,7 @@ import {
 } from "./schema";
 
 export type JournalResponse = {
+  id: string;
   name: string;
   createdAt: string;
   updatedAt: string;
@@ -45,6 +48,7 @@ export class JournalsClient {
         archived[j.name] = false;
       }
       results.push({
+        id: j.id,
         name: j.name,
         createdAt: j.createdAt,
         updatedAt: j.updatedAt,
@@ -58,19 +62,18 @@ export class JournalsClient {
   listWithCounts = async (): Promise<JournalWithCount[]> => {
     const journals = await this.list();
 
-    // Count documents per journal
     const countRows = await this.db
-      .select({ journal: documentsTable.journal })
-      .from(documentsTable);
-
-    const countMap = new Map<string, number>();
-    for (const row of countRows) {
-      countMap.set(row.journal, (countMap.get(row.journal) ?? 0) + 1);
-    }
+      .select({
+        journalId: documentsTable.journalId,
+        count: sql<number>`count(*)`,
+      })
+      .from(documentsTable)
+      .groupBy(documentsTable.journalId);
+    const countMap = new Map(countRows.map((r) => [r.journalId, r.count]));
 
     return journals.map((j) => ({
       ...j,
-      count: countMap.get(j.name) ?? 0,
+      count: countMap.get(j.id) ?? 0,
     }));
   };
 
@@ -83,7 +86,10 @@ export class JournalsClient {
     return this.index(name);
   };
 
-  index = async (journalName: string): Promise<JournalResponse> => {
+  index = async (
+    journalName: string,
+    id: string = createId(),
+  ): Promise<JournalResponse> => {
     const archivedPrefs: Record<string, boolean> =
       (await this.preferences.get("archivedJournals")) ?? {};
 
@@ -98,6 +104,7 @@ export class JournalsClient {
     const timestamp = new Date().toISOString();
 
     await this.db.insert(journalsTable).values({
+      id,
       name: journalName,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -130,7 +137,7 @@ export class JournalsClient {
       .set({ name: newName, updatedAt: timestamp })
       .where(eq(journalsTable.name, journal.name));
 
-    // documents.journal is updated by ON UPDATE CASCADE (FK constraint)
+    // Documents reference the journal by id; nothing else changes.
 
     await this.preferences.delete(`archivedJournals.${journal.name}`);
     await this.preferences.set(
@@ -206,7 +213,7 @@ export const MAX_NAME_LENGTH = 25;
  * ASCII without ICU — non-ASCII names still compare byte-for-byte.
  */
 export const findJournalIgnoringCase = (
-  db: BetterSQLite3Database<typeof schema>,
+  db: Trx,
   name: string,
 ): string | undefined => {
   const [row] = db
@@ -244,4 +251,15 @@ export const validateJournalName = (name: string): string => {
   }
 
   return baseSanitized;
+};
+
+/** The id of the journal named exactly `name`; throws if none. */
+export const resolveJournalId = (trx: Trx, name: string): string => {
+  const [row] = trx
+    .select({ id: journalsTable.id })
+    .from(journalsTable)
+    .where(eq(journalsTable.name, name))
+    .all();
+  if (!row) throw new Error(`[JOURNAL_NOT_FOUND] Journal ${name} not found`);
+  return row.id;
 };
