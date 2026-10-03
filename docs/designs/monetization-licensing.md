@@ -1,5 +1,7 @@
 # Design Doc: Monetization & Licensing (Brainstorming)
 
+> **Status: Shelved (2026-10).** Not pursuing app sales.
+
 **Status:** Brainstorming / Exploration (No commitments)
 
 ## Context

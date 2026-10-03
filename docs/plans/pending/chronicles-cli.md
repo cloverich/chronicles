@@ -1,5 +1,7 @@
 # Chronicles CLI — Implementation Plan (Phases 0–2)
 
+> **Status: Not planned (2026-10).** Kept for reference; not queued. See the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
+
 ## Goals
 
 Build a CLI entry point into the existing backend. The CLI is a second way to reach the same data — not a separate app.

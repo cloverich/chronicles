@@ -1,5 +1,7 @@
 # Design Doc: Chronicles CLI
 
+> **Status: Not planned (2026-10).** Historical. LLM access now goes through Engram, and later App Intents / a desktop MCP server over `NotesClient`. See the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
+
 ## High-Level Plan
 
 > **This section is the reference anchor for implementation work.**
