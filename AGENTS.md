@@ -40,6 +40,7 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 
 - [docs/development.md](docs/development.md): Install, run, test, lint, build commands and project conventions. Read first.
 - [docs/architecture.md](docs/architecture.md): Tech stack, process model, DB schema. Read when reasoning about cross-cutting concerns.
+- [spec/README.md](spec/README.md): Language-neutral data model, export format, derive rules, NotesClient contract, and their golden vectors. Read before changing storage, links, attachments, export/import, or the NotesClient.
 - [docs/editor/markdown-pipeline.md](docs/editor/markdown-pipeline.md): Lexical's markdown roundtrip, plus the separate micromark -> MDAST -> remark pipeline used by the indexer/search/import. Read when touching parsing or serialization.
 - [docs/editor/plugins.md](docs/editor/plugins.md): Lexical plugin set and conventions. Read when adding or modifying editor behavior.
 - [docs/editor/styling.md](docs/editor/styling.md): Editor CSS and Tailwind theming. Read when changing editor appearance.
