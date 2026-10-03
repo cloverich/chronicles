@@ -4,27 +4,32 @@
     {
       "id": "03aqld2ohipshn721zlijp170",
       "name": "_private",
-      "dir": "j_private"
+      "dir": "j_private",
+      "archivedAt": "2024-08-01T00:00:00.000Z"
     },
     {
       "id": "03ckcy7vckbi9p65ykb1j0vkc",
       "name": "default_journal",
-      "dir": "default_journal"
+      "dir": "default_journal",
+      "archivedAt": null
     },
     {
       "id": "03aqdjryx3t7dd9h7lezzx83o",
       "name": "my notes",
-      "dir": "my notes"
+      "dir": "my notes",
+      "archivedAt": null
     },
     {
       "id": "03aq5qh9copxys3mzz5l8q60f",
       "name": "work",
-      "dir": "work"
+      "dir": "work",
+      "archivedAt": null
     },
     {
       "id": "03aqt6de1xziesuws46rpwkh4",
       "name": "日記",
-      "dir": "日記"
+      "dir": "日記",
+      "archivedAt": null
     }
   ],
   "notes": [

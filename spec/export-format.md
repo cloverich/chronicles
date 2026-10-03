@@ -111,7 +111,9 @@ keys in exactly this order:
 ```json
 {
   "formatVersion": "2.0",
-  "journals": [{ "id": "<uuid25>", "name": "work", "dir": "work" }],
+  "journals": [
+    { "id": "<uuid25>", "name": "work", "dir": "work", "archivedAt": null }
+  ],
   "notes": [
     {
       "id": "…",

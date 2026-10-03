@@ -255,6 +255,7 @@ export async function createClient(
   );
   const exportClient = new ExportClient(db, opts.notesDir);
 
+  await journals.migrateArchivedPreference();
   await journals.ensureDefault();
 
   return {

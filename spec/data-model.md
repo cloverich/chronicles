@@ -19,12 +19,12 @@ No identity is ever derived from a name or a path.
 
 ### Journal
 
-| Field       | Type      | Notes                                                              |
-| ----------- | --------- | ------------------------------------------------------------------ |
-| `name`      | string    | Unique ignoring ASCII case; 1–25 chars; not `_attachments`; no `/` |
-| `createdAt` | timestamp |                                                                    |
-| `updatedAt` | timestamp |                                                                    |
-| `archived`  | boolean   | Stored in preferences today                                        |
+| Field        | Type       | Notes                                                              |
+| ------------ | ---------- | ------------------------------------------------------------------ |
+| `name`       | string     | Unique ignoring ASCII case; 1–25 chars; not `_attachments`; no `/` |
+| `createdAt`  | timestamp  |                                                                    |
+| `updatedAt`  | timestamp  |                                                                    |
+| `archivedAt` | timestamp? | Set when archived; null otherwise                                  |
 
 ### Note
 

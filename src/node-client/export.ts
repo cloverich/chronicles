@@ -30,6 +30,7 @@ export interface ManifestJournal {
   id: string;
   name: string;
   dir: string;
+  archivedAt: string | null;
 }
 
 export interface ManifestNote {
@@ -190,7 +191,12 @@ export class ExportClient {
     const manifest: Manifest = {
       formatVersion: EXPORT_FORMAT_VERSION,
       journals: journalRows
-        .map((j) => ({ id: j.id, name: j.name, dir: dirsByName.get(j.name)! }))
+        .map((j) => ({
+          id: j.id,
+          name: j.name,
+          dir: dirsByName.get(j.name)!,
+          archivedAt: j.archivedAt,
+        }))
         .sort((a, b) => compareCodePoints(a.name, b.name)),
       notes: manifestNotes,
       attachments: Array.from(attachments.values()).sort((a, b) =>
