@@ -15,9 +15,17 @@ import {
 import React from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useOptionalNotes } from "../../../hooks/useNotes";
 import { noteLinkUrl, parseNoteLink } from "../../../markdown/noteLinks";
-import type { SearchItem } from "../../documents/SearchStore";
 import { $createChroniclesNoteLinkNode } from "./ChroniclesNoteLinkNode";
+
+/** A link target offered in the dropdown. */
+interface SearchItem {
+  id: string;
+  title: string | null;
+  /** Journal name, for display. */
+  journal: string;
+}
 
 interface MatchState {
   end: number;
@@ -75,6 +83,7 @@ export function LexicalNoteLinkPlugin({
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const navigate = useNavigate();
+  const notes = useOptionalNotes();
   const [match, setMatch] = React.useState<MatchState | null>(null);
   const [results, setResults] = React.useState<SearchItem[]>([]);
   const [position, setPosition] = React.useState<DropdownPosition | null>(null);
@@ -108,7 +117,7 @@ export function LexicalNoteLinkPlugin({
   }, [editor]);
 
   React.useEffect(() => {
-    if (!match || typeof window === "undefined" || !window.chronicles) {
+    if (!match || !notes) {
       setResults([]);
       setSelectedIndex(0);
       return;
@@ -116,21 +125,23 @@ export function LexicalNoteLinkPlugin({
 
     let disposed = false;
     const query = match.query.trim();
-    const searchQuery = query
-      ? { journals: [], limit: 10, titles: [query] }
-      : { journals: [], limit: 10 };
+    const searchQuery = query ? { limit: 10, titles: [query] } : { limit: 10 };
 
-    window.chronicles
-      .getClient()
-      .documents.search(searchQuery)
-      .then((response) => {
+    Promise.all([notes.searchNotes(searchQuery), notes.listJournals()])
+      .then(([response, { journals }]) => {
         if (disposed) {
           return;
         }
 
+        const names = new Map(journals.map((j) => [j.id, j.name]));
+        const items: SearchItem[] = response.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          journal: names.get(item.journalId) ?? item.journalId,
+        }));
         const filtered = documentId
-          ? response.data.filter((item) => item.id !== documentId)
-          : response.data;
+          ? items.filter((item) => item.id !== documentId)
+          : items;
         setResults(filtered);
         setSelectedIndex((current) =>
           clampIndex(current, Math.max(filtered.length, 1)),
@@ -146,7 +157,7 @@ export function LexicalNoteLinkPlugin({
     return () => {
       disposed = true;
     };
-  }, [match]);
+  }, [match, notes]);
 
   React.useEffect(() => {
     if (!match || typeof window === "undefined") {

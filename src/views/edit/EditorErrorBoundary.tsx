@@ -15,7 +15,7 @@ interface Props {
   children: React.ReactNode;
   navigate: NavigateFunction;
   documentId: string;
-  journal: string;
+  journal?: string;
 }
 
 /**

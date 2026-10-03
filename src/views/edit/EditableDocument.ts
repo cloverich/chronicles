@@ -7,17 +7,11 @@ import {
   toJS,
 } from "mobx";
 import { toast } from "sonner";
-import type { IClient } from "../../hooks/useClient";
-import type {
-  FrontMatter,
-  GetDocumentResponse,
-} from "../../preload/client/types";
-
-function isExistingDocument(
-  doc: GetDocumentResponse,
-): doc is GetDocumentResponse {
-  return "id" in doc;
-}
+import {
+  isNotesError,
+  type Note,
+  type NotesClient,
+} from "../../contract/notes";
 
 /**
  * View model for tracking save state of a loaded document
@@ -34,12 +28,13 @@ export class EditableDocument {
 
   // The underlying document properties:
   title?: string;
-  journal: string;
+  journalId: string;
   id: string;
   createdAt: string;
   updatedAt: string; // read-only outside this class
   tags: string[];
-  frontMatter: FrontMatter;
+  /** User frontmatter keys only. */
+  frontMatter: Record<string, unknown>;
 
   /** Revision of the last load or save; sent as baseRevision. */
   revision: string;
@@ -55,16 +50,16 @@ export class EditableDocument {
   teardown?: IReactionDisposer;
 
   constructor(
-    private client: IClient,
-    doc: GetDocumentResponse,
+    private notes: NotesClient,
+    doc: Note,
   ) {
-    this.title = doc.frontMatter.title;
-    this.journal = doc.journal;
+    this.title = doc.title ?? undefined;
+    this.journalId = doc.journalId;
     this.content = doc.content;
     this.id = doc.id;
-    this.createdAt = doc.frontMatter.createdAt;
-    this.updatedAt = doc.frontMatter.updatedAt;
-    this.tags = doc.frontMatter.tags;
+    this.createdAt = doc.createdAt;
+    this.updatedAt = doc.updatedAt;
+    this.tags = doc.tags;
     this.frontMatter = doc.frontMatter;
     this.revision = doc.revision;
 
@@ -73,7 +68,7 @@ export class EditableDocument {
       savingError: observable,
       content: observable,
       title: observable,
-      journal: observable,
+      journalId: observable,
       id: observable,
       createdAt: observable,
       updatedAt: observable,
@@ -89,7 +84,7 @@ export class EditableDocument {
         return {
           createdAt: this.createdAt,
           title: this.title,
-          journal: this.journal,
+          journalId: this.journalId,
           tags: this.tags.slice(), // must access elements to watch them
         };
       },
@@ -130,10 +125,7 @@ export class EditableDocument {
       this.saving = true;
 
       try {
-        this.updatedAt = this.frontMatter.updatedAt = new Date().toISOString();
-        this.frontMatter.title = this.title;
-        this.frontMatter.createdAt = this.createdAt;
-        this.frontMatter.tags = this.tags;
+        this.updatedAt = new Date().toISOString();
 
         if (type === "markdown") this.content = content;
 
@@ -144,7 +136,7 @@ export class EditableDocument {
         console.error("Error saving document", err);
         const message = err instanceof Error ? err.message : String(err);
         toast.error(
-          message.includes("[DOCUMENT_CONFLICT]")
+          isNotesError(err) && err.code === "conflict"
             ? "This note was changed elsewhere. Reload it before editing; your latest edit was not saved."
             : message,
         );
@@ -158,15 +150,20 @@ export class EditableDocument {
 
   private persist = (): Promise<void> => {
     const run = async () => {
-      this.revision = await this.client.documents.updateDocument(
+      const { revision } = await this.notes.updateNote(
         toJS({
-          journal: this.journal,
-          content: this.content,
           id: this.id,
-          frontMatter: toJS(this.frontMatter),
           baseRevision: this.revision,
+          journalId: this.journalId,
+          title: this.title ?? null,
+          content: this.content,
+          tags: this.tags.slice(),
+          frontMatter: toJS(this.frontMatter),
+          createdAt: this.createdAt,
+          updatedAt: this.updatedAt,
         }),
       );
+      this.revision = revision;
     };
     const next = this.pendingSave.then(run, run);
     this.pendingSave = next.catch(() => {});
@@ -179,6 +176,6 @@ export class EditableDocument {
   del = async () => {
     // overload saving for deleting
     this.saving = true;
-    await this.client.documents.del(this.id);
+    await this.notes.deleteNote({ id: this.id });
   };
 }
