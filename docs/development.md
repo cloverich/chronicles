@@ -48,7 +48,7 @@ src/markdown/        Markdown parsing + serialization (indexer, search, import)
 ## Environment Variables
 
 - `CHRONICLES_SETTINGS_DIR`: Overrides the directory for `settings.json` (see `src/electron/settings.ts`).
-- `CHRONICLES_USER_DATA`: Overrides Electron's `userData` path for database and local storage (see `src/electron/index.ts`).
+- `CHRONICLES_USER_DATA`: Overrides Electron's `userData` path — database, backups, and Chromium storage (see `src/electron/index.ts`). Set `CHRONICLES_SETTINGS_DIR` too for a fully isolated scratch profile.
 - `HEADLESS=true`: Runs the application without showing the main window (useful for background scripts/dev).
 
 ## Commits foramt

@@ -27,7 +27,13 @@ const __dirname = path.dirname(__filename);
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow: BrowserWindow | null = null;
 
-const userDataDir = process.env.CHRONICLES_USER_DATA || app.getPath("userData");
+// CHRONICLES_USER_DATA isolates the whole profile (database, backups, and
+// Chromium's own storage), so scratch runs never touch the real one. Pair it
+// with CHRONICLES_SETTINGS_DIR: settings.ts resolves its path at import time.
+if (process.env.CHRONICLES_USER_DATA) {
+  app.setPath("userData", process.env.CHRONICLES_USER_DATA);
+}
+const userDataDir = app.getPath("userData");
 const databasePath = path.join(userDataDir, "chronicles.db");
 const backups = createAppBackups({
   userDataDir,
