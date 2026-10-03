@@ -91,6 +91,24 @@ export const renderContractFixtures: RenderContractFixture[] = [
     requiredSelectors: ["p a[data-chronicles-note-link='true']"],
   },
   {
+    id: "chronicles-stored-note-link-renders-custom-anchor",
+    markdown:
+      "[Behavioral Interview Prep](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)",
+    expectedLinks: [
+      {
+        name: "Behavioral Interview Prep",
+        href: "chronicles://note/03awvyp9xobkv9t1jmmtiz0bp",
+        noteLink: true,
+      },
+    ],
+    expectedLinkCount: 1,
+    requiredHtmlFragments: [
+      'href="chronicles://note/03awvyp9xobkv9t1jmmtiz0bp"',
+      'data-chronicles-note-link="true"',
+    ],
+    requiredSelectors: ["p a[data-chronicles-note-link='true']"],
+  },
+  {
     id: "mixed-real-note-structure-renders-semantic-blocks",
     markdown: [
       "# Daily Review",

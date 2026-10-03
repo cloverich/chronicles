@@ -26,7 +26,7 @@ export interface DerivableDocument {
 
 export interface DerivedData {
   /** Distinct note-link targets, in document order. */
-  noteLinks: { targetId: string; targetJournal: string }[];
+  noteLinks: { targetId: string }[];
   /** Distinct image destinations, in document order. */
   imageLinks: string[];
   fts: { title: string; content: string };
@@ -45,10 +45,7 @@ export function deriveData(doc: Omit<DerivableDocument, "id">): DerivedData {
     const parsed = parseNoteLink(link.url);
     if (!parsed || seenTargets.has(parsed.noteId)) continue;
     seenTargets.add(parsed.noteId);
-    noteLinks.push({
-      targetId: parsed.noteId,
-      targetJournal: parsed.journalName,
-    });
+    noteLinks.push({ targetId: parsed.noteId });
   }
 
   return {

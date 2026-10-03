@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 import { parseMarkdown, selectImageLinks } from "../markdown";
-import { parseNoteLink } from "../markdown/noteLinks";
+import { toStoredNoteLink } from "../markdown/noteLinks";
 import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
 import { readChroniclesTree } from "./chronicles-tree";
@@ -292,10 +292,7 @@ export async function importChroniclesTree(
 
       const content = rewriteUrls(note.body, (url, node) => {
         if (node.type === "image") return imageUrls.get(url);
-        const link = parseNoteLink(decodeLinkSegment(url));
-        const target = link && journalByDir.get(link.journalName);
-        if (!target) return undefined;
-        return `../${target.name}/${link!.noteId}.md`;
+        return toStoredNoteLink(decodeLinkSegment(url));
       }).markdown;
 
       const userKeys = stripColumnOwnedKeys(note.frontMatter);

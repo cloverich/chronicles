@@ -9,4 +9,4 @@ tags: ["unicode","émoji"]
 
 你好, world! Émoji: 🚀
 
-Back to [spaced journal](<../my%20notes/03b3m6xaiod1fz6mvkjmvb3jc.md>).
+Back to [spaced journal](../my%20notes/03b3m6xaiod1fz6mvkjmvb3jc.md).

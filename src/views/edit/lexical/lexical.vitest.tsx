@@ -462,10 +462,11 @@ describe("lexical migration spike", () => {
     });
   });
 
-  it("navigates directly when clicking a chronicles note link", async () => {
-    renderEditorWithRoutes(
-      "[Target note](../research/01931c56fc2378079233d986767c519c.md)",
-    );
+  it.each([
+    "[Target note](chronicles://note/01931c56fc2378079233d986767c519c)",
+    "[Target note](../research/01931c56fc2378079233d986767c519c.md)",
+  ])("navigates directly when clicking a note link: %s", async (markdown) => {
+    renderEditorWithRoutes(markdown);
 
     const noteLink = await screen.findByRole("link", { name: "Target note" });
     fireEvent.click(noteLink);
@@ -680,7 +681,7 @@ describe("lexical migration spike", () => {
         | undefined;
       expect(latestMarkdown).toContain("Behavioral Interview Prep");
       expect(latestMarkdown).toContain(
-        "../research/01931c56fc2378079233d986767c519c.md",
+        "chronicles://note/01931c56fc2378079233d986767c519c",
       );
     });
     expect(screen.queryByText("Link a Chronicles note")).toBeNull();

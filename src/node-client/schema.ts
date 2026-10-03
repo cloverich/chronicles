@@ -77,7 +77,6 @@ export const documentLinks = sqliteTable(
         onUpdate: "cascade",
       }),
     targetId: text("targetId").notNull(),
-    targetJournal: text("targetJournal").notNull(),
     resolvedAt: text("resolvedAt"),
   },
   (table) => [
