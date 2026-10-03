@@ -1,7 +1,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import path from "path";
 
+import { validateJournalName } from "../contract/rules";
 import { createId } from "../preload/client/util";
 import type { Trx } from "./derive";
 import { tombstoneNotes } from "./documents";
@@ -239,7 +239,10 @@ export class JournalsClient {
   };
 }
 
-export const MAX_NAME_LENGTH = 25;
+export {
+  MAX_JOURNAL_NAME_LENGTH as MAX_NAME_LENGTH,
+  validateJournalName,
+} from "../contract/rules";
 
 /**
  * Journal names are unique ignoring case. Returns the stored name matching
@@ -256,35 +259,6 @@ export const findJournalIgnoringCase = (
     .where(sql`lower(${journalsTable.name}) = lower(${name})`)
     .all();
   return row?.name;
-};
-
-export const validateJournalName = (name: string): string => {
-  name = name?.trim() || "";
-  if (!name) {
-    throw new Error("Journal name cannot be empty.");
-  }
-
-  if (name === "_attachments") {
-    throw new Error("Journal name cannot be '_attachments'.");
-  }
-
-  if (name.length > MAX_NAME_LENGTH) {
-    throw new Error(
-      `Journal name exceeds max length of ${MAX_NAME_LENGTH} characters.`,
-    );
-  }
-
-  const sanitized = decodeURIComponent(encodeURIComponent(name));
-  if (name !== sanitized) {
-    throw new Error("Journal name is not URL safe.");
-  }
-
-  const baseSanitized = path.basename(name);
-  if (baseSanitized !== name) {
-    throw new Error("Journal name contains invalid path characters.");
-  }
-
-  return baseSanitized;
 };
 
 /** The id of the journal named exactly `name`; throws if none. */
