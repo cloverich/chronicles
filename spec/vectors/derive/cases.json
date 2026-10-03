@@ -1,0 +1,417 @@
+[
+  {
+    "name": "plain note link",
+    "title": "Links",
+    "markdown": "See [other](../work/03awvyp9xobkv9t1jmmtiz0bp.md).\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "work"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "Links",
+        "content": "See [other](../work/03awvyp9xobkv9t1jmmtiz0bp.md).\n"
+      }
+    }
+  },
+  {
+    "name": "duplicate targets dedupe, first journal wins",
+    "title": null,
+    "markdown": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md) [b](../other/03awvyp9xobkv9t1jmmtiz0bp.md) [c](../work/03b3m6xaiod1fz6mvkjmvb3jc.md)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "work"
+        },
+        {
+          "targetId": "03b3m6xaiod1fz6mvkjmvb3jc",
+          "targetJournal": "work"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md) [b](../other/03awvyp9xobkv9t1jmmtiz0bp.md) [c](../work/03b3m6xaiod1fz6mvkjmvb3jc.md)\n"
+      }
+    }
+  },
+  {
+    "name": "link with title attribute",
+    "title": null,
+    "markdown": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md \"Title\")\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "work"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md \"Title\")\n"
+      }
+    }
+  },
+  {
+    "name": "angle-bracket destination with space in journal",
+    "title": null,
+    "markdown": "[a](<../my notes/03awvyp9xobkv9t1jmmtiz0bp.md>)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "my notes"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](<../my notes/03awvyp9xobkv9t1jmmtiz0bp.md>)\n"
+      }
+    }
+  },
+  {
+    "name": "space without brackets is not a link",
+    "title": null,
+    "markdown": "[a](../my notes/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../my notes/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "unicode journal",
+    "title": null,
+    "markdown": "[a](../日記/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "日記"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../日記/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "percent-encoded journal is not decoded",
+    "title": null,
+    "markdown": "[a](../my%20notes/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "my%20notes"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../my%20notes/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "inline code is not a link",
+    "title": null,
+    "markdown": "`[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)`\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "`[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)`\n"
+      }
+    }
+  },
+  {
+    "name": "fenced code is not a link",
+    "title": null,
+    "markdown": "```md\n[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n```\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "```md\n[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n```\n"
+      }
+    }
+  },
+  {
+    "name": "indented code is not a link",
+    "title": null,
+    "markdown": "    [a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "    [a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "escaped bracket is not a link",
+    "title": null,
+    "markdown": "\\[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "\\[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "reference-style link is not derived",
+    "title": null,
+    "markdown": "[a][ref]\n\n[ref]: ../work/03awvyp9xobkv9t1jmmtiz0bp.md\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a][ref]\n\n[ref]: ../work/03awvyp9xobkv9t1jmmtiz0bp.md\n"
+      }
+    }
+  },
+  {
+    "name": "missing journal segment",
+    "title": null,
+    "markdown": "[a](../03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "same-directory link",
+    "title": null,
+    "markdown": "[a](./03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](./03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "single-dot-prefixed path is not a note link",
+    "title": null,
+    "markdown": "[a](.x/work/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](.x/work/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "query string",
+    "title": null,
+    "markdown": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md?x=1)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](../work/03awvyp9xobkv9t1jmmtiz0bp.md?x=1)\n"
+      }
+    }
+  },
+  {
+    "name": "remote .md url",
+    "title": null,
+    "markdown": "[a](https://example.com/work/03awvyp9xobkv9t1jmmtiz0bp.md)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](https://example.com/work/03awvyp9xobkv9t1jmmtiz0bp.md)\n"
+      }
+    }
+  },
+  {
+    "name": "chronicles:// note link (future form) is not yet derived",
+    "title": null,
+    "markdown": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[a](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)\n"
+      }
+    }
+  },
+  {
+    "name": "link in table cell and blockquote",
+    "title": null,
+    "markdown": "| a |\n| - |\n| [x](../work/03awvyp9xobkv9t1jmmtiz0bp.md) |\n\n> [y](../work/03b3m6xaiod1fz6mvkjmvb3jc.md)\n",
+    "expected": {
+      "noteLinks": [
+        {
+          "targetId": "03awvyp9xobkv9t1jmmtiz0bp",
+          "targetJournal": "work"
+        },
+        {
+          "targetId": "03b3m6xaiod1fz6mvkjmvb3jc",
+          "targetJournal": "work"
+        }
+      ],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "| a |\n| - |\n| [x](../work/03awvyp9xobkv9t1jmmtiz0bp.md) |\n\n> [y](../work/03b3m6xaiod1fz6mvkjmvb3jc.md)\n"
+      }
+    }
+  },
+  {
+    "name": "wikilink is text",
+    "title": null,
+    "markdown": "[[Some Note]]\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "[[Some Note]]\n"
+      }
+    }
+  },
+  {
+    "name": "images: local, duplicate, remote, data",
+    "title": null,
+    "markdown": "![a](../_attachments/a.webp)\n\n![b](../_attachments/a.webp)\n\n![c](https://example.com/c.png)\n\n![d](data:image/png;base64,AAAA)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [
+        "../_attachments/a.webp",
+        "https://example.com/c.png",
+        "data:image/png;base64,AAAA"
+      ],
+      "fts": {
+        "title": "",
+        "content": "![a](../_attachments/a.webp)\n\n![b](../_attachments/a.webp)\n\n![c](https://example.com/c.png)\n\n![d](data:image/png;base64,AAAA)\n"
+      }
+    }
+  },
+  {
+    "name": "image inside link",
+    "title": null,
+    "markdown": "[![i](../_attachments/i.png)](https://example.com)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [
+        "../_attachments/i.png"
+      ],
+      "fts": {
+        "title": "",
+        "content": "[![i](../_attachments/i.png)](https://example.com)\n"
+      }
+    }
+  },
+  {
+    "name": "image with escaped paren",
+    "title": null,
+    "markdown": "![a](../_attachments/a%29b.png)\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [
+        "../_attachments/a%29b.png"
+      ],
+      "fts": {
+        "title": "",
+        "content": "![a](../_attachments/a%29b.png)\n"
+      }
+    }
+  },
+  {
+    "name": "reference-style image is not derived",
+    "title": null,
+    "markdown": "![a][img]\n\n[img]: ../_attachments/r.png\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "![a][img]\n\n[img]: ../_attachments/r.png\n"
+      }
+    }
+  },
+  {
+    "name": "image in code is not derived",
+    "title": null,
+    "markdown": "`![a](../_attachments/a.png)`\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "`![a](../_attachments/a.png)`\n"
+      }
+    }
+  },
+  {
+    "name": "html img is not derived",
+    "title": null,
+    "markdown": "<img src=\"../_attachments/h.png\">\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "<img src=\"../_attachments/h.png\">\n"
+      }
+    }
+  },
+  {
+    "name": "fts: missing title is empty, content verbatim",
+    "title": null,
+    "markdown": "# Heading\n\nBody with *emphasis* and 🚀.\n",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "",
+        "content": "# Heading\n\nBody with *emphasis* and 🚀.\n"
+      }
+    }
+  },
+  {
+    "name": "fts: title kept",
+    "title": "Title ✓",
+    "markdown": "",
+    "expected": {
+      "noteLinks": [],
+      "imageLinks": [],
+      "fts": {
+        "title": "Title ✓",
+        "content": ""
+      }
+    }
+  }
+]

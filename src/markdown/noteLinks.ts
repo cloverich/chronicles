@@ -1,5 +1,5 @@
 // For parsing note links, i.e. the `./<journalName>/<noteId>.md` format.
-const noteLinkRegex = /^\..\/(?:(.+)\/)?([a-zA-Z0-9-]+)\.md$/;
+const noteLinkRegex = /^\.\.\/(?:(.+)\/)?([a-zA-Z0-9-]+)\.md$/;
 
 /**
  * Check if url conforms to the note link format.
