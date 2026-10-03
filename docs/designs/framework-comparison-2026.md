@@ -1,5 +1,7 @@
 # Desktop Framework Comparison 2026: Electron vs. Tauri vs. Electrobun
 
+> **Status: Historical snapshot (Feb–Mar 2026).** Vite/Vitest and Lexical migrations are complete. Current direction is Electron for desktop plus a standalone Swift app; see the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
+
 **Analysis Date:** February 23, 2026
 **Context:** Evaluating framework options for Chronicles, a TypeScript-heavy local-first markdown notes app
 
