@@ -1,0 +1,76 @@
+{
+  "formatVersion": "2.0",
+  "journals": [
+    {
+      "name": "_private",
+      "dir": "j_private"
+    },
+    {
+      "name": "default_journal",
+      "dir": "default_journal"
+    },
+    {
+      "name": "my notes",
+      "dir": "my notes"
+    },
+    {
+      "name": "work",
+      "dir": "work"
+    },
+    {
+      "name": "日記",
+      "dir": "日記"
+    }
+  ],
+  "notes": [
+    {
+      "id": "03awvyp9xobkv9t1jmmtiz0bp",
+      "journal": "work",
+      "path": "work/03awvyp9xobkv9t1jmmtiz0bp.md",
+      "revision": "3d513b419994748a1843f64a7e6baee5f6c472aa1da0a05d3a8cbbbf56baa22f"
+    },
+    {
+      "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+      "journal": "my notes",
+      "path": "my notes/03b3m6xaiod1fz6mvkjmvb3jc.md",
+      "revision": "97697a378ab914004ee22ef629bae76e061603ea56e1c11a23e4a5ed3e19e951"
+    },
+    {
+      "id": "03b9wsjvyu3t3ufq044kfzgru",
+      "journal": "日記",
+      "path": "日記/03b9wsjvyu3t3ufq044kfzgru.md",
+      "revision": "7b6cfc74ae9d0719cbb3a2984dcaa7a39608f9f43f2cac72d6c1cd3ff3d7b5a4"
+    },
+    {
+      "id": "03bgn0rwju13kzyxhez49oxf3",
+      "journal": "work",
+      "path": "work/03bgn0rwju13kzyxhez49oxf3.md",
+      "revision": "b0f828e0449f40cfa905cad7ece8b5222cf50434b5d37b2ea84c474056082fc7"
+    },
+    {
+      "id": "03bn5fp7keqa3yooxua9rlndm",
+      "journal": "work",
+      "path": "work/03bn5fp7keqa3yooxua9rlndm.md",
+      "revision": "f2490447f2500b7f67ad1d2db77e3d07775bb4babc68342174d2ea9f7619de17"
+    },
+    {
+      "id": "03btvnx85ev892j5n93i9v5si",
+      "journal": "_private",
+      "path": "j_private/03btvnx85ev892j5n93i9v5si.md",
+      "revision": "309866dbce8d75c2a2c370f847070acceb9cdf4d6ca3f56a61e052a76ff3688d"
+    },
+    {
+      "id": "03c0e2uj5zhktbgav50jzbth4",
+      "journal": "work",
+      "path": "work/03c0e2uj5zhktbgav50jzbth4.md",
+      "revision": "9e6070586854f82b9d79446bfce476dee10aee6260db68664295d1536cc6d503"
+    }
+  ],
+  "attachments": [
+    {
+      "path": "_attachments/pixel.png",
+      "sha256": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
+      "byteSize": 68
+    }
+  ]
+}

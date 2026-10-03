@@ -1,9 +1,6 @@
 import fs from "fs";
 import path from "path";
 
-import type * as mdast from "mdast";
-import { parseMarkdown } from "../markdown";
-import { splitFrontMatter } from "../preload/client/importer/frontmatter";
 import {
   SKIPPABLE_FILES,
   SKIPPABLE_PREFIXES,
@@ -11,6 +8,7 @@ import {
 } from "../preload/client/types";
 import { checkId } from "../preload/client/util";
 import { walk } from "../preload/utils/fs-utils";
+import { parseNoteFile } from "./canonical-note";
 
 /**
  * Pure filesystem discovery + parsing for a Chronicles notes tree
@@ -24,7 +22,8 @@ export interface TreeNote {
   journal: string;
   path: string;
   frontMatter: FrontMatter;
-  mdast: mdast.Root;
+  /** Markdown body, byte-for-byte as in the file (LF line endings). */
+  body: string;
 }
 
 export interface TreeReadReport {
@@ -98,19 +97,18 @@ export function readChroniclesTree(rootDir: string): {
 
       try {
         const rawContents = await fs.promises.readFile(file.path, "utf8");
-        const parsedMdast = parseMarkdown(rawContents);
-        const { frontMatter, bodyMdast } = splitFrontMatter(
-          parsedMdast,
-          file.stats,
-        );
-
-        yield {
-          id,
-          journal,
-          path: file.path,
-          frontMatter,
-          mdast: bodyMdast,
+        const { frontMatter: raw, body } = parseNoteFile(rawContents);
+        const frontMatter: FrontMatter = {
+          ...raw,
+          tags: raw.tags || [],
+          title: raw.title,
+          createdAt:
+            raw.createdAt ||
+            (file.stats.birthtime || file.stats.mtime).toISOString(),
+          updatedAt: raw.updatedAt || file.stats.mtime.toISOString(),
         };
+
+        yield { id, journal, path: file.path, frontMatter, body };
       } catch (error) {
         errored.push({ path: file.path, error });
         console.error(
