@@ -10,11 +10,7 @@ import {
 import { parseNoteLink } from "../markdown/noteLinks";
 import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
-import {
-  compareCodePoints,
-  noteRevision,
-  serializeNote,
-} from "./canonical-note";
+import { compareCodePoints, serializeNote } from "./canonical-note";
 import {
   assignJournalDirs,
   encodeLinkSegment,
@@ -177,7 +173,7 @@ export class ExportClient {
         id: row.id,
         journalId: row.journalId,
         path: relPath,
-        revision: noteRevision(fileContents),
+        revision: row.revision,
       });
 
       for (const { sha256, ext } of referenced) {

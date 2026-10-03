@@ -20,7 +20,8 @@ import type {
   UpdateRequest,
 } from "../preload/client/types";
 import { createId } from "../preload/client/util";
-import { derive } from "./derive";
+import { computeRevision } from "./canonical-note";
+import { derive, type Trx } from "./derive";
 import type { NodeFilesClient } from "./files";
 import { resolveJournalId } from "./journals";
 import * as schema from "./schema";
@@ -56,6 +57,32 @@ export function stripColumnOwnedKeys(
   return userKeys;
 }
 
+/**
+ * Recompute and store a note's revision from its row and tags. Call last in
+ * every transaction that changes a note.
+ */
+export function refreshRevision(trx: Trx, id: string): string {
+  const [row] = trx.select().from(documents).where(eq(documents.id, id)).all();
+  const tags = trx
+    .select({ tag: documentTags.tag })
+    .from(documentTags)
+    .where(eq(documentTags.documentId, id))
+    .all()
+    .map((t) => t.tag);
+  const revision = computeRevision({
+    id: row.id,
+    title: row.title,
+    journal: row.journalId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    tags,
+    frontMatter: JSON.parse(row.frontmatter || "{}"),
+    content: row.content,
+  });
+  trx.update(documents).set({ revision }).where(eq(documents.id, id)).run();
+  return revision;
+}
+
 export class DocumentsClient {
   constructor(
     private db: BetterSQLite3Database<typeof schema>,
@@ -81,6 +108,7 @@ export class DocumentsClient {
         updatedAt: documents.updatedAt,
         frontmatter: documents.frontmatter,
         content: documents.content,
+        revision: documents.revision,
       })
       .from(documents)
       .innerJoin(journals, eq(documents.journalId, journals.id))
@@ -114,6 +142,7 @@ export class DocumentsClient {
       journal: row.journal,
       frontMatter,
       content: row.content,
+      revision: row.revision,
     };
   };
 
@@ -158,12 +187,14 @@ export class DocumentsClient {
         title: args.frontMatter.title,
         content: args.content,
       });
+      refreshRevision(trx, id);
     });
 
     return id;
   };
 
-  updateDocument = async (args: UpdateRequest): Promise<void> => {
+  /** Returns the note's new revision. */
+  updateDocument = async (args: UpdateRequest): Promise<string> => {
     if (!args.id) throw new Error("id required to update document");
 
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
@@ -172,15 +203,24 @@ export class DocumentsClient {
 
     const userKeys = stripColumnOwnedKeys(args.frontMatter);
 
-    this.db.transaction((trx) => {
+    return this.db.transaction((trx) => {
       const [existing] = trx
-        .select({ id: documents.id })
+        .select({ id: documents.id, revision: documents.revision })
         .from(documents)
         .where(eq(documents.id, args.id))
         .all();
 
       if (!existing) {
         throw new Error(`[DOCUMENT_NOT_FOUND] Document ${args.id} not found`);
+      }
+
+      if (
+        args.baseRevision !== undefined &&
+        args.baseRevision !== existing.revision
+      ) {
+        throw new Error(
+          `[DOCUMENT_CONFLICT] Document ${args.id} changed since revision ${args.baseRevision}`,
+        );
       }
 
       trx
@@ -217,6 +257,7 @@ export class DocumentsClient {
         title: args.frontMatter.title,
         content: args.content,
       });
+      return refreshRevision(trx, args.id);
     });
   };
 
@@ -282,6 +323,7 @@ export class DocumentsClient {
         }
 
         derive(trx, { id: args.id, title: args.title, content: args.content });
+        refreshRevision(trx, args.id);
         return "replaced";
       }
 
@@ -306,6 +348,7 @@ export class DocumentsClient {
       }
 
       derive(trx, { id: args.id, title: args.title, content: args.content });
+      refreshRevision(trx, args.id);
       return "created";
     });
   };

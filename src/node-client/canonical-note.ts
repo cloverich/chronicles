@@ -111,6 +111,16 @@ export function noteRevision(serialized: string): string {
 }
 
 /**
+ * A note's revision: the hash of its canonical serialization with references
+ * in stored form (`chronicles://note/…`, `chronicles://attachment/…`). It
+ * depends on the note alone — unlike exported bytes, whose link paths depend
+ * on other notes' journals.
+ */
+export function computeRevision(note: CanonicalNote): string {
+  return noteRevision(serializeNote(note));
+}
+
+/**
  * Split a note file into its raw frontmatter object and body, preserving the
  * body bytes. Accepts canonical (v2) and legacy (v1, block-style YAML) files.
  * A file without a leading `---` fence has no frontmatter.

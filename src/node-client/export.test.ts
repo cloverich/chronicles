@@ -236,12 +236,17 @@ describe("ExportClient.export", () => {
     );
     assert.strictEqual(manifestEntryA.journalId, alpha.id);
     assert.ok(noteARaw.includes(`journal: "${alpha.id}"`));
-    assert.strictEqual(manifestEntryA.revision, sha256(noteARaw));
-
+    // Revisions hash stored-form references, so they match the database and,
+    // for a note without references, the exported file itself.
     for (const entry of manifest.notes) {
-      const raw = readFileSync(path.join(destDir, entry.path), "utf8");
-      assert.strictEqual(entry.revision, sha256(raw));
+      const doc = await fixture.client.documents.findById({ id: entry.id });
+      assert.strictEqual(entry.revision, doc.revision);
     }
+    const emptyEntry = manifest.notes.find(
+      (n: any) => n.id === fixture.ids.noteEmpty,
+    );
+    assert.strictEqual(emptyEntry.revision, sha256(noteEmptyRaw));
+    assert.notStrictEqual(manifestEntryA.revision, sha256(noteARaw));
 
     const info = JSON.parse(
       readFileSync(path.join(destDir, "export-info.json"), "utf8"),

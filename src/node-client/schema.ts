@@ -40,6 +40,8 @@ export const documents = sqliteTable(
     frontmatter: text("frontmatter").notNull(),
     /** Markdown body, frontmatter stripped. SQLite is the source of truth for content. */
     content: text("content").notNull().default(""),
+    /** sha256 of the canonical note (see computeRevision); the update precondition. */
+    revision: text("revision").notNull().default(""),
   },
   (table) => [
     index("documents_title_idx").on(table.title),
