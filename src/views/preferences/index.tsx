@@ -17,6 +17,7 @@ import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
 import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
+import { usePlatform } from "../../hooks/usePlatform";
 import { usePreferences } from "../../hooks/usePreferences";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
@@ -32,6 +33,7 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
+  const platform = usePlatform();
   const navigate = useNavigate();
   const maintenanceStore = useMaintenanceStore();
   const journalsStore = useJournals();
@@ -58,7 +60,7 @@ const PreferencesPane = observer((props: Props) => {
       (async () => {
         const themesDir = `${preferences.settingsDir}/themes`;
         const { themes, overrides } =
-          await window.chronicles.listAvailableThemes(themesDir);
+          await platform.listAvailableThemes(themesDir);
         setAvailableThemes(themes);
         if (overrides.length > 0) {
           toast.info(
@@ -67,8 +69,7 @@ const PreferencesPane = observer((props: Props) => {
         }
 
         const fontsDir = `${preferences.settingsDir}/fonts`;
-        const installedFonts =
-          await window.chronicles.listInstalledFonts(fontsDir);
+        const installedFonts = await platform.listInstalledFonts(fontsDir);
         setAvailableFonts(installedFonts);
 
         // Resolve async path for display
@@ -78,7 +79,7 @@ const PreferencesPane = observer((props: Props) => {
         } catch {
           setSettingsPath("(unknown)");
         }
-        // setHljsThemes(await window.chronicles.listHljsThemes());
+        // setHljsThemes(await platform.listHljsThemes());
       })();
     }
   }, [props.isOpen, preferences.settingsDir]);
@@ -86,7 +87,7 @@ const PreferencesPane = observer((props: Props) => {
   async function selectNotesRoot() {
     store.loading = true;
     try {
-      const result = await window.chronicles.openDialogSelectDir();
+      const result = await platform.openDialogSelectDir();
       if (!result.value) {
         store.loading = false;
         return;
@@ -109,14 +110,14 @@ const PreferencesPane = observer((props: Props) => {
   async function importTheme() {
     store.loading = true;
     try {
-      const result = await window.chronicles.selectThemeFile();
+      const result = await platform.selectThemeFile();
       if (!result.value) {
         store.loading = false;
         return;
       }
 
       const themesDir = `${preferences.settingsDir}/themes`;
-      const importResult = await window.chronicles.importThemeFile(
+      const importResult = await platform.importThemeFile(
         result.value,
         themesDir,
       );
@@ -138,13 +139,13 @@ const PreferencesPane = observer((props: Props) => {
 
   async function refreshThemeList() {
     const themesDir = `${preferences.settingsDir}/themes`;
-    const result = await window.chronicles.listAvailableThemes(themesDir);
+    const result = await platform.listAvailableThemes(themesDir);
     setAvailableThemes(result.themes);
   }
 
   async function deleteTheme(name: string) {
     const themesDir = `${preferences.settingsDir}/themes`;
-    const deleted = await window.chronicles.deleteThemeByName(name, themesDir);
+    const deleted = await platform.deleteThemeByName(name, themesDir);
     if (deleted) {
       toast.success(`Theme "${name}" removed`);
       // Reset to system default if the deleted theme was active
@@ -162,18 +163,18 @@ const PreferencesPane = observer((props: Props) => {
 
   function openThemesDir() {
     const themesDir = `${preferences.settingsDir}/themes`;
-    window.chronicles.openPath(themesDir);
+    platform.openPath(themesDir);
   }
 
   function openFontsDir() {
     const fontsDir = `${preferences.settingsDir}/fonts`;
-    window.chronicles.openPath(fontsDir);
+    platform.openPath(fontsDir);
   }
 
   async function importDirectory() {
     store.loading = true;
     try {
-      const result = await window.chronicles.openDialogSelectDir();
+      const result = await platform.openDialogSelectDir();
       if (!result?.value) {
         store.loading = false;
         return;
@@ -231,7 +232,7 @@ const PreferencesPane = observer((props: Props) => {
   async function exportNotes() {
     store.loading = true;
     try {
-      const result = await window.chronicles.openDialogSelectDir();
+      const result = await platform.openDialogSelectDir();
       if (!result?.value) {
         store.loading = false;
         return;

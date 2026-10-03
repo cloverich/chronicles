@@ -2,6 +2,7 @@ import { reaction, toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { Preferences } from "../hooks/stores/preferences";
+import { usePlatform, type PlatformServices } from "../hooks/usePlatform";
 import {
   resolveActiveThemeName,
   systemDarkTheme,
@@ -48,8 +49,11 @@ const CUSTOM_FONT_STYLE_ID = "chronicles-custom-fonts";
  * Inject or replace the highlight.js theme CSS in a <style> tag.
  * The tag is identified by HLJS_STYLE_ID so it can be swapped on theme change.
  */
-async function applyHljsTheme(themeName: string): Promise<void> {
-  const css = await window.chronicles.loadHljsThemeCSS(themeName);
+async function applyHljsTheme(
+  platform: PlatformServices,
+  themeName: string,
+): Promise<void> {
+  const css = await platform.loadHljsThemeCSS(themeName);
   if (!css) {
     console.warn(`StyleWatcher: hljs theme "${themeName}" not found`);
     return;
@@ -126,17 +130,16 @@ function applyThemeColors(colors: ThemeColors): void {
  * Handles fonts, max-width, font-size, and color theme styling preferences.
  */
 export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
+  const platform = usePlatform();
   React.useEffect(() => {
     const fontsDir = `${preferences.settingsDir}/fonts`;
     (async () => {
-      const initialFonts =
-        await window.chronicles.refreshInstalledFontsCache(fontsDir);
+      const initialFonts = await platform.refreshInstalledFontsCache(fontsDir);
       applyCustomFontsStylesheet(initialFonts.css);
     })();
 
     const refreshFontsCache = window.setTimeout(async () => {
-      const result =
-        await window.chronicles.refreshInstalledFontsCache(fontsDir);
+      const result = await platform.refreshInstalledFontsCache(fontsDir);
       if (result.changed) {
         applyCustomFontsStylesheet(result.css);
         console.info(
@@ -252,7 +255,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       // Set native theme and get OS dark mode preference.
       // Falls back to matchMedia if setNativeTheme returns false (stub).
       const shouldUseDark =
-        (await window.chronicles.setNativeTheme(preferences.darkMode)) ||
+        (await platform.setNativeTheme(preferences.darkMode)) ||
         (preferences.darkMode === "system"
           ? window.matchMedia("(prefers-color-scheme: dark)").matches
           : preferences.darkMode === "dark");
@@ -268,7 +271,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       );
 
       const themesDir = `${preferences.settingsDir}/themes`;
-      let theme = await window.chronicles.loadThemeByName(themeName, themesDir);
+      let theme = await platform.loadThemeByName(themeName, themesDir);
 
       if (!theme) {
         console.error(
@@ -293,7 +296,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       // override native UI to match (e.g., a dark-feeling theme used in light mode).
       // Skip for "system" — we already set it at the top and want OS tracking.
       if (preferences.darkMode !== "system" && theme.inherentMode) {
-        await window.chronicles.setNativeTheme(theme.inherentMode);
+        await platform.setNativeTheme(theme.inherentMode);
       }
 
       // Code syntax highlighting disabled until Plate's code_line collapse
@@ -302,7 +305,7 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       //   effectiveMode === "dark"
       //     ? (preferences.codeThemeDark || DEFAULT_HLJS_DARK)
       //     : (preferences.codeThemeLight || DEFAULT_HLJS_LIGHT);
-      // applyHljsTheme(codeTheme);
+      // applyHljsTheme(platform, codeTheme);
     }
 
     // Watch theme and darkMode preferences, apply colors immediately and on change

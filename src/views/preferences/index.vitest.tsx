@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
 import { ClientContext } from "../../hooks/useClient";
+import { hostPlatformServices, PlatformContext } from "../../hooks/usePlatform";
 import Preferences from "./index";
 
 function createClient() {
@@ -58,9 +59,11 @@ function renderPreferences({
   return render(
     <MemoryRouter>
       <ClientContext.Provider value={client}>
-        <ApplicationContext.Provider value={applicationStore}>
-          <Preferences isOpen={true} onClose={vi.fn()} />
-        </ApplicationContext.Provider>
+        <PlatformContext.Provider value={hostPlatformServices()}>
+          <ApplicationContext.Provider value={applicationStore}>
+            <Preferences isOpen={true} onClose={vi.fn()} />
+          </ApplicationContext.Provider>
+        </PlatformContext.Provider>
       </ClientContext.Provider>
     </MemoryRouter>,
   );

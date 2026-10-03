@@ -5,7 +5,9 @@ import { HashRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import Container from "./container";
 import { Preferences } from "./hooks/stores/preferences";
+import { ClientContext } from "./hooks/useClient";
 import { hostNotesClient, NotesContext } from "./hooks/useNotes";
+import { hostPlatformServices, PlatformContext } from "./hooks/usePlatform";
 import "./index.css";
 
 // todo: refactor and enforce actions on mobx stores
@@ -13,14 +15,23 @@ configure({ enforceActions: "never" });
 
 const root = createRoot(document.getElementById("app")!);
 
-// The NotesClient is injected here, once. Without one the app can't run, so
-// fail at startup with the reason instead of failing later on first use.
-let notes: ReturnType<typeof hostNotesClient> | null = null;
-let notesError: Error | null = null;
+// The composition root: the only place that reads the host (window.chronicles).
+// Without these services the app can't run, so fail at startup with the
+// reason instead of failing later on first use.
+let services: {
+  notes: ReturnType<typeof hostNotesClient>;
+  platform: ReturnType<typeof hostPlatformServices>;
+  client: ReturnType<Window["chronicles"]["getClient"]>;
+} | null = null;
+let startupError: Error | null = null;
 try {
-  notes = hostNotesClient();
+  services = {
+    notes: hostNotesClient(),
+    platform: hostPlatformServices(),
+    client: window.chronicles.getClient(),
+  };
 } catch (err) {
-  notesError = err as Error;
+  startupError = err as Error;
 }
 
 // Rely on localStorage to ensure the last used dark mode setting is applied
@@ -55,12 +66,16 @@ root.render(
           },
         }}
       />
-      {notes ? (
-        <NotesContext.Provider value={notes}>
-          <Container />
-        </NotesContext.Provider>
+      {services ? (
+        <ClientContext.Provider value={services.client}>
+          <NotesContext.Provider value={services.notes}>
+            <PlatformContext.Provider value={services.platform}>
+              <Container />
+            </PlatformContext.Provider>
+          </NotesContext.Provider>
+        </ClientContext.Provider>
       ) : (
-        <pre className="p-8 text-sm">{String(notesError)}</pre>
+        <pre className="p-8 text-sm">{String(startupError)}</pre>
       )}
     </HashRouter>
   </>,
