@@ -8,9 +8,13 @@ import {
 } from "mobx";
 import { createContext, useContext } from "react";
 
+import type {
+  NoteSummary,
+  NotesClient,
+  SearchNotesRequest,
+} from "../../contract/notes";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { MaintenanceStore } from "../../hooks/stores/maintenance";
-import type { IClient } from "../../hooks/useClient";
 import { SearchParser } from "./SearchParser";
 import { SearchToken } from "./search/tokens";
 
@@ -47,21 +51,6 @@ function toSearchItem(doc: DocumentBase): SearchItem | null {
   };
 }
 
-interface SearchQuery {
-  // journal name(s)
-  journals: string[];
-  titles?: string[];
-  before?: string;
-  date?: string;
-  tags?: string[];
-  exclude?: {
-    tags?: string[];
-    journals?: string[];
-  };
-  texts?: string[];
-  limit?: number;
-}
-
 export const SearchStoreContext = createContext<SearchStore | null>(null);
 
 export function useSearchStore() {
@@ -83,7 +72,7 @@ export class SearchStore {
   private _tokens: IObservableArray<SearchToken> = observable([]);
 
   constructor(
-    private client: IClient,
+    private notes: NotesClient,
     journals: JournalsStore,
     setTokensUrl: any,
     tokens: string[],
@@ -159,7 +148,7 @@ export class SearchStore {
   }
 
   // todo: this might be better as a @computed get
-  private tokensToQuery = (): SearchQuery => {
+  private tokensToQuery = (): SearchNotesRequest => {
     const journals = this.tokens
       .filter((t) => t.type === "in" && !(t as any).excluded)
       .map((token) => token.value) as string[]; // assumes pre-validated by addToeken above
@@ -194,16 +183,32 @@ export class SearchStore {
     const dateToken = this.tokens.find((t) => t.type === "date");
     const date = dateToken?.value as string | undefined;
 
+    // `in:` tokens name journals; the query takes ids.
+    const ids = (names: string[]) =>
+      names.flatMap((name) => {
+        const id = this.journals.journals.find((j) => j.name === name)?.id;
+        return id ? [id] : [];
+      });
+
     return {
-      journals,
+      journalIds: ids(journals),
+      excludeJournalIds: ids(excludedJournals),
       tags,
-      exclude: { tags: excludedTags, journals: excludedJournals },
+      excludeTags: excludedTags,
       titles,
       texts,
-      before,
+      ...(before ? { before } : {}),
       date,
     };
   };
+
+  private toSearchItem = (item: NoteSummary): SearchItem => ({
+    id: item.id,
+    createdAt: item.createdAt,
+    title: item.title ?? undefined,
+    journal:
+      this.journals.journals.find((j) => j.id === item.journalId)?.name ?? "",
+  });
 
   /**
    * If a document is present in search results, and is edited / deleted / etc,
@@ -256,8 +261,9 @@ export class SearchStore {
     q.limit = limit + 1;
 
     try {
-      const res = this.client.documents.search(q);
-      const docs = (await res).data;
+      const docs = (await this.notes.searchNotes(q)).items.map(
+        this.toSearchItem,
+      );
 
       if (docs.length > limit) {
         this.nextId = docs[docs.length - 1].id;
@@ -273,8 +279,8 @@ export class SearchStore {
       this.docs = docs;
 
       // Get total count for search results (without pagination)
-      const countQuery = this.tokensToQuery();
-      this.count = await this.client.documents.searchCount(countQuery);
+      const { before: _before, ...countQuery } = this.tokensToQuery();
+      this.count = (await this.notes.countNotes(countQuery)).count;
     } catch (err) {
       console.error("Error with documents.search results", err);
       this.error = err instanceof Error ? err.message : JSON.stringify(err);

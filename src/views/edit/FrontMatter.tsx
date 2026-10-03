@@ -4,8 +4,8 @@ import { DayPicker, getDefaultClassNames } from "react-day-picker";
 import * as D from "../../components/DropdownMenu";
 import * as Popover from "../../components/Popover";
 import TagInput from "../../components/tag-input/TagInput";
+import type { Journal } from "../../contract/notes";
 import { useAutosizeTextarea } from "../../hooks/useAutosizeTextarea";
-import { JournalResponse } from "../../hooks/useClient";
 import { usePreferences } from "../../hooks/usePreferences";
 import { useTags } from "../../hooks/useTags";
 import { TagTokenParser } from "../documents/search/parsers/tag";
@@ -26,7 +26,7 @@ const FrontMatter = observer(
     journals,
   }: {
     document: DocumentProps;
-    journals: JournalResponse[];
+    journals: Journal[];
   }) => {
     const journalSelectorOpenState = D.useOpenState();
     const datePickerOpenState = D.useOpenState();

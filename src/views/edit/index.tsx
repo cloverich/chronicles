@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { JournalResponse } from "../../hooks/useClient";
+import type { Journal } from "../../contract/notes";
 import { useJournals } from "../../hooks/useJournals";
 import { useNotes } from "../../hooks/useNotes";
 import { useSearchStore } from "../documents/SearchStore";
@@ -14,10 +14,7 @@ import MarkdownEditor from "./markdown-editor";
 import { useEditableDocument } from "./useEditableDocument";
 
 /** The search list still keys journals by name. */
-function toSearchDocument(
-  document: EditableDocument,
-  journals: JournalResponse[],
-) {
+function toSearchDocument(document: EditableDocument, journals: Journal[]) {
   return {
     id: document.id,
     journal: journals.find((j) => j.id === document.journalId)?.name ?? "",
@@ -83,7 +80,7 @@ const DocumentLoadingContainer = observer(() => {
 
 interface DocumentEditProps {
   document: EditableDocument;
-  journals: JournalResponse[];
+  journals: Journal[];
 }
 
 /**
@@ -156,7 +153,7 @@ function EditorInner({
   document: EditableDocument;
   selectedViewMode: EditorMode;
   setSelectedViewMode: (mode: EditorMode) => void;
-  journals: JournalResponse[];
+  journals: Journal[];
   goBack: () => void;
   deleteDocument: () => void;
 }) {

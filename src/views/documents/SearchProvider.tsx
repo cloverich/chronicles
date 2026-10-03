@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useSearchParams } from "react-router-dom";
-import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
 import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
+import { useNotes } from "../../hooks/useNotes";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 
 // Sets up document search and its context
 export function SearchProvider() {
   const jstore = useJournals();
-  const client = useClient();
+  const notes = useNotes();
   const [params, setParams] = useSearchParams();
   const [searchStore, setSearchStore] = useState<null | SearchStore>(null);
   const maintenanceStore = useMaintenanceStore();
@@ -17,7 +17,7 @@ export function SearchProvider() {
   // a hook.
   if (jstore && !searchStore) {
     const store = new SearchStore(
-      client,
+      notes,
       jstore,
       setParams,
       params.getAll("search"),

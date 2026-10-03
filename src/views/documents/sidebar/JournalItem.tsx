@@ -6,11 +6,10 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 
 import { Icons } from "../../../components/icons";
-import { JournalResponse } from "../../../hooks/useClient";
+import type { Journal } from "../../../contract/notes";
 import { useIsMounted } from "../../../hooks/useIsMounted";
 import { useJournals } from "../../../hooks/useJournals";
 import { cn } from "../../../lib/utils";
-import { JournalWithCount } from "../../../node-client/journals";
 import { SidebarStore } from "./store";
 
 export function JournalCreateForm({ done }: { done: () => any }) {
@@ -44,7 +43,7 @@ export const JournalItem = observer(
     isArchived,
     isDefault,
   }: {
-    journal: JournalWithCount;
+    journal: Journal;
     store: SidebarStore;
     editing: boolean;
     isArchived: boolean;
@@ -73,7 +72,7 @@ export const JournalItem = observer(
                 {journal.name}
                 {isDefault ? "*" : ""}
                 <span className="ml-1 text-xs opacity-60">
-                  ({journal.count})
+                  ({journal.noteCount})
                 </span>
               </a>
             )}
@@ -143,7 +142,7 @@ const JournalEditor = observer(function JournalEditor({
 }: {
   isNew?: boolean;
   // New journal (no id) or existing journal (has id)
-  journal: JournalResponse | { name: string };
+  journal: Journal | { name: string };
   done: () => void;
 }) {
   const [name, setName] = React.useState(journal.name);
@@ -159,7 +158,7 @@ const JournalEditor = observer(function JournalEditor({
       if (isNew) {
         await store.create(name);
       } else {
-        await store.updateName(journal as JournalResponse, name);
+        await store.updateName(journal as Journal, name);
       }
 
       if (isMounted()) {
