@@ -299,6 +299,28 @@ export function createMemoryNotesClient(
       };
     },
 
+    async bulkUpdate({ query, op }) {
+      const tag = op.type === "change_journal" ? null : op.tag.trim();
+      if (tag === "") throw new NotesError("invalid_input", "Tag is empty");
+      if (op.type === "change_journal") {
+        requireJournal(op.journalId, "invalid_input");
+      }
+      const matched = [...notes.values()].filter((n) => matches(n, query));
+      for (const n of matched) {
+        await store({
+          ...n,
+          journalId: op.type === "change_journal" ? op.journalId : n.journalId,
+          tags:
+            op.type === "add_tag"
+              ? [...n.tags, tag!]
+              : op.type === "remove_tag"
+                ? n.tags.filter((t) => t !== tag)
+                : n.tags,
+        });
+      }
+      return { matched: matched.length, updated: matched.length, failed: [] };
+    },
+
     async putAttachment({ bytes, name }) {
       const m = name.match(/(\.[A-Za-z0-9]+)$/);
       const ext = m ? m[1].toLowerCase() : "";

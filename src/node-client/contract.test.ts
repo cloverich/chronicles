@@ -69,6 +69,7 @@ async function nodeAdapter(lib: ContractLibrary): Promise<NotesClient> {
     journals: client.journals,
     tags: client.tags,
     files: client.files,
+    bulkOperations: client.bulkOperations,
   });
 }
 

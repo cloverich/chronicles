@@ -9,6 +9,7 @@ import {
 import { createContext, useContext } from "react";
 
 import type {
+  NoteQuery,
   NoteSummary,
   NotesClient,
   SearchNotesRequest,
@@ -201,6 +202,12 @@ export class SearchStore {
       date,
     };
   };
+
+  /** The active search as a contract query (no paging). */
+  get query(): NoteQuery {
+    const { before: _before, limit: _limit, ...query } = this.tokensToQuery();
+    return query;
+  }
 
   private toSearchItem = (item: NoteSummary): SearchItem => ({
     id: item.id,
