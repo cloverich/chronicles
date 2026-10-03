@@ -5,6 +5,7 @@ import { tmpdir } from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { SourceType } from "../preload/client/importer/SourceType";
+import { deriveData } from "./derive";
 import { createClient } from "./factory";
 
 /**
@@ -123,5 +124,34 @@ describe("spec/vectors/export", () => {
         fs.rmSync(work, { recursive: true, force: true });
       }
     });
+  }
+});
+
+describe("spec/vectors/derive", () => {
+  const deriveDir = path.join(SPEC_DIR, "derive");
+  for (const file of fs.readdirSync(deriveDir)) {
+    const filePath = path.join(deriveDir, file);
+    const cases: {
+      name: string;
+      title: string | null;
+      markdown: string;
+      expected: unknown;
+    }[] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+    if (UPDATE) {
+      for (const c of cases) {
+        c.expected = deriveData({ title: c.title, content: c.markdown });
+      }
+      fs.writeFileSync(filePath, JSON.stringify(cases, null, 2) + "\n");
+    }
+
+    for (const c of cases) {
+      test(`${file}: ${c.name}`, () => {
+        assert.deepStrictEqual(
+          deriveData({ title: c.title, content: c.markdown }),
+          c.expected,
+        );
+      });
+    }
   }
 });

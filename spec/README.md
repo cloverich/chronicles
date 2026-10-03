@@ -12,6 +12,7 @@ Node code.
 | ------------------------------------ | ----------------------------------------------------------------- |
 | [data-model.md](data-model.md)       | Entities, identifiers, schema invariants, link/attachment grammar |
 | [export-format.md](export-format.md) | Export tree, canonical note bytes, manifest, versioning           |
+| [derive.md](derive.md)               | Derived data (note links, image refs, FTS)                        |
 | `vectors/`                           | Golden inputs and expected outputs                                |
 
 ## Status
@@ -28,6 +29,7 @@ regenerates the vectors and the diff shows the change.
 vectors/
   export/<case>/input.json   library state (journals, notes, attachments)
   export/<case>/expected/    the exact export tree (minus export-info.json)
+  derive/<file>.json         markdown in → derived data out
 ```
 
 An implementation passes a vector when:
@@ -35,6 +37,8 @@ An implementation passes a vector when:
 - **export:** loading `input.json` into an empty library and exporting yields
   `expected/` byte-for-byte; importing `expected/` into an empty library and
   exporting again also yields `expected/` byte-for-byte.
+- **derive:** for each case, deriving from `title` + `markdown` yields
+  `expected`.
 
 In this repo, `yarn test:node` runs every vector
 (`src/node-client/spec-vectors.test.ts`). To regenerate after an intentional
