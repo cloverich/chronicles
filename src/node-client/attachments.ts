@@ -11,6 +11,7 @@ import {
 } from "../markdown/attachmentRefs";
 import { rewriteUrls } from "../markdown/rewriteUrls";
 import { derive } from "./derive";
+import { refreshRevision } from "./documents";
 import * as schema from "./schema";
 import { attachments, documents } from "./schema";
 
@@ -164,6 +165,7 @@ export class AttachmentStore {
           .where(sql`${documents.id} = ${row.id}`)
           .run();
         derive(trx, { id: row.id, title: row.title, content });
+        refreshRevision(trx, row.id);
         notesUpdated++;
       }
     });

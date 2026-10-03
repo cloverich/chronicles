@@ -13,6 +13,7 @@ import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
 import { AttachmentStore } from "./attachments";
 import { BulkOperationsClient } from "./bulk-operations";
+import { computeRevision } from "./canonical-note";
 import { DocumentsClient } from "./documents";
 import { ExportClient } from "./export";
 import { NodeFilesClient } from "./files";
@@ -65,6 +66,26 @@ export function registerMigrationFunctions(sqlite: Database.Database) {
     (timestamp: unknown) => {
       const ms = typeof timestamp === "string" ? Date.parse(timestamp) : NaN;
       return createId(Number.isFinite(ms) && ms >= 0 ? ms : undefined);
+    },
+  );
+
+  // Used by 0006_revisions.
+  sqlite.function(
+    "chronicles_note_revision",
+    { deterministic: true, varargs: true },
+    (...args: unknown[]) => {
+      const [id, title, journalId, createdAt, updatedAt, tags, fm, content] =
+        args as (string | null)[];
+      return computeRevision({
+        id: id!,
+        title,
+        journal: journalId!,
+        createdAt: createdAt!,
+        updatedAt: updatedAt!,
+        tags: JSON.parse(tags || "[]"),
+        frontMatter: JSON.parse(fm || "{}"),
+        content: content ?? "",
+      });
     },
   );
 

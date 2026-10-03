@@ -6,6 +6,7 @@ import { after, describe, test } from "node:test";
 import { tmpdir } from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import { computeRevision } from "./canonical-note";
 import { createClient, runMigrations } from "./factory";
 
 /**
@@ -130,5 +131,35 @@ describe("0004_id_only_note_links", () => {
     assert.deepStrictEqual(links, [
       { documentId: A, targetId: B, resolvedAt: null },
     ]);
+  });
+});
+
+describe("0006_revisions", () => {
+  test("backfills each note's revision from its canonical form", async () => {
+    const { dbPath, sqlite } = dbAtMigration("revisions", 5);
+    const A = "03awvyp9xobkv9t1jmmtiz0bp";
+    sqlite.exec(`
+      INSERT INTO journals (id, name) VALUES ('03aq5qh9copxys3mzz5l8q60f', 'work');
+      INSERT INTO documents (id, journalId, title, frontmatter, content, createdAt, updatedAt) VALUES
+        ('${A}', '03aq5qh9copxys3mzz5l8q60f', 'A', '{"source":"x"}', 'Body', '2024-01-01T00:00:00.000Z', '2024-01-02T00:00:00.000Z');
+      INSERT INTO document_tags (documentId, tag) VALUES ('${A}', 'b'), ('${A}', 'a');
+    `);
+    sqlite.close();
+
+    const client = await openUpgraded("revisions", dbPath);
+    const doc = await client.documents.findById({ id: A });
+    assert.strictEqual(
+      doc.revision,
+      computeRevision({
+        id: A,
+        title: "A",
+        journal: "03aq5qh9copxys3mzz5l8q60f",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-02T00:00:00.000Z",
+        tags: ["a", "b"],
+        frontMatter: { source: "x" },
+        content: "Body",
+      }),
+    );
   });
 });

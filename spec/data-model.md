@@ -59,12 +59,17 @@ preserved verbatim.
 
 Attachments are immutable. Nothing is garbage-collected automatically.
 
-### Revision **[v1]**
+### Revision
 
-`revision` = sha256 (lowercase hex) of the note's canonical bytes as defined in
-[export-format.md](export-format.md#note-file). Updates carry `baseRevision`;
-a mismatch is a `conflict`, never an overwrite. Revisions give equality, not
-order.
+`revision` = lowercase hex sha256 of the note serialized exactly as a note file
+(see [export-format.md](export-format.md#note-file)) **with references in
+stored form** (`chronicles://note/…`, `chronicles://attachment/…`). It depends
+on the note alone: an exported file differs only where link destinations were
+rewritten, and its manifest entry carries this revision, not the file's hash.
+
+Every write recomputes it. An update may carry `baseRevision`; if it differs
+from the stored revision the update fails with a conflict and nothing is
+written. Revisions give equality, not order. **[now]**
 
 ### Tombstone **[v1]**
 

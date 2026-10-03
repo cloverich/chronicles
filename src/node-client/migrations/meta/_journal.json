@@ -43,6 +43,13 @@
       "when": 1791045754813,
       "tag": "0005_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791046225021,
+      "tag": "0006_revisions",
+      "breakpoints": true
     }
   ]
 }

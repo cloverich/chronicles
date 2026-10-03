@@ -98,7 +98,10 @@ Readers map both back to stored forms (see
 
 ## Revision
 
-`revision` = lowercase hex sha256 of the complete note file bytes.
+Each manifest note carries the note's `revision` (see
+[data-model.md](data-model.md#revision)): the hash of its canonical
+serialization with stored-form references. For a note without note links or
+attachments this equals the sha256 of the exported file.
 
 ## Manifest
 

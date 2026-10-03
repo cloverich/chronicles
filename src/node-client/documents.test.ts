@@ -565,3 +565,67 @@ describe("search journal filter", () => {
     assert.ok(!excluded.data.some((d) => d.id === id));
   });
 });
+
+describe("revisions", () => {
+  test("stale saves conflict instead of overwriting", async () => {
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-revision-"));
+    const client = await createClient({ dbPath: ":memory:", notesDir });
+    try {
+      const frontMatter = {
+        tags: ["a"],
+        title: "Rev",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      };
+      const id = await client.documents.createDocument({
+        journal: "default_journal",
+        content: "v1",
+        frontMatter: { ...frontMatter },
+      });
+
+      // Two editors load the same revision.
+      const loaded = await client.documents.findById({ id });
+      assert.match(loaded.revision, /^[0-9a-f]{64}$/);
+
+      const r2 = await client.documents.updateDocument({
+        id,
+        journal: "default_journal",
+        content: "v2 from editor one",
+        frontMatter: { ...frontMatter },
+        baseRevision: loaded.revision,
+      });
+      assert.notStrictEqual(r2, loaded.revision);
+      assert.strictEqual(
+        (await client.documents.findById({ id })).revision,
+        r2,
+      );
+
+      await assert.rejects(
+        client.documents.updateDocument({
+          id,
+          journal: "default_journal",
+          content: "v2 from editor two",
+          frontMatter: { ...frontMatter },
+          baseRevision: loaded.revision,
+        }),
+        /\[DOCUMENT_CONFLICT\]/,
+      );
+      assert.strictEqual(
+        (await client.documents.findById({ id })).content,
+        "v2 from editor one",
+      );
+
+      // Tag-only changes change the revision too.
+      const r3 = await client.documents.updateDocument({
+        id,
+        journal: "default_journal",
+        content: "v2 from editor one",
+        frontMatter: { ...frontMatter, tags: ["a", "b"] },
+        baseRevision: r2,
+      });
+      assert.notStrictEqual(r3, r2);
+    } finally {
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+});

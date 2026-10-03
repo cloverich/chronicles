@@ -34,6 +34,8 @@ export interface GetDocumentResponse {
   content: string;
   journal: string;
   frontMatter: FrontMatter;
+  /** Pass back as `baseRevision` when updating. */
+  revision: string;
 }
 
 /**
@@ -129,6 +131,11 @@ export interface CreateRequest {
 
 export interface UpdateRequest extends CreateRequest {
   id: string;
+  /**
+   * The revision this edit is based on. When given and the note has changed
+   * since, the update fails with `[DOCUMENT_CONFLICT]` instead of overwriting.
+   */
+  baseRevision?: string;
 }
 
 // arbitrary front matter is allowed, but a subset of properties
