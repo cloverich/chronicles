@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import Backups, { formatAge, formatBytes, formatDate } from ".";
 import type { BackupStatus, SnapshotSummary } from "../../backup/types";
+import { hostPlatformServices, PlatformContext } from "../../hooks/usePlatform";
 
 const snapshot: SnapshotSummary = {
   id: "2026-09-22T14-25-34Z",
@@ -47,7 +48,9 @@ const status: BackupStatus = {
 function renderPage() {
   return render(
     <MemoryRouter>
-      <Backups />
+      <PlatformContext.Provider value={hostPlatformServices()}>
+        <Backups />
+      </PlatformContext.Provider>
     </MemoryRouter>,
   );
 }
