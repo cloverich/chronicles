@@ -7,10 +7,12 @@ updatedAt: "2024-07-01T00:00:00.000Z"
 tags: []
 ---
 
-![pixel](../_attachments/pixel.png)
+![pixel](../_attachments/43/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png)
 
-![again](../_attachments/pixel.png)
+[same blob as a link](../_attachments/43/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png)
 
-![missing](../_attachments/does-not-exist.png)
+![missing blob](chronicles://attachment/0000000000000000000000000000000000000000000000000000000000000000.png)
+
+![legacy reference, untouched](../_attachments/legacy.png)
 
 ![remote](https://example.com/x.png)

@@ -262,8 +262,15 @@ describe("lexical migration spike", () => {
     );
   });
 
-  it("roundtrips image markdown through Lexical", () => {
-    const markdown = "![A tidy desk](../_attachments/desk.png)";
+  it.each([
+    "![A tidy desk](../_attachments/desk.png)",
+    `![A tidy desk](chronicles://attachment/${"ab".repeat(32)}.webp)`,
+  ])("roundtrips image markdown through Lexical: %s", (markdown) => {
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
+  });
+
+  it("roundtrips stored-form note links through Lexical", () => {
+    const markdown = "[Target](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)";
     expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
   });
 

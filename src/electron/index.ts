@@ -12,6 +12,10 @@ import fs from "fs";
 import path from "path";
 import url, { fileURLToPath } from "url";
 import {
+  attachmentPoolPath,
+  parseAttachmentUrl,
+} from "../markdown/attachmentRefs.js";
+import {
   applyPendingRestore,
   createAppBackups,
   registerBackupIpc,
@@ -81,7 +85,19 @@ function validateChroniclesUrl(chroniclesUrl: string) {
   let baseDir: string | null = null;
   let relativePath: string | null = null;
 
-  if (chroniclesUrl?.startsWith("chronicles://../_attachments/")) {
+  const attachment = parseAttachmentUrl(chroniclesUrl);
+  if (attachment) {
+    const notesDir = settings.get("notesDir");
+    if (!notesDir) {
+      console.error(
+        "[validateChroniclesUrl]: notesDir is not set - unable to load attachment",
+      );
+      return null;
+    }
+
+    baseDir = path.join(notesDir, "_attachments");
+    relativePath = attachmentPoolPath(attachment.sha256, attachment.ext);
+  } else if (chroniclesUrl?.startsWith("chronicles://../_attachments/")) {
     const notesDir = settings.get("notesDir");
     if (!notesDir) {
       console.error(

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 
-import { createId } from "../preload/client/util";
+import type { AttachmentStore } from "./attachments";
 
 export type UploadImageWarningCode =
   | "decode_missing_plugin"
@@ -40,7 +40,10 @@ function getSharpWarning(error: unknown): UploadImageWarning {
 }
 
 export class NodeFilesClient {
-  constructor(private notesDir: string) {}
+  constructor(
+    private notesDir: string,
+    readonly attachments: AttachmentStore,
+  ) {}
 
   /**
    * Ensure a directory exists, creating it recursively if needed.
@@ -81,42 +84,40 @@ export class NodeFilesClient {
   };
 
   /**
-   * Upload an image from an ArrayBuffer, processing it with sharp.
-   * Saves to _attachments directory under notesDir.
+   * Upload an image from an ArrayBuffer, processing it with sharp (rotate,
+   * resize, webp). Stored content-addressed by the processed bytes.
    */
   uploadImageBytes = async (
     arrayBuffer: ArrayBuffer,
     name = "upload.png",
   ): Promise<UploadImageResult> => {
-    const dir = path.join(this.notesDir, "_attachments");
-    await this.ensureDir(dir);
-
     const buffer = Buffer.from(arrayBuffer);
-    const ext = path.extname(name) || ".webp";
-    const filename = `${createId()}${ext}`;
-    const filepath = path.join(dir, filename);
-
     let warning: UploadImageWarning | undefined;
+    let bytes: Buffer;
+    let ext: string;
 
     try {
-      await sharp(buffer)
+      bytes = await sharp(buffer)
         .rotate()
         .resize({ width: 1600, withoutEnlargement: true })
         .webp({ quality: 90 })
-        .toFile(filepath);
+        .toBuffer();
+      ext = ".webp";
     } catch (error) {
       warning = getSharpWarning(error);
       console.warn(
         "[NodeFilesClient] sharp failed, saving original bytes",
         (error as Error).message,
       );
-      await fs.promises.writeFile(filepath, buffer);
+      bytes = buffer;
+      ext = path.extname(name) || ".bin";
     }
 
-    return {
-      url: `chronicles://../_attachments/${filename}`,
-      warning,
-    };
+    const stored = await this.attachments.putBytes(bytes, {
+      ext,
+      originalName: name,
+    });
+    return { url: stored.url, warning };
   };
 
   /**
@@ -127,16 +128,10 @@ export class NodeFilesClient {
     arrayBuffer: ArrayBuffer,
     name = "upload.bin",
   ): Promise<string> => {
-    const dir = path.join(this.notesDir, "_attachments");
-    await this.ensureDir(dir);
-
-    const buffer = Buffer.from(arrayBuffer);
-    const ext = path.extname(name) || ".bin";
-    const filename = `${createId()}${ext}`;
-    const filepath = path.join(dir, filename);
-
-    await fs.promises.writeFile(filepath, buffer);
-
-    return `chronicles://../_attachments/${filename}`;
+    const stored = await this.attachments.putBytes(Buffer.from(arrayBuffer), {
+      ext: path.extname(name) || ".bin",
+      originalName: name,
+    });
+    return stored.url;
   };
 }

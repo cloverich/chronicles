@@ -68,13 +68,14 @@
       "id": "03c0e2uj5zhktbgav50jzbth4",
       "journalId": "03aq5qh9copxys3mzz5l8q60f",
       "path": "work/03c0e2uj5zhktbgav50jzbth4.md",
-      "revision": "a3fad379955375425b45503f11aa74073f719252680307ac114c20fed64895ef"
+      "revision": "a07dd7a52984339642440e739f1e377025f1c32fbf27696e4cc981b2204684f8"
     }
   ],
   "attachments": [
     {
-      "path": "_attachments/pixel.png",
+      "path": "_attachments/43/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png",
       "sha256": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
+      "ext": ".png",
       "byteSize": 68
     }
   ]

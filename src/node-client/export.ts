@@ -1,9 +1,12 @@
-import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
 
+import {
+  attachmentPoolPath,
+  parseAttachmentUrl,
+} from "../markdown/attachmentRefs";
 import { parseNoteLink } from "../markdown/noteLinks";
 import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
@@ -19,7 +22,7 @@ import {
 } from "./export-layout";
 import { isSameOrInside, pathExists } from "./fs-guards";
 import * as schema from "./schema";
-import { documents, documentTags, imageLinks, journals } from "./schema";
+import { documents, documentTags, journals } from "./schema";
 
 export interface ExportReport {
   destDir: string;
@@ -43,6 +46,7 @@ export interface ManifestNote {
 export interface ManifestAttachment {
   path: string;
   sha256: string;
+  ext: string;
   byteSize: number;
 }
 
@@ -52,8 +56,6 @@ export interface Manifest {
   notes: ManifestNote[];
   attachments: ManifestAttachment[];
 }
-
-const ATTACHMENT_PREFIX = "../_attachments/";
 
 export class ExportClient {
   constructor(
@@ -99,11 +101,16 @@ export class ExportClient {
     }
   };
 
+  private attachmentPath = (a: { sha256: string; ext: string }) =>
+    path.join(
+      this.notesDir,
+      "_attachments",
+      attachmentPoolPath(a.sha256, a.ext),
+    );
+
   private writeExport = async (
     tmpDir: string,
   ): Promise<Omit<ExportReport, "destDir">> => {
-    const notesAttachmentsDir = path.join(this.notesDir, "_attachments");
-
     const journalRows = await this.db.select().from(journals);
     const dirsByName = assignJournalDirs(journalRows.map((j) => j.name));
     // journal id → export directory
@@ -116,7 +123,7 @@ export class ExportClient {
 
     const manifestNotes: ManifestNote[] = [];
     const attachments = new Map<string, ManifestAttachment>();
-    const missingBasenames = new Set<string>();
+    const missing = new Set<string>();
 
     for (const row of rows) {
       const tagRows = await this.db
@@ -124,7 +131,19 @@ export class ExportClient {
         .from(documentTags)
         .where(eq(documentTags.documentId, row.id));
 
+      const referenced: { sha256: string; ext: string }[] = [];
       const content = rewriteUrls(row.content, (url) => {
+        const attachment = parseAttachmentUrl(url);
+        if (attachment) {
+          const source = this.attachmentPath(attachment);
+          if (!fs.existsSync(source)) {
+            missing.add(`${attachment.sha256}${attachment.ext}`);
+            return undefined;
+          }
+          referenced.push(attachment);
+          return `../_attachments/${attachmentPoolPath(attachment.sha256, attachment.ext)}`;
+        }
+
         const link = parseNoteLink(url);
         if (!link) return undefined;
         const targetJournal = journalOf.get(link.noteId);
@@ -161,36 +180,14 @@ export class ExportClient {
         revision: noteRevision(fileContents),
       });
 
-      // ---- attachments referenced by this note ----
-      const imageRows = await this.db
-        .select({ imagePath: imageLinks.imagePath })
-        .from(imageLinks)
-        .where(eq(imageLinks.documentId, row.id));
-
-      for (const { imagePath } of imageRows) {
-        if (!imagePath.startsWith(ATTACHMENT_PREFIX)) continue;
-        const basename = path.basename(imagePath);
-        const relAttachment = `_attachments/${basename}`;
-        if (attachments.has(relAttachment) || missingBasenames.has(basename)) {
-          continue;
-        }
-
-        const sourcePath = path.join(notesAttachmentsDir, basename);
-        if (!(await pathExists(sourcePath))) {
-          missingBasenames.add(basename);
-          continue;
-        }
-
-        const bytes = await fs.promises.readFile(sourcePath);
-        await fs.promises.mkdir(path.join(tmpDir, "_attachments"), {
-          recursive: true,
-        });
-        await fs.promises.writeFile(path.join(tmpDir, relAttachment), bytes);
-        attachments.set(relAttachment, {
-          path: relAttachment,
-          sha256: crypto.createHash("sha256").update(bytes).digest("hex"),
-          byteSize: bytes.byteLength,
-        });
+      for (const { sha256, ext } of referenced) {
+        const rel = `_attachments/${attachmentPoolPath(sha256, ext)}`;
+        if (attachments.has(rel)) continue;
+        const dest = path.join(tmpDir, rel);
+        await fs.promises.mkdir(path.dirname(dest), { recursive: true });
+        await fs.promises.copyFile(this.attachmentPath({ sha256, ext }), dest);
+        const { size } = await fs.promises.stat(dest);
+        attachments.set(rel, { path: rel, sha256, ext, byteSize: size });
       }
     }
 
@@ -220,7 +217,7 @@ export class ExportClient {
       notes: rows.length,
       attachments: {
         copied: attachments.size,
-        missing: Array.from(missingBasenames).sort(),
+        missing: Array.from(missing).sort(),
       },
     };
   };
