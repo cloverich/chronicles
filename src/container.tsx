@@ -80,7 +80,7 @@ export default observer(function Container() {
             <Route path="edit/new" element={<DocumentCreator />} />
             <Route path="edit/:document" element={<Editor />} />
           </Route>
-          <Route path="*" element={<Navigate to="documents" replace />} />
+          <Route path="*" element={<Navigate to="/documents" replace />} />
         </Routes>
       </Layout>
     </ApplicationContext.Provider>
