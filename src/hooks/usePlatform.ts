@@ -9,7 +9,7 @@ import React, { useContext } from "react";
  */
 export type PlatformServices = Omit<
   Window["chronicles"],
-  "getClient" | "getNotesClient"
+  "ready" | "getClient" | "getNotesClient"
 >;
 
 export const PlatformContext = React.createContext<PlatformServices | null>(
@@ -34,6 +34,11 @@ export function hostPlatformServices(): PlatformServices {
       "[chronicles] No platform services: window.chronicles is missing",
     );
   }
-  const { getClient: _c, getNotesClient: _n, ...platform } = window.chronicles;
+  const {
+    ready: _r,
+    getClient: _c,
+    getNotesClient: _n,
+    ...platform
+  } = window.chronicles;
   return platform;
 }

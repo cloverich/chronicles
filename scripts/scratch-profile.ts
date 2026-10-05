@@ -2,16 +2,18 @@
  * Seed a disposable Chronicles profile (synthetic notes) whose database is at
  * an older migration, to exercise upgrades in the real app:
  *
- *   ELECTRON_RUN_AS_NODE=1 electron --import tsx scripts/scratch-profile.ts <dir> <lastMigrationIdx>
+ *   ELECTRON_RUN_AS_NODE=1 electron --import tsx scripts/scratch-profile.ts <dir> <lastMigrationIdx> [bulkNotes]
  *   HEADLESS=true CHRONICLES_USER_DATA=<dir>/userData CHRONICLES_SETTINGS_DIR=<dir>/settings yarn start
  *
  * Replaces <dir>; refuses a non-empty directory it did not create.
  */
 import Database from "better-sqlite3";
+import crypto from "crypto";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
 import { runMigrations } from "../src/node-client/factory";
+import { createId } from "../src/preload/client/util";
 const [dir, idxStr] = process.argv.slice(2);
 const last = Number(idxStr);
 const MARKER = ".chronicles-scratch";
@@ -51,6 +53,29 @@ INSERT INTO documents (id, journal, title, frontmatter, content, createdAt, upda
  ('${B}', 'personal', 'Scratch two', '{}', 'Back to [one](../work/${A}.md).\n', '2024-01-03T00:00:00.000Z', '2024-01-03T00:00:00.000Z');
 INSERT INTO document_tags VALUES ('${A}', 'smoke');
 `);
+
+// Optional bulk: N more notes, each linking note A and embedding its own
+// ~256KB attachment, so upgrade steps take as long as a real library's.
+const bulk = Number(process.argv[4] ?? 0);
+const insert = sqlite.prepare(
+  "INSERT INTO documents (id, journal, title, frontmatter, content, createdAt, updatedAt) VALUES (?, 'work', ?, '{}', ?, ?, ?)",
+);
+for (let i = 0; i < bulk; i++) {
+  const id = createId(Date.UTC(2023, 0, 1) + i * 60_000);
+  const file = `bulk-${i}.png`;
+  fs.writeFileSync(
+    path.join(dir, "notes/_attachments", file),
+    crypto.randomBytes(256 * 1024),
+  );
+  const at = new Date(Date.UTC(2023, 0, 1) + i * 60_000).toISOString();
+  insert.run(
+    id,
+    `Bulk ${i}`,
+    `Bulk note ${i}, see [one](../work/${A}.md).\n\n![img](../_attachments/${file})\n`,
+    at,
+    at,
+  );
+}
 sqlite.close();
 fs.writeFileSync(
   path.join(dir, "settings/settings.json"),

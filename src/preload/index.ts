@@ -28,6 +28,12 @@ initClient().catch((err) => {
 const notesClient = exposeNotesClient(() => getClient().notes);
 
 contextBridge.exposeInMainWorld("chronicles", {
+  /**
+   * Resolves once the database is open and migrated (which can take a while
+   * on the first launch after an upgrade); rejects with the reason it failed.
+   * Call before getClient()/getNotesClient().
+   */
+  ready: () => initClient().then(() => undefined),
   getClient,
   getNotesClient: () => notesClient,
   backups,
@@ -49,6 +55,7 @@ contextBridge.exposeInMainWorld("chronicles", {
 declare global {
   interface Window {
     chronicles: {
+      ready: () => Promise<void>;
       getClient: typeof getClient;
       getNotesClient: () => NotesClient;
       backups: typeof backups;

@@ -44,6 +44,7 @@ Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
 });
 
 window.chronicles = {
+  ready: vi.fn(async () => {}),
   getClient: () =>
     ({
       importer: {
