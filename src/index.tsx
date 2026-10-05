@@ -5,34 +5,13 @@ import { HashRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import Container from "./container";
 import { Preferences } from "./hooks/stores/preferences";
-import { ClientContext } from "./hooks/useClient";
-import { hostNotesClient, NotesContext } from "./hooks/useNotes";
-import { hostPlatformServices, PlatformContext } from "./hooks/usePlatform";
 import "./index.css";
+import { startApp } from "./startup";
 
 // todo: refactor and enforce actions on mobx stores
 configure({ enforceActions: "never" });
 
 const root = createRoot(document.getElementById("app")!);
-
-// The composition root: the only place that reads the host (window.chronicles).
-// Without these services the app can't run, so fail at startup with the
-// reason instead of failing later on first use.
-let services: {
-  notes: ReturnType<typeof hostNotesClient>;
-  platform: ReturnType<typeof hostPlatformServices>;
-  client: ReturnType<Window["chronicles"]["getClient"]>;
-} | null = null;
-let startupError: Error | null = null;
-try {
-  services = {
-    notes: hostNotesClient(),
-    platform: hostPlatformServices(),
-    client: window.chronicles.getClient(),
-  };
-} catch (err) {
-  startupError = err as Error;
-}
 
 // Rely on localStorage to ensure the last used dark mode setting is applied
 // on launch. This avoids a flash of the wrong mode while the app stores
@@ -40,43 +19,37 @@ try {
 const theme = localStorage.getItem("darkMode") || "system";
 document.documentElement.classList.add(theme);
 
-root.render(
-  <>
-    <HashRouter>
-      <Toaster
-        theme={theme as Preferences["darkMode"]}
-        duration={3000}
-        position="bottom-right"
-        style={
-          {
-            "--normal-bg": "var(--background)",
-            "--normal-text": "var(--foreground)",
-            "--normal-border": "var(--border)",
-          } as React.CSSProperties
-        }
-        toastOptions={{
-          classNames: {
-            toast:
-              "px-2 py-4 group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-            description: "group-[.toast]:text-muted-foreground",
-            actionButton:
-              "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-            cancelButton:
-              "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-          },
-        }}
-      />
-      {services ? (
-        <ClientContext.Provider value={services.client}>
-          <NotesContext.Provider value={services.notes}>
-            <PlatformContext.Provider value={services.platform}>
-              <Container />
-            </PlatformContext.Provider>
-          </NotesContext.Provider>
-        </ClientContext.Provider>
-      ) : (
-        <pre className="p-8 text-sm">{String(startupError)}</pre>
-      )}
-    </HashRouter>
-  </>,
-);
+function render(content: React.ReactNode) {
+  root.render(
+    <>
+      <HashRouter>
+        <Toaster
+          theme={theme as Preferences["darkMode"]}
+          duration={3000}
+          position="bottom-right"
+          style={
+            {
+              "--normal-bg": "var(--background)",
+              "--normal-text": "var(--foreground)",
+              "--normal-border": "var(--border)",
+            } as React.CSSProperties
+          }
+          toastOptions={{
+            classNames: {
+              toast:
+                "px-2 py-4 group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+              description: "group-[.toast]:text-muted-foreground",
+              actionButton:
+                "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+              cancelButton:
+                "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+            },
+          }}
+        />
+        {content}
+      </HashRouter>
+    </>,
+  );
+}
+
+startApp(window.chronicles, render, <Container />);
