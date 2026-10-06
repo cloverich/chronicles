@@ -1,3 +1,4 @@
+import path from "path";
 import type { NotesClient } from "../../contract/notes";
 import type { Settings } from "../../electron/settings";
 import type { Maintenance } from "../../hooks/useMaintenance";
@@ -51,7 +52,10 @@ export async function createHostServices(
   const nodeClient = await createNodeClient({
     dbPath: store.get("databaseUrl"),
     notesDir: store.get("notesDir"),
-    settingsDir: store.get("settingsDir"),
+    // The same settings.json the main process reads, not the `settingsDir`
+    // preference (the themes/fonts folder): they differ under
+    // CHRONICLES_SETTINGS_DIR, and only match by case on a real profile.
+    settingsDir: path.dirname(store.path),
   });
 
   return {
