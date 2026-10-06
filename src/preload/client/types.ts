@@ -1,4 +1,5 @@
 import type { NotesClient } from "../../contract/notes";
+import type { Settings } from "../../hooks/useSettings";
 import { IBulkOperationsClient } from "../../node-client/bulk-operations";
 import { IDocumentsClient } from "../../node-client/documents";
 import { ExportClient } from "../../node-client/export";
@@ -15,6 +16,7 @@ import { ITagsClient } from "../../node-client/tags";
 export interface IClient {
   /** The platform-neutral contract; prefer it over the services below. */
   notes: NotesClient;
+  settings: Settings;
   journals: IJournalsClient;
   tags: ITagsClient;
   documents: IDocumentsClient;

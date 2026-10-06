@@ -1,10 +1,10 @@
 import { computed, makeObservable, observable } from "mobx";
 import type { Journal, NotesClient } from "../../contract/notes";
 import { asciiLower, validateJournalName } from "../../contract/rules";
-import type { IClient } from "../useClient";
+import type { Settings } from "../useSettings";
 
 /** The default journal is a per-app setting, not library data. */
-type Settings = Pick<IClient["preferences"], "get" | "set">;
+type JournalSettings = Pick<Settings, "get" | "setMany">;
 
 export class JournalsStore {
   loading: boolean = true;
@@ -24,7 +24,7 @@ export class JournalsStore {
 
   constructor(
     private notes: NotesClient,
-    private settings: Settings,
+    private settings: JournalSettings,
     journals: Journal[],
     defaultJournal: string,
   ) {
@@ -43,7 +43,7 @@ export class JournalsStore {
   }
 
   // todo: Move to a proper start-up routine; fuse with sync routine
-  static async init(notes: NotesClient, settings: Settings) {
+  static async init(notes: NotesClient, settings: JournalSettings) {
     const jstore = new JournalsStore(notes, settings, [], "");
     await jstore.refresh();
     return jstore;
@@ -64,7 +64,7 @@ export class JournalsStore {
     this.loading = true;
     try {
       this.journals = (await this.notes.listJournals()).journals;
-      this.defaultJournal = await this.settings.get("defaultJournal");
+      this.defaultJournal = (await this.settings.get("defaultJournal")) ?? "";
     } catch (err: any) {
       console.error("Error refreshing journals:", err);
       throw err;
@@ -176,7 +176,7 @@ export class JournalsStore {
 
     this.saving = true;
     try {
-      await this.settings.set("defaultJournal", journal);
+      await this.settings.setMany({ defaultJournal: journal });
       this.defaultJournal = journal;
     } catch (err: any) {
       this.error = err;

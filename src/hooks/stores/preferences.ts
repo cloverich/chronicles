@@ -1,9 +1,9 @@
 import { makeObservable, observable, reaction, toJS } from "mobx";
 import type { IPreferences } from "../../electron/settings";
-import type { IClient } from "../../preload/client/types";
+import type { Settings } from "../useSettings";
 
 export class Preferences implements IPreferences {
-  client: IClient["preferences"];
+  settings: Settings;
   private _lastSynced!: {
     [K in keyof IPreferences]?: IPreferences[K] | null;
   };
@@ -41,7 +41,7 @@ export class Preferences implements IPreferences {
     title?: string;
   };
 
-  constructor(prefs: IPreferences, client: IClient["preferences"]) {
+  constructor(prefs: IPreferences, settings: Settings) {
     Object.assign(this, prefs);
     makeObservable(this, {
       databaseUrl: observable,
@@ -60,7 +60,7 @@ export class Preferences implements IPreferences {
     });
 
     this._lastSynced = { ...prefs };
-    this.client = client;
+    this.settings = settings;
 
     reaction(
       () => ({
@@ -102,8 +102,8 @@ export class Preferences implements IPreferences {
         toWrite = JSON.parse(JSON.stringify(toWrite));
 
         if (Object.keys(toWrite).length > 0) {
-          console.debug("Preferences: Writing changes to client:", toWrite);
-          this.client.setMultiple(toWrite);
+          console.debug("Preferences: Writing changes to settings:", toWrite);
+          this.settings.setMany(toWrite);
         } else {
           console.debug("Preferences: No changes to save.");
         }
@@ -116,10 +116,6 @@ export class Preferences implements IPreferences {
     return JSON.stringify(a) !== JSON.stringify(b);
   };
 
-  private save = async () => {
-    await this.client.replace(JSON.parse(JSON.stringify(this)));
-  };
-
   /**
    * Immediately save specific preferences, bypassing the debounce.
    * Use for critical settings that need to be persisted before other operations.
@@ -129,7 +125,7 @@ export class Preferences implements IPreferences {
   saveImmediate = async (prefs: Partial<IPreferences>): Promise<void> => {
     // Save to disk immediately (bypassing debounce). First, so a rejected
     // value (e.g. a notesDir inside a sync folder) never reaches the store.
-    await this.client.setMultiple(prefs);
+    await this.settings.setMany(prefs);
 
     // Update MobX observables
     Object.assign(this, prefs);
@@ -139,14 +135,11 @@ export class Preferences implements IPreferences {
   };
 
   refresh = async () => {
-    Object.assign(this, await this.client.all());
+    Object.assign(this, await this.settings.all());
   };
 
-  static init = async (pref: IClient["preferences"]) => {
-    // load remote preferences
-    const preferences = await pref.all();
-
+  static init = async (settings: Settings) => {
     // note: Watchers are setup in usePreferences
-    return new Preferences(preferences, pref);
+    return new Preferences(await settings.all(), settings);
   };
 }

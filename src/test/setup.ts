@@ -51,12 +51,13 @@ window.chronicles = {
         import: vi.fn(),
         clearImportTables: vi.fn(),
       },
-      preferences: {
-        all: vi.fn(),
-        setMultiple: vi.fn(),
-        replace: vi.fn(),
-        settingsPath: vi.fn(() => "/tmp/settings/settings.json"),
-      },
+    }) as any,
+  getSettings: () =>
+    ({
+      get: vi.fn(),
+      all: vi.fn(),
+      setMany: vi.fn(),
+      location: vi.fn(async () => "/tmp/settings/settings.json"),
     }) as any,
   backups: {
     status: vi.fn(async () => ({

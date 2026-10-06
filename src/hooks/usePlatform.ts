@@ -9,7 +9,7 @@ import React, { useContext } from "react";
  */
 export type PlatformServices = Omit<
   Window["chronicles"],
-  "ready" | "getClient" | "getNotesClient"
+  "ready" | "getClient" | "getNotesClient" | "getSettings"
 >;
 
 export const PlatformContext = React.createContext<PlatformServices | null>(
@@ -38,6 +38,7 @@ export function hostPlatformServices(): PlatformServices {
     ready: _r,
     getClient: _c,
     getNotesClient: _n,
+    getSettings: _s,
     ...platform
   } = window.chronicles;
   return platform;

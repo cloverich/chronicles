@@ -19,6 +19,7 @@ import { useJournals } from "../../hooks/useJournals";
 import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
 import { usePlatform } from "../../hooks/usePlatform";
 import { usePreferences } from "../../hooks/usePreferences";
+import { useSettings } from "../../hooks/useSettings";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
   SKIPPABLE_FILES,
@@ -38,6 +39,7 @@ const PreferencesPane = observer((props: Props) => {
   const maintenanceStore = useMaintenanceStore();
   const journalsStore = useJournals();
   const client = useClient();
+  const settings = useSettings();
   const [store, _] = React.useState(() =>
     observable({
       loading: false,
@@ -74,7 +76,7 @@ const PreferencesPane = observer((props: Props) => {
 
         // Resolve async path for display
         try {
-          const path = await client.preferences.settingsPath();
+          const path = await settings.location();
           setSettingsPath(path);
         } catch {
           setSettingsPath("(unknown)");

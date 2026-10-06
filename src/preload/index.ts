@@ -1,6 +1,7 @@
 import { contextBridge } from "electron";
 import type { NotesClient } from "../contract/notes";
-import { exposeNotesClient } from "../contract/transport";
+import { exposeNotesClient, exposeService } from "../contract/transport";
+import type { Settings } from "../hooks/useSettings";
 import { backups } from "./backups";
 import { getClient, initClient } from "./client";
 import "./utils.electron";
@@ -31,11 +32,12 @@ contextBridge.exposeInMainWorld("chronicles", {
   /**
    * Resolves once the database is open and migrated (which can take a while
    * on the first launch after an upgrade); rejects with the reason it failed.
-   * Call before getClient()/getNotesClient().
+   * Call before any get*() service accessor.
    */
   ready: () => initClient().then(() => undefined),
   getClient,
   getNotesClient: () => notesClient,
+  getSettings: () => exposeService(getClient().settings),
   backups,
   openDialogSelectDir,
   selectThemeFile,
@@ -58,6 +60,7 @@ declare global {
       ready: () => Promise<void>;
       getClient: typeof getClient;
       getNotesClient: () => NotesClient;
+      getSettings: () => Settings;
       backups: typeof backups;
       openDialogSelectDir: typeof openDialogSelectDir;
       selectThemeFile: typeof selectThemeFile;

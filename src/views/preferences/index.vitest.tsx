@@ -5,6 +5,8 @@ import { vi } from "vitest";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
 import { ClientContext } from "../../hooks/useClient";
 import { hostPlatformServices, PlatformContext } from "../../hooks/usePlatform";
+import { SettingsContext } from "../../hooks/useSettings";
+import { fakeSettings } from "../../test/fakes";
 import Preferences from "./index";
 
 function createClient() {
@@ -12,12 +14,6 @@ function createClient() {
     importer: {
       import: vi.fn(),
       clearImportTables: vi.fn(),
-    },
-    preferences: {
-      settingsPath: vi.fn(() => "/tmp/settings/settings.json"),
-      setMultiple: vi.fn(),
-      replace: vi.fn(),
-      all: vi.fn(),
     },
     documents: {
       rebuildDerived: vi.fn(),
@@ -60,9 +56,11 @@ function renderPreferences({
     <MemoryRouter>
       <ClientContext.Provider value={client}>
         <PlatformContext.Provider value={hostPlatformServices()}>
-          <ApplicationContext.Provider value={applicationStore}>
-            <Preferences isOpen={true} onClose={vi.fn()} />
-          </ApplicationContext.Provider>
+          <SettingsContext.Provider value={fakeSettings()}>
+            <ApplicationContext.Provider value={applicationStore}>
+              <Preferences isOpen={true} onClose={vi.fn()} />
+            </ApplicationContext.Provider>
+          </SettingsContext.Provider>
         </PlatformContext.Provider>
       </ClientContext.Provider>
     </MemoryRouter>,

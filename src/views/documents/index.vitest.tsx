@@ -46,9 +46,9 @@ function createClient({
   );
 
   const client = {
-    preferences: {
+    settings: {
       get: vi.fn(async () => "work"),
-      set: vi.fn(),
+      setMany: vi.fn(),
     },
     journals: {
       list: vi.fn(async () => []),
@@ -84,7 +84,7 @@ function createClient({
 
   return { ...client, notes } as unknown as Pick<
     IClient,
-    "preferences" | "journals" | "documents" | "notes"
+    "settings" | "journals" | "documents" | "notes"
   >;
 }
 
@@ -92,7 +92,7 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
   const client = createClient() as IClient;
   const journals = new JournalsStore(
     createMemoryNotesClient(),
-    client.preferences,
+    client.settings,
     [
       {
         id: WORK_ID,
@@ -196,7 +196,7 @@ describe("Documents surface", () => {
     const applicationStore = createApplicationStore({
       journals: new JournalsStore(
         createMemoryNotesClient(),
-        (createClient() as IClient).preferences,
+        (createClient() as IClient).settings,
         [],
         "",
       ),

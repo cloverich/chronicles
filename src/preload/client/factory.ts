@@ -1,6 +1,18 @@
 import type { Settings } from "../../electron/settings";
+import type { Settings as SettingsFacade } from "../../hooks/useSettings";
 import { createClient as createNodeClient } from "../../node-client/factory";
 import { createNodeNotesClient } from "../../node-client/notes-adapter";
+import type { PreferencesClient } from "../../node-client/preferences";
+
+/** Electron's Settings: the conf-backed preferences file. */
+function createSettings(prefs: PreferencesClient): SettingsFacade {
+  return {
+    get: (key) => prefs.get(key),
+    all: () => prefs.all(),
+    setMany: (partial) => prefs.setMultiple(partial),
+    location: async () => prefs.settingsPath(),
+  };
+}
 
 interface ClientFactoryParams {
   store: Settings;
@@ -15,6 +27,7 @@ export async function createClient({ store }: ClientFactoryParams) {
 
   return {
     notes: createNodeNotesClient(nodeClient),
+    settings: createSettings(nodeClient.preferences),
     journals: nodeClient.journals,
     documents: nodeClient.documents,
     tags: nodeClient.tags,

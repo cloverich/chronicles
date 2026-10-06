@@ -70,3 +70,40 @@ export function exposeNotesClient(resolve: () => NotesClient): NotesClient {
 /** UI side: `[notes:<code>]` errors come back as NotesErrors. */
 export const hydrateNotesClient = (client: NotesClient) =>
   wrap(client, decodeNotesError);
+
+type AnyFn = (...args: unknown[]) => unknown;
+
+function wrapService<T extends object>(
+  service: T,
+  mapError: (err: unknown) => unknown,
+): T {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(service)) {
+    if (typeof value === "function") {
+      out[key] = async (...args: unknown[]) => {
+        try {
+          return await (value as AnyFn)(...args);
+        } catch (err) {
+          throw mapError(err);
+        }
+      };
+    } else if (value && typeof value === "object") {
+      out[key] = wrapService(value, mapError);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out as T;
+}
+
+/**
+ * Host side, for the other host services (Settings, Maintenance): every
+ * method, including those on nested objects, becomes async and its errors
+ * leave as `[notes:<code>] message`.
+ */
+export const exposeService = <T extends object>(service: T): T =>
+  wrapService(service, encodeNotesError);
+
+/** UI side of `exposeService`. */
+export const hydrateService = <T extends object>(service: T): T =>
+  wrapService(service, decodeNotesError);
