@@ -1,39 +1,10 @@
-import { IBulkOperationsClient } from "../../node-client/bulk-operations";
-import { IDocumentsClient } from "../../node-client/documents";
-import { ExportClient } from "../../node-client/export";
-import { NodeFilesClient } from "../../node-client/files";
-import { IImporterClient } from "../../node-client/importer";
-import { IJournalsClient } from "../../node-client/journals";
-import { IPreferencesClient } from "../../node-client/preferences";
-import { ITagsClient } from "../../node-client/tags";
-
-// This interface was created with these "I" types like this
-// so non-preload code could import this type without the bundler
-// trying (and failing) to bundle unrelated preload code, which expects
-// to be run in a node environment.
-export interface IClient {
-  journals: IJournalsClient;
-  tags: ITagsClient;
-  documents: IDocumentsClient;
-  preferences: IPreferencesClient;
-  files: NodeFilesClient;
-  importer: IImporterClient;
-  bulkOperations: IBulkOperationsClient;
-  export: ExportClient;
-}
-
-export type JournalResponse = {
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  archived: boolean;
-};
-
 export interface GetDocumentResponse {
   id: string;
   content: string;
   journal: string;
   frontMatter: FrontMatter;
+  /** Pass back as `baseRevision` when updating. */
+  revision: string;
 }
 
 /**
@@ -129,6 +100,11 @@ export interface CreateRequest {
 
 export interface UpdateRequest extends CreateRequest {
   id: string;
+  /**
+   * The revision this edit is based on. When given and the note has changed
+   * since, the update fails with `[DOCUMENT_CONFLICT]` instead of overwriting.
+   */
+  baseRevision?: string;
 }
 
 // arbitrary front matter is allowed, but a subset of properties

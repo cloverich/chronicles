@@ -48,7 +48,7 @@ src/markdown/        Markdown parsing + serialization (indexer, search, import)
 ## Environment Variables
 
 - `CHRONICLES_SETTINGS_DIR`: Overrides the directory for `settings.json` (see `src/electron/settings.ts`).
-- `CHRONICLES_USER_DATA`: Overrides Electron's `userData` path for database and local storage (see `src/electron/index.ts`).
+- `CHRONICLES_USER_DATA`: Overrides Electron's `userData` path — database, backups, and Chromium storage (see `src/electron/index.ts`). Set `CHRONICLES_SETTINGS_DIR` too for a fully isolated scratch profile.
 - `HEADLESS=true`: Runs the application without showing the main window (useful for background scripts/dev).
 
 ## Commits foramt
@@ -66,7 +66,7 @@ Bullet points communicate key changes, not dev practices (i.e. "added search by 
 
 ## Conventions
 
-- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`; generate new ones with `yarn drizzle-kit generate` (config: `drizzle.config.ts` at repo root)
+- **Database**: SQLite via Drizzle + better-sqlite3. Migrations in `src/node-client/migrations/`; generate new ones with `yarn drizzle-kit generate` (config: `drizzle.config.ts` at repo root). `generate` prompts interactively for column renames and can't mint ids or rewrite content, so data-transforming migrations (0003+) are hand-written SQL plus a hand-edited `meta/*_snapshot.json`; afterwards `drizzle-kit generate` must report "No schema changes". Upgrade tests live in `src/node-client/migrations.test.ts`; `scripts/scratch-profile.ts` seeds a disposable profile at an older migration for an in-app check
 - **IPC**: All renderer<->main communication through `src/preload/`
 - **State**: MobX stores in `src/hooks/stores/`
 - **Styling**: Tailwind CSS v4 + Radix UI primitives

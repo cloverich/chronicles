@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Preferences } from "./stores/preferences";
 import { useApplicationStore } from "./useApplicationStore";
-import useClient from "./useClient";
+import { useSettings } from "./useSettings";
 
 export interface PreferencesSetupState {
   loading: boolean;
@@ -12,7 +12,7 @@ export interface PreferencesSetupState {
 let wasAlreadyCalled = false;
 
 export const usePreferencesSetup = () => {
-  const client = useClient();
+  const settings = useSettings();
   const [loading, setLoading] = useState(true);
   // const [loadingErr, setLoadingErr] = useState<Error | null>(null);
   const [preferences, setPreferences] = useState<Preferences | null>(null);
@@ -30,7 +30,7 @@ export const usePreferencesSetup = () => {
       }
       wasAlreadyCalled = true;
 
-      const preferences = await Preferences.init(client.preferences);
+      const preferences = await Preferences.init(settings);
       document.documentElement.addEventListener(
         "settingsUpdated",
         preferences.refresh,

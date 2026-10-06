@@ -20,16 +20,26 @@ import type {
   UpdateRequest,
 } from "../preload/client/types";
 import { createId } from "../preload/client/util";
-import { derive } from "./derive";
+import { computeRevision } from "./canonical-note";
+import { derive, type Trx } from "./derive";
 import type { NodeFilesClient } from "./files";
+import { resolveJournalId } from "./journals";
 import * as schema from "./schema";
-import { documentLinks, documents, documentTags, imageLinks } from "./schema";
+import {
+  documentLinks,
+  documents,
+  documentTags,
+  imageLinks,
+  journals,
+} from "./schema";
 
 export type IDocumentsClient = DocumentsClient;
 
 // Front-matter keys that are canonical columns on `documents` / `documentTags`.
 // The `frontmatter` JSON column only holds arbitrary user-supplied keys.
 const COLUMN_OWNED_FRONTMATTER_KEYS = [
+  "id",
+  "journal",
   "title",
   "tags",
   "createdAt",
@@ -45,6 +55,58 @@ export function stripColumnOwnedKeys(
     delete userKeys[key];
   }
   return userKeys;
+}
+
+/**
+ * Recompute and store a note's revision from its row and tags. Call last in
+ * every transaction that changes a note.
+ */
+export function refreshRevision(trx: Trx, id: string): string {
+  const [row] = trx.select().from(documents).where(eq(documents.id, id)).all();
+  const tags = trx
+    .select({ tag: documentTags.tag })
+    .from(documentTags)
+    .where(eq(documentTags.documentId, id))
+    .all()
+    .map((t) => t.tag);
+  const revision = computeRevision({
+    id: row.id,
+    title: row.title,
+    journal: row.journalId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    tags,
+    frontMatter: JSON.parse(row.frontmatter || "{}"),
+    content: row.content,
+  });
+  trx.update(documents).set({ revision }).where(eq(documents.id, id)).run();
+  return revision;
+}
+
+/** Record deletes of notes (inside the deleting transaction). */
+export function tombstoneNotes(trx: Trx, ids: string[]): void {
+  if (ids.length === 0) return;
+  const deletedAt = new Date().toISOString();
+  const rows = trx
+    .select({ id: documents.id, revision: documents.revision })
+    .from(documents)
+    .where(inArray(documents.id, ids))
+    .all();
+  for (const row of rows) {
+    trx
+      .insert(schema.tombstones)
+      .values({
+        id: row.id,
+        kind: "note",
+        deletedAt,
+        lastRevision: row.revision,
+      })
+      .onConflictDoUpdate({
+        target: schema.tombstones.id,
+        set: { deletedAt, lastRevision: row.revision },
+      })
+      .run();
+  }
 }
 
 export class DocumentsClient {
@@ -64,8 +126,18 @@ export class DocumentsClient {
 
   findById = async ({ id }: { id: string }): Promise<GetDocumentResponse> => {
     const [row] = await this.db
-      .select()
+      .select({
+        id: documents.id,
+        journal: journals.name,
+        title: documents.title,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        frontmatter: documents.frontmatter,
+        content: documents.content,
+        revision: documents.revision,
+      })
       .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id))
       .where(eq(documents.id, id));
 
     if (!row) {
@@ -96,6 +168,7 @@ export class DocumentsClient {
       journal: row.journal,
       frontMatter,
       content: row.content,
+      revision: row.revision,
     };
   };
 
@@ -110,11 +183,12 @@ export class DocumentsClient {
     const userKeys = stripColumnOwnedKeys(args.frontMatter);
 
     this.db.transaction((trx) => {
+      trx.delete(schema.tombstones).where(eq(schema.tombstones.id, id)).run();
       trx
         .insert(documents)
         .values({
           id,
-          journal: args.journal,
+          journalId: resolveJournalId(trx, args.journal),
           title: args.frontMatter.title,
           createdAt: args.frontMatter.createdAt,
           updatedAt: args.frontMatter.updatedAt,
@@ -140,12 +214,14 @@ export class DocumentsClient {
         title: args.frontMatter.title,
         content: args.content,
       });
+      refreshRevision(trx, id);
     });
 
     return id;
   };
 
-  updateDocument = async (args: UpdateRequest): Promise<void> => {
+  /** Returns the note's new revision. */
+  updateDocument = async (args: UpdateRequest): Promise<string> => {
     if (!args.id) throw new Error("id required to update document");
 
     args.frontMatter.tags = Array.from(new Set(args.frontMatter.tags));
@@ -154,9 +230,9 @@ export class DocumentsClient {
 
     const userKeys = stripColumnOwnedKeys(args.frontMatter);
 
-    this.db.transaction((trx) => {
+    return this.db.transaction((trx) => {
       const [existing] = trx
-        .select({ id: documents.id })
+        .select({ id: documents.id, revision: documents.revision })
         .from(documents)
         .where(eq(documents.id, args.id))
         .all();
@@ -165,10 +241,19 @@ export class DocumentsClient {
         throw new Error(`[DOCUMENT_NOT_FOUND] Document ${args.id} not found`);
       }
 
+      if (
+        args.baseRevision !== undefined &&
+        args.baseRevision !== existing.revision
+      ) {
+        throw new Error(
+          `[DOCUMENT_CONFLICT] Document ${args.id} changed since revision ${args.baseRevision}`,
+        );
+      }
+
       trx
         .update(documents)
         .set({
-          journal: args.journal,
+          journalId: resolveJournalId(trx, args.journal),
           title: args.frontMatter.title,
           updatedAt: args.frontMatter.updatedAt,
           frontmatter: JSON.stringify(userKeys),
@@ -199,6 +284,7 @@ export class DocumentsClient {
         title: args.frontMatter.title,
         content: args.content,
       });
+      return refreshRevision(trx, args.id);
     });
   };
 
@@ -241,7 +327,7 @@ export class DocumentsClient {
         trx
           .update(documents)
           .set({
-            journal: args.journal,
+            journalId: resolveJournalId(trx, args.journal),
             title: args.title,
             createdAt: args.createdAt,
             updatedAt: args.updatedAt,
@@ -264,14 +350,19 @@ export class DocumentsClient {
         }
 
         derive(trx, { id: args.id, title: args.title, content: args.content });
+        refreshRevision(trx, args.id);
         return "replaced";
       }
 
       trx
+        .delete(schema.tombstones)
+        .where(eq(schema.tombstones.id, args.id))
+        .run();
+      trx
         .insert(documents)
         .values({
           id: args.id,
-          journal: args.journal,
+          journalId: resolveJournalId(trx, args.journal),
           title: args.title,
           createdAt: args.createdAt,
           updatedAt: args.updatedAt,
@@ -288,12 +379,14 @@ export class DocumentsClient {
       }
 
       derive(trx, { id: args.id, title: args.title, content: args.content });
+      refreshRevision(trx, args.id);
       return "created";
     });
   };
 
   del = async (id: string): Promise<void> => {
     this.db.transaction((trx) => {
+      tombstoneNotes(trx, [id]);
       trx.delete(documents).where(eq(documents.id, id)).run();
       trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
     });
@@ -310,7 +403,7 @@ export class DocumentsClient {
     if (q?.journals?.length) {
       conditions.push(
         inArray(
-          sql`lower(${documents.journal})`,
+          sql`lower(${journals.name})`,
           q.journals.map((j) => j.toLowerCase()),
         ),
       );
@@ -319,7 +412,7 @@ export class DocumentsClient {
     if (q?.exclude?.journals?.length) {
       conditions.push(
         notInArray(
-          sql`lower(${documents.journal})`,
+          sql`lower(${journals.name})`,
           q.exclude.journals.map((j) => j.toLowerCase()),
         ),
       );
@@ -385,12 +478,18 @@ export class DocumentsClient {
       id: documents.id,
       createdAt: documents.createdAt,
       title: documents.title,
-      journal: documents.journal,
+      journal: journals.name,
     };
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    let query = this.db.select(cols).from(documents);
+    let query = this.db
+      .select(cols)
+      .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id));
     const filtered = whereClause ? query.where(whereClause) : query;
-    const ordered = filtered.orderBy(sql`${documents.createdAt} DESC`);
+    const ordered = filtered.orderBy(
+      sql`${documents.createdAt} DESC`,
+      sql`${documents.id} DESC`,
+    );
     const rows = await (q?.limit ? ordered.limit(q.limit) : ordered);
 
     return { data: rows as SearchItem[] };
@@ -407,10 +506,10 @@ export class DocumentsClient {
       conditions.push(inArray(documents.id, q.ids));
     }
     if (q?.journals?.length) {
-      conditions.push(inArray(documents.journal, q.journals));
+      conditions.push(inArray(journals.name, q.journals));
     }
     if (q?.exclude?.journals?.length) {
-      conditions.push(notInArray(documents.journal, q.exclude.journals));
+      conditions.push(notInArray(journals.name, q.exclude.journals));
     }
     if (q?.date) {
       conditions.push(like(documents.createdAt, `${q.date}%`));
@@ -455,7 +554,8 @@ export class DocumentsClient {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const query = this.db
       .select({ count: sql<number>`count(*)` })
-      .from(documents);
+      .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id));
     const filtered = whereClause ? query.where(whereClause) : query;
     const [result] = await filtered;
     return Number(result?.count || 0);
@@ -464,9 +564,20 @@ export class DocumentsClient {
   deindexJournal = async (journal: string): Promise<void> => {
     this.db.transaction((trx) => {
       trx.run(
-        sql`DELETE FROM documents_fts WHERE id IN (SELECT id FROM documents WHERE journal = ${journal})`,
+        sql`DELETE FROM documents_fts WHERE id IN (SELECT d.id FROM documents d JOIN journals j ON j.id = d.journalId WHERE j.name = ${journal})`,
       );
-      trx.delete(documents).where(eq(documents.journal, journal)).run();
+      trx
+        .delete(documents)
+        .where(
+          inArray(
+            documents.journalId,
+            trx
+              .select({ id: journals.id })
+              .from(journals)
+              .where(eq(journals.name, journal)),
+          ),
+        )
+        .run();
     });
   };
 
@@ -485,6 +596,7 @@ export class DocumentsClient {
       trx.run(sql`DELETE FROM documents_fts`);
       trx.delete(documents).run();
       trx.delete(schema.journals).run();
+      trx.delete(schema.tombstones).run();
       trx.delete(schema.importNotes).run();
       trx.delete(schema.importFiles).run();
       trx.delete(schema.imports).run();

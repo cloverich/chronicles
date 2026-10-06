@@ -1,0 +1,78 @@
+{
+  "description": "listTags and putAttachment.",
+  "scenarios": [
+    {
+      "name": "tag counts in code-point order",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "listTags",
+          "response": {
+            "tags": [
+              {
+                "tag": "ideas",
+                "count": 1
+              },
+              {
+                "tag": "meeting",
+                "count": 1
+              },
+              {
+                "tag": "work",
+                "count": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "attachments are content-addressed",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "putAttachment",
+          "request": {
+            "bytes": {
+              "$base64": "aGVsbG8="
+            },
+            "name": "Hello.TXT"
+          },
+          "response": {
+            "url": "chronicles://attachment/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824.txt",
+            "sha256": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+            "ext": ".txt"
+          }
+        },
+        {
+          "op": "putAttachment",
+          "request": {
+            "bytes": {
+              "$base64": "aGVsbG8="
+            },
+            "name": "again.txt"
+          },
+          "response": {
+            "url": "chronicles://attachment/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824.txt",
+            "sha256": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+            "ext": ".txt"
+          }
+        },
+        {
+          "op": "putAttachment",
+          "request": {
+            "bytes": {
+              "$base64": "aGVsbG8="
+            },
+            "name": "no-extension"
+          },
+          "response": {
+            "url": "chronicles://attachment/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+            "sha256": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+            "ext": ""
+          }
+        }
+      ]
+    }
+  ]
+}

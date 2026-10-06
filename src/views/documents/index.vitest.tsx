@@ -3,12 +3,15 @@ import { runInAction } from "mobx";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
+import { createMemoryNotesClient } from "../../contract/memory";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import type { IClient, SearchResponse } from "../../hooks/useClient";
-import type { SearchRequest } from "../../preload/client/types";
+import { NotesContext } from "../../hooks/useNotes";
+import { fakeSettings } from "../../test/fakes";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 import Documents from "./index";
+
+const WORK_ID = "03awvyp9xobkv9t1jmmtiz0bp";
 
 const baseDocs = [
   {
@@ -34,50 +37,36 @@ function createClient({
   searchDocs?: typeof baseDocs;
   searchError?: SearchClientError | null;
 } = {}) {
-  const search = vi.fn<(q?: SearchRequest) => Promise<SearchResponse>>(
-    async () => {
+  const notes = {
+    ...createMemoryNotesClient(),
+    searchNotes: vi.fn(async () => {
       if (searchError) throw searchError;
-      return { data: [...searchDocs] };
-    },
-  );
-
-  const client = {
-    preferences: {
-      get: vi.fn(async () => "work"),
-      set: vi.fn(),
-    },
-    journals: {
-      list: vi.fn(async () => []),
-      listWithCounts: vi.fn(async () => []),
-      create: vi.fn(),
-      rename: vi.fn(),
-      archive: vi.fn(),
-      unarchive: vi.fn(),
-      remove: vi.fn(),
-    },
-    documents: {
-      search,
-      searchCount: vi.fn(async () => searchDocs.length),
-      deindexJournal: vi.fn(),
-    },
+      return {
+        items: searchDocs.map((d) => ({
+          id: d.id,
+          journalId: WORK_ID,
+          title: d.title,
+          createdAt: d.createdAt,
+        })),
+      };
+    }),
+    countNotes: vi.fn(async () => ({ count: searchDocs.length })),
   };
 
-  return client as unknown as Pick<
-    IClient,
-    "preferences" | "journals" | "documents"
-  >;
+  return { notes, settings: fakeSettings({ defaultJournal: "work" }) };
 }
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
+  const client = createClient();
   const journals = new JournalsStore(
-    createClient() as IClient,
+    createMemoryNotesClient(),
+    client.settings,
     [
       {
+        id: WORK_ID,
         name: "work",
         archived: false,
-        count: 2,
-        createdAt: "2026-03-10T09:00:00.000Z",
-        updatedAt: "2026-03-10T09:00:00.000Z",
+        noteCount: 2,
       },
     ],
     "work",
@@ -114,7 +103,7 @@ function createSearchStore({
   const applicationStore = createApplicationStore();
   const client = createClient({ searchDocs: docs, searchError });
   const searchStore = new SearchStore(
-    client as IClient,
+    client.notes,
     applicationStore.journals,
     vi.fn(),
     [],
@@ -142,11 +131,13 @@ function renderDocuments({
 }) {
   return render(
     <MemoryRouter>
-      <ApplicationContext.Provider value={applicationStore}>
-        <SearchStoreContext.Provider value={searchStore}>
-          <Documents />
-        </SearchStoreContext.Provider>
-      </ApplicationContext.Provider>
+      <NotesContext.Provider value={createMemoryNotesClient()}>
+        <ApplicationContext.Provider value={applicationStore}>
+          <SearchStoreContext.Provider value={searchStore}>
+            <Documents />
+          </SearchStoreContext.Provider>
+        </ApplicationContext.Provider>
+      </NotesContext.Provider>
     </MemoryRouter>,
   );
 }
@@ -171,7 +162,12 @@ describe("Documents surface", () => {
   it("renders the empty state when no journals exist", () => {
     const { searchStore } = createSearchStore();
     const applicationStore = createApplicationStore({
-      journals: new JournalsStore(createClient() as IClient, [], ""),
+      journals: new JournalsStore(
+        createMemoryNotesClient(),
+        createClient().settings,
+        [],
+        "",
+      ),
     });
 
     renderDocuments({ searchStore, applicationStore });
@@ -225,7 +221,7 @@ describe("Documents surface", () => {
       expect(alert).toHaveTextContent("boom");
     });
 
-    expect(client.documents.search).toHaveBeenCalled();
+    expect(client.notes.searchNotes).toHaveBeenCalled();
   });
 
   it("invokes pagination behavior and scrolls to top", () => {

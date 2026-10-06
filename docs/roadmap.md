@@ -1,5 +1,7 @@
 # Chronicles Roadmap (2026)
 
+> **Status: Superseded (2026-10).** The publishing/CLI/web focus below is historical. Current direction: the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
+
 ## Current Focus: High-Signal Ecosystem & Publishing
 
 This roadmap outlines the transition of Chronicles from a "Local-First Journal" to a "High-Signal Authoring & Publishing Engine."

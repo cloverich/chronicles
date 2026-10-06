@@ -22,6 +22,41 @@
       "when": 1789398214373,
       "tag": "0002_drop_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791044916809,
+      "tag": "0003_journal_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791045403726,
+      "tag": "0004_id_only_note_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791045754813,
+      "tag": "0005_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791046225021,
+      "tag": "0006_revisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791046448193,
+      "tag": "0007_tombstones",
+      "breakpoints": true
     }
   ]
 }

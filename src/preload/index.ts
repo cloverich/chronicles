@@ -1,10 +1,12 @@
 import { contextBridge } from "electron";
-import { backups } from "./backups";
-import { getClient, initClient } from "./client";
+import type { NotesClient } from "../contract/notes";
+import { exposeNotesClient, exposeService } from "../contract/transport";
+import type { Maintenance } from "../hooks/useMaintenance";
+import type { Settings } from "../hooks/useSettings";
+import { getHost, initHost } from "./client";
 import "./utils.electron";
 import {
   deleteThemeByName,
-  getInstalledFontsStylesheetHref,
   importThemeFile,
   listAvailableThemes,
   listHljsThemes,
@@ -18,21 +20,29 @@ import {
   setNativeTheme,
 } from "./utils.electron";
 
-// Kick off client initialization eagerly so it's ready when the renderer calls getClient()
-initClient().catch((err) => {
-  console.error("[chronicles] Failed to initialize client:", err);
+// Open the library eagerly; the renderer waits on ready().
+initHost().catch((err) => {
+  console.error("[chronicles] Failed to open the library:", err);
 });
 
+const notesClient = exposeNotesClient(() => getHost().notes);
+
 contextBridge.exposeInMainWorld("chronicles", {
-  getClient,
-  backups,
+  /**
+   * Resolves once the database is open and migrated (which can take a while
+   * on the first launch after an upgrade); rejects with the reason it failed.
+   * Call before any get*() service accessor.
+   */
+  ready: () => initHost().then(() => undefined),
+  getNotesClient: () => notesClient,
+  getSettings: () => exposeService(getHost().settings),
+  getMaintenance: () => exposeService(getHost().maintenance),
   openDialogSelectDir,
   selectThemeFile,
   importThemeFile,
   listAvailableThemes,
   loadThemeByName,
   listInstalledFonts,
-  getInstalledFontsStylesheetHref,
   refreshInstalledFontsCache,
   openPath,
   setNativeTheme,
@@ -44,15 +54,16 @@ contextBridge.exposeInMainWorld("chronicles", {
 declare global {
   interface Window {
     chronicles: {
-      getClient: typeof getClient;
-      backups: typeof backups;
+      ready: () => Promise<void>;
+      getNotesClient: () => NotesClient;
+      getSettings: () => Settings;
+      getMaintenance: () => Maintenance;
       openDialogSelectDir: typeof openDialogSelectDir;
       selectThemeFile: typeof selectThemeFile;
       importThemeFile: typeof importThemeFile;
       listAvailableThemes: typeof listAvailableThemes;
       loadThemeByName: typeof loadThemeByName;
       listInstalledFonts: typeof listInstalledFonts;
-      getInstalledFontsStylesheetHref: typeof getInstalledFontsStylesheetHref;
       refreshInstalledFontsCache: typeof refreshInstalledFontsCache;
       openPath: typeof openPath;
       setNativeTheme: typeof setNativeTheme;

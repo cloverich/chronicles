@@ -2,24 +2,21 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { observable } from "mobx";
 import React from "react";
 import { vi } from "vitest";
+import { createMemoryNotesClient } from "../../contract/memory";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import { ClientContext } from "../../hooks/useClient";
+import { NotesContext } from "../../hooks/useNotes";
 import FrontMatter from "./FrontMatter";
 
 function makeDoc(overrides: Partial<Record<string, any>> = {}) {
   return observable({
     createdAt: "2026-03-25T00:00:00.000Z",
     title: "Test note",
-    journal: "work",
+    journalId: "j1",
     tags: [] as string[],
     save: vi.fn(),
     ...overrides,
   });
 }
-
-const fakeClient = {
-  tags: { all: vi.fn(async () => []) },
-} as any;
 
 const fakeAppStore = {
   preferences: {
@@ -28,17 +25,17 @@ const fakeAppStore = {
   },
 } as any;
 
-const journals = [{ name: "work", archived: false }] as any[];
+const journals = [{ id: "j1", name: "work", archived: false }] as any[];
 
 function renderFrontMatter(doc = makeDoc()) {
   return {
     doc,
     ...render(
-      <ClientContext.Provider value={fakeClient}>
+      <NotesContext.Provider value={createMemoryNotesClient()}>
         <ApplicationContext.Provider value={fakeAppStore}>
           <FrontMatter document={doc} journals={journals} />
         </ApplicationContext.Provider>
-      </ClientContext.Provider>,
+      </NotesContext.Provider>,
     ),
   };
 }

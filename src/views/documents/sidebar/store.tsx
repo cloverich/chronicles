@@ -1,8 +1,8 @@
 import { computed, makeObservable, observable } from "mobx";
 import React from "react";
 import { toast } from "sonner";
+import type { Journal } from "../../../contract/notes";
 import { JournalsStore } from "../../../hooks/stores/journals";
-import { JournalResponse } from "../../../hooks/useClient";
 import { useJournals } from "../../../hooks/useJournals";
 import { SearchStore } from "../SearchStore";
 
@@ -94,7 +94,7 @@ export class SidebarStore {
     this.adding = !this.adding;
   };
 
-  onArchive = async (journal: JournalResponse) => {
+  onArchive = async (journal: Journal) => {
     if (this.saving) return;
 
     this.saving = true;
@@ -108,7 +108,7 @@ export class SidebarStore {
     }
   };
 
-  onDelete = async (journal: JournalResponse) => {
+  onDelete = async (journal: Journal) => {
     if (this.saving) return;
     this.saving = true;
 
@@ -124,7 +124,7 @@ export class SidebarStore {
     }
   };
 
-  onSetDefault = async (journal: JournalResponse) => {
+  onSetDefault = async (journal: Journal) => {
     if (this.saving) return;
     this.saving = true;
 

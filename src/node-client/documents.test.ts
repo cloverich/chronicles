@@ -245,7 +245,6 @@ describe("derived rows (links, images, FTS)", () => {
       .where(eq(schema.documentLinks.documentId, id));
     assert.strictEqual(linkRows.length, 1);
     assert.strictEqual(linkRows[0].targetId, targetId);
-    assert.strictEqual(linkRows[0].targetJournal, targetJournal);
 
     const imageRows = await client.db
       .select()
@@ -487,11 +486,9 @@ describe("rebuildDerived", () => {
     assert.deepStrictEqual(
       linkRowsAfter.map((r) => ({
         targetId: r.targetId,
-        targetJournal: r.targetJournal,
       })),
       linkRowsBefore.map((r) => ({
         targetId: r.targetId,
-        targetJournal: r.targetJournal,
       })),
     );
     assert.deepStrictEqual(
@@ -566,5 +563,146 @@ describe("search journal filter", () => {
       exclude: { journals: ["FEATURES"] },
     });
     assert.ok(!excluded.data.some((d) => d.id === id));
+  });
+});
+
+describe("revisions", () => {
+  test("stale saves conflict instead of overwriting", async () => {
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-revision-"));
+    const client = await createClient({ dbPath: ":memory:", notesDir });
+    try {
+      const frontMatter = {
+        tags: ["a"],
+        title: "Rev",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      };
+      const id = await client.documents.createDocument({
+        journal: "default_journal",
+        content: "v1",
+        frontMatter: { ...frontMatter },
+      });
+
+      // Two editors load the same revision.
+      const loaded = await client.documents.findById({ id });
+      assert.match(loaded.revision, /^[0-9a-f]{64}$/);
+
+      const r2 = await client.documents.updateDocument({
+        id,
+        journal: "default_journal",
+        content: "v2 from editor one",
+        frontMatter: { ...frontMatter },
+        baseRevision: loaded.revision,
+      });
+      assert.notStrictEqual(r2, loaded.revision);
+      assert.strictEqual(
+        (await client.documents.findById({ id })).revision,
+        r2,
+      );
+
+      await assert.rejects(
+        client.documents.updateDocument({
+          id,
+          journal: "default_journal",
+          content: "v2 from editor two",
+          frontMatter: { ...frontMatter },
+          baseRevision: loaded.revision,
+        }),
+        /\[DOCUMENT_CONFLICT\]/,
+      );
+      assert.strictEqual(
+        (await client.documents.findById({ id })).content,
+        "v2 from editor one",
+      );
+
+      // Tag-only changes change the revision too.
+      const r3 = await client.documents.updateDocument({
+        id,
+        journal: "default_journal",
+        content: "v2 from editor one",
+        frontMatter: { ...frontMatter, tags: ["a", "b"] },
+        baseRevision: r2,
+      });
+      assert.notStrictEqual(r3, r2);
+    } finally {
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("tombstones", () => {
+  test("deleting notes and journals leaves tombstones and no FTS rows", async () => {
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-tombstone-"));
+    const client = await createClient({ dbPath: ":memory:", notesDir });
+    try {
+      const fm = () => ({
+        tags: [],
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+      await client.journals.create({ name: "doomed" });
+      const kept = await client.documents.createDocument({
+        journal: "default_journal",
+        content: "kept",
+        frontMatter: fm(),
+      });
+      const single = await client.documents.createDocument({
+        journal: "default_journal",
+        content: "deleted alone",
+        frontMatter: fm(),
+      });
+      const inJournal = await client.documents.createDocument({
+        journal: "doomed",
+        content: "deleted with journal",
+        frontMatter: fm(),
+      });
+      const singleRevision = (await client.documents.findById({ id: single }))
+        .revision;
+      const doomed = (await client.journals.list()).find(
+        (j) => j.name === "doomed",
+      )!;
+
+      await client.documents.del(single);
+      await client.journals.remove("doomed");
+
+      const stones = await client.db.select().from(schema.tombstones);
+      assert.deepStrictEqual(
+        stones
+          .map(({ deletedAt, ...t }) => t)
+          .sort((a, b) => a.id.localeCompare(b.id)),
+        [
+          { id: single, kind: "note", lastRevision: singleRevision },
+          {
+            id: inJournal,
+            kind: "note",
+            lastRevision: stones.find((s) => s.id === inJournal)!.lastRevision,
+          },
+          { id: doomed.id, kind: "journal", lastRevision: null },
+        ].sort((a, b) => a.id.localeCompare(b.id)),
+      );
+
+      const fts = client.sqlite
+        .prepare("SELECT id FROM documents_fts")
+        .all() as { id: string }[];
+      assert.deepStrictEqual(
+        fts.map((r) => r.id),
+        [kept],
+      );
+
+      // Re-creating a deleted id (e.g. by import) clears its tombstone.
+      await client.documents.importDocument({
+        id: single,
+        journal: "default_journal",
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        tags: [],
+        content: "back",
+        frontMatter: {},
+      });
+      const after = await client.db.select().from(schema.tombstones);
+      assert.ok(!after.some((t) => t.id === single));
+    } finally {
+      rmSync(notesDir, { recursive: true, force: true });
+    }
   });
 });

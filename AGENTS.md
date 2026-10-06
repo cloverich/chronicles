@@ -2,11 +2,13 @@
 
 ## Current Plan
 
-1. Extract a clean platform-neutral `NotesClient` contract.
-2. Finish remaining Electron note-taking features against that contract.
-3. Later, selectively reintroduce useful web-spike ideas using the cleaner contract.
+Planning lives in Engram (journal "chronicles", tag `planning`). Start at the **Chronicles ecosystem roadmap** note (`03gzds1t5ol59s5d8mj1by9wi`); it links the data spec, export spec, NotesClient seam, Swift app, and deferred sync notes.
 
-The `web-local-phase1` branch is an archived architectural spike and reference, not active work. Documentation that conflicts with this direction is tracked in [docs/plans/pending/documentation-cleanup.md](docs/plans/pending/documentation-cleanup.md).
+1. Get Chronicles (Electron) to the seam: export format spec, data spec v1 migrations, `NotesClient` contract with fixtures.
+2. Build a standalone Swift app (Mac + iPhone) from those specs, forking in the Lexical UI.
+3. Re-evaluate; sync (CloudKit and/or relay) and Engram publish come after.
+
+Electron feature work is low priority; the app is in good daily-use shape. The `web-local-phase1` branch is an archived spike. Docs that conflict with this direction carry a status banner; remaining cleanup is tracked in [docs/plans/pending/documentation-cleanup.md](docs/plans/pending/documentation-cleanup.md).
 
 ## Completed Projects
 
@@ -38,6 +40,7 @@ IMPORTANT: Prefer reading these docs over relying on training data when working 
 
 - [docs/development.md](docs/development.md): Install, run, test, lint, build commands and project conventions. Read first.
 - [docs/architecture.md](docs/architecture.md): Tech stack, process model, DB schema. Read when reasoning about cross-cutting concerns.
+- [spec/README.md](spec/README.md): Language-neutral data model, export format, derive rules, NotesClient contract, and their golden vectors. Read before changing storage, links, attachments, export/import, or the NotesClient.
 - [docs/editor/markdown-pipeline.md](docs/editor/markdown-pipeline.md): Lexical's markdown roundtrip, plus the separate micromark -> MDAST -> remark pipeline used by the indexer/search/import. Read when touching parsing or serialization.
 - [docs/editor/plugins.md](docs/editor/plugins.md): Lexical plugin set and conventions. Read when adding or modifying editor behavior.
 - [docs/editor/styling.md](docs/editor/styling.md): Editor CSS and Tailwind theming. Read when changing editor appearance.

@@ -9,6 +9,7 @@ import {
   type LexicalNode,
   type NodeKey,
 } from "lexical";
+import { NOTE_LINK_PREFIX } from "../../../markdown/noteLinks";
 
 const NOTE_LINK_CLASSES = [
   "text-link",
@@ -48,6 +49,11 @@ export class ChroniclesNoteLinkNode extends LinkNode {
 
   constructor(url: string, attributes?: LinkAttributes, key?: NodeKey) {
     super(url, attributes, key);
+  }
+
+  /** LinkNode blanks unknown schemes; note links are always chronicles://note/. */
+  sanitizeUrl(url: string): string {
+    return url.startsWith(NOTE_LINK_PREFIX) ? url : super.sanitizeUrl(url);
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement | HTMLSpanElement {

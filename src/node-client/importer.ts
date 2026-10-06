@@ -8,6 +8,7 @@ import {
   mdastToString,
   parseMarkdownForImportProcessing,
 } from "../markdown";
+import { noteLinkUrl } from "../markdown/noteLinks";
 import { SourceType } from "../preload/client/importer/SourceType";
 import { parseTitleAndFrontMatterForImport } from "../preload/client/importer/frontmatter";
 import {
@@ -487,15 +488,14 @@ export class ImporterClient {
     const timestamp = new Date().toISOString();
     await this.db
       .insert(schema.journals)
-      .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
+      .values({
+        id: createId(),
+        name: journalName,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
       .onConflictDoNothing();
 
-    // Track in preferences (archivedJournals) if not already present
-    const archived: Record<string, boolean> =
-      (await this.preferences.get("archivedJournals")) ?? {};
-    if (!(journalName in archived)) {
-      await this.preferences.set(`archivedJournals.${journalName}`, false);
-    }
     return journalName;
   };
 
@@ -574,8 +574,7 @@ export class ImporterClient {
       // came up only once in my 400 notes when the linked file did not exist1
       if (!mapped) return;
 
-      (mdastNode as mdast.Link).url =
-        `../${mapped.journal}/${mapped.chroniclesId}.md`;
+      (mdastNode as mdast.Link).url = noteLinkUrl(mapped.chroniclesId);
     }
 
     if (mdastNode.type === "ofmWikilink") {
@@ -586,7 +585,7 @@ export class ImporterClient {
 
       // NOTE: This updates the url, but assumes the node type
       // will be converted to regular link in later step
-      (mdastNode as any).url = `../${mapped.journal}/${mapped.chroniclesId}.md`;
+      (mdastNode as any).url = noteLinkUrl(mapped.chroniclesId);
     }
 
     if ("children" in mdastNode) {

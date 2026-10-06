@@ -1,6 +1,6 @@
 import { makeObservable, observable } from "mobx";
 import { toast } from "sonner";
-import type { IClient } from "../useClient";
+import type { Maintenance } from "../useMaintenance";
 import type { IJournalStore } from "./journals";
 
 export class MaintenanceStore {
@@ -9,7 +9,7 @@ export class MaintenanceStore {
   error: Error | null = null;
 
   constructor(
-    private client: IClient,
+    private maintenance: Maintenance,
     private journalsStore: IJournalStore,
   ) {
     makeObservable(this, {
@@ -20,13 +20,6 @@ export class MaintenanceStore {
   }
 
   /**
-   * Regenerates derived state (search index, note links, image references)
-   * from the documents stored in SQLite. Use when search results or links
-   * look wrong.
-   *
-   * @returns Promise that resolves when the repair completes
-   */
-  /**
    * Deletes all notes, journals, and import records so an import can be
    * re-run from scratch. Attachments on disk are left in place.
    */
@@ -34,8 +27,7 @@ export class MaintenanceStore {
     if (this.isRepairing) return;
     this.isRepairing = true;
     try {
-      await this.client.documents.deleteAll();
-      await this.client.journals.ensureDefault();
+      await this.maintenance.resetLibrary();
       this.lastRepairTime = new Date();
       await this.journalsStore.refresh();
       toast.success("All notes deleted");
@@ -48,6 +40,11 @@ export class MaintenanceStore {
     }
   };
 
+  /**
+   * Regenerates derived state (search index, note links, image references)
+   * from the documents stored in SQLite. Use when search results or links
+   * look wrong.
+   */
   repair = async (): Promise<void> => {
     // Prevent duplicate calls - no-op if already repairing
     if (this.isRepairing) {
@@ -62,7 +59,7 @@ export class MaintenanceStore {
     try {
       toastId = toast.loading("Repairing search index…");
 
-      await this.client.documents.rebuildDerived();
+      await this.maintenance.rebuildDerived();
 
       this.lastRepairTime = new Date();
 

@@ -8,6 +8,7 @@ import {
 import React from "react";
 import { toast } from "sonner";
 import { isImageUrl } from "../../../hooks/images";
+import { useOptionalNotes } from "../../../hooks/useNotes";
 import { $createChroniclesImageNode } from "./ChroniclesImageNode";
 
 type UploadImageWarningCode =
@@ -15,16 +16,9 @@ type UploadImageWarningCode =
   | "decode_failed"
   | "process_failed";
 
-type UploadImageResult = {
-  url: string;
-  warning?: {
-    code: UploadImageWarningCode;
-  };
-};
-
 function buildImageWarningMessage(
   filename: string,
-  code: UploadImageWarningCode,
+  code: UploadImageWarningCode | string,
 ) {
   switch (code) {
     case "decode_missing_plugin":
@@ -127,44 +121,25 @@ function extractImageFiles(event: unknown): File[] {
   );
 }
 
-function parseUploadResult(result: unknown): UploadImageResult | null {
-  if (typeof result === "string") {
-    return { url: result };
-  }
-
-  if (
-    typeof result === "object" &&
-    result !== null &&
-    typeof (result as UploadImageResult).url === "string"
-  ) {
-    return result as UploadImageResult;
-  }
-
-  return null;
-}
-
 export function LexicalImageUploadPlugin(): null {
   const [editor] = useLexicalComposerContext();
+  const notes = useOptionalNotes();
 
   const uploadAndInsertImages = React.useCallback(
     async (files: File[]) => {
-      const chronicles = (window as any).chronicles;
-      const client = chronicles?.getClient?.();
-      const uploadImageBytes = client?.files?.uploadImageBytes;
-      if (typeof uploadImageBytes !== "function") {
+      if (!notes) {
         toast.warning("Image upload is not available.");
         return;
       }
 
       const results = await Promise.all(
         files.map(async (file) => {
-          const buffer = await file.arrayBuffer();
-          const uploadResult = parseUploadResult(
-            await uploadImageBytes(buffer, file.name),
-          );
-          if (!uploadResult) {
-            return null;
-          }
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const uploadResult = await notes.putAttachment({
+            bytes,
+            name: file.name,
+            optimizeImage: true,
+          });
 
           if (uploadResult.warning?.code) {
             toast.warning(
@@ -192,7 +167,7 @@ export function LexicalImageUploadPlugin(): null {
         );
       });
     },
-    [editor],
+    [editor, notes],
   );
 
   React.useEffect(() => {

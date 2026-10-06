@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import Container from "./container";
 import { Preferences } from "./hooks/stores/preferences";
 import "./index.css";
+import { startApp } from "./startup";
 
 // todo: refactor and enforce actions on mobx stores
 configure({ enforceActions: "never" });
@@ -18,33 +19,37 @@ const root = createRoot(document.getElementById("app")!);
 const theme = localStorage.getItem("darkMode") || "system";
 document.documentElement.classList.add(theme);
 
-root.render(
-  <>
-    <HashRouter>
-      <Toaster
-        theme={theme as Preferences["darkMode"]}
-        duration={3000}
-        position="bottom-right"
-        style={
-          {
-            "--normal-bg": "var(--background)",
-            "--normal-text": "var(--foreground)",
-            "--normal-border": "var(--border)",
-          } as React.CSSProperties
-        }
-        toastOptions={{
-          classNames: {
-            toast:
-              "px-2 py-4 group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-            description: "group-[.toast]:text-muted-foreground",
-            actionButton:
-              "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-            cancelButton:
-              "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-          },
-        }}
-      />
-      <Container />
-    </HashRouter>
-  </>,
-);
+function render(content: React.ReactNode) {
+  root.render(
+    <>
+      <HashRouter>
+        <Toaster
+          theme={theme as Preferences["darkMode"]}
+          duration={3000}
+          position="bottom-right"
+          style={
+            {
+              "--normal-bg": "var(--background)",
+              "--normal-text": "var(--foreground)",
+              "--normal-border": "var(--border)",
+            } as React.CSSProperties
+          }
+          toastOptions={{
+            classNames: {
+              toast:
+                "px-2 py-4 group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+              description: "group-[.toast]:text-muted-foreground",
+              actionButton:
+                "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+              cancelButton:
+                "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+            },
+          }}
+        />
+        {content}
+      </HashRouter>
+    </>,
+  );
+}
+
+startApp(window.chronicles, render, <Container />);

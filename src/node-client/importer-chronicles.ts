@@ -1,14 +1,22 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
 
-import { mdastToString, selectImageLinks } from "../markdown";
+import {
+  attachmentPoolPath,
+  parseAttachmentUrl,
+} from "../markdown/attachmentRefs";
+import { parseNoteLink, toStoredNoteLink } from "../markdown/noteLinks";
+import { rewriteUrls, type UrlNode } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
 import { readChroniclesTree } from "./chronicles-tree";
 import type { IDocumentsClient } from "./documents";
 import { stripColumnOwnedKeys } from "./documents";
+import type { Manifest } from "./export";
+import { decodeLinkSegment, EXPORT_FORMAT_MAJOR } from "./export-layout";
 import type { IFilesClientForImport } from "./files-import-resolver";
+import { isSameOrInside } from "./fs-guards";
 import { findJournalIgnoringCase } from "./journals";
 import type { IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
@@ -38,85 +46,78 @@ export interface ChroniclesImportDeps {
 
 const DEFAULT_OPTS: ChroniclesImportOptions = { onConflict: "skip" };
 
-/** Strip a query string, decode percent-escapes, then return the basename of a (possibly relative) image URL. */
-function basenameOf(url: string): string {
-  const withoutQuery = url.split("?")[0] || "";
-  let decoded = withoutQuery;
+function safeDecode(url: string): string {
   try {
-    decoded = decodeURIComponent(withoutQuery);
+    return decodeURIComponent(url);
   } catch {
-    // malformed escape sequence — fall back to the raw string
+    return url; // malformed escape sequence
   }
-  return path.basename(decoded);
-}
-
-/** Remote and inline images are left untouched; only local paths are attachments. */
-function isExternalImageUrl(url: string): boolean {
-  return /^(https?:|data:)/i.test(url);
-}
-
-/** Strip a leading `chronicles://` prefix, if present. */
-function normalizeImageUrl(url: string): string {
-  if (url.startsWith("chronicles://")) {
-    return url.slice("chronicles://".length);
-  }
-  return url;
 }
 
 /**
- * Resolve an image link's source file and copy it (if not already present)
- * into `<notesDir>/_attachments/<basename>`, preserving the filename.
- * Always returns the canonical `../_attachments/<basename>` URL, even when
- * the source file cannot be found (the caller records it as missing).
+ * Whether a destination refers to a local attachment: any local image, any
+ * link into `_attachments/`, or an already content-addressed reference.
  */
-async function resolveAndCopyImage(
+function isAttachmentRef(url: string, node: UrlNode): boolean {
+  if (/^(https?:|data:|mailto:)/i.test(url)) return false;
+  if (parseNoteLink(url)) return false;
+  if (parseAttachmentUrl(url)) return true;
+  return node.type === "image" || url.includes("_attachments/");
+}
+
+/**
+ * Find an attachment's file in the import tree and store it
+ * content-addressed. Returns the stored reference, or undefined when the file
+ * can't be found (the caller leaves the reference as it was).
+ */
+async function importAttachment(
   url: string,
   notePath: string,
   importDir: string,
-  attachmentsDestDir: string,
   files: IFilesClientForImport,
   report: ChroniclesImportReport,
   missing: Set<string>,
-): Promise<string> {
-  const normalized = normalizeImageUrl(url);
-  const basename = basenameOf(normalized);
-  const canonicalUrl = path.posix.join("..", "_attachments", basename);
-
-  let decodedNormalized = normalized;
-  try {
-    decodedNormalized = decodeURIComponent(normalized);
-  } catch {
-    // malformed escape sequence — fall back to the raw string
-  }
+): Promise<string | undefined> {
+  const stored = parseAttachmentUrl(url);
+  const relative = stored
+    ? `_attachments/${attachmentPoolPath(stored.sha256, stored.ext)}`
+    : safeDecode(url.replace(/^chronicles:\/\//, "").split("?")[0] || "");
+  const basename = path.basename(relative);
 
   const candidates = [
+    path.resolve(path.dirname(notePath), relative),
+    path.resolve(importDir, relative),
     path.join(importDir, "_attachments", basename),
-    path.resolve(path.dirname(notePath), decodedNormalized),
-    path.resolve(importDir, decodedNormalized),
-  ];
+  ].filter((c) => isSameOrInside(c, importDir));
 
-  let sourcePath: string | undefined;
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      sourcePath = candidate;
-      break;
-    }
-  }
-
+  const sourcePath = candidates.find((c) => fs.existsSync(c));
   if (!sourcePath) {
     missing.add(basename);
-    return canonicalUrl;
+    return undefined;
   }
 
-  const destPath = path.join(attachmentsDestDir, basename);
-  if (fs.existsSync(destPath)) {
-    report.attachments.existing++;
-  } else {
-    await files.copyFile(sourcePath, destPath);
-    report.attachments.copied++;
-  }
+  const result = await files.attachments.putFile(sourcePath);
+  report.attachments[result.existed ? "existing" : "copied"]++;
+  return result.url;
+}
 
-  return canonicalUrl;
+/**
+ * Read `manifest.json` when the tree is a v2+ export. Legacy (v1) exports and
+ * plain notes directories have no usable manifest and import by directory
+ * name. An unknown major version is rejected rather than guessed at.
+ */
+async function readManifest(importDir: string): Promise<Manifest | null> {
+  const manifestPath = path.join(importDir, "manifest.json");
+  if (!fs.existsSync(manifestPath)) return null;
+  const raw = JSON.parse(await fs.promises.readFile(manifestPath, "utf8"));
+  if (raw?.formatVersion == null) return null; // v1: `version: 1`
+  const major = parseInt(String(raw.formatVersion).split(".")[0], 10);
+  if (major !== EXPORT_FORMAT_MAJOR) {
+    throw new Error(
+      `[IMPORT_UNSUPPORTED_FORMAT] Export format ${raw.formatVersion} is not supported (expected ${EXPORT_FORMAT_MAJOR}.x)`,
+    );
+  }
+  return raw as Manifest;
 }
 
 /**
@@ -132,6 +133,11 @@ export async function importChroniclesTree(
 ): Promise<ChroniclesImportReport> {
   const { db, documents, files, preferences, notesDir } = deps;
   importDir = path.resolve(importDir);
+
+  const manifest = await readManifest(importDir);
+  const journalByDir = new Map(
+    (manifest?.journals ?? []).map((j) => [j.dir, j]),
+  );
 
   const report: ChroniclesImportReport = {
     created: 0,
@@ -151,63 +157,114 @@ export async function importChroniclesTree(
     importDir,
   });
 
-  const attachmentsDestDir = path.join(notesDir, "_attachments");
-  await fs.promises.mkdir(attachmentsDestDir, { recursive: true });
-
-  // Journal names are unique ignoring case: a tree directory "Features"
-  // merges into an existing "features" journal. Returns the stored name.
+  // Match by journal id first, then by name ignoring case (a tree directory
+  // "Features" merges into an existing "features" journal). An existing
+  // same-name journal with no notes adopts the imported id, so a fresh
+  // library's default journal doesn't fork the identity of an exported one.
+  // Returns the stored name.
   const ensuredJournals = new Map<string, string>();
-  const ensureJournal = async (journalName: string): Promise<string> => {
-    const cached = ensuredJournals.get(journalName);
+  const ensureJournal = async (
+    journalName: string,
+    journalId?: string,
+    archivedAt: string | null = null,
+  ): Promise<string> => {
+    const cacheKey = journalId ?? journalName;
+    const cached = ensuredJournals.get(cacheKey);
     if (cached) return cached;
 
-    const existing = findJournalIgnoringCase(db, journalName);
-    if (existing) {
-      ensuredJournals.set(journalName, existing);
-      return existing;
-    }
-    ensuredJournals.set(journalName, journalName);
+    const resolved = db.transaction((trx) => {
+      if (journalId) {
+        const [byId] = trx
+          .select({ name: schema.journals.name })
+          .from(schema.journals)
+          .where(eq(schema.journals.id, journalId))
+          .all();
+        if (byId) return byId.name;
+      }
 
-    const timestamp = new Date().toISOString();
-    const result = db
-      .insert(schema.journals)
-      .values({ name: journalName, createdAt: timestamp, updatedAt: timestamp })
-      .onConflictDoNothing()
-      .run();
+      const existing = findJournalIgnoringCase(trx, journalName);
+      if (existing) {
+        if (journalId) {
+          const [{ count }] = trx
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.documents)
+            .innerJoin(
+              schema.journals,
+              eq(schema.documents.journalId, schema.journals.id),
+            )
+            .where(eq(schema.journals.name, existing))
+            .all();
+          if (count === 0) {
+            trx
+              .update(schema.journals)
+              .set({ id: journalId })
+              .where(eq(schema.journals.name, existing))
+              .run();
+          }
+        }
+        return existing;
+      }
 
-    if (result.changes > 0) {
+      const timestamp = new Date().toISOString();
+      trx
+        .insert(schema.journals)
+        .values({
+          id: journalId ?? createId(),
+          name: journalName,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          archivedAt,
+        })
+        .run();
       report.journalsCreated.push(journalName);
-    }
-
-    const archived: Record<string, boolean> =
-      (await preferences.get("archivedJournals")) ?? {};
-    if (!(journalName in archived)) {
-      await preferences.set(`archivedJournals.${journalName}`, false);
-    }
-    return journalName;
+      return journalName;
+    });
+    ensuredJournals.set(cacheKey, resolved);
+    return resolved;
   };
+
+  for (const j of manifest?.journals ?? []) {
+    await ensureJournal(j.name, j.id, j.archivedAt ?? null);
+  }
 
   const { notes, report: treeReport } = readChroniclesTree(importDir);
 
   for await (const note of notes) {
     try {
-      const journal = await ensureJournal(note.journal);
+      if (note.frontMatter.id != null && note.frontMatter.id !== note.id) {
+        throw new Error(
+          `frontmatter id ${note.frontMatter.id} does not match filename`,
+        );
+      }
+      const manifestJournal = journalByDir.get(note.journal);
+      const journal = manifestJournal
+        ? await ensureJournal(manifestJournal.name, manifestJournal.id)
+        : await ensureJournal(note.journal);
 
-      const images = selectImageLinks(note.mdast);
-      for (const image of images) {
-        if (isExternalImageUrl(image.url)) continue;
-        image.url = await resolveAndCopyImage(
-          image.url,
-          note.path,
-          importDir,
-          attachmentsDestDir,
-          files,
-          report,
-          missingAttachments,
+      const attachmentUrls = new Map<string, string | undefined>();
+      rewriteUrls(note.body, (url, node) => {
+        if (isAttachmentRef(url, node)) attachmentUrls.set(url, undefined);
+        return undefined;
+      });
+      for (const url of attachmentUrls.keys()) {
+        attachmentUrls.set(
+          url,
+          await importAttachment(
+            url,
+            note.path,
+            importDir,
+            files,
+            report,
+            missingAttachments,
+          ),
         );
       }
 
-      const content = mdastToString(note.mdast);
+      const content = rewriteUrls(note.body, (url) => {
+        if (attachmentUrls.has(url)) return attachmentUrls.get(url);
+        return toStoredNoteLink(decodeLinkSegment(url));
+      }).markdown;
+
       const userKeys = stripColumnOwnedKeys(note.frontMatter);
 
       const result = await documents.importDocument(

@@ -1,8 +1,11 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import path from "path";
 
-import type { IPreferencesClient } from "./preferences";
+import { validateJournalName } from "../contract/rules";
+import { createId } from "../preload/client/util";
+import type { Trx } from "./derive";
+import { tombstoneNotes } from "./documents";
+import type { IPreferences, IPreferencesClient } from "./preferences";
 import * as schema from "./schema";
 import {
   documents as documentsTable,
@@ -10,6 +13,7 @@ import {
 } from "./schema";
 
 export type JournalResponse = {
+  id: string;
   name: string;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +25,16 @@ export interface JournalWithCount extends JournalResponse {
 }
 
 export type IJournalsClient = JournalsClient;
+
+const toResponse = (
+  row: typeof journalsTable.$inferSelect,
+): JournalResponse => ({
+  id: row.id,
+  name: row.name,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+  archived: row.archivedAt != null,
+});
 
 export class JournalsClient {
   constructor(
@@ -34,43 +48,24 @@ export class JournalsClient {
       .from(journalsTable)
       .orderBy(journalsTable.name);
 
-    const archived: Record<string, boolean> =
-      (await this.preferences.get("archivedJournals")) ?? {};
-
-    const results: JournalResponse[] = [];
-    for (const j of rows) {
-      if (!(j.name in archived)) {
-        // patch missing entry
-        await this.preferences.set(`archivedJournals.${j.name}`, false);
-        archived[j.name] = false;
-      }
-      results.push({
-        name: j.name,
-        createdAt: j.createdAt,
-        updatedAt: j.updatedAt,
-        archived: archived[j.name] || false,
-      });
-    }
-
-    return results;
+    return rows.map(toResponse);
   };
 
   listWithCounts = async (): Promise<JournalWithCount[]> => {
     const journals = await this.list();
 
-    // Count documents per journal
     const countRows = await this.db
-      .select({ journal: documentsTable.journal })
-      .from(documentsTable);
-
-    const countMap = new Map<string, number>();
-    for (const row of countRows) {
-      countMap.set(row.journal, (countMap.get(row.journal) ?? 0) + 1);
-    }
+      .select({
+        journalId: documentsTable.journalId,
+        count: sql<number>`count(*)`,
+      })
+      .from(documentsTable)
+      .groupBy(documentsTable.journalId);
+    const countMap = new Map(countRows.map((r) => [r.journalId, r.count]));
 
     return journals.map((j) => ({
       ...j,
-      count: countMap.get(j.name) ?? 0,
+      count: countMap.get(j.id) ?? 0,
     }));
   };
 
@@ -83,21 +78,14 @@ export class JournalsClient {
     return this.index(name);
   };
 
-  index = async (journalName: string): Promise<JournalResponse> => {
-    const archivedPrefs: Record<string, boolean> =
-      (await this.preferences.get("archivedJournals")) ?? {};
-
-    let isArchived: boolean;
-    if (!(journalName in archivedPrefs)) {
-      await this.preferences.set(`archivedJournals.${journalName}`, false);
-      isArchived = false;
-    } else {
-      isArchived = archivedPrefs[journalName];
-    }
-
+  index = async (
+    journalName: string,
+    id: string = createId(),
+  ): Promise<JournalResponse> => {
     const timestamp = new Date().toISOString();
 
     await this.db.insert(journalsTable).values({
+      id,
       name: journalName,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -108,7 +96,7 @@ export class JournalsClient {
       .from(journalsTable)
       .where(eq(journalsTable.name, journalName));
 
-    return { ...row, archived: isArchived };
+    return toResponse(row);
   };
 
   rename = async (
@@ -130,20 +118,14 @@ export class JournalsClient {
       .set({ name: newName, updatedAt: timestamp })
       .where(eq(journalsTable.name, journal.name));
 
-    // documents.journal is updated by ON UPDATE CASCADE (FK constraint)
-
-    await this.preferences.delete(`archivedJournals.${journal.name}`);
-    await this.preferences.set(
-      `archivedJournals.${newName}`,
-      journal.archived ?? false,
-    );
+    // Documents reference the journal by id; nothing else changes.
 
     const [row] = await this.db
       .select()
       .from(journalsTable)
       .where(eq(journalsTable.name, newName));
 
-    return { ...row, archived: journal.archived ?? false };
+    return toResponse(row);
   };
 
   remove = async (journal: string): Promise<JournalResponse[]> => {
@@ -154,9 +136,39 @@ export class JournalsClient {
       );
     }
 
-    await this.preferences.delete(`archivedJournals.${journal}`);
-    await this.db.delete(journalsTable).where(eq(journalsTable.name, journal));
+    this.db.transaction((trx) => {
+      const [row] = trx
+        .select({ id: journalsTable.id })
+        .from(journalsTable)
+        .where(eq(journalsTable.name, journal))
+        .all();
+      if (!row) return;
 
+      const noteIds = trx
+        .select({ id: documentsTable.id })
+        .from(documentsTable)
+        .where(eq(documentsTable.journalId, row.id))
+        .all()
+        .map((d) => d.id);
+      tombstoneNotes(trx, noteIds);
+      for (const id of noteIds) {
+        trx.run(sql`DELETE FROM documents_fts WHERE id = ${id}`);
+      }
+      trx
+        .delete(documentsTable)
+        .where(eq(documentsTable.journalId, row.id))
+        .run();
+      trx.delete(journalsTable).where(eq(journalsTable.id, row.id)).run();
+      trx
+        .insert(schema.tombstones)
+        .values({
+          id: row.id,
+          kind: "journal",
+          deletedAt: new Date().toISOString(),
+        })
+        .onConflictDoNothing()
+        .run();
+    });
     return this.list();
   };
 
@@ -167,13 +179,42 @@ export class JournalsClient {
         "Cannot archive the last journal. Create a new journal first.",
       );
     }
-    await this.preferences.set(`archivedJournals.${journal}`, true);
+    await this.setArchived(journal, new Date().toISOString());
     return this.list();
   };
 
   unarchive = async (journal: string): Promise<JournalResponse[]> => {
-    await this.preferences.set(`archivedJournals.${journal}`, false);
+    await this.setArchived(journal, null);
     return this.list();
+  };
+
+  private setArchived = async (journal: string, archivedAt: string | null) => {
+    await this.db
+      .update(journalsTable)
+      .set({ archivedAt })
+      .where(eq(journalsTable.name, journal));
+  };
+
+  /**
+   * One-time move of archived state from the `archivedJournals` preference
+   * (a name → boolean map) to `journals.archivedAt`. Deletes the preference
+   * afterwards, so it runs once.
+   */
+  migrateArchivedPreference = async (): Promise<void> => {
+    const archived: IPreferences["archivedJournals"] =
+      await this.preferences.get("archivedJournals");
+    if (!archived) return;
+    const now = new Date().toISOString();
+    for (const [name, isArchived] of Object.entries(archived)) {
+      if (!isArchived) continue;
+      await this.db
+        .update(journalsTable)
+        .set({ archivedAt: now })
+        .where(
+          and(eq(journalsTable.name, name), isNull(journalsTable.archivedAt)),
+        );
+    }
+    await this.preferences.delete("archivedJournals");
   };
 
   /**
@@ -198,7 +239,10 @@ export class JournalsClient {
   };
 }
 
-export const MAX_NAME_LENGTH = 25;
+export {
+  MAX_JOURNAL_NAME_LENGTH as MAX_NAME_LENGTH,
+  validateJournalName,
+} from "../contract/rules";
 
 /**
  * Journal names are unique ignoring case. Returns the stored name matching
@@ -206,7 +250,7 @@ export const MAX_NAME_LENGTH = 25;
  * ASCII without ICU — non-ASCII names still compare byte-for-byte.
  */
 export const findJournalIgnoringCase = (
-  db: BetterSQLite3Database<typeof schema>,
+  db: Trx,
   name: string,
 ): string | undefined => {
   const [row] = db
@@ -217,31 +261,13 @@ export const findJournalIgnoringCase = (
   return row?.name;
 };
 
-export const validateJournalName = (name: string): string => {
-  name = name?.trim() || "";
-  if (!name) {
-    throw new Error("Journal name cannot be empty.");
-  }
-
-  if (name === "_attachments") {
-    throw new Error("Journal name cannot be '_attachments'.");
-  }
-
-  if (name.length > MAX_NAME_LENGTH) {
-    throw new Error(
-      `Journal name exceeds max length of ${MAX_NAME_LENGTH} characters.`,
-    );
-  }
-
-  const sanitized = decodeURIComponent(encodeURIComponent(name));
-  if (name !== sanitized) {
-    throw new Error("Journal name is not URL safe.");
-  }
-
-  const baseSanitized = path.basename(name);
-  if (baseSanitized !== name) {
-    throw new Error("Journal name contains invalid path characters.");
-  }
-
-  return baseSanitized;
+/** The id of the journal named exactly `name`; throws if none. */
+export const resolveJournalId = (trx: Trx, name: string): string => {
+  const [row] = trx
+    .select({ id: journalsTable.id })
+    .from(journalsTable)
+    .where(eq(journalsTable.name, name))
+    .all();
+  if (!row) throw new Error(`[JOURNAL_NOT_FOUND] Journal ${name} not found`);
+  return row.id;
 };

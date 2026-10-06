@@ -23,8 +23,12 @@ export function prefixUrl(url: string) {
   }
 }
 
+/**
+ * Strip the display-only `chronicles://` prefix from a legacy relative path.
+ * Stored references (`chronicles://attachment/…`, `chronicles://note/…`) keep it.
+ */
 export function unPrefixUrl(url: string) {
-  if (url.startsWith("chronicles://")) {
+  if (url.startsWith("chronicles://../")) {
     return url.slice(13);
   } else {
     return url;

@@ -1,5 +1,7 @@
 # Design Doc: Chronicles Cloud (Cloudflare Workers)
 
+> **Status: Archived (2026-10).** No web product is planned. See the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
+
 > **Status: DEFERRED (July 2026).** Superseded for now by
 > [chronicles-web-local.md](chronicles-web-local.md) — a plain Node + SQLite web
 > server that runs anywhere (laptop over Tailscale today, a fixed-price VPS

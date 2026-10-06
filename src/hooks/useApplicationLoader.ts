@@ -4,8 +4,10 @@ import type { IApplicationState } from "./stores/application";
 import { ApplicationStore } from "./stores/application";
 import { JournalsStore } from "./stores/journals";
 import { MaintenanceStore } from "./stores/maintenance";
-import useClient from "./useClient";
+import { useMaintenance } from "./useMaintenance";
+import { useNotes } from "./useNotes";
 import { usePreferencesSetup } from "./usePreferences";
+import { useSettings } from "./useSettings";
 
 let wasAlreadyCalled = false;
 
@@ -21,7 +23,9 @@ export function useAppLoader(): IApplicationState {
     React.useState<MaintenanceStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
-  const client = useClient();
+  const maintenance = useMaintenance();
+  const notes = useNotes();
+  const settings = useSettings();
   const { preferences } = usePreferencesSetup();
   const [applicationStore, setApplicationStore] =
     React.useState<ApplicationStore | null>(null);
@@ -40,9 +44,9 @@ export function useAppLoader(): IApplicationState {
 
     async function load() {
       try {
-        const journalStore = await JournalsStore.init(client);
+        const journalStore = await JournalsStore.init(notes, settings);
         const maintenanceStoreInstance = new MaintenanceStore(
-          client,
+          maintenance,
           journalStore,
         );
 
@@ -50,7 +54,7 @@ export function useAppLoader(): IApplicationState {
 
         setJournalsStore(journalStore);
         setMaintenanceStore(maintenanceStoreInstance);
-        setBulkOperationsStore(new BulkOperationsStore(client.bulkOperations));
+        setBulkOperationsStore(new BulkOperationsStore(notes));
         setLoading(false);
       } catch (err: any) {
         if (!isEffectMounted) return;

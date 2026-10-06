@@ -12,3 +12,5 @@ src/markdown/test-docs/*
 # Ignore .claude/ except for hooks which should be tracked
 .claude/*
 !.claude/hooks/
+# Spec vectors are byte-exact golden files.
+spec/vectors/

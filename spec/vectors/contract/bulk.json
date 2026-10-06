@@ -1,0 +1,227 @@
+{
+  "description": "bulkUpdate: one change applied to every note matching a query.",
+  "scenarios": [
+    {
+      "name": "add and remove a tag across a journal",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "bulkUpdate",
+          "request": {
+            "query": {
+              "journalIds": [
+                "03aq5qh9copxys3mzz5l8q60f"
+              ]
+            },
+            "op": {
+              "type": "add_tag",
+              "tag": "q1"
+            }
+          },
+          "response": {
+            "matched": 2,
+            "updated": 2,
+            "failed": []
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp"
+          },
+          "response": {
+            "id": "03awvyp9xobkv9t1jmmtiz0bp",
+            "journalId": "03aq5qh9copxys3mzz5l8q60f",
+            "title": "Alpha meeting",
+            "content": "Discussed the roadmap with [Beta](chronicles://note/03b3m6xaiod1fz6mvkjmvb3jc).\n",
+            "tags": [
+              "meeting",
+              "q1",
+              "work"
+            ],
+            "createdAt": "2024-01-10T09:00:00.000Z",
+            "updatedAt": "2024-01-10T10:00:00.000Z",
+            "frontMatter": {},
+            "revision": "473f03001868d0ab12cd0df245c0023243c4a4143d8d9b7c3453b7792f80ad89"
+          }
+        },
+        {
+          "op": "listTags",
+          "response": {
+            "tags": [
+              {
+                "tag": "ideas",
+                "count": 1
+              },
+              {
+                "tag": "meeting",
+                "count": 1
+              },
+              {
+                "tag": "q1",
+                "count": 2
+              },
+              {
+                "tag": "work",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "op": "bulkUpdate",
+          "request": {
+            "query": {
+              "tags": [
+                "q1"
+              ]
+            },
+            "op": {
+              "type": "remove_tag",
+              "tag": "q1"
+            }
+          },
+          "response": {
+            "matched": 2,
+            "updated": 2,
+            "failed": []
+          }
+        },
+        {
+          "op": "listTags",
+          "response": {
+            "tags": [
+              {
+                "tag": "ideas",
+                "count": 1
+              },
+              {
+                "tag": "meeting",
+                "count": 1
+              },
+              {
+                "tag": "work",
+                "count": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "move matching notes to another journal",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "bulkUpdate",
+          "request": {
+            "query": {
+              "texts": [
+                "roadmap"
+              ]
+            },
+            "op": {
+              "type": "change_journal",
+              "journalId": "03aqdjryx3t7dd9h7lezzx83o"
+            }
+          },
+          "response": {
+            "matched": 2,
+            "updated": 2,
+            "failed": []
+          }
+        },
+        {
+          "op": "listJournals",
+          "response": {
+            "journals": [
+              {
+                "id": "03aqdjryx3t7dd9h7lezzx83o",
+                "name": "personal",
+                "archived": false,
+                "noteCount": 3
+              },
+              {
+                "id": "03aq5qh9copxys3mzz5l8q60f",
+                "name": "work",
+                "archived": false,
+                "noteCount": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "getNote",
+          "request": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru"
+          },
+          "response": {
+            "id": "03b9wsjvyu3t3ufq044kfzgru",
+            "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+            "title": "Gamma",
+            "content": "Roadmap follow-up.\n",
+            "tags": [],
+            "createdAt": "2024-03-05T09:00:00.000Z",
+            "updatedAt": "2024-03-06T09:00:00.000Z",
+            "frontMatter": {
+              "source": "fixture",
+              "priority": 2
+            },
+            "revision": "13769db65a9ad7475a18ce5894a29fbc366e02990a048546b507c228d9daa448"
+          }
+        }
+      ]
+    },
+    {
+      "name": "no matches and invalid operations",
+      "library": "basic",
+      "steps": [
+        {
+          "op": "bulkUpdate",
+          "request": {
+            "query": {
+              "tags": [
+                "nothing-has-this"
+              ]
+            },
+            "op": {
+              "type": "add_tag",
+              "tag": "x"
+            }
+          },
+          "response": {
+            "matched": 0,
+            "updated": 0,
+            "failed": []
+          }
+        },
+        {
+          "op": "bulkUpdate",
+          "request": {
+            "query": {},
+            "op": {
+              "type": "change_journal",
+              "journalId": "03zzzzzzzzzzzzzzzzzzzzzzz"
+            }
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        },
+        {
+          "op": "bulkUpdate",
+          "request": {
+            "query": {},
+            "op": {
+              "type": "add_tag",
+              "tag": "  "
+            }
+          },
+          "error": {
+            "code": "invalid_input"
+          }
+        }
+      ]
+    }
+  ]
+}

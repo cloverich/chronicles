@@ -1,12 +1,16 @@
 import { computed, makeObservable, observable } from "mobx";
-import { JournalWithCount } from "../../node-client/journals";
-import type { IClient, JournalResponse } from "../useClient";
+import type { Journal, NotesClient } from "../../contract/notes";
+import { asciiLower, validateJournalName } from "../../contract/rules";
+import type { Settings } from "../useSettings";
+
+/** The default journal is a per-app setting, not library data. */
+type JournalSettings = Pick<Settings, "get" | "setMany">;
 
 export class JournalsStore {
   loading: boolean = true;
   saving: boolean = false;
   error: Error | null = null;
-  journals: JournalWithCount[];
+  journals: Journal[];
 
   get active() {
     return this.journals.filter((j) => !j.archived);
@@ -19,11 +23,11 @@ export class JournalsStore {
   defaultJournal: string;
 
   constructor(
-    private client: IClient,
-    journals: JournalWithCount[],
+    private notes: NotesClient,
+    private settings: JournalSettings,
+    journals: Journal[],
     defaultJournal: string,
   ) {
-    this.client = client;
     this.journals = journals;
     this.defaultJournal = defaultJournal;
 
@@ -39,16 +43,15 @@ export class JournalsStore {
   }
 
   // todo: Move to a proper start-up routine; fuse with sync routine
-  static async init(client: IClient) {
-    // todo: kind of silly post
-    const jstore = new JournalsStore(client, [], "");
+  static async init(notes: NotesClient, settings: JournalSettings) {
+    const jstore = new JournalsStore(notes, settings, [], "");
     await jstore.refresh();
     return jstore;
   }
 
   // todo: refactor so preferences and this store are always in sync
   private async assertNotDefault(journal: string) {
-    const defaultJournal = await this.client.preferences.get("defaultJournal");
+    const defaultJournal = await this.settings.get("defaultJournal");
 
     if (journal === defaultJournal) {
       throw new Error(
@@ -60,8 +63,8 @@ export class JournalsStore {
   refresh = async () => {
     this.loading = true;
     try {
-      this.journals = await this.client.journals.listWithCounts();
-      this.defaultJournal = await this.client.preferences.get("defaultJournal");
+      this.journals = (await this.notes.listJournals()).journals;
+      this.defaultJournal = (await this.settings.get("defaultJournal")) ?? "";
     } catch (err: any) {
       console.error("Error refreshing journals:", err);
       throw err;
@@ -70,14 +73,13 @@ export class JournalsStore {
     }
   };
 
-  remove = async (journal: JournalResponse) => {
+  remove = async (journal: Journal) => {
     this.saving = true;
     try {
       await this.assertNotDefault(journal.name);
 
-      await this.client.journals.remove(journal.name);
-      await this.client.documents.deindexJournal(journal.name);
-      this.journals = this.journals.filter((j) => j.name !== journal.name);
+      await this.notes.deleteJournal({ id: journal.id });
+      this.journals = this.journals.filter((j) => j.id !== journal.id);
     } catch (err: any) {
       console.error("Error removing journal:", err);
       throw err;
@@ -86,17 +88,18 @@ export class JournalsStore {
     }
   };
 
-  // todo: client.journals has its own validation that is more robust than this
-  // and isn ow exported us that
-  validateName = (name: string) => {
-    name = name.trim();
-    if (!name) return ["Journal name cannot be empty", name];
-    if (name.length > 25)
-      return ["Journal name cannot be longer than 25 characters", name];
-
-    if (this.journals.find((j) => j.name === name)) {
-      return ["Journal with that name already exists", name];
+  /** The contract's name rules, checked here for an immediate message. */
+  validateName = (name: string, self?: Journal) => {
+    try {
+      name = validateJournalName(name);
+    } catch (err) {
+      return [(err as Error).message, name];
     }
+
+    const taken = this.journals.find(
+      (j) => asciiLower(j.name) === asciiLower(name) && j.id !== self?.id,
+    );
+    if (taken) return ["Journal with that name already exists", name];
 
     return [null, name];
   };
@@ -109,12 +112,7 @@ export class JournalsStore {
       const [err, validName] = this.validateName(journal);
       if (err) throw new Error(err);
 
-      const newJournal = await this.client.journals.create({
-        name: validName!,
-      });
-
-      // New journals start with count: 0
-      this.journals.push({ ...newJournal, count: 0 });
+      this.journals.push(await this.notes.createJournal({ name: validName! }));
     } catch (err: any) {
       console.error(err);
       throw err;
@@ -123,19 +121,16 @@ export class JournalsStore {
     }
   };
 
-  updateName = async (journal: JournalResponse, newName: string) => {
+  updateName = async (journal: Journal, newName: string) => {
     this.saving = true;
     try {
-      const [err, validName] = this.validateName(newName);
+      const [err, validName] = this.validateName(newName, journal);
       if (err) throw new Error(err);
 
-      const updatedAttrs = await this.client.journals.rename(
-        // note: re-structured to avoid passing a Proxy object (sigh)
-        { name: journal.name, archived: journal.archived },
-        newName,
+      Object.assign(
+        journal,
+        await this.notes.renameJournal({ id: journal.id, name: validName! }),
       );
-
-      Object.assign(journal, updatedAttrs);
     } catch (err: any) {
       console.error(`Error updating journal name for ${journal.name}:`, err);
       throw err;
@@ -144,7 +139,7 @@ export class JournalsStore {
     }
   };
 
-  toggleArchive = async (journal: JournalResponse) => {
+  toggleArchive = async (journal: Journal) => {
     this.saving = true;
 
     try {
@@ -152,21 +147,15 @@ export class JournalsStore {
 
       // Don't allow archiving last journal. Note since last journal should automatically
       // be default, should not happen.
-      if (
-        !journal.archived &&
-        (await this.client.journals.list()).filter((j) => !j.archived).length <=
-          1
-      ) {
+      if (!journal.archived && this.active.length <= 1) {
         throw new Error("Cannot archive last journal");
       }
 
-      if (journal.archived) {
-        await this.client.journals.unarchive(journal.name);
-      } else {
-        await this.client.journals.archive(journal.name);
-      }
-      // Refresh to get updated list with counts
-      this.journals = await this.client.journals.listWithCounts();
+      await this.notes.setJournalArchived({
+        id: journal.id,
+        archived: !journal.archived,
+      });
+      this.journals = (await this.notes.listJournals()).journals;
     } catch (err: any) {
       console.error(`Error toggling archive for journal ${journal.name}:`, err);
 
@@ -187,7 +176,7 @@ export class JournalsStore {
 
     this.saving = true;
     try {
-      await this.client.preferences.set("defaultJournal", journal);
+      await this.settings.setMany({ defaultJournal: journal });
       this.defaultJournal = journal;
     } catch (err: any) {
       this.error = err;

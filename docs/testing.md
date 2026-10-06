@@ -10,11 +10,11 @@ yarn test:node     # node:test suites only
 
 ## Vitest (`src/**/*.vitest.{ts,tsx}`)
 
-Renderer code: React views, hooks, stores driven through real providers, and the Lexical editor. Runs in jsdom with React Testing Library (`vitest.config.ts`, setup in `src/test/setup.ts`, which installs a fake `window.chronicles`).
+Renderer code: React views, hooks, stores driven through real providers, and the Lexical editor. Runs in jsdom with React Testing Library (`vitest.config.ts`, setup in `src/test/setup.ts`). Host services are injected per test: the in-memory NotesClient and the fakes in `src/test/fakes.ts`.
 
 Conventions:
 
-- Render the real component tree with real providers; mock at the client boundary (`ClientContext`, preload APIs), not child components or stores.
+- Render the real component tree with real providers; mock at the service boundary (the contexts the composition root provides), not child components or stores.
 - Assert on visible UI, not implementation details. No snapshot-heavy tests.
 - Lexical behaviour is tested here in jsdom (`src/views/edit/lexical/*.vitest.tsx`); browser mode has not been needed.
 

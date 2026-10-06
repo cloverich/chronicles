@@ -9,7 +9,10 @@ import {
 
 // ---------- journals ----------
 export const journals = sqliteTable("journals", {
-  name: text("name").primaryKey().notNull(),
+  /** uuid25; stable across renames and devices. */
+  id: text("id").primaryKey().notNull(),
+  /** Unique ignoring ASCII case (enforced by the app; see findJournalIgnoringCase). */
+  name: text("name").notNull().unique(),
   createdAt: text("createdAt")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -31,19 +34,19 @@ export const documents = sqliteTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
     title: text("title"),
-    journal: text("journal")
+    journalId: text("journalId")
       .notNull()
-      .references(() => journals.name, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      }),
+      .references(() => journals.id, { onDelete: "cascade" }),
     frontmatter: text("frontmatter").notNull(),
     /** Markdown body, frontmatter stripped. SQLite is the source of truth for content. */
     content: text("content").notNull().default(""),
+    /** sha256 of the canonical note (see computeRevision); the update precondition. */
+    revision: text("revision").notNull().default(""),
   },
   (table) => [
     index("documents_title_idx").on(table.title),
     index("documents_createdat_idx").on(table.createdAt),
+    index("documents_journalid_idx").on(table.journalId),
   ],
 );
 
@@ -76,7 +79,6 @@ export const documentLinks = sqliteTable(
         onUpdate: "cascade",
       }),
     targetId: text("targetId").notNull(),
-    targetJournal: text("targetJournal").notNull(),
     resolvedAt: text("resolvedAt"),
   },
   (table) => [
@@ -107,6 +109,30 @@ export const imageLinks = sqliteTable(
     index("image_links_resolved_idx").on(table.resolved),
   ],
 );
+
+// ---------- attachments ----------
+/** Content-addressed blobs; see src/node-client/attachments.ts. */
+export const attachments = sqliteTable("attachments", {
+  sha256: text("sha256").primaryKey().notNull(),
+  /** Lowercase, with dot (".webp"), or "" */
+  ext: text("ext").notNull(),
+  mime: text("mime").notNull(),
+  byteSize: integer("byteSize").notNull(),
+  originalName: text("originalName"),
+  createdAt: text("createdAt")
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ---------- tombstones ----------
+/** Records deletes so another device can learn of them; content is gone. */
+export const tombstones = sqliteTable("tombstones", {
+  id: text("id").primaryKey().notNull(),
+  kind: text("kind", { enum: ["note", "journal"] }).notNull(),
+  deletedAt: text("deletedAt").notNull(),
+  /** A note's revision when deleted. */
+  lastRevision: text("lastRevision"),
+});
 
 // ---------- imports ----------
 export const imports = sqliteTable("imports", {

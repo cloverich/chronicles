@@ -22,6 +22,8 @@ const PIXEL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
   "base64",
 );
+const PIXEL_SHA = crypto.createHash("sha256").update(PIXEL_PNG).digest("hex");
+const PIXEL_POOL = `_attachments/${PIXEL_SHA.slice(0, 2)}/${PIXEL_SHA}.png`;
 
 function sha256(contents: string): string {
   return crypto.createHash("sha256").update(contents, "utf8").digest("hex");
@@ -56,13 +58,13 @@ async function buildFixtureClient(prefix: string): Promise<Fixture> {
   await client.journals.create({ name: "journal-alpha" });
   await client.journals.create({ name: "journal-beta" });
 
-  fs.mkdirSync(path.join(notesDir, "_attachments"), { recursive: true });
-  writeFileSync(path.join(notesDir, "_attachments", "pixel.png"), PIXEL_PNG);
+  const pixel = await client.files.attachments.putBytes(PIXEL_PNG, {
+    ext: ".png",
+  });
 
   const noteA = await client.documents.createDocument({
     journal: "journal-alpha",
-    content:
-      "Hello world.\n\nAn attached image:\n\n![alt text](../_attachments/pixel.png)\n",
+    content: `Hello world.\n\nAn attached image:\n\n![alt text](${pixel.url})\n`,
     frontMatter: {
       title: "First Note",
       tags: ["alpha", "beta"],
@@ -74,7 +76,7 @@ async function buildFixtureClient(prefix: string): Promise<Fixture> {
 
   const noteB = await client.documents.createDocument({
     journal: "journal-beta",
-    content: `[First Note](../journal-alpha/${noteA}.md)\n`,
+    content: `[First Note](chronicles://note/${noteA})\n`,
     frontMatter: {
       tags: [],
       createdAt: "2024-02-01T00:00:00.000Z",
@@ -84,7 +86,7 @@ async function buildFixtureClient(prefix: string): Promise<Fixture> {
 
   const noteMissingImage = await client.documents.createDocument({
     journal: "journal-alpha",
-    content: "![missing](../_attachments/does-not-exist.png)\n",
+    content: `![missing](chronicles://attachment/${"0".repeat(64)}.png)\n`,
     frontMatter: {
       title: "Missing Image",
       tags: [],
@@ -144,7 +146,9 @@ describe("ExportClient.export", () => {
     assert.strictEqual(report.destDir, destDir);
     assert.strictEqual(report.notes, 5);
     assert.strictEqual(report.attachments.copied, 1);
-    assert.deepStrictEqual(report.attachments.missing, ["does-not-exist.png"]);
+    assert.deepStrictEqual(report.attachments.missing, [
+      `${"0".repeat(64)}.png`,
+    ]);
 
     // ---- note files exist and frontmatter parses back ----
     const noteAPath = path.join(
@@ -162,7 +166,7 @@ describe("ExportClient.export", () => {
     assert.strictEqual(frontMatter.createdAt, "2024-01-15T00:00:00.000Z");
     assert.strictEqual(frontMatter.updatedAt, "2024-01-16T00:00:00.000Z");
     assert.strictEqual(frontMatter.source, "export-test");
-    assert.ok(noteARaw.includes("../_attachments/pixel.png"));
+    assert.ok(noteARaw.includes(`(../${PIXEL_POOL})`));
 
     // note with empty tags still serializes `tags: []`
     const noteBPath = path.join(
@@ -182,7 +186,7 @@ describe("ExportClient.export", () => {
       `${fixture.ids.noteEmpty}.md`,
     );
     const noteEmptyRaw = readFileSync(noteEmptyPath, "utf8");
-    assert.ok(noteEmptyRaw.endsWith("---\n\n\n"));
+    assert.ok(noteEmptyRaw.endsWith("tags: []\n---\n"));
 
     // unicode note
     const noteUnicodePath = path.join(
@@ -196,7 +200,7 @@ describe("ExportClient.export", () => {
     assert.strictEqual(noteUnicodeFrontMatter.title, "笔记 🎉");
 
     // ---- attachment copied ----
-    const attachmentPath = path.join(destDir, "_attachments", "pixel.png");
+    const attachmentPath = path.join(destDir, PIXEL_POOL);
     assert.ok(existsSync(attachmentPath));
     assert.ok(readFileSync(attachmentPath).equals(PIXEL_PNG));
 
@@ -204,22 +208,50 @@ describe("ExportClient.export", () => {
     const manifest = JSON.parse(
       readFileSync(path.join(destDir, "manifest.json"), "utf8"),
     );
-    assert.strictEqual(manifest.version, 1);
-    assert.strictEqual(typeof manifest.exportedAt, "string");
+    assert.strictEqual(manifest.formatVersion, "2.0");
+    assert.ok(!("exportedAt" in manifest));
+    assert.deepStrictEqual(
+      manifest.journals.map(({ name, dir }: any) => ({ name, dir })),
+      [
+        { name: "default_journal", dir: "default_journal" },
+        { name: "journal-alpha", dir: "journal-alpha" },
+        { name: "journal-beta", dir: "journal-beta" },
+      ],
+    );
+    const alpha = (await fixture.client.journals.list()).find(
+      (j) => j.name === "journal-alpha",
+    )!;
     assert.strictEqual(manifest.notes.length, 5);
-    assert.deepStrictEqual(manifest.attachments, ["pixel.png"]);
+    assert.deepStrictEqual(manifest.attachments, [
+      {
+        path: PIXEL_POOL,
+        sha256: PIXEL_SHA,
+        ext: ".png",
+        byteSize: PIXEL_PNG.byteLength,
+      },
+    ]);
 
     const manifestEntryA = manifest.notes.find(
       (n: any) => n.id === fixture.ids.noteA,
     );
-    assert.strictEqual(manifestEntryA.journal, "journal-alpha");
-    assert.strictEqual(manifestEntryA.sha256, sha256(noteARaw));
-
+    assert.strictEqual(manifestEntryA.journalId, alpha.id);
+    assert.ok(noteARaw.includes(`journal: "${alpha.id}"`));
+    // Revisions hash stored-form references, so they match the database and,
+    // for a note without references, the exported file itself.
     for (const entry of manifest.notes) {
-      const filePath = path.join(destDir, entry.journal, `${entry.id}.md`);
-      const raw = readFileSync(filePath, "utf8");
-      assert.strictEqual(entry.sha256, sha256(raw));
+      const doc = await fixture.client.documents.findById({ id: entry.id });
+      assert.strictEqual(entry.revision, doc.revision);
     }
+    const emptyEntry = manifest.notes.find(
+      (n: any) => n.id === fixture.ids.noteEmpty,
+    );
+    assert.strictEqual(emptyEntry.revision, sha256(noteEmptyRaw));
+    assert.notStrictEqual(manifestEntryA.revision, sha256(noteARaw));
+
+    const info = JSON.parse(
+      readFileSync(path.join(destDir, "export-info.json"), "utf8"),
+    );
+    assert.strictEqual(typeof info.exportedAt, "string");
   });
 });
 
@@ -315,29 +347,16 @@ describe("ExportClient.export byte-stability", () => {
     assert.deepStrictEqual(files1, files2);
   });
 
-  test("every file except manifest.json is byte-identical", () => {
+  test("every file except export-info.json is byte-identical", () => {
     const files = listFilesRecursive(dest1).filter(
-      (f) => f !== "manifest.json",
+      (f) => f !== "export-info.json",
     );
+    assert.ok(files.includes("manifest.json"));
     for (const relPath of files) {
       const a = readFileSync(path.join(dest1, relPath));
       const b = readFileSync(path.join(dest2, relPath));
       assert.ok(a.equals(b), `mismatch in ${relPath}`);
     }
-  });
-
-  test("manifests are identical except exportedAt", () => {
-    const manifest1 = JSON.parse(
-      readFileSync(path.join(dest1, "manifest.json"), "utf8"),
-    );
-    const manifest2 = JSON.parse(
-      readFileSync(path.join(dest2, "manifest.json"), "utf8"),
-    );
-    assert.strictEqual(typeof manifest1.exportedAt, "string");
-    assert.strictEqual(typeof manifest2.exportedAt, "string");
-    delete manifest1.exportedAt;
-    delete manifest2.exportedAt;
-    assert.deepStrictEqual(manifest1, manifest2);
   });
 });
 
@@ -399,7 +418,6 @@ describe("ExportClient.export round-trip via Chronicles import", () => {
     const originalLinks = await fixture.client.db
       .select({
         targetId: schema.documentLinks.targetId,
-        targetJournal: schema.documentLinks.targetJournal,
       })
       .from(schema.documentLinks)
       .where(eq(schema.documentLinks.documentId, fixture.ids.noteB));
@@ -407,7 +425,6 @@ describe("ExportClient.export round-trip via Chronicles import", () => {
     const reimportedLinks = await secondClient.db
       .select({
         targetId: schema.documentLinks.targetId,
-        targetJournal: schema.documentLinks.targetJournal,
       })
       .from(schema.documentLinks)
       .where(eq(schema.documentLinks.documentId, fixture.ids.noteB));
@@ -446,9 +463,66 @@ describe("ExportClient.export round-trip via Chronicles import", () => {
   });
 
   test("re-imported attachment content matches", () => {
-    const reimportedPixel = readFileSync(
-      path.join(secondNotesDir, "_attachments", "pixel.png"),
-    );
+    const reimportedPixel = readFileSync(path.join(secondNotesDir, PIXEL_POOL));
     assert.ok(reimportedPixel.equals(PIXEL_PNG));
+  });
+});
+
+describe("ExportClient.export → import → export", () => {
+  test("second export is byte-identical to the first", async () => {
+    const fixture = await buildFixtureClient("chronicles-export-rt2-test-");
+    const parentDir = mkdtempSync(path.join(tmpdir(), "chronicles-rt2-"));
+    const secondNotesDir = mkdtempSync(path.join(tmpdir(), "chronicles-rt2-"));
+    try {
+      const first = path.join(parentDir, "first");
+      const second = path.join(parentDir, "second");
+      await fixture.client.export.export(first);
+
+      const client = await createClient({
+        dbPath: ":memory:",
+        notesDir: secondNotesDir,
+      });
+      await client.importer.import(first, SourceType.Chronicles);
+      await client.export.export(second);
+
+      const list = (dir: string) =>
+        fs
+          .readdirSync(dir, { recursive: true, withFileTypes: true })
+          .filter((e) => e.isFile() && e.name !== "export-info.json")
+          .map((e) => path.relative(dir, path.join(e.parentPath, e.name)))
+          .sort();
+      assert.deepStrictEqual(list(second), list(first));
+      for (const rel of list(first)) {
+        assert.ok(
+          readFileSync(path.join(first, rel)).equals(
+            readFileSync(path.join(second, rel)),
+          ),
+          `mismatch in ${rel}`,
+        );
+      }
+    } finally {
+      rmSync(fixture.notesDir, { recursive: true, force: true });
+      rmSync(secondNotesDir, { recursive: true, force: true });
+      rmSync(parentDir, { recursive: true, force: true });
+    }
+  });
+
+  test("import rejects an unknown major format version", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "chronicles-badver-"));
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-badver-"));
+    try {
+      writeFileSync(
+        path.join(dir, "manifest.json"),
+        JSON.stringify({ formatVersion: "3.0", journals: [], notes: [] }),
+      );
+      const client = await createClient({ dbPath: ":memory:", notesDir });
+      await assert.rejects(
+        client.importer.import(dir, SourceType.Chronicles),
+        /IMPORT_UNSUPPORTED_FORMAT/,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(notesDir, { recursive: true, force: true });
+    }
   });
 });

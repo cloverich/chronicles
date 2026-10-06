@@ -4,8 +4,8 @@ import { DayPicker, getDefaultClassNames } from "react-day-picker";
 import * as D from "../../components/DropdownMenu";
 import * as Popover from "../../components/Popover";
 import TagInput from "../../components/tag-input/TagInput";
+import type { Journal } from "../../contract/notes";
 import { useAutosizeTextarea } from "../../hooks/useAutosizeTextarea";
-import { JournalResponse } from "../../hooks/useClient";
 import { usePreferences } from "../../hooks/usePreferences";
 import { useTags } from "../../hooks/useTags";
 import { TagTokenParser } from "../documents/search/parsers/tag";
@@ -13,7 +13,7 @@ import { TagTokenParser } from "../documents/search/parsers/tag";
 interface DocumentProps {
   createdAt: string;
   title?: string;
-  journal: string;
+  journalId: string;
   tags: string[];
   save(type: "frontmatter", content: undefined): unknown;
 }
@@ -26,7 +26,7 @@ const FrontMatter = observer(
     journals,
   }: {
     document: DocumentProps;
-    journals: JournalResponse[];
+    journals: Journal[];
   }) => {
     const journalSelectorOpenState = D.useOpenState();
     const datePickerOpenState = D.useOpenState();
@@ -72,9 +72,8 @@ const FrontMatter = observer(
       }
     }, [titleRef]);
 
-    // todo: this is no longer needed (since re-wroking journal id to its name)
-    function getName(journalName?: string) {
-      const journal = journals?.find((j) => j.name === journalName);
+    function getName(journalId?: string) {
+      const journal = journals?.find((j) => j.id === journalId);
       return journal ? journal.name : "Unknown journal";
     }
 
@@ -82,9 +81,9 @@ const FrontMatter = observer(
       return journals.map((j: any) => {
         return (
           <D.DropdownMenuItem
-            key={j.name}
+            key={j.id}
             onSelect={(e) => {
-              document.journal = j.name;
+              document.journalId = j.id;
             }}
           >
             {j.name}
@@ -98,7 +97,7 @@ const FrontMatter = observer(
         <D.DropdownMenu modal={false} {...journalSelectorOpenState}>
           <D.DropdownMenuTrigger asChild>
             <span className="border-primary cursor-pointer border-b">
-              {getName(document.journal)}
+              {getName(document.journalId)}
             </span>
           </D.DropdownMenuTrigger>
           <D.DropdownMenuContent align="start">

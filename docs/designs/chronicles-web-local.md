@@ -1,10 +1,6 @@
 # Design Doc: Chronicles Web (local / self-hosted)
 
-> **Status: Speccing.** This is the active web direction, superseding
-> [cloud-web.md](cloud-web.md) (Cloudflare/Durable Objects), which is deferred
-> for cost-risk reasons documented there. Nothing here is implemented yet.
-> Prerequisite: finish removing Plate (see
-> [lexical-evaluation.md](lexical-evaluation.md)).
+> **Status: Archived (2026-10).** The `web-local-phase1` branch was an architectural spike, not active work. Its lessons (client injection, async adapter) feed the NotesClient contract; the web product is not planned. See the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
 
 ## The idea
 

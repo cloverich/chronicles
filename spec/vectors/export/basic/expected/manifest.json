@@ -1,0 +1,87 @@
+{
+  "formatVersion": "2.0",
+  "journals": [
+    {
+      "id": "03aqld2ohipshn721zlijp170",
+      "name": "_private",
+      "dir": "j_private",
+      "archivedAt": "2024-08-01T00:00:00.000Z"
+    },
+    {
+      "id": "03ckcy7vckbi9p65ykb1j0vkc",
+      "name": "default_journal",
+      "dir": "default_journal",
+      "archivedAt": null
+    },
+    {
+      "id": "03aqdjryx3t7dd9h7lezzx83o",
+      "name": "my notes",
+      "dir": "my notes",
+      "archivedAt": null
+    },
+    {
+      "id": "03aq5qh9copxys3mzz5l8q60f",
+      "name": "work",
+      "dir": "work",
+      "archivedAt": null
+    },
+    {
+      "id": "03aqt6de1xziesuws46rpwkh4",
+      "name": "日記",
+      "dir": "日記",
+      "archivedAt": null
+    }
+  ],
+  "notes": [
+    {
+      "id": "03awvyp9xobkv9t1jmmtiz0bp",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
+      "path": "work/03awvyp9xobkv9t1jmmtiz0bp.md",
+      "revision": "cdb2cbca3fe00d7e1cb00849ece9b7331148094a97ecdd7bf33e9aab9a53964f"
+    },
+    {
+      "id": "03b3m6xaiod1fz6mvkjmvb3jc",
+      "journalId": "03aqdjryx3t7dd9h7lezzx83o",
+      "path": "my notes/03b3m6xaiod1fz6mvkjmvb3jc.md",
+      "revision": "562c1899c6b58133c1cc5fa24ae361b3d5cdbb5633e8bd2711480bb629c066f8"
+    },
+    {
+      "id": "03b9wsjvyu3t3ufq044kfzgru",
+      "journalId": "03aqt6de1xziesuws46rpwkh4",
+      "path": "日記/03b9wsjvyu3t3ufq044kfzgru.md",
+      "revision": "1581a5d9b8d22d33ac041ccfd6bcf04e71912a3dc780704d9d1d46c420f2133e"
+    },
+    {
+      "id": "03bgn0rwju13kzyxhez49oxf3",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
+      "path": "work/03bgn0rwju13kzyxhez49oxf3.md",
+      "revision": "8fa8f94134450959fe2f9c4c781624e225a0c35b0325e2b223ce6e203551c4cd"
+    },
+    {
+      "id": "03bn5fp7keqa3yooxua9rlndm",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
+      "path": "work/03bn5fp7keqa3yooxua9rlndm.md",
+      "revision": "09f32e9cdd8e36133f313b0eee48e370840656467e48d3c8da9be954624e52be"
+    },
+    {
+      "id": "03btvnx85ev892j5n93i9v5si",
+      "journalId": "03aqld2ohipshn721zlijp170",
+      "path": "j_private/03btvnx85ev892j5n93i9v5si.md",
+      "revision": "8c7185308540497c5b99c005051db722c1c1b0d4654c6581530d2b60c47a6af1"
+    },
+    {
+      "id": "03c0e2uj5zhktbgav50jzbth4",
+      "journalId": "03aq5qh9copxys3mzz5l8q60f",
+      "path": "work/03c0e2uj5zhktbgav50jzbth4.md",
+      "revision": "687151e0c46ac9243b87f9b31dec16d8808b4aab7c69df656c668feba92ee55f"
+    }
+  ],
+  "attachments": [
+    {
+      "path": "_attachments/43/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png",
+      "sha256": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
+      "ext": ".png",
+      "byteSize": 68
+    }
+  ]
+}

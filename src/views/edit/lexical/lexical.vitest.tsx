@@ -1,9 +1,10 @@
 import {
   act,
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
+  type RenderOptions,
 } from "@testing-library/react";
 import {
   $getRoot,
@@ -21,6 +22,8 @@ import {
 import React from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { NotesClient } from "../../../contract/notes";
+import { NotesContext } from "../../../hooks/useNotes";
 import { LexicalBasedEditor } from "./LexicalBasedEditor";
 import {
   lexicalCapabilities,
@@ -48,7 +51,6 @@ interface NoteSearchResult {
 }
 
 type NoteSearchQuery = {
-  journals: string[];
   limit?: number;
   titles?: string[];
 };
@@ -57,6 +59,20 @@ type UploadImageBytesFn = (
   arrayBuffer: ArrayBuffer,
   filename?: string,
 ) => Promise<{ url: string } | string>;
+
+let notesMock: NotesClient | null = null;
+
+/** Every render gets the current NotesClient mock (or none) from context. */
+function render(ui: React.ReactElement, options?: RenderOptions) {
+  return rtlRender(ui, {
+    wrapper: ({ children }) => (
+      <NotesContext.Provider value={notesMock}>
+        {children}
+      </NotesContext.Provider>
+    ),
+    ...options,
+  });
+}
 
 function mockChroniclesClient({
   searchResolver = () => [],
@@ -67,24 +83,33 @@ function mockChroniclesClient({
   searchResolver?: (query: NoteSearchQuery) => NoteSearchResult[];
   uploadImageBytes?: UploadImageBytesFn;
 } = {}) {
-  const searchMock = vi.fn(
-    async (query: NoteSearchQuery): Promise<{ data: NoteSearchResult[] }> => ({
-      data: searchResolver(query),
-    }),
-  );
-
-  (window as any).chronicles = {
-    getClient() {
+  const searchMock = vi.fn(async (query: NoteSearchQuery) => ({
+    // The mock uses journal names as journal ids.
+    items: searchResolver(query).map((r) => ({
+      id: r.id,
+      journalId: r.journal,
+      title: r.title ?? null,
+      createdAt: r.createdAt,
+    })),
+  }));
+  const putAttachment = vi.fn(
+    async ({ bytes, name }: { bytes: Uint8Array; name: string }) => {
+      const result = await uploadImageBytes(bytes.buffer as ArrayBuffer, name);
+      const url = typeof result === "string" ? result : result.url;
       return {
-        documents: {
-          search: searchMock,
-        },
-        files: {
-          uploadImageBytes,
-        },
+        ...(typeof result === "string" ? {} : result),
+        url,
+        sha256: "",
+        ext: "",
       };
     },
-  };
+  );
+
+  notesMock = {
+    searchNotes: searchMock,
+    listJournals: vi.fn(async () => ({ journals: [] })),
+    putAttachment,
+  } as unknown as NotesClient;
 
   return { searchMock, uploadImageBytes };
 }
@@ -96,7 +121,7 @@ function mockChroniclesSearch(
 }
 
 afterEach(() => {
-  delete (window as any).chronicles;
+  notesMock = null;
 });
 
 function RouterLocationProbe(): JSX.Element {
@@ -262,8 +287,15 @@ describe("lexical migration spike", () => {
     );
   });
 
-  it("roundtrips image markdown through Lexical", () => {
-    const markdown = "![A tidy desk](../_attachments/desk.png)";
+  it.each([
+    "![A tidy desk](../_attachments/desk.png)",
+    `![A tidy desk](chronicles://attachment/${"ab".repeat(32)}.webp)`,
+  ])("roundtrips image markdown through Lexical: %s", (markdown) => {
+    expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
+  });
+
+  it("roundtrips stored-form note links through Lexical", () => {
+    const markdown = "[Target](chronicles://note/03awvyp9xobkv9t1jmmtiz0bp)";
     expect(roundtripLexicalMarkdown(markdown)).toBe(markdown);
   });
 
@@ -462,10 +494,11 @@ describe("lexical migration spike", () => {
     });
   });
 
-  it("navigates directly when clicking a chronicles note link", async () => {
-    renderEditorWithRoutes(
-      "[Target note](../research/01931c56fc2378079233d986767c519c.md)",
-    );
+  it.each([
+    "[Target note](chronicles://note/01931c56fc2378079233d986767c519c)",
+    "[Target note](../research/01931c56fc2378079233d986767c519c.md)",
+  ])("navigates directly when clicking a note link: %s", async (markdown) => {
+    renderEditorWithRoutes(markdown);
 
     const noteLink = await screen.findByRole("link", { name: "Target note" });
     fireEvent.click(noteLink);
@@ -680,7 +713,7 @@ describe("lexical migration spike", () => {
         | undefined;
       expect(latestMarkdown).toContain("Behavioral Interview Prep");
       expect(latestMarkdown).toContain(
-        "../research/01931c56fc2378079233d986767c519c.md",
+        "chronicles://note/01931c56fc2378079233d986767c519c",
       );
     });
     expect(screen.queryByText("Link a Chronicles note")).toBeNull();

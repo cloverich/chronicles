@@ -1,14 +1,24 @@
-import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
-import yaml from "yaml";
 
+import {
+  attachmentPoolPath,
+  parseAttachmentUrl,
+} from "../markdown/attachmentRefs";
+import { parseNoteLink } from "../markdown/noteLinks";
+import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
+import { compareCodePoints, serializeNote } from "./canonical-note";
+import {
+  assignJournalDirs,
+  encodeLinkSegment,
+  EXPORT_FORMAT_VERSION,
+} from "./export-layout";
 import { isSameOrInside, pathExists } from "./fs-guards";
 import * as schema from "./schema";
-import { documentTags, documents, imageLinks } from "./schema";
+import { documents, documentTags, journals } from "./schema";
 
 export interface ExportReport {
   destDir: string;
@@ -16,20 +26,33 @@ export interface ExportReport {
   attachments: { copied: number; missing: string[] };
 }
 
-interface ManifestNote {
+export interface ManifestJournal {
   id: string;
-  journal: string;
+  name: string;
+  dir: string;
+  archivedAt: string | null;
+}
+
+export interface ManifestNote {
+  id: string;
+  journalId: string;
+  path: string;
+  revision: string;
+}
+
+export interface ManifestAttachment {
+  path: string;
   sha256: string;
+  ext: string;
+  byteSize: number;
 }
 
-interface Manifest {
-  version: 1;
-  exportedAt: string;
+export interface Manifest {
+  formatVersion: string;
+  journals: ManifestJournal[];
   notes: ManifestNote[];
-  attachments: string[];
+  attachments: ManifestAttachment[];
 }
-
-const ATTACHMENT_PREFIX = "../_attachments/";
 
 export class ExportClient {
   constructor(
@@ -75,94 +98,110 @@ export class ExportClient {
     }
   };
 
+  private attachmentPath = (a: { sha256: string; ext: string }) =>
+    path.join(
+      this.notesDir,
+      "_attachments",
+      attachmentPoolPath(a.sha256, a.ext),
+    );
+
   private writeExport = async (
     tmpDir: string,
   ): Promise<Omit<ExportReport, "destDir">> => {
-    const attachmentsDestDir = path.join(tmpDir, "_attachments");
-    const notesAttachmentsDir = path.join(this.notesDir, "_attachments");
+    const journalRows = await this.db.select().from(journals);
+    const dirsByName = assignJournalDirs(journalRows.map((j) => j.name));
+    // journal id → export directory
+    const dirs = new Map(
+      journalRows.map((j) => [j.id, dirsByName.get(j.name)!]),
+    );
 
-    const rows = await this.db
-      .select()
-      .from(documents)
-      .orderBy(documents.journal, documents.id);
+    const rows = await this.db.select().from(documents).orderBy(documents.id);
+    const journalOf = new Map(rows.map((r) => [r.id, r.journalId]));
 
     const manifestNotes: ManifestNote[] = [];
-    const copiedBasenames = new Set<string>();
-    const missingBasenames = new Set<string>();
-    let attachmentsCopied = 0;
+    const attachments = new Map<string, ManifestAttachment>();
+    const missing = new Set<string>();
 
     for (const row of rows) {
       const tagRows = await this.db
         .select({ tag: documentTags.tag })
         .from(documentTags)
-        .where(eq(documentTags.documentId, row.id))
-        .orderBy(documentTags.tag);
-      const tags = tagRows.map((t) => t.tag);
+        .where(eq(documentTags.documentId, row.id));
 
-      const userKeys: Record<string, any> = row.frontmatter
-        ? JSON.parse(row.frontmatter)
-        : {};
-      const sortedUserKeyNames = Object.keys(userKeys).sort();
-
-      const frontMatter: Record<string, any> = {};
-      if (row.title != null) {
-        frontMatter.title = row.title;
-      }
-      frontMatter.tags = tags;
-      frontMatter.createdAt = row.createdAt;
-      frontMatter.updatedAt = row.updatedAt;
-      for (const key of sortedUserKeyNames) {
-        frontMatter[key] = userKeys[key];
-      }
-
-      const yamlStr = yaml.stringify(frontMatter);
-      const fileContents = `---\n${yamlStr}---\n\n${row.content}\n`;
-
-      const journalDir = path.join(tmpDir, row.journal);
-      await fs.promises.mkdir(journalDir, { recursive: true });
-      const notePath = path.join(journalDir, `${row.id}.md`);
-      await fs.promises.writeFile(notePath, fileContents, "utf8");
-
-      const sha256 = crypto
-        .createHash("sha256")
-        .update(fileContents, "utf8")
-        .digest("hex");
-      manifestNotes.push({ id: row.id, journal: row.journal, sha256 });
-
-      // ---- attachments referenced by this note ----
-      const imageRows = await this.db
-        .select({ imagePath: imageLinks.imagePath })
-        .from(imageLinks)
-        .where(eq(imageLinks.documentId, row.id));
-
-      for (const { imagePath } of imageRows) {
-        if (!imagePath.startsWith(ATTACHMENT_PREFIX)) continue;
-        const basename = path.basename(imagePath);
-        if (copiedBasenames.has(basename) || missingBasenames.has(basename)) {
-          continue;
+      const referenced: { sha256: string; ext: string }[] = [];
+      const content = rewriteUrls(row.content, (url) => {
+        const attachment = parseAttachmentUrl(url);
+        if (attachment) {
+          const source = this.attachmentPath(attachment);
+          if (!fs.existsSync(source)) {
+            missing.add(`${attachment.sha256}${attachment.ext}`);
+            return undefined;
+          }
+          referenced.push(attachment);
+          return `../_attachments/${attachmentPoolPath(attachment.sha256, attachment.ext)}`;
         }
 
-        const sourcePath = path.join(notesAttachmentsDir, basename);
-        if (!(await pathExists(sourcePath))) {
-          missingBasenames.add(basename);
-          continue;
-        }
+        const link = parseNoteLink(url);
+        if (!link) return undefined;
+        const targetJournal = journalOf.get(link.noteId);
+        if (!targetJournal) return undefined;
+        const dir = encodeLinkSegment(dirs.get(targetJournal)!);
+        return `../${dir}/${link.noteId}.md`;
+      }).markdown;
 
-        await fs.promises.mkdir(attachmentsDestDir, { recursive: true });
-        await fs.promises.copyFile(
-          sourcePath,
-          path.join(attachmentsDestDir, basename),
-        );
-        copiedBasenames.add(basename);
-        attachmentsCopied++;
+      const fileContents = serializeNote({
+        id: row.id,
+        title: row.title,
+        journal: row.journalId,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        tags: tagRows.map((t) => t.tag),
+        frontMatter: row.frontmatter ? JSON.parse(row.frontmatter) : {},
+        content,
+      });
+
+      const dir = dirs.get(row.journalId)!;
+      const relPath = `${dir}/${row.id}.md`;
+      await fs.promises.mkdir(path.join(tmpDir, dir), {
+        recursive: true,
+      });
+      await fs.promises.writeFile(
+        path.join(tmpDir, relPath),
+        fileContents,
+        "utf8",
+      );
+      manifestNotes.push({
+        id: row.id,
+        journalId: row.journalId,
+        path: relPath,
+        revision: row.revision,
+      });
+
+      for (const { sha256, ext } of referenced) {
+        const rel = `_attachments/${attachmentPoolPath(sha256, ext)}`;
+        if (attachments.has(rel)) continue;
+        const dest = path.join(tmpDir, rel);
+        await fs.promises.mkdir(path.dirname(dest), { recursive: true });
+        await fs.promises.copyFile(this.attachmentPath({ sha256, ext }), dest);
+        const { size } = await fs.promises.stat(dest);
+        attachments.set(rel, { path: rel, sha256, ext, byteSize: size });
       }
     }
 
     const manifest: Manifest = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
+      formatVersion: EXPORT_FORMAT_VERSION,
+      journals: journalRows
+        .map((j) => ({
+          id: j.id,
+          name: j.name,
+          dir: dirsByName.get(j.name)!,
+          archivedAt: j.archivedAt,
+        }))
+        .sort((a, b) => compareCodePoints(a.name, b.name)),
       notes: manifestNotes,
-      attachments: Array.from(copiedBasenames).sort(),
+      attachments: Array.from(attachments.values()).sort((a, b) =>
+        compareCodePoints(a.path, b.path),
+      ),
     };
 
     await fs.promises.writeFile(
@@ -170,12 +209,17 @@ export class ExportClient {
       JSON.stringify(manifest, null, 2) + "\n",
       "utf8",
     );
+    await fs.promises.writeFile(
+      path.join(tmpDir, "export-info.json"),
+      JSON.stringify({ exportedAt: new Date().toISOString() }, null, 2) + "\n",
+      "utf8",
+    );
 
     return {
       notes: rows.length,
       attachments: {
-        copied: attachmentsCopied,
-        missing: Array.from(missingBasenames).sort(),
+        copied: attachments.size,
+        missing: Array.from(missing).sort(),
       },
     };
   };

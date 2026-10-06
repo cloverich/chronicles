@@ -2,7 +2,8 @@ import { observable } from "mobx";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import useClient from "../../hooks/useClient";
+import { isNotesError } from "../../contract/notes";
+import { useNotes } from "../../hooks/useNotes";
 import { EditableDocument } from "./EditableDocument";
 
 interface LoodingState {
@@ -16,7 +17,7 @@ interface LoodingState {
  */
 export function useEditableDocument(documentId?: string) {
   const navigate = useNavigate();
-  const client = useClient();
+  const notes = useNotes();
   const [state, _] = React.useState<LoodingState>(() => {
     return observable({
       document: null,
@@ -42,10 +43,10 @@ export function useEditableDocument(documentId?: string) {
       }
 
       try {
-        const doc = await client.documents.findById({ id: documentId });
+        const doc = await notes.getNote({ id: documentId });
         if (!isEffectMounted) return;
 
-        state.document = new EditableDocument(client, doc);
+        state.document = new EditableDocument(notes, doc);
 
         // Loading is instantaneous and the loading = true | false transition which the edit/view depends on never
         // happens; insert an artifical delay (hack).
@@ -56,7 +57,7 @@ export function useEditableDocument(documentId?: string) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("useEditableDocument.err", message);
 
-        if (message.startsWith("[DOCUMENT_NOT_FOUND]")) {
+        if (isNotesError(err) && err.code === "not_found") {
           navigate("/documents");
           toast.warning(`Document ${documentId} not found`);
         } else {

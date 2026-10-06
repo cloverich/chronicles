@@ -1,5 +1,7 @@
 # Design Doc: Publishing System (Phase 1)
 
+> **Status: Superseded (2026-10).** Publishing is now a narrow Chronicles → Engram publish, sketched in the Chronicles ecosystem roadmap in Engram (see `Agents.md`).
+
 ## Context
 
 Chronicles is a high-fidelity markdown editor. Users want to bridge the gap between private journaling and public publishing (e.g., Hugo, Astro, Substack). This system provides a way to "export" documents into external structures while maintaining asset integrity (images/links).

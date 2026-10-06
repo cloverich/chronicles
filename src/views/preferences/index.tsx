@@ -14,10 +14,12 @@ import {
   DialogTitle,
 } from "../../components/Dialog";
 import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
-import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { useMaintenance } from "../../hooks/useMaintenance";
 import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
+import { usePlatform } from "../../hooks/usePlatform";
 import { usePreferences } from "../../hooks/usePreferences";
+import { useSettings } from "../../hooks/useSettings";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
   SKIPPABLE_FILES,
@@ -32,10 +34,12 @@ interface Props {
 }
 
 const PreferencesPane = observer((props: Props) => {
+  const platform = usePlatform();
   const navigate = useNavigate();
   const maintenanceStore = useMaintenanceStore();
   const journalsStore = useJournals();
-  const client = useClient();
+  const maintenance = useMaintenance();
+  const settings = useSettings();
   const [store, _] = React.useState(() =>
     observable({
       loading: false,
@@ -58,7 +62,7 @@ const PreferencesPane = observer((props: Props) => {
       (async () => {
         const themesDir = `${preferences.settingsDir}/themes`;
         const { themes, overrides } =
-          await window.chronicles.listAvailableThemes(themesDir);
+          await platform.listAvailableThemes(themesDir);
         setAvailableThemes(themes);
         if (overrides.length > 0) {
           toast.info(
@@ -67,18 +71,17 @@ const PreferencesPane = observer((props: Props) => {
         }
 
         const fontsDir = `${preferences.settingsDir}/fonts`;
-        const installedFonts =
-          await window.chronicles.listInstalledFonts(fontsDir);
+        const installedFonts = await platform.listInstalledFonts(fontsDir);
         setAvailableFonts(installedFonts);
 
         // Resolve async path for display
         try {
-          const path = await client.preferences.settingsPath();
+          const path = await settings.location();
           setSettingsPath(path);
         } catch {
           setSettingsPath("(unknown)");
         }
-        // setHljsThemes(await window.chronicles.listHljsThemes());
+        // setHljsThemes(await platform.listHljsThemes());
       })();
     }
   }, [props.isOpen, preferences.settingsDir]);
@@ -86,7 +89,7 @@ const PreferencesPane = observer((props: Props) => {
   async function selectNotesRoot() {
     store.loading = true;
     try {
-      const result = await window.chronicles.openDialogSelectDir();
+      const result = await platform.openDialogSelectDir();
       if (!result.value) {
         store.loading = false;
         return;
@@ -109,14 +112,14 @@ const PreferencesPane = observer((props: Props) => {
   async function importTheme() {
     store.loading = true;
     try {
-      const result = await window.chronicles.selectThemeFile();
+      const result = await platform.selectThemeFile();
       if (!result.value) {
         store.loading = false;
         return;
       }
 
       const themesDir = `${preferences.settingsDir}/themes`;
-      const importResult = await window.chronicles.importThemeFile(
+      const importResult = await platform.importThemeFile(
         result.value,
         themesDir,
       );
@@ -138,13 +141,13 @@ const PreferencesPane = observer((props: Props) => {
 
   async function refreshThemeList() {
     const themesDir = `${preferences.settingsDir}/themes`;
-    const result = await window.chronicles.listAvailableThemes(themesDir);
+    const result = await platform.listAvailableThemes(themesDir);
     setAvailableThemes(result.themes);
   }
 
   async function deleteTheme(name: string) {
     const themesDir = `${preferences.settingsDir}/themes`;
-    const deleted = await window.chronicles.deleteThemeByName(name, themesDir);
+    const deleted = await platform.deleteThemeByName(name, themesDir);
     if (deleted) {
       toast.success(`Theme "${name}" removed`);
       // Reset to system default if the deleted theme was active
@@ -162,31 +165,34 @@ const PreferencesPane = observer((props: Props) => {
 
   function openThemesDir() {
     const themesDir = `${preferences.settingsDir}/themes`;
-    window.chronicles.openPath(themesDir);
+    platform.openPath(themesDir);
   }
 
   function openFontsDir() {
     const fontsDir = `${preferences.settingsDir}/fonts`;
-    window.chronicles.openPath(fontsDir);
+    platform.openPath(fontsDir);
   }
 
   async function importDirectory() {
     store.loading = true;
     try {
-      const result = await window.chronicles.openDialogSelectDir();
+      const result = await platform.openDialogSelectDir();
       if (!result?.value) {
         store.loading = false;
         return;
       }
 
       toast.info("Importing directory...this may take a few minutes");
-      const report = await client.importer.import(
-        result.value,
-        store.sourceType,
-        store.sourceType === SourceType.Chronicles
-          ? { onConflict: store.replaceExisting ? "replace" : "skip" }
-          : undefined,
-      );
+      const report = await maintenance.importNotes({
+        dir: result.value,
+        source: store.sourceType,
+        onConflict:
+          store.sourceType === SourceType.Chronicles
+            ? store.replaceExisting
+              ? "replace"
+              : "skip"
+            : undefined,
+      });
 
       await journalsStore.refresh();
 
@@ -231,7 +237,7 @@ const PreferencesPane = observer((props: Props) => {
   async function exportNotes() {
     store.loading = true;
     try {
-      const result = await window.chronicles.openDialogSelectDir();
+      const result = await platform.openDialogSelectDir();
       if (!result?.value) {
         store.loading = false;
         return;
@@ -240,7 +246,7 @@ const PreferencesPane = observer((props: Props) => {
       const destDir = `${result.value}/chronicles-export-${timestampForDirName()}`;
 
       toast.info("Exporting notes...this may take a few minutes");
-      const report = await client.export.export(destDir);
+      const report = await maintenance.exportNotes({ dir: destDir });
 
       toast.success(
         `Export completed: ${report.notes} notes, ${report.attachments.copied} attachments copied to ${report.destDir}`,

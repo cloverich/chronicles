@@ -3,26 +3,11 @@ import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import { ClientContext } from "../../hooks/useClient";
+import { MaintenanceContext } from "../../hooks/useMaintenance";
+import { PlatformContext } from "../../hooks/usePlatform";
+import { SettingsContext } from "../../hooks/useSettings";
+import { fakeMaintenance, fakePlatform, fakeSettings } from "../../test/fakes";
 import Preferences from "./index";
-
-function createClient() {
-  return {
-    importer: {
-      import: vi.fn(),
-      clearImportTables: vi.fn(),
-    },
-    preferences: {
-      settingsPath: vi.fn(() => "/tmp/settings/settings.json"),
-      setMultiple: vi.fn(),
-      replace: vi.fn(),
-      all: vi.fn(),
-    },
-    documents: {
-      rebuildDerived: vi.fn(),
-    },
-  } as any;
-}
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
   return {
@@ -48,53 +33,56 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
   } as any;
 }
 
+let platform = fakePlatform();
+
 function renderPreferences({
-  client = createClient(),
   applicationStore = createApplicationStore(),
 }: {
-  client?: any;
   applicationStore?: any;
 } = {}) {
   return render(
     <MemoryRouter>
-      <ClientContext.Provider value={client}>
-        <ApplicationContext.Provider value={applicationStore}>
-          <Preferences isOpen={true} onClose={vi.fn()} />
-        </ApplicationContext.Provider>
-      </ClientContext.Provider>
+      <MaintenanceContext.Provider value={fakeMaintenance()}>
+        <PlatformContext.Provider value={platform}>
+          <SettingsContext.Provider value={fakeSettings()}>
+            <ApplicationContext.Provider value={applicationStore}>
+              <Preferences isOpen={true} onClose={vi.fn()} />
+            </ApplicationContext.Provider>
+          </SettingsContext.Provider>
+        </PlatformContext.Provider>
+      </MaintenanceContext.Provider>
     </MemoryRouter>,
   );
 }
 
 describe("Preferences surface", () => {
   beforeEach(() => {
-    window.chronicles.listAvailableThemes = vi.fn(() => ({
-      themes: [
-        {
-          name: "System Light",
-          builtin: true,
-          bundled: true,
-          mode: "light",
-        },
-        {
-          name: "System Dark",
-          builtin: true,
-          bundled: true,
-          mode: "dark",
-        },
-        {
-          name: "Solarized",
-          builtin: false,
-          bundled: false,
-          mode: "light",
-        },
-      ],
-      overrides: [],
-    })) as any;
-    window.chronicles.listInstalledFonts = vi.fn(() => [
-      "Hubot Sans",
-      "Mona Sans",
-    ]) as any;
+    platform = fakePlatform({
+      listAvailableThemes: vi.fn(() => ({
+        themes: [
+          {
+            name: "System Light",
+            builtin: true,
+            bundled: true,
+            mode: "light",
+          },
+          {
+            name: "System Dark",
+            builtin: true,
+            bundled: true,
+            mode: "dark",
+          },
+          {
+            name: "Solarized",
+            builtin: false,
+            bundled: false,
+            mode: "light",
+          },
+        ],
+        overrides: [],
+      })) as any,
+      listInstalledFonts: vi.fn(() => ["Hubot Sans", "Mona Sans"]),
+    });
   });
 
   it("renders the settings sections when opened", () => {

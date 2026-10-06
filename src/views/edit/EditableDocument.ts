@@ -7,17 +7,11 @@ import {
   toJS,
 } from "mobx";
 import { toast } from "sonner";
-import type { IClient } from "../../hooks/useClient";
-import type {
-  FrontMatter,
-  GetDocumentResponse,
-} from "../../preload/client/types";
-
-function isExistingDocument(
-  doc: GetDocumentResponse,
-): doc is GetDocumentResponse {
-  return "id" in doc;
-}
+import {
+  isNotesError,
+  type Note,
+  type NotesClient,
+} from "../../contract/notes";
 
 /**
  * View model for tracking save state of a loaded document
@@ -34,12 +28,18 @@ export class EditableDocument {
 
   // The underlying document properties:
   title?: string;
-  journal: string;
+  journalId: string;
   id: string;
   createdAt: string;
   updatedAt: string; // read-only outside this class
   tags: string[];
-  frontMatter: FrontMatter;
+  /** User frontmatter keys only. */
+  frontMatter: Record<string, unknown>;
+
+  /** Revision of the last load or save; sent as baseRevision. */
+  revision: string;
+  /** Saves run one at a time so each sees the previous save's revision. */
+  private pendingSave: Promise<void> = Promise.resolve();
 
   // todo: save queue. I'm saving too often, but need to do this until I allow exiting note
   // while save is in progress; track and report saveCount to discover if this is a major issue
@@ -50,24 +50,25 @@ export class EditableDocument {
   teardown?: IReactionDisposer;
 
   constructor(
-    private client: IClient,
-    doc: GetDocumentResponse,
+    private notes: NotesClient,
+    doc: Note,
   ) {
-    this.title = doc.frontMatter.title;
-    this.journal = doc.journal;
+    this.title = doc.title ?? undefined;
+    this.journalId = doc.journalId;
     this.content = doc.content;
     this.id = doc.id;
-    this.createdAt = doc.frontMatter.createdAt;
-    this.updatedAt = doc.frontMatter.updatedAt;
-    this.tags = doc.frontMatter.tags;
+    this.createdAt = doc.createdAt;
+    this.updatedAt = doc.updatedAt;
+    this.tags = doc.tags;
     this.frontMatter = doc.frontMatter;
+    this.revision = doc.revision;
 
     makeObservable(this, {
       saving: observable,
       savingError: observable,
       content: observable,
       title: observable,
-      journal: observable,
+      journalId: observable,
       id: observable,
       createdAt: observable,
       updatedAt: observable,
@@ -83,7 +84,7 @@ export class EditableDocument {
         return {
           createdAt: this.createdAt,
           title: this.title,
-          journal: this.journal,
+          journalId: this.journalId,
           tags: this.tags.slice(), // must access elements to watch them
         };
       },
@@ -124,44 +125,21 @@ export class EditableDocument {
       this.saving = true;
 
       try {
-        this.updatedAt = this.frontMatter.updatedAt = new Date().toISOString();
-        this.frontMatter.title = this.title;
-        this.frontMatter.createdAt = this.createdAt;
-        this.frontMatter.tags = this.tags;
+        this.updatedAt = new Date().toISOString();
 
-        // todo: if we stay on this route, just make a separate saveFrontMatter method...
-        if (type === "frontmatter") {
-          await this.client.documents.updateDocument(
-            toJS({
-              journal: this.journal,
-              content: this.content,
-              id: this.id,
-              frontMatter: toJS(this.frontMatter),
-            }),
-          );
-          this.saveCount++;
+        if (type === "markdown") this.content = content;
 
-          return;
-        }
-
-        this.content = content;
-
-        // todo: is toJS necessary here, i.e. copying this.journal to journal, loses Proxy or not?
-        // todo: use mobx viewmodel over GetDocumentResponse; track frontMatter properties directly rather
-        // than copying back and forth
-        await this.client.documents.updateDocument(
-          toJS({
-            journal: this.journal,
-            content: this.content,
-            id: this.id,
-            frontMatter: toJS(this.frontMatter),
-          }),
-        );
+        await this.persist();
         this.saveCount++;
       } catch (err) {
         this.saving = false;
         console.error("Error saving document", err);
-        toast.error(JSON.stringify(err));
+        const message = err instanceof Error ? err.message : String(err);
+        toast.error(
+          isNotesError(err) && err.code === "conflict"
+            ? "This note was changed elsewhere. Reload it before editing; your latest edit was not saved."
+            : message,
+        );
       } finally {
         this.saving = false;
       }
@@ -170,12 +148,34 @@ export class EditableDocument {
     { trailing: true },
   );
 
+  private persist = (): Promise<void> => {
+    const run = async () => {
+      const { revision } = await this.notes.updateNote(
+        toJS({
+          id: this.id,
+          baseRevision: this.revision,
+          journalId: this.journalId,
+          title: this.title ?? null,
+          content: this.content,
+          tags: this.tags.slice(),
+          frontMatter: toJS(this.frontMatter),
+          createdAt: this.createdAt,
+          updatedAt: this.updatedAt,
+        }),
+      );
+      this.revision = revision;
+    };
+    const next = this.pendingSave.then(run, run);
+    this.pendingSave = next.catch(() => {});
+    return next;
+  };
+
   /**
    * Deletes the document from the server.
    */
   del = async () => {
     // overload saving for deleting
     this.saving = true;
-    await this.client.documents.del(this.id);
+    await this.notes.deleteNote({ id: this.id });
   };
 }

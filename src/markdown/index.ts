@@ -18,6 +18,7 @@ import { gfmFromMarkdown, gfmToMarkdown } from "mdast-util-gfm";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
+import { NOTE_LINK_PREFIX } from "./noteLinks";
 
 // During import (processing) parse #tag and [[WikiLink]]; importer converts them
 // to Chronicles tags and markdown links. Future versions may support these properly.
@@ -98,7 +99,10 @@ const visit = <T extends mdast.Node>(
 export const selectNoteLinks = (mdast: mdast.Root): mdast.Link[] => {
   const links: mdast.Link[] = [];
   visit<mdast.Link>(mdast as any, "link", (node: mdast.Link) => {
-    if (isNoteLink(node)) {
+    if (
+      isNoteLink(node) ||
+      (node as mdast.Link).url?.startsWith(NOTE_LINK_PREFIX)
+    ) {
       links.push(node);
     }
   });

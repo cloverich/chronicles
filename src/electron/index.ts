@@ -12,6 +12,10 @@ import fs from "fs";
 import path from "path";
 import url, { fileURLToPath } from "url";
 import {
+  attachmentPoolPath,
+  parseAttachmentUrl,
+} from "../markdown/attachmentRefs.js";
+import {
   applyPendingRestore,
   createAppBackups,
   registerBackupIpc,
@@ -27,7 +31,13 @@ const __dirname = path.dirname(__filename);
 // Used by createWindow, but needed in database routine because of the filepicker call
 let mainWindow: BrowserWindow | null = null;
 
-const userDataDir = process.env.CHRONICLES_USER_DATA || app.getPath("userData");
+// CHRONICLES_USER_DATA isolates the whole profile (database, backups, and
+// Chromium's own storage), so scratch runs never touch the real one. Pair it
+// with CHRONICLES_SETTINGS_DIR: settings.ts resolves its path at import time.
+if (process.env.CHRONICLES_USER_DATA) {
+  app.setPath("userData", process.env.CHRONICLES_USER_DATA);
+}
+const userDataDir = app.getPath("userData");
 const databasePath = path.join(userDataDir, "chronicles.db");
 const backups = createAppBackups({
   userDataDir,
@@ -75,7 +85,19 @@ function validateChroniclesUrl(chroniclesUrl: string) {
   let baseDir: string | null = null;
   let relativePath: string | null = null;
 
-  if (chroniclesUrl?.startsWith("chronicles://../_attachments/")) {
+  const attachment = parseAttachmentUrl(chroniclesUrl);
+  if (attachment) {
+    const notesDir = settings.get("notesDir");
+    if (!notesDir) {
+      console.error(
+        "[validateChroniclesUrl]: notesDir is not set - unable to load attachment",
+      );
+      return null;
+    }
+
+    baseDir = path.join(notesDir, "_attachments");
+    relativePath = attachmentPoolPath(attachment.sha256, attachment.ext);
+  } else if (chroniclesUrl?.startsWith("chronicles://../_attachments/")) {
     const notesDir = settings.get("notesDir");
     if (!notesDir) {
       console.error(

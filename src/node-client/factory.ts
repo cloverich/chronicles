@@ -8,7 +8,12 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { toStoredNoteLink } from "../markdown/noteLinks";
+import { rewriteUrls } from "../markdown/rewriteUrls";
+import { createId } from "../preload/client/util";
+import { AttachmentStore } from "./attachments";
 import { BulkOperationsClient } from "./bulk-operations";
+import { computeRevision } from "./canonical-note";
 import { DocumentsClient } from "./documents";
 import { ExportClient } from "./export";
 import { NodeFilesClient } from "./files";
@@ -50,6 +55,76 @@ function resolveMigrationsFolder(): string {
   }
   // Last resort: resolve from cwd
   return path.resolve(process.cwd(), "src/node-client/migrations");
+}
+
+/** SQL functions that migrations call; register before running them. */
+export function registerMigrationFunctions(sqlite: Database.Database) {
+  // Used by migrations that mint ids (e.g. 0003_journal_ids).
+  sqlite.function(
+    "chronicles_create_id",
+    { deterministic: false },
+    (timestamp: unknown) => {
+      const ms = typeof timestamp === "string" ? Date.parse(timestamp) : NaN;
+      return createId(Number.isFinite(ms) && ms >= 0 ? ms : undefined);
+    },
+  );
+
+  // Used by 0006_revisions.
+  sqlite.function(
+    "chronicles_note_revision",
+    { deterministic: true, varargs: true },
+    (...args: unknown[]) => {
+      const [id, title, journalId, createdAt, updatedAt, tags, fm, content] =
+        args as (string | null)[];
+      return computeRevision({
+        id: id!,
+        title,
+        journal: journalId!,
+        createdAt: createdAt!,
+        updatedAt: updatedAt!,
+        tags: JSON.parse(tags || "[]"),
+        frontMatter: JSON.parse(fm || "{}"),
+        content: content ?? "",
+      });
+    },
+  );
+
+  // Used by 0004_id_only_note_links.
+  sqlite.function(
+    "chronicles_store_note_links",
+    { deterministic: true },
+    (content: unknown) =>
+      typeof content === "string" && content.includes(".md")
+        ? rewriteUrls(content, toStoredNoteLink).markdown
+        : content,
+  );
+}
+
+/**
+ * Apply pending Drizzle migrations with foreign keys off, per SQLite's
+ * table-rebuild procedure: with them on, dropping a parent table (e.g.
+ * `journals`) inside a migration cascade-deletes its children. Integrity is
+ * verified with `foreign_key_check` before foreign keys are re-enabled.
+ */
+export function runMigrations(
+  sqlite: Database.Database,
+  db: BetterSQLite3Database<typeof schema>,
+  migrationsFolder: string,
+) {
+  registerMigrationFunctions(sqlite);
+
+  sqlite.exec("PRAGMA foreign_keys = OFF;");
+  try {
+    migrate(db, { migrationsFolder });
+    const violations = sqlite.prepare("PRAGMA foreign_key_check").all();
+    if (violations.length > 0) {
+      throw new Error(
+        `[MIGRATION_FK_VIOLATION] ${violations.length} foreign key violations after migration: ${JSON.stringify(violations.slice(0, 5))}`,
+      );
+    }
+  } finally {
+    sqlite.exec("PRAGMA foreign_keys = ON;");
+  }
 }
 
 export interface CreateClientOptions {
@@ -137,7 +212,7 @@ export async function createClient(
     );
   }
 
-  migrate(db, { migrationsFolder });
+  runMigrations(sqlite, db, migrationsFolder);
 
   // FTS5 virtual table — not expressible in Drizzle schema, so we create it
   // manually (idempotent).
@@ -164,7 +239,9 @@ export async function createClient(
     defaults: PREFERENCES_DEFAULTS,
   });
   const preferences = new PreferencesClient(conf);
-  const files = new NodeFilesClient(opts.notesDir);
+  const attachments = new AttachmentStore(db, opts.notesDir);
+  await attachments.migrateLegacyLayout();
+  const files = new NodeFilesClient(opts.notesDir, attachments);
   const journals = new JournalsClient(db, preferences);
   const documents = new DocumentsClient(db, files);
   const bulkOperations = new BulkOperationsClient(db, documents);
@@ -178,6 +255,7 @@ export async function createClient(
   );
   const exportClient = new ExportClient(db, opts.notesDir);
 
+  await journals.migrateArchivedPreference();
   await journals.ensureDefault();
 
   return {

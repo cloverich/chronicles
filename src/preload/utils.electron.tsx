@@ -1,10 +1,6 @@
 // In renderer process (web page).
 import { ipcRenderer } from "electron";
-import {
-  getFontsCSSStylesheetHref,
-  listInstalledFonts,
-  refreshFontsCSSFile,
-} from "../fonts/loader";
+import { listInstalledFonts, refreshFontsCSSFile } from "../fonts/loader";
 import { listHljsThemes, loadHljsThemeCSS } from "../themes/hljs";
 import { importThemeFile } from "../themes/importer";
 import {
@@ -78,7 +74,6 @@ export const setNativeTheme = (theme: "light" | "dark" | "system"): boolean => {
 
 export {
   deleteThemeByName,
-  getFontsCSSStylesheetHref as getInstalledFontsStylesheetHref,
   importThemeFile,
   listAvailableThemes,
   listHljsThemes,

@@ -1,8 +1,9 @@
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import useClient, { JournalResponse } from "../../hooks/useClient";
+import type { Journal } from "../../contract/notes";
 import { useJournals } from "../../hooks/useJournals";
+import { useNotes } from "../../hooks/useNotes";
 import { useSearchStore } from "../documents/SearchStore";
 import { EditableDocument } from "./EditableDocument";
 import EditorErrorBoundary from "./EditorErrorBoundary";
@@ -11,6 +12,15 @@ import { EditorLayout } from "./lexical/EditorLayout";
 import { EditLoadingComponent } from "./loading";
 import MarkdownEditor from "./markdown-editor";
 import { useEditableDocument } from "./useEditableDocument";
+
+/** The search list still keys journals by name. */
+function toSearchDocument(document: EditableDocument, journals: Journal[]) {
+  return {
+    id: document.id,
+    journal: journals.find((j) => j.id === document.journalId)?.name ?? "",
+    frontMatter: { createdAt: document.createdAt, title: document.title },
+  };
+}
 
 // Loads document, with loading and error placeholders
 const DocumentLoadingContainer = observer(() => {
@@ -34,7 +44,7 @@ const DocumentLoadingContainer = observer(() => {
 
     const journals = journalsStore.journals.filter((j) => {
       if (j.archived) {
-        return j.name === document.journal;
+        return j.id === document.journalId;
       } else {
         return !j.archived;
       }
@@ -43,10 +53,14 @@ const DocumentLoadingContainer = observer(() => {
     setJournals(journals);
   }, [document, loadingError]);
 
+  const journalName = journalsStore.journals.find(
+    (j) => j.id === document?.journalId,
+  )?.name;
+
   if (loadingError) {
     return (
       <EditLoadingComponent
-        journal={document?.journal}
+        journal={journalName}
         documentId={documentId}
         error={loadingError}
       />
@@ -57,10 +71,7 @@ const DocumentLoadingContainer = observer(() => {
   // resetting the state of the editor
   if (!document || !journals || loading) {
     return (
-      <EditLoadingComponent
-        journal={document?.journal}
-        documentId={documentId}
-      />
+      <EditLoadingComponent journal={journalName} documentId={documentId} />
     );
   }
 
@@ -69,7 +80,7 @@ const DocumentLoadingContainer = observer(() => {
 
 interface DocumentEditProps {
   document: EditableDocument;
-  journals: JournalResponse[];
+  journals: Journal[];
 }
 
 /**
@@ -82,7 +93,7 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
   );
   const navigate = useNavigate();
   const searchStore = useSearchStore()!;
-  const client = useClient();
+  const notes = useNotes();
 
   // If there are no journals, redirect to the documents view
   React.useEffect(() => {
@@ -100,22 +111,22 @@ const DocumentEditView = observer((props: DocumentEditProps) => {
     ) {
       // This handles the edit case but hmm... if its new... it should be added to the search...
       // but in what order? Well... if we aren't paginated... it should be at the top.
-      searchStore.updateSearch(document);
+      searchStore.updateSearch(toSearchDocument(document, journals));
       navigate(-1);
     }
   }
 
   async function deleteDocument() {
     if (!confirm("Are you sure you want to delete this note?")) return;
-    await client.documents.del(document.id);
-    searchStore.updateSearch(document, "del");
+    await notes.deleteNote({ id: document.id });
+    searchStore.updateSearch(toSearchDocument(document, journals), "del");
     navigate("/documents");
   }
 
   return (
     <EditorErrorBoundary
       documentId={document.id}
-      journal={document.journal}
+      journal={journals.find((j) => j.id === document.journalId)?.name}
       navigate={navigate}
     >
       <EditorInner
@@ -142,7 +153,7 @@ function EditorInner({
   document: EditableDocument;
   selectedViewMode: EditorMode;
   setSelectedViewMode: (mode: EditorMode) => void;
-  journals: JournalResponse[];
+  journals: Journal[];
   goBack: () => void;
   deleteDocument: () => void;
 }) {

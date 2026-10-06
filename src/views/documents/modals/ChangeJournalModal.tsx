@@ -25,13 +25,11 @@ export const ChangeJournalModal = observer(
       if (!selectedJournal) return;
 
       // Fire and forget - store handles the async operation
-      bulkOps.changeJournal(
-        {
-          journals: searchStore.selectedJournals,
-          tags: searchStore.selectedTags,
-        },
-        selectedJournal,
+      const journal = journalsStore.journals.find(
+        (j) => j.id === selectedJournal,
       );
+      if (!journal) return;
+      bulkOps.changeJournal(searchStore.query, journal);
 
       handleClose();
     };
@@ -73,7 +71,7 @@ export const ChangeJournalModal = observer(
             {journalsStore.journals
               .filter((j) => !j.archived)
               .map((journal) => (
-                <option key={journal.name} value={journal.name}>
+                <option key={journal.id} value={journal.id}>
                   {journal.name}
                 </option>
               ))}

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconButton } from "../../../components/IconButton";
 import { Separator } from "../../../components/Separator";
-import { JournalResponse } from "../../../hooks/useClient";
+import type { Journal } from "../../../contract/notes";
 import Titlebar from "../../../titlebar/macos";
 import * as Base from "../../layout";
 import { EditableDocument } from "../EditableDocument";
@@ -15,7 +15,7 @@ interface Props {
   document: EditableDocument;
   selectedViewMode: EditorMode;
   setSelectedViewMode: (mode: EditorMode) => void;
-  journals: JournalResponse[];
+  journals: Journal[];
   goBack: () => void;
   deleteDocument: () => void;
 }
