@@ -4,7 +4,6 @@ import React from "react";
 import { vi } from "vitest";
 import { createMemoryNotesClient } from "../../contract/memory";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import { ClientContext } from "../../hooks/useClient";
 import { NotesContext } from "../../hooks/useNotes";
 import FrontMatter from "./FrontMatter";
 
@@ -19,10 +18,6 @@ function makeDoc(overrides: Partial<Record<string, any>> = {}) {
   });
 }
 
-const fakeClient = {
-  tags: { all: vi.fn(async () => []) },
-} as any;
-
 const fakeAppStore = {
   preferences: {
     fontSizes: {},
@@ -36,13 +31,11 @@ function renderFrontMatter(doc = makeDoc()) {
   return {
     doc,
     ...render(
-      <ClientContext.Provider value={fakeClient}>
-        <NotesContext.Provider value={createMemoryNotesClient()}>
-          <ApplicationContext.Provider value={fakeAppStore}>
-            <FrontMatter document={doc} journals={journals} />
-          </ApplicationContext.Provider>
-        </NotesContext.Provider>
-      </ClientContext.Provider>,
+      <NotesContext.Provider value={createMemoryNotesClient()}>
+        <ApplicationContext.Provider value={fakeAppStore}>
+          <FrontMatter document={doc} journals={journals} />
+        </ApplicationContext.Provider>
+      </NotesContext.Provider>,
     ),
   };
 }

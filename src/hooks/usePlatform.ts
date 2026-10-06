@@ -9,7 +9,7 @@ import React, { useContext } from "react";
  */
 export type PlatformServices = Omit<
   Window["chronicles"],
-  "ready" | "getClient" | "getNotesClient" | "getSettings" | "getMaintenance"
+  "ready" | "getNotesClient" | "getSettings" | "getMaintenance"
 >;
 
 export const PlatformContext = React.createContext<PlatformServices | null>(
@@ -24,23 +24,5 @@ export function usePlatform(): PlatformServices {
       "[chronicles] usePlatform() called outside a PlatformContext",
     );
   }
-  return platform;
-}
-
-/** The Electron host's platform services. */
-export function hostPlatformServices(): PlatformServices {
-  if (!window.chronicles) {
-    throw new Error(
-      "[chronicles] No platform services: window.chronicles is missing",
-    );
-  }
-  const {
-    ready: _r,
-    getClient: _c,
-    getNotesClient: _n,
-    getSettings: _s,
-    getMaintenance: _m,
-    ...platform
-  } = window.chronicles;
   return platform;
 }

@@ -1,3 +1,4 @@
+import type { NotesClient } from "../../contract/notes";
 import type { Settings } from "../../electron/settings";
 import type { Maintenance } from "../../hooks/useMaintenance";
 import type { Settings as SettingsFacade } from "../../hooks/useSettings";
@@ -37,11 +38,16 @@ function createMaintenance(client: NodeClient): Maintenance {
   };
 }
 
-interface ClientFactoryParams {
-  store: Settings;
+/** What the preload hands the renderer, each behind its own accessor. */
+export interface HostServices {
+  notes: NotesClient;
+  settings: SettingsFacade;
+  maintenance: Maintenance;
 }
 
-export async function createClient({ store }: ClientFactoryParams) {
+export async function createHostServices(
+  store: Settings,
+): Promise<HostServices> {
   const nodeClient = await createNodeClient({
     dbPath: store.get("databaseUrl"),
     notesDir: store.get("notesDir"),
@@ -52,13 +58,5 @@ export async function createClient({ store }: ClientFactoryParams) {
     notes: createNodeNotesClient(nodeClient),
     settings: createSettings(nodeClient.preferences),
     maintenance: createMaintenance(nodeClient),
-    journals: nodeClient.journals,
-    documents: nodeClient.documents,
-    tags: nodeClient.tags,
-    preferences: nodeClient.preferences,
-    files: nodeClient.files,
-    importer: nodeClient.importer,
-    bulkOperations: nodeClient.bulkOperations,
-    export: nodeClient.export,
   };
 }

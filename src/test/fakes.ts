@@ -5,6 +5,7 @@ import {
   type IPreferences,
 } from "../electron/preferences-types";
 import type { Maintenance } from "../hooks/useMaintenance";
+import type { PlatformServices } from "../hooks/usePlatform";
 import type { Settings } from "../hooks/useSettings";
 
 /** In-memory Settings; every method is a spy. */
@@ -54,4 +55,29 @@ export function fakeMaintenance() {
       restore: vi.fn(async (id: string) => ({ scheduled: id })),
     },
   } satisfies Maintenance;
+}
+
+/** Platform services with no themes, fonts, or dialogs. */
+export function fakePlatform(
+  overrides: Partial<PlatformServices> = {},
+): PlatformServices {
+  return {
+    openDialogSelectDir: vi.fn(async () => ({ value: undefined })),
+    selectThemeFile: vi.fn(async () => ({ value: undefined })),
+    importThemeFile: vi.fn(() => ({ success: true, themeName: "Custom" })),
+    listAvailableThemes: vi.fn(() => ({ themes: [], overrides: [] })),
+    loadThemeByName: vi.fn(),
+    listInstalledFonts: vi.fn(() => []),
+    refreshInstalledFontsCache: vi.fn(() => ({
+      changed: false,
+      css: "",
+      href: "",
+    })),
+    openPath: vi.fn(),
+    setNativeTheme: vi.fn(),
+    deleteThemeByName: vi.fn(() => true),
+    listHljsThemes: vi.fn(() => []),
+    loadHljsThemeCSS: vi.fn(() => ""),
+    ...overrides,
+  } as unknown as PlatformServices;
 }

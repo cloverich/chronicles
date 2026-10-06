@@ -3,6 +3,7 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { useNotes } from "./hooks/useNotes";
 import { startApp } from "./startup";
+import { fakeMaintenance, fakePlatform, fakeSettings } from "./test/fakes";
 
 function Probe() {
   const notes = useNotes();
@@ -12,18 +13,19 @@ function Probe() {
 function makeHost() {
   let finish!: () => void;
   let ready = false;
-  const host = {
-    ...window.chronicles,
-    ready: vi.fn(() => new Promise<void>((resolve) => (finish = resolve))),
-    // Like the preload: asking before ready throws.
-    getClient: vi.fn(() => {
-      if (!ready) throw new Error("getClient() called before initClient()");
-      return {} as any;
-    }),
-    getNotesClient: vi.fn(() => {
+  // Like the preload: asking for a service before ready throws.
+  const whenReady =
+    <T,>(service: T) =>
+    () => {
       if (!ready) throw new Error("not ready");
-      return { getNote: async () => ({}) } as any;
-    }),
+      return service;
+    };
+  const host = {
+    ...fakePlatform(),
+    ready: vi.fn(() => new Promise<void>((resolve) => (finish = resolve))),
+    getNotesClient: vi.fn(whenReady({ getNote: async () => ({}) } as any)),
+    getSettings: vi.fn(whenReady(fakeSettings())),
+    getMaintenance: vi.fn(whenReady(fakeMaintenance())),
   };
   return {
     host,
@@ -41,7 +43,9 @@ describe("startApp", () => {
     const started = startApp(host as any, (c) => rerender(<>{c}</>), <Probe />);
 
     expect(screen.getByText("Opening your library…")).toBeInTheDocument();
-    expect(host.getClient).not.toHaveBeenCalled();
+    expect(host.getNotesClient).not.toHaveBeenCalled();
+    expect(host.getSettings).not.toHaveBeenCalled();
+    expect(host.getMaintenance).not.toHaveBeenCalled();
 
     await act(async () => {
       finish();
@@ -52,7 +56,7 @@ describe("startApp", () => {
 
   it("shows why startup failed", async () => {
     const host = {
-      ...window.chronicles,
+      ...fakePlatform(),
       ready: vi.fn(async () => {
         throw new Error("migration 0004 failed");
       }),

@@ -1,6 +1,5 @@
 import React from "react";
 import { hydrateNotesClient, hydrateService } from "./contract/transport";
-import { ClientContext } from "./hooks/useClient";
 import { MaintenanceContext } from "./hooks/useMaintenance";
 import { NotesContext } from "./hooks/useNotes";
 import { PlatformContext, type PlatformServices } from "./hooks/usePlatform";
@@ -31,7 +30,6 @@ export async function startApp(
     await host.ready();
     const {
       ready: _r,
-      getClient,
       getNotesClient,
       getSettings,
       getMaintenance,
@@ -39,19 +37,15 @@ export async function startApp(
     } = host;
     const platform: PlatformServices = rest;
     render(
-      <ClientContext.Provider value={getClient()}>
-        <NotesContext.Provider value={hydrateNotesClient(getNotesClient())}>
-          <SettingsContext.Provider value={hydrateService(getSettings())}>
-            <MaintenanceContext.Provider
-              value={hydrateService(getMaintenance())}
-            >
-              <PlatformContext.Provider value={platform}>
-                {app}
-              </PlatformContext.Provider>
-            </MaintenanceContext.Provider>
-          </SettingsContext.Provider>
-        </NotesContext.Provider>
-      </ClientContext.Provider>,
+      <NotesContext.Provider value={hydrateNotesClient(getNotesClient())}>
+        <SettingsContext.Provider value={hydrateService(getSettings())}>
+          <MaintenanceContext.Provider value={hydrateService(getMaintenance())}>
+            <PlatformContext.Provider value={platform}>
+              {app}
+            </PlatformContext.Provider>
+          </MaintenanceContext.Provider>
+        </SettingsContext.Provider>
+      </NotesContext.Provider>,
     );
   } catch (err) {
     console.error("[chronicles] startup failed", err);

@@ -6,9 +6,8 @@ import { vi } from "vitest";
 import { createMemoryNotesClient } from "../../contract/memory";
 import { JournalsStore } from "../../hooks/stores/journals";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import type { IClient, SearchResponse } from "../../hooks/useClient";
 import { NotesContext } from "../../hooks/useNotes";
-import type { SearchRequest } from "../../preload/client/types";
+import { fakeSettings } from "../../test/fakes";
 import { SearchStore, SearchStoreContext } from "./SearchStore";
 import Documents from "./index";
 
@@ -38,34 +37,6 @@ function createClient({
   searchDocs?: typeof baseDocs;
   searchError?: SearchClientError | null;
 } = {}) {
-  const search = vi.fn<(q?: SearchRequest) => Promise<SearchResponse>>(
-    async () => {
-      if (searchError) throw searchError;
-      return { data: [...searchDocs] };
-    },
-  );
-
-  const client = {
-    settings: {
-      get: vi.fn(async () => "work"),
-      setMany: vi.fn(),
-    },
-    journals: {
-      list: vi.fn(async () => []),
-      listWithCounts: vi.fn(async () => []),
-      create: vi.fn(),
-      rename: vi.fn(),
-      archive: vi.fn(),
-      unarchive: vi.fn(),
-      remove: vi.fn(),
-    },
-    documents: {
-      search,
-      searchCount: vi.fn(async () => searchDocs.length),
-      deindexJournal: vi.fn(),
-    },
-  };
-
   const notes = {
     ...createMemoryNotesClient(),
     searchNotes: vi.fn(async () => {
@@ -82,14 +53,11 @@ function createClient({
     countNotes: vi.fn(async () => ({ count: searchDocs.length })),
   };
 
-  return { ...client, notes } as unknown as Pick<
-    IClient,
-    "settings" | "journals" | "documents" | "notes"
-  >;
+  return { notes, settings: fakeSettings({ defaultJournal: "work" }) };
 }
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
-  const client = createClient() as IClient;
+  const client = createClient();
   const journals = new JournalsStore(
     createMemoryNotesClient(),
     client.settings,
@@ -196,7 +164,7 @@ describe("Documents surface", () => {
     const applicationStore = createApplicationStore({
       journals: new JournalsStore(
         createMemoryNotesClient(),
-        (createClient() as IClient).settings,
+        createClient().settings,
         [],
         "",
       ),

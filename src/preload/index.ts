@@ -3,11 +3,10 @@ import type { NotesClient } from "../contract/notes";
 import { exposeNotesClient, exposeService } from "../contract/transport";
 import type { Maintenance } from "../hooks/useMaintenance";
 import type { Settings } from "../hooks/useSettings";
-import { getClient, initClient } from "./client";
+import { getHost, initHost } from "./client";
 import "./utils.electron";
 import {
   deleteThemeByName,
-  getInstalledFontsStylesheetHref,
   importThemeFile,
   listAvailableThemes,
   listHljsThemes,
@@ -21,12 +20,12 @@ import {
   setNativeTheme,
 } from "./utils.electron";
 
-// Kick off client initialization eagerly so it's ready when the renderer calls getClient()
-initClient().catch((err) => {
-  console.error("[chronicles] Failed to initialize client:", err);
+// Open the library eagerly; the renderer waits on ready().
+initHost().catch((err) => {
+  console.error("[chronicles] Failed to open the library:", err);
 });
 
-const notesClient = exposeNotesClient(() => getClient().notes);
+const notesClient = exposeNotesClient(() => getHost().notes);
 
 contextBridge.exposeInMainWorld("chronicles", {
   /**
@@ -34,18 +33,16 @@ contextBridge.exposeInMainWorld("chronicles", {
    * on the first launch after an upgrade); rejects with the reason it failed.
    * Call before any get*() service accessor.
    */
-  ready: () => initClient().then(() => undefined),
-  getClient,
+  ready: () => initHost().then(() => undefined),
   getNotesClient: () => notesClient,
-  getSettings: () => exposeService(getClient().settings),
-  getMaintenance: () => exposeService(getClient().maintenance),
+  getSettings: () => exposeService(getHost().settings),
+  getMaintenance: () => exposeService(getHost().maintenance),
   openDialogSelectDir,
   selectThemeFile,
   importThemeFile,
   listAvailableThemes,
   loadThemeByName,
   listInstalledFonts,
-  getInstalledFontsStylesheetHref,
   refreshInstalledFontsCache,
   openPath,
   setNativeTheme,
@@ -58,7 +55,6 @@ declare global {
   interface Window {
     chronicles: {
       ready: () => Promise<void>;
-      getClient: typeof getClient;
       getNotesClient: () => NotesClient;
       getSettings: () => Settings;
       getMaintenance: () => Maintenance;
@@ -68,7 +64,6 @@ declare global {
       listAvailableThemes: typeof listAvailableThemes;
       loadThemeByName: typeof loadThemeByName;
       listInstalledFonts: typeof listInstalledFonts;
-      getInstalledFontsStylesheetHref: typeof getInstalledFontsStylesheetHref;
       refreshInstalledFontsCache: typeof refreshInstalledFontsCache;
       openPath: typeof openPath;
       setNativeTheme: typeof setNativeTheme;
