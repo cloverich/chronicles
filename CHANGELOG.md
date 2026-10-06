@@ -2,17 +2,17 @@
 
 ## Unreleased
 
-- 2026-10-06 674ba4c Settings, import, export, repair, reset, and backups now reach the app through their own small interfaces, completing the groundwork for a native Mac and iPhone app; no visible change.
-- 2026-10-04 42df4e4 The first launch after an upgrade shows "Opening your library…" while the library migrates, and a failed startup explains why instead of crashing.
-- 2026-10-04 d927071 Fixed an endless redirect when opening an unknown page.
-- 2026-10-03 1f07f14 Bulk tag and journal changes now apply to every note in the active search, not just its journal and tag filters, and report notes that failed.
-- 2026-10-03 f6930b3 Archived journals are stored with the library, so archiving survives export and import.
-- 2026-10-03 147eedf Fixed deleted journals leaving their notes in search results.
-- 2026-10-03 5d8e7bf Saving a note that changed elsewhere now warns instead of silently overwriting it.
-- 2026-10-03 c6f2a5f Attachments are stored by content, so identical images are kept once; existing attachments move to the new layout on first launch.
-- 2026-10-03 06ddb4d Note links refer to notes by ID, so moving a note or renaming a journal no longer breaks or rewrites links.
-- 2026-10-03 19ca146 Renaming a journal no longer touches its notes.
-- 2026-10-03 0cdc314 Exports are now byte-for-byte repeatable, carry journal and attachment details in the manifest, and re-import exactly; older exports still import.
+- 2026-10-06 9c1c31d Settings, import, export, repair, reset, and backups now reach the app through their own small interfaces, completing the groundwork for a native Mac and iPhone app; no visible change.
+- 2026-10-04 7933bee The first launch after an upgrade shows "Opening your library…" while the library migrates, and a failed startup explains why instead of crashing.
+- 2026-10-04 8c99a8e Fixed an endless redirect when opening an unknown page.
+- 2026-10-03 4a40be7 Bulk tag and journal changes now apply to every note in the active search, not just its journal and tag filters, and report notes that failed.
+- 2026-10-03 b914eeb Archived journals are stored with the library, so archiving survives export and import.
+- 2026-10-03 d2c7b9e Fixed deleted journals leaving their notes in search results.
+- 2026-10-03 eb0db20 Saving a note that changed elsewhere now warns instead of silently overwriting it.
+- 2026-10-03 778ef0c Attachments are stored by content, so identical images are kept once; existing attachments move to the new layout on first launch.
+- 2026-10-03 8bd8d06 Note links refer to notes by ID, so moving a note or renaming a journal no longer breaks or rewrites links.
+- 2026-10-03 7d1cfac Renaming a journal no longer touches its notes.
+- 2026-10-03 8a0ac9c Exports are now byte-for-byte repeatable, carry journal and attachment details in the manifest, and re-import exactly; older exports still import.
 
 ## 0.13.0 — 2026-09-24
 
