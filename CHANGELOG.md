@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 2026-10-06 674ba4c Settings, import, export, repair, reset, and backups now reach the app through their own small interfaces, completing the groundwork for a native Mac and iPhone app; no visible change.
+- 2026-10-04 42df4e4 The first launch after an upgrade shows "Opening your library…" while the library migrates, and a failed startup explains why instead of crashing.
 - 2026-10-04 d927071 Fixed an endless redirect when opening an unknown page.
 - 2026-10-03 1f07f14 Bulk tag and journal changes now apply to every note in the active search, not just its journal and tag filters, and report notes that failed.
 - 2026-10-03 f6930b3 Archived journals are stored with the library, so archiving survives export and import.
