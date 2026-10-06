@@ -59,22 +59,13 @@ window.chronicles = {
       setMany: vi.fn(),
       location: vi.fn(async () => "/tmp/settings/settings.json"),
     }) as any,
-  backups: {
-    status: vi.fn(async () => ({
-      destination: null,
-      lastSuccess: null,
-      lastFailure: null,
-      lastRestore: null,
-      pendingRestore: null,
-      changedSinceLastSnapshot: null,
-      newest: null,
-      liveDataInSyncFolder: null,
-    })),
-    list: vi.fn(async () => []),
-    pickDestination: vi.fn(),
-    runNow: vi.fn(),
-    restore: vi.fn(),
-  },
+  getMaintenance: () =>
+    ({
+      backups: {
+        status: vi.fn(async () => ({})),
+        list: vi.fn(async () => []),
+      },
+    }) as any,
   openDialogSelectDir: vi.fn(async () => ({ value: undefined })),
   selectThemeFile: vi.fn(async () => ({ value: undefined })),
   importThemeFile: vi.fn(() => ({ success: true, themeName: "Custom" })),

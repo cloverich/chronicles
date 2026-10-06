@@ -1,4 +1,5 @@
 import type { NotesClient } from "../../contract/notes";
+import type { Maintenance } from "../../hooks/useMaintenance";
 import type { Settings } from "../../hooks/useSettings";
 import { IBulkOperationsClient } from "../../node-client/bulk-operations";
 import { IDocumentsClient } from "../../node-client/documents";
@@ -17,6 +18,7 @@ export interface IClient {
   /** The platform-neutral contract; prefer it over the services below. */
   notes: NotesClient;
   settings: Settings;
+  maintenance: Maintenance;
   journals: IJournalsClient;
   tags: ITagsClient;
   documents: IDocumentsClient;

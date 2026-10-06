@@ -6,13 +6,18 @@ import { tmpdir } from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createMemoryNotesClient } from "../contract/memory";
-import { isNotesError, type NotesClient } from "../contract/notes";
+import { isNotesError, NotesError, type NotesClient } from "../contract/notes";
 import {
   runScenario,
   type ContractFixture,
   type ContractLibrary,
 } from "../contract/scenario";
-import { exposeNotesClient, hydrateNotesClient } from "../contract/transport";
+import {
+  exposeNotesClient,
+  exposeService,
+  hydrateNotesClient,
+  hydrateService,
+} from "../contract/transport";
 import { createClient } from "./factory";
 import { createNodeNotesClient } from "./notes-adapter";
 import * as schema from "./schema";
@@ -149,4 +154,33 @@ test("NotesError codes survive a message-only boundary (contextBridge)", async (
     (await ui.listJournals()).journals.length,
     library("basic").journals.length,
   );
+});
+
+test("host services keep error codes across the boundary, nested ones too", async () => {
+  const exposed = exposeService({
+    location: () => "/settings.json",
+    backups: {
+      runNow: async () => {
+        throw new NotesError("unsupported", "no backups here");
+      },
+    },
+  });
+  const bridged = {
+    location: () => exposed.location(),
+    backups: {
+      runNow: () =>
+        exposed.backups.runNow().catch((e: Error) => {
+          throw new Error(e.message);
+        }),
+    },
+  };
+  const ui = hydrateService(bridged);
+
+  assert.strictEqual(await ui.location(), "/settings.json");
+  await assert.rejects(ui.backups.runNow(), (err: unknown) => {
+    assert.ok(isNotesError(err));
+    assert.strictEqual(err.code, "unsupported");
+    assert.strictEqual(err.message, "no backups here");
+    return true;
+  });
 });

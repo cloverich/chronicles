@@ -3,23 +3,11 @@ import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import { ApplicationContext } from "../../hooks/useApplicationStore";
-import { ClientContext } from "../../hooks/useClient";
+import { MaintenanceContext } from "../../hooks/useMaintenance";
 import { hostPlatformServices, PlatformContext } from "../../hooks/usePlatform";
 import { SettingsContext } from "../../hooks/useSettings";
-import { fakeSettings } from "../../test/fakes";
+import { fakeMaintenance, fakeSettings } from "../../test/fakes";
 import Preferences from "./index";
-
-function createClient() {
-  return {
-    importer: {
-      import: vi.fn(),
-      clearImportTables: vi.fn(),
-    },
-    documents: {
-      rebuildDerived: vi.fn(),
-    },
-  } as any;
-}
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
   return {
@@ -46,15 +34,13 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
 }
 
 function renderPreferences({
-  client = createClient(),
   applicationStore = createApplicationStore(),
 }: {
-  client?: any;
   applicationStore?: any;
 } = {}) {
   return render(
     <MemoryRouter>
-      <ClientContext.Provider value={client}>
+      <MaintenanceContext.Provider value={fakeMaintenance()}>
         <PlatformContext.Provider value={hostPlatformServices()}>
           <SettingsContext.Provider value={fakeSettings()}>
             <ApplicationContext.Provider value={applicationStore}>
@@ -62,7 +48,7 @@ function renderPreferences({
             </ApplicationContext.Provider>
           </SettingsContext.Provider>
         </PlatformContext.Provider>
-      </ClientContext.Provider>
+      </MaintenanceContext.Provider>
     </MemoryRouter>,
   );
 }

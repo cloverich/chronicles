@@ -14,8 +14,8 @@ import {
   DialogTitle,
 } from "../../components/Dialog";
 import { APPEARANCE_DEFAULTS } from "../../electron/appearance-defaults";
-import useClient from "../../hooks/useClient";
 import { useJournals } from "../../hooks/useJournals";
+import { useMaintenance } from "../../hooks/useMaintenance";
 import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
 import { usePlatform } from "../../hooks/usePlatform";
 import { usePreferences } from "../../hooks/usePreferences";
@@ -38,7 +38,7 @@ const PreferencesPane = observer((props: Props) => {
   const navigate = useNavigate();
   const maintenanceStore = useMaintenanceStore();
   const journalsStore = useJournals();
-  const client = useClient();
+  const maintenance = useMaintenance();
   const settings = useSettings();
   const [store, _] = React.useState(() =>
     observable({
@@ -183,13 +183,16 @@ const PreferencesPane = observer((props: Props) => {
       }
 
       toast.info("Importing directory...this may take a few minutes");
-      const report = await client.importer.import(
-        result.value,
-        store.sourceType,
-        store.sourceType === SourceType.Chronicles
-          ? { onConflict: store.replaceExisting ? "replace" : "skip" }
-          : undefined,
-      );
+      const report = await maintenance.importNotes({
+        dir: result.value,
+        source: store.sourceType,
+        onConflict:
+          store.sourceType === SourceType.Chronicles
+            ? store.replaceExisting
+              ? "replace"
+              : "skip"
+            : undefined,
+      });
 
       await journalsStore.refresh();
 
@@ -243,7 +246,7 @@ const PreferencesPane = observer((props: Props) => {
       const destDir = `${result.value}/chronicles-export-${timestampForDirName()}`;
 
       toast.info("Exporting notes...this may take a few minutes");
-      const report = await client.export.export(destDir);
+      const report = await maintenance.exportNotes({ dir: destDir });
 
       toast.success(
         `Export completed: ${report.notes} notes, ${report.attachments.copied} attachments copied to ${report.destDir}`,

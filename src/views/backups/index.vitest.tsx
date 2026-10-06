@@ -4,7 +4,8 @@ import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import Backups, { formatAge, formatBytes, formatDate } from ".";
 import type { BackupStatus, SnapshotSummary } from "../../backup/types";
-import { hostPlatformServices, PlatformContext } from "../../hooks/usePlatform";
+import { MaintenanceContext } from "../../hooks/useMaintenance";
+import { fakeMaintenance } from "../../test/fakes";
 
 const snapshot: SnapshotSummary = {
   id: "2026-09-22T14-25-34Z",
@@ -45,41 +46,28 @@ const status: BackupStatus = {
   liveDataInSyncFolder: null,
 };
 
+let maintenance: ReturnType<typeof fakeMaintenance>;
+let api: ReturnType<typeof fakeMaintenance>["backups"];
+
 function renderPage() {
   return render(
     <MemoryRouter>
-      <PlatformContext.Provider value={hostPlatformServices()}>
+      <MaintenanceContext.Provider value={maintenance}>
         <Backups />
-      </PlatformContext.Provider>
+      </MaintenanceContext.Provider>
     </MemoryRouter>,
   );
 }
 
-const unset: BackupStatus = {
-  destination: null,
-  lastSuccess: null,
-  lastFailure: null,
-  lastRestore: null,
-  pendingRestore: null,
-  changedSinceLastSnapshot: null,
-  newest: null,
-  liveDataInSyncFolder: null,
-};
-
 describe("Backups page", () => {
   beforeEach(() => {
-    const api = vi.mocked(window.chronicles.backups);
-    api.status.mockReset().mockResolvedValue(unset);
-    api.list.mockReset().mockResolvedValue([]);
-    api.runNow.mockReset();
+    maintenance = fakeMaintenance();
+    api = maintenance.backups;
   });
 
   it("shows the destination, history, and snapshot list", async () => {
-    vi.mocked(window.chronicles.backups.status).mockResolvedValue(status);
-    vi.mocked(window.chronicles.backups.list).mockResolvedValue([
-      preRestore,
-      snapshot,
-    ]);
+    vi.mocked(api.status).mockResolvedValue(status);
+    vi.mocked(api.list).mockResolvedValue([preRestore, snapshot]);
 
     renderPage();
 
@@ -105,9 +93,9 @@ describe("Backups page", () => {
   });
 
   it("backs up on demand and refreshes", async () => {
-    vi.mocked(window.chronicles.backups.status).mockResolvedValue(status);
-    vi.mocked(window.chronicles.backups.list).mockResolvedValue([]);
-    vi.mocked(window.chronicles.backups.runNow).mockResolvedValue({
+    vi.mocked(api.status).mockResolvedValue(status);
+    vi.mocked(api.list).mockResolvedValue([]);
+    vi.mocked(api.runNow).mockResolvedValue({
       status: "created",
       snapshot,
     });
@@ -117,12 +105,8 @@ describe("Backups page", () => {
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
 
-    await waitFor(() =>
-      expect(window.chronicles.backups.runNow).toHaveBeenCalledTimes(1),
-    );
-    await waitFor(() =>
-      expect(window.chronicles.backups.list).toHaveBeenCalledTimes(2),
-    );
+    await waitFor(() => expect(api.runNow).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(api.list).toHaveBeenCalledTimes(2));
   });
 
   it("asks for a destination before the first backup", async () => {

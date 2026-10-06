@@ -1,8 +1,8 @@
 import { contextBridge } from "electron";
 import type { NotesClient } from "../contract/notes";
 import { exposeNotesClient, exposeService } from "../contract/transport";
+import type { Maintenance } from "../hooks/useMaintenance";
 import type { Settings } from "../hooks/useSettings";
-import { backups } from "./backups";
 import { getClient, initClient } from "./client";
 import "./utils.electron";
 import {
@@ -38,7 +38,7 @@ contextBridge.exposeInMainWorld("chronicles", {
   getClient,
   getNotesClient: () => notesClient,
   getSettings: () => exposeService(getClient().settings),
-  backups,
+  getMaintenance: () => exposeService(getClient().maintenance),
   openDialogSelectDir,
   selectThemeFile,
   importThemeFile,
@@ -61,7 +61,7 @@ declare global {
       getClient: typeof getClient;
       getNotesClient: () => NotesClient;
       getSettings: () => Settings;
-      backups: typeof backups;
+      getMaintenance: () => Maintenance;
       openDialogSelectDir: typeof openDialogSelectDir;
       selectThemeFile: typeof selectThemeFile;
       importThemeFile: typeof importThemeFile;

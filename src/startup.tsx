@@ -1,6 +1,7 @@
 import React from "react";
 import { hydrateNotesClient, hydrateService } from "./contract/transport";
 import { ClientContext } from "./hooks/useClient";
+import { MaintenanceContext } from "./hooks/useMaintenance";
 import { NotesContext } from "./hooks/useNotes";
 import { PlatformContext, type PlatformServices } from "./hooks/usePlatform";
 import { SettingsContext } from "./hooks/useSettings";
@@ -28,15 +29,26 @@ export async function startApp(
   try {
     if (!host) throw new Error("The host did not provide window.chronicles.");
     await host.ready();
-    const { ready: _r, getClient, getNotesClient, getSettings, ...rest } = host;
+    const {
+      ready: _r,
+      getClient,
+      getNotesClient,
+      getSettings,
+      getMaintenance,
+      ...rest
+    } = host;
     const platform: PlatformServices = rest;
     render(
       <ClientContext.Provider value={getClient()}>
         <NotesContext.Provider value={hydrateNotesClient(getNotesClient())}>
           <SettingsContext.Provider value={hydrateService(getSettings())}>
-            <PlatformContext.Provider value={platform}>
-              {app}
-            </PlatformContext.Provider>
+            <MaintenanceContext.Provider
+              value={hydrateService(getMaintenance())}
+            >
+              <PlatformContext.Provider value={platform}>
+                {app}
+              </PlatformContext.Provider>
+            </MaintenanceContext.Provider>
           </SettingsContext.Provider>
         </NotesContext.Provider>
       </ClientContext.Provider>,

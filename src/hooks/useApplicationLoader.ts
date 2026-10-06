@@ -4,7 +4,7 @@ import type { IApplicationState } from "./stores/application";
 import { ApplicationStore } from "./stores/application";
 import { JournalsStore } from "./stores/journals";
 import { MaintenanceStore } from "./stores/maintenance";
-import useClient from "./useClient";
+import { useMaintenance } from "./useMaintenance";
 import { useNotes } from "./useNotes";
 import { usePreferencesSetup } from "./usePreferences";
 import { useSettings } from "./useSettings";
@@ -23,7 +23,7 @@ export function useAppLoader(): IApplicationState {
     React.useState<MaintenanceStore>();
   const [loading, setLoading] = React.useState(true);
   const [loadingErr, setLoadingErr] = React.useState(null);
-  const client = useClient();
+  const maintenance = useMaintenance();
   const notes = useNotes();
   const settings = useSettings();
   const { preferences } = usePreferencesSetup();
@@ -46,7 +46,7 @@ export function useAppLoader(): IApplicationState {
       try {
         const journalStore = await JournalsStore.init(notes, settings);
         const maintenanceStoreInstance = new MaintenanceStore(
-          client,
+          maintenance,
           journalStore,
         );
 

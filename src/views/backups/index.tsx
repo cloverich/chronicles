@@ -8,7 +8,7 @@ import type {
 } from "../../backup/types";
 import { Button } from "../../components/Button";
 import { IconButton } from "../../components/IconButton";
-import { usePlatform } from "../../hooks/usePlatform";
+import { useMaintenance } from "../../hooks/useMaintenance";
 import Titlebar from "../../titlebar/macos";
 import * as Base from "../layout";
 
@@ -79,7 +79,7 @@ function Row({ label, children }: React.PropsWithChildren<{ label: string }>) {
 }
 
 export default function Backups() {
-  const platform = usePlatform();
+  const { backups } = useMaintenance();
   const navigate = useNavigate();
   const [status, setStatus] = React.useState<BackupStatus | null>(null);
   const [snapshots, setSnapshots] = React.useState<SnapshotSummary[]>([]);
@@ -90,10 +90,7 @@ export default function Backups() {
 
   const refresh = React.useCallback(async () => {
     try {
-      const [s, list] = await Promise.all([
-        platform.backups.status(),
-        platform.backups.list(),
-      ]);
+      const [s, list] = await Promise.all([backups.status(), backups.list()]);
       setStatus(s);
       setSnapshots(list);
       setLoadError(null);
@@ -122,7 +119,7 @@ export default function Backups() {
   }
 
   async function backUpNow() {
-    const result = await act("run", () => platform.backups.runNow());
+    const result = await act("run", () => backups.runNow());
     if (result?.status === "created") {
       toast.success(`Snapshot ${result.snapshot.id} saved`);
     }
@@ -134,9 +131,7 @@ export default function Backups() {
         "Chronicles will relaunch, snapshot your current notes, then replace them with this snapshot. Attachments missing from your notes folder are copied back; existing files are left alone.",
     );
     if (!ok) return;
-    const result = await act("restore", () =>
-      platform.backups.restore(snapshot.id),
-    );
+    const result = await act("restore", () => backups.restore(snapshot.id));
     if (result) toast.info("Restoring… Chronicles will relaunch.");
   }
 
@@ -272,9 +267,7 @@ export default function Backups() {
               variant="ghost"
               loading={busy === "pick"}
               disabled={busy !== null}
-              onClick={() =>
-                act("pick", () => platform.backups.pickDestination())
-              }
+              onClick={() => act("pick", () => backups.pickDestination())}
             >
               {hasDestination ? "Change destination…" : "Choose destination…"}
             </Button>
