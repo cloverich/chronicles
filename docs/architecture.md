@@ -22,13 +22,16 @@ Electron runs three bundles:
 2. **Preload** (`src/preload/index.ts` -> `src/preload.bundle.mjs`) — IPC bridge, `window.chronicles` API
 3. **Renderer** (`src/index.tsx` -> Vite-managed `dist/index.html` + hashed assets in `dist/assets/`) — React application (sandboxed)
 
-The renderer never reads the host directly. `src/index.tsx` is the composition root: it takes three services from `window.chronicles` and injects them as React context, failing startup with a reason if one is missing:
+The renderer never reads the host directly. `src/startup.tsx` (called from `src/index.tsx`) is the composition root: it waits for `window.chronicles.ready()`, takes four services, and injects them as React context, failing startup with a reason if one is missing:
 
 - **NotesClient** (`NotesContext`, `useNotes()`): notes, journals, tags, attachments, bulk updates. A runtime-free contract in `src/contract/` (spec: `spec/notes-client.md`); the preload backs it with `src/node-client/notes-adapter.ts`. Errors cross `contextBridge` as `[notes:<code>] message` and are rehydrated into `NotesError`s (`src/contract/transport.ts`).
-- **PlatformServices** (`PlatformContext`, `usePlatform()`): dialogs, appearance, themes, fonts, code themes, backups.
-- **Legacy client** (`ClientContext`, `useClient()`): settings, import/export, and maintenance, still on the Node service objects in `src/preload/client/types.ts`.
+- **Settings** (`SettingsContext`, `useSettings()`): per-device app settings typed by `IPreferences`. Never library data.
+- **Maintenance** (`MaintenanceContext`, `useMaintenance()`): import, export, rebuild derived data, reset library, backups.
+- **PlatformServices** (`PlatformContext`, `usePlatform()`): dialogs, appearance, themes, fonts, code themes.
 
-Tests inject the in-memory reference NotesClient (`src/contract/memory.ts`) or mocks.
+Settings and Maintenance are host-specific, so their interfaces live in `src/hooks/`, not the contract; the preload builds them in `src/preload/client/factory.ts`, and their errors cross the bridge the same way (`exposeService`/`hydrateService`).
+
+Tests inject the in-memory reference NotesClient (`src/contract/memory.ts`) and the fakes in `src/test/fakes.ts`; no renderer test reads `window`.
 
 ## Key Directories
 
@@ -38,7 +41,7 @@ src/
   contract/        Runtime-free NotesClient contract, reference adapter, canonical serializer
   electron/        Main process (app lifecycle, settings, IPC wiring)
   node-client/     Drizzle + better-sqlite3 backend (documents, journals, search, import, migrations/)
-  preload/         IPC bridge + client API definitions
+  preload/         IPC bridge; builds the host services (client/factory.ts)
   views/           React views (documents, edit, preferences)
   components/      Reusable UI (Radix-based)
   hooks/           React hooks, MobX stores (hooks/stores/)
