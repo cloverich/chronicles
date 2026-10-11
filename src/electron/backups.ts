@@ -37,7 +37,7 @@ export function createAppBackups(opts: {
       const result = win
         ? await dialog.showOpenDialog(win, options)
         : await dialog.showOpenDialog(options);
-      return result.canceled ? null : result.filePaths[0] ?? null;
+      return result.canceled ? null : (result.filePaths[0] ?? null);
     },
   });
 }

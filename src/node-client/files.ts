@@ -5,9 +5,7 @@ import sharp from "sharp";
 import type { AttachmentStore } from "./attachments";
 
 export type UploadImageWarningCode =
-  | "decode_missing_plugin"
-  | "decode_failed"
-  | "process_failed";
+  "decode_missing_plugin" | "decode_failed" | "process_failed";
 
 export interface UploadImageWarning {
   code: UploadImageWarningCode;
