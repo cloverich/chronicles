@@ -76,9 +76,6 @@ cp src/preload.bundle.mjs dist/
 cp -r dist/renderer/* dist/
 rm -rf dist/renderer
 
-# copy highlight.js theme CSS for code block syntax highlighting
-./scripts/bundle-hljs-themes.sh dist/hljs-themes
-
 # copy package.json, required by electron to know how to start
 cp package.json dist/
 cp yarn.lock dist/

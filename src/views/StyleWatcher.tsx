@@ -2,7 +2,7 @@ import { reaction, toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { Preferences } from "../hooks/stores/preferences";
-import { usePlatform, type PlatformServices } from "../hooks/usePlatform";
+import { usePlatform } from "../hooks/usePlatform";
 import {
   resolveActiveThemeName,
   systemDarkTheme,
@@ -40,33 +40,7 @@ const DERIVABLE_DEFAULTS: Record<string, keyof ThemeColors> = {
   interactiveHover: "accent",
 };
 
-const HLJS_STYLE_ID = "chronicles-hljs-theme";
-const DEFAULT_HLJS_LIGHT = "github";
-const DEFAULT_HLJS_DARK = "github-dark";
 const CUSTOM_FONT_STYLE_ID = "chronicles-custom-fonts";
-
-/**
- * Inject or replace the highlight.js theme CSS in a <style> tag.
- * The tag is identified by HLJS_STYLE_ID so it can be swapped on theme change.
- */
-async function applyHljsTheme(
-  platform: PlatformServices,
-  themeName: string,
-): Promise<void> {
-  const css = await platform.loadHljsThemeCSS(themeName);
-  if (!css) {
-    console.warn(`StyleWatcher: hljs theme "${themeName}" not found`);
-    return;
-  }
-
-  let styleEl = document.getElementById(HLJS_STYLE_ID) as HTMLStyleElement;
-  if (!styleEl) {
-    styleEl = document.createElement("style");
-    styleEl.id = HLJS_STYLE_ID;
-    document.head.appendChild(styleEl);
-  }
-  styleEl.textContent = css;
-}
 
 function applyCustomFontsStylesheet(css: string | null): void {
   let styleEl = document.getElementById(
@@ -298,14 +272,6 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
       if (preferences.darkMode !== "system" && theme.inherentMode) {
         await platform.setNativeTheme(theme.inherentMode);
       }
-
-      // Code syntax highlighting disabled until Plate's code_line collapse
-      // bug is fixed — see https://github.com/cloverich/chronicles/issues/176
-      // const codeTheme =
-      //   effectiveMode === "dark"
-      //     ? (preferences.codeThemeDark || DEFAULT_HLJS_DARK)
-      //     : (preferences.codeThemeLight || DEFAULT_HLJS_LIGHT);
-      // applyHljsTheme(platform, codeTheme);
     }
 
     // Watch theme and darkMode preferences, apply colors immediately and on change
@@ -314,9 +280,6 @@ export const StyleWatcher: React.FC<Props> = observer(({ preferences }) => {
         darkMode: preferences.darkMode,
         themeLightName: preferences.themeLightName,
         themeDarkName: preferences.themeDarkName,
-        // Uncomment when #176 is fixed:
-        // codeThemeLight: preferences.codeThemeLight,
-        // codeThemeDark: preferences.codeThemeDark,
       }),
       () => applyActiveTheme(),
       { fireImmediately: true },

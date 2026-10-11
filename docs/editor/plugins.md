@@ -28,8 +28,7 @@ Located in `src/views/edit/lexical/`, one plugin per file:
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `LexicalBlockShortcutsPlugin`      | Block-level keyboard shortcuts (e.g. code block entry/exit behavior)                                                     |
 | `LexicalCheckListShortcutPlugin`   | Converts `[ ] `/`[x] ` typed in a bullet list into a checklist item                                                      |
-| `LexicalCodeHighlightPlugin`       | Registers syntax highlighting for code blocks                                                                            |
-| `LexicalCodeLanguagePlugin`        | Floating language picker + copy button for code blocks (portal pattern)                                                  |
+| `LexicalCodeLanguagePlugin`        | Floating language text field + copy button for code blocks (portal pattern)                                              |
 | `LexicalFormattingShortcutsPlugin` | Cmd-based text formatting shortcuts                                                                                      |
 | `LexicalListBehaviorPlugin`        | Tab/Shift-Tab indent/outdent behavior for lists                                                                          |
 | `LexicalImageUploadPlugin`         | Drag-drop and paste image upload                                                                                         |

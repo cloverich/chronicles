@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import yaml from "yaml";
 
@@ -27,15 +28,16 @@ describe("front matter parsing", function () {
     `);
 
     const parsed = parseMarkdown(content);
-    expect(parsed.children[0].type).to.equal("yaml");
-    expect(parsed.children[0].value).to.equal(
+    const node = parsed.children[0];
+    assert(node.type === "yaml");
+    expect(node.value).to.equal(
       "title: 2024-09-29\n" +
         "tags: weekly-todo\n" +
         "createdAt: 2024-09-30T17:50:22.000Z\n" +
         "updatedAt: 2024-11-04T16:24:11.000Z",
     );
 
-    const frontMatter = yaml.parse(parsed.children[0].value as string);
+    const frontMatter = yaml.parse(node.value);
     expect(frontMatter).to.deep.equal({
       title: "2024-09-29",
       tags: "weekly-todo",
@@ -53,7 +55,9 @@ describe("front matter parsing", function () {
     `);
 
     const parsed = parseMarkdown(content);
-    const frontMatter = yaml.parse(parsed.children[0].value as string);
+    const node = parsed.children[0];
+    assert(node.type === "yaml");
+    const frontMatter = yaml.parse(node.value);
     expect(frontMatter).to.deep.equal({
       title: "2024-09-29: A day to remember",
     });

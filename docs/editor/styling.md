@@ -4,7 +4,7 @@ Styling is managed through Tailwind CSS v4 classes, applied to Lexical nodes via
 
 ## Key Files
 
-- **`src/views/edit/lexical/LexicalBasedEditor.tsx`**: Editor setup — the `theme` object in `initialConfig` maps each Lexical node type (`paragraph`, `heading.h1`/`h2`/`h3`, `quote`, `code`, `codeHighlight.*`, `list.*`, `link`, `text.*`) to Tailwind classes, which Lexical attaches to the corresponding DOM elements
+- **`src/views/edit/lexical/LexicalBasedEditor.tsx`**: Editor setup — the `theme` object in `initialConfig` maps each Lexical node type (`paragraph`, `heading.h1`/`h2`/`h3`, `quote`, `code`, `list.*`, `link`, `text.*`) to Tailwind classes, which Lexical attaches to the corresponding DOM elements
 - **`src/views/edit/lexical/ChroniclesImageNode.tsx`**: Custom node that renders its own DOM directly (not via the `theme` object) and sets classes imperatively
 - **`src/views/edit/lexical/EditorLayout.tsx`**: Layout wrapper — flex column with `items-center` for centering
 - **`src/index.css`**: CSS custom properties (widths, font families, font sizes) and `@utility` definitions
@@ -53,7 +53,7 @@ RIGHT:  max-w-[var(--max-w-code)]          → resolves to CSS variable value
 
 **Flex centering requires `w-full` on intermediate containers.** When a parent has `items-center`, child elements shrink to intrinsic width unless given `w-full`. Every intermediate `div` between the centering parent and the block elements needs `w-full`.
 
-**`@utility` classes must be detectable by the scanner.** Tailwind only emits `@utility` CSS when it finds the class name in source files. Dense single-line strings (like hljs syntax highlighting classes) can cause scanner misses. Arbitrary value syntax `[var(--foo)]` is more reliable since it generates inline.
+**`@utility` classes must be detectable by the scanner.** Tailwind only emits `@utility` CSS when it finds the class name in source files. Dense single-line strings can cause scanner misses. Arbitrary value syntax `[var(--foo)]` is more reliable since it generates inline.
 
 **Arbitrary variants (e.g. `[ul_&]:mb-0`) may not apply until a hard refresh or restart.** HMR does not always invalidate and rebuild the full Tailwind stylesheet when new utility classes appear for the first time in a session. If an arbitrary variant seems to have no effect, restart the dev server before debugging further.
 

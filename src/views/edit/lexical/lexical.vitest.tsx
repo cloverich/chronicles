@@ -567,8 +567,7 @@ describe("lexical migration spike", () => {
       expect(searchMock).toHaveBeenCalled();
     });
     const latestQuery = searchMock.mock.calls.at(-1)?.[0] as
-      | NoteSearchQuery
-      | undefined;
+      NoteSearchQuery | undefined;
     expect(latestQuery?.titles).toEqual(["target"]);
   });
 
@@ -709,8 +708,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("Behavioral Interview Prep");
       expect(latestMarkdown).toContain(
         "chronicles://note/01931c56fc2378079233d986767c519c",
@@ -878,8 +876,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toBe("[Updated label](https://example.com/next)");
     });
   });
@@ -899,8 +896,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toBe("Like this");
     });
   });
@@ -966,8 +962,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("**Alpha**");
     expect(latestMarkdown).toContain("Beta");
     expect(latestMarkdown).not.toContain("**Alpha Beta**");
@@ -1018,8 +1013,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("Alpha");
     expect(latestMarkdown).toMatch(/(\*Beta\*|_Beta_)/);
     expect(latestMarkdown).not.toMatch(/(\*Alpha Beta\*|_Alpha Beta_)/);
@@ -1070,8 +1064,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("`Alpha`");
     expect(latestMarkdown).toContain("Beta");
     expect(latestMarkdown).not.toContain("`Alpha Beta`");
@@ -1125,8 +1118,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("Alpha");
     expect(latestMarkdown).toContain("~~Beta~~");
     expect(latestMarkdown).not.toContain("~~Alpha Beta~~");
@@ -1175,8 +1167,7 @@ describe("lexical migration spike", () => {
     expect(onMarkdownChange).not.toHaveBeenCalled();
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBeUndefined();
   });
 
@@ -1218,12 +1209,11 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("`Alpha`");
   });
 
-  it("converts fenced markdown typing to a highlighted code block", async () => {
+  it("converts fenced markdown typing to a plain code block with its language", async () => {
     const onMarkdownChange = vi.fn();
     let lexicalEditor: LexicalEditor | null = null;
 
@@ -1265,7 +1255,8 @@ describe("lexical migration spike", () => {
     await waitFor(() => {
       const codeBlock = editor.querySelector("code[data-language='js']");
       expect(codeBlock).toBeTruthy();
-      expect(codeBlock?.getAttribute("data-highlight-language")).toBe("js");
+      expect(codeBlock?.hasAttribute("data-highlight-language")).toBe(false);
+      expect(codeBlock?.querySelector("[class]")).toBeNull();
     });
 
     await waitFor(() => {
@@ -1273,8 +1264,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("```js");
     expect(latestMarkdown).toContain("const answer = 42;");
   });
@@ -1317,8 +1307,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("## Heading");
   });
 
@@ -1358,8 +1347,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("> Quoted");
   });
 
@@ -1397,8 +1385,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("- first");
   });
 
@@ -1436,8 +1423,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("1. first");
   });
 
@@ -1477,8 +1463,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("~~Beta~~");
   });
 
@@ -1523,8 +1508,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("```");
     expect(latestMarkdown).toContain("const answer = 42;");
   });
@@ -1568,8 +1552,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("const answer = 42;");
       expect(latestMarkdown).not.toContain("```");
     });
@@ -1602,26 +1585,18 @@ describe("lexical migration spike", () => {
       });
     });
 
-    const languageSelect = (await screen.findByLabelText(
+    const languageInput = (await screen.findByLabelText(
       "Code language",
-    )) as HTMLSelectElement;
-    const optionValues = Array.from(languageSelect.options).map(
-      (option) => option.value,
-    );
-    const nextLanguage =
-      optionValues.find(
-        (value) => value !== languageSelect.value && value !== "plain",
-      ) ?? optionValues.find((value) => value !== languageSelect.value);
-    expect(nextLanguage).toBeDefined();
-
-    fireEvent.change(languageSelect, {
-      target: { value: nextLanguage! },
+    )) as HTMLInputElement;
+    expect(languageInput.value).toBe("js");
+    const nextLanguage = "custom-language";
+    fireEvent.change(languageInput, {
+      target: { value: nextLanguage },
     });
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("```" + nextLanguage);
     });
   });
@@ -1692,8 +1667,7 @@ describe("lexical migration spike", () => {
         editor.querySelector(".lexical-listitem-unchecked"),
       ).not.toBeNull();
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       // Lexical's list exporter always adds ' ' between prefix and content,
       // so an empty checklist item serializes as "- [ ] " (with trailing space).
       expect(latestMarkdown).toBe("- [ ] ");
@@ -1731,8 +1705,7 @@ describe("lexical migration spike", () => {
     await waitFor(() => {
       expect(editor.querySelector(".lexical-listitem-checked")).not.toBeNull();
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toBe("- [x] ");
     });
   });
@@ -1782,8 +1755,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("- first");
       expect(latestMarkdown).toContain("\nafter");
       expect(latestMarkdown).not.toContain("- after");
@@ -1885,8 +1857,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("After code");
 
       const afterCodeIndex = latestMarkdown?.indexOf("After code") ?? -1;
@@ -1935,8 +1906,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("After quote");
       expect(latestMarkdown).toContain("\nAfter quote");
       expect(latestMarkdown).not.toContain("> After quote");
@@ -1988,8 +1958,7 @@ describe("lexical migration spike", () => {
 
     await waitFor(() => {
       const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-        | string
-        | undefined;
+        string | undefined;
       expect(latestMarkdown).toContain("After trailing line");
 
       const afterIndex = latestMarkdown?.indexOf("After trailing line") ?? -1;
@@ -2048,8 +2017,7 @@ describe("lexical migration spike", () => {
       expect(onMarkdownChange).toHaveBeenCalled();
     });
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain(
       "![dropped.png](../_attachments/dropped.png)",
     );
@@ -2108,8 +2076,7 @@ describe("lexical migration spike", () => {
       expect(onMarkdownChange).toHaveBeenCalled();
     });
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain(
       "![pasted.png](../_attachments/pasted.png)",
     );
@@ -2155,8 +2122,7 @@ describe("lexical migration spike", () => {
     });
 
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toContain("[Alpha](https://chronicles.app/docs)");
     expect(latestMarkdown).toContain("Beta");
     expect(latestMarkdown).not.toContain(
@@ -2199,8 +2165,7 @@ describe("lexical migration spike", () => {
       expect(onMarkdownChange).toHaveBeenCalled();
     });
     const latestMarkdown = onMarkdownChange.mock.calls.at(-1)?.[0] as
-      | string
-      | undefined;
+      string | undefined;
     expect(latestMarkdown).toBe("not a link Beta");
     expect(latestMarkdown).not.toContain("](");
   });

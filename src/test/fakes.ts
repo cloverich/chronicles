@@ -76,8 +76,6 @@ export function fakePlatform(
     openPath: vi.fn(),
     setNativeTheme: vi.fn(),
     deleteThemeByName: vi.fn(() => true),
-    listHljsThemes: vi.fn(() => []),
-    loadHljsThemeCSS: vi.fn(() => ""),
     ...overrides,
   } as unknown as PlatformServices;
 }

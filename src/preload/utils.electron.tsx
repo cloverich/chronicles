@@ -1,7 +1,6 @@
 // In renderer process (web page).
 import { ipcRenderer } from "electron";
 import { listInstalledFonts, refreshFontsCSSFile } from "../fonts/loader";
-import { listHljsThemes, loadHljsThemeCSS } from "../themes/hljs";
 import { importThemeFile } from "../themes/importer";
 import {
   deleteThemeByName,
@@ -76,9 +75,7 @@ export {
   deleteThemeByName,
   importThemeFile,
   listAvailableThemes,
-  listHljsThemes,
   listInstalledFonts,
-  loadHljsThemeCSS,
   loadThemeByName,
   refreshFontsCSSFile as refreshInstalledFontsCache,
 };

@@ -14,7 +14,6 @@ import React from "react";
 import { DecoratorBoundaryPlugin } from "./DecoratorBoundaryPlugin";
 import { LexicalBlockShortcutsPlugin } from "./LexicalBlockShortcutsPlugin";
 import { LexicalCheckListShortcutPlugin } from "./LexicalCheckListShortcutPlugin";
-import { LexicalCodeHighlightPlugin } from "./LexicalCodeHighlightPlugin";
 import { LexicalCodeLanguagePlugin } from "./LexicalCodeLanguagePlugin";
 import { LexicalFormattingShortcutsPlugin } from "./LexicalFormattingShortcutsPlugin";
 import { LexicalImageUploadPlugin } from "./LexicalImageUploadPlugin";
@@ -75,15 +74,6 @@ export function LexicalBasedEditor({
           },
           theme: {
             code: "group/code mb-8 max-w-[var(--max-w-code)] w-full block relative rounded-md bg-muted/60 p-8 pr-4 font-mono text-[length:var(--font-size-code)]",
-            codeHighlight: {
-              comment: "text-muted-foreground italic",
-              function: "text-blue-600",
-              keyword: "text-fuchsia-600",
-              number: "text-orange-600",
-              operator: "text-foreground/80",
-              punctuation: "text-foreground/70",
-              string: "text-emerald-700",
-            },
             heading: {
               h1: "max-w-[var(--max-w-prose)] w-full text-[length:var(--font-size-heading)] font-semibold font-heading mt-[1.6em] mb-[0.5em]",
               h2: "max-w-[var(--max-w-prose)] w-full text-[length:calc(var(--font-size-heading)*0.833)] font-semibold font-heading-2 mt-[1.4em] mb-[0.5em]",
@@ -134,7 +124,6 @@ export function LexicalBasedEditor({
         <ListPlugin />
         <CheckListPlugin />
         <MarkdownShortcutPlugin transformers={chroniclesLexicalTransformers} />
-        <LexicalCodeHighlightPlugin />
         <LexicalCodeLanguagePlugin />
         <LexicalFormattingShortcutsPlugin />
         <LexicalBlockShortcutsPlugin />
