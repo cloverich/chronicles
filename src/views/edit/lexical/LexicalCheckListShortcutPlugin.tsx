@@ -1,7 +1,12 @@
 import { $isListItemNode, $isListNode } from "@lexical/list";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $findMatchingParent } from "@lexical/utils";
-import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
+import {
+  $getNodeByKey,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+} from "lexical";
 import React from "react";
 
 /**
@@ -17,7 +22,7 @@ export function LexicalCheckListShortcutPlugin(): null {
 
   React.useEffect(() => {
     return editor.registerUpdateListener(({ dirtyLeaves, editorState }) => {
-      editorState.read(() => {
+      const shortcut = editorState.read(() => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) return;
 
@@ -34,6 +39,17 @@ export function LexicalCheckListShortcutPlugin(): null {
         const match = text.match(/^\[( |x)\] $/i);
         if (!match) return;
 
+        return {
+          key: anchorNode.getKey(),
+          isChecked: match[1].toLowerCase() === "x",
+        };
+      });
+
+      if (!shortcut) return;
+      editor.update(() => {
+        const anchorNode = $getNodeByKey(shortcut.key);
+        if (!$isTextNode(anchorNode)) return;
+
         const listItemNode = $findMatchingParent(anchorNode, $isListItemNode);
         if (!$isListItemNode(listItemNode)) return;
 
@@ -42,14 +58,10 @@ export function LexicalCheckListShortcutPlugin(): null {
           return;
         }
 
-        const isChecked = match[1].toLowerCase() === "x";
-
-        editor.update(() => {
-          anchorNode.setTextContent("");
-          listNode.setListType("check");
-          listItemNode.setChecked(isChecked);
-          listItemNode.selectStart();
-        });
+        anchorNode.setTextContent("");
+        listNode.setListType("check");
+        listItemNode.setChecked(shortcut.isChecked);
+        listItemNode.selectStart();
       });
     });
   }, [editor]);
