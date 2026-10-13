@@ -21,7 +21,7 @@ All user-configurable style values are expressed as CSS custom properties define
 
 - `--max-w-prose` (`768px`): paragraphs, headings, blockquotes, lists
 - `--max-w-code` (`var(--max-w-prose)`): code blocks (independently configurable)
-- `--max-w-frontmatter` (`var(--max-w-prose)`): document title + front matter
+- `--max-w-frontmatter` (`var(--max-w-prose)`): document title + front matter; sits in the prose column, left-aligned with the body, so it can be narrower than prose but not wider
 
 ### Font family
 

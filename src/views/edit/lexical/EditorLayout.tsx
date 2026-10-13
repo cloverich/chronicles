@@ -71,7 +71,10 @@ export const EditorLayout = observer(
         <Base.TitlebarSpacer />
         <Base.ScrollContainer>
           <div className="flex w-full grow flex-col items-center">
-            <FrontMatter document={document} journals={journals} />
+            {/* Shares the prose column so the title aligns with the body */}
+            <div className="w-full max-w-(--max-w-prose)">
+              <FrontMatter document={document} journals={journals} />
+            </div>
 
             <div className="flex w-full max-w-(--max-w-prose) grow pt-6">
               <LexicalBasedEditor
