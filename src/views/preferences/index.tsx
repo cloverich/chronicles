@@ -53,9 +53,6 @@ const PreferencesPane = observer((props: Props) => {
   >([]);
   const [availableFonts, setAvailableFonts] = React.useState<string[]>([]);
   const [settingsPath, setSettingsPath] = React.useState<string>("");
-  // Code theme selection disabled until #176 is fixed
-  // https://github.com/cloverich/chronicles/issues/176
-  // const [hljsThemes, setHljsThemes] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (props.isOpen) {
@@ -81,7 +78,6 @@ const PreferencesPane = observer((props: Props) => {
         } catch {
           setSettingsPath("(unknown)");
         }
-        // setHljsThemes(await platform.listHljsThemes());
       })();
     }
   }, [props.isOpen, preferences.settingsDir]);
@@ -297,9 +293,7 @@ const PreferencesPane = observer((props: Props) => {
                     value={preferences.darkMode}
                     onChange={(e) =>
                       (preferences.darkMode = e.target.value as
-                        | "light"
-                        | "dark"
-                        | "system")
+                        "light" | "dark" | "system")
                     }
                   >
                     <option value="light">Light</option>
@@ -347,41 +341,6 @@ const PreferencesPane = observer((props: Props) => {
                       ))}
                   </NativeSelect>
                 </div>
-
-                {/* Code theme selection hidden until Plate's code_line collapse
-                    bug is fixed — see https://github.com/cloverich/chronicles/issues/176
-                <div className="my-4 flex justify-between">
-                  <div className="text-foreground-strong mb-2 font-medium">
-                    Code Theme (Light)
-                  </div>
-                  <NativeSelect
-                    value={preferences.codeThemeLight || "github"}
-                    onChange={(e) =>
-                      (preferences.codeThemeLight = e.target.value)
-                    }
-                  >
-                    {hljsThemes.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </NativeSelect>
-                </div>
-
-                <div className="my-4 flex justify-between">
-                  <div className="text-foreground-strong mb-2 font-medium">
-                    Code Theme (Dark)
-                  </div>
-                  <NativeSelect
-                    value={preferences.codeThemeDark || "github-dark"}
-                    onChange={(e) =>
-                      (preferences.codeThemeDark = e.target.value)
-                    }
-                  >
-                    {hljsThemes.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </NativeSelect>
-                </div>
-                */}
 
                 <div className="my-4 flex justify-between">
                   <div>

@@ -81,7 +81,6 @@ Electron's `contextBridge.exposeInMainWorld` creates a serialization-safe bridge
 | `listAvailableThemes(dir)`          | Filesystem | `fs.readdirSync` in preload                                        |
 | `loadThemeByName(name, dir)`        | Filesystem | `fs.readFileSync` + JSON.parse in preload                          |
 | `deleteThemeByName(name, dir)`      | Filesystem | `fs.unlinkSync` in preload                                         |
-| `listHljsThemes()`                  | Filesystem | Read from bundled hljs-themes dir                                  |
 | `loadHljsThemeCSS(name)`            | Filesystem | Read CSS file contents                                             |
 | `listInstalledFonts()`              | Filesystem | Scan fonts directory                                               |
 | `getInstalledFontsStylesheetHref()` | Filesystem | Return `file://` URL for fonts.css                                 |

@@ -9,9 +9,7 @@ import {
   deleteThemeByName,
   importThemeFile,
   listAvailableThemes,
-  listHljsThemes,
   listInstalledFonts,
-  loadHljsThemeCSS,
   loadThemeByName,
   openDialogSelectDir,
   openPath,
@@ -47,8 +45,6 @@ contextBridge.exposeInMainWorld("chronicles", {
   openPath,
   setNativeTheme,
   deleteThemeByName,
-  listHljsThemes,
-  loadHljsThemeCSS,
 });
 
 declare global {
@@ -68,8 +64,6 @@ declare global {
       openPath: typeof openPath;
       setNativeTheme: typeof setNativeTheme;
       deleteThemeByName: typeof deleteThemeByName;
-      listHljsThemes: typeof listHljsThemes;
-      loadHljsThemeCSS: typeof loadHljsThemeCSS;
     };
   }
 }

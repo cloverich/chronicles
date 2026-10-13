@@ -12,9 +12,7 @@ import { useOptionalNotes } from "../../../hooks/useNotes";
 import { $createChroniclesImageNode } from "./ChroniclesImageNode";
 
 type UploadImageWarningCode =
-  | "decode_missing_plugin"
-  | "decode_failed"
-  | "process_failed";
+  "decode_missing_plugin" | "decode_failed" | "process_failed";
 
 function buildImageWarningMessage(
   filename: string,

@@ -21,7 +21,6 @@ Chronicles uses a token-based theming system. Color palettes are defined as JSON
 | `src/themes/schema.ts`       | `ThemeConfig` interface, token lists, `validate()` function         |
 | `src/themes/builtins.ts`     | System Light and System Dark theme definitions                      |
 | `src/themes/loader.ts`       | `listAvailableThemes()`, `loadThemeByName()`, `deleteThemeByName()` |
-| `src/themes/hljs.ts`         | `loadHljsThemeCSS()`, `listHljsThemes()` — code theme loading       |
 | `src/themes/importer.ts`     | `importThemeFile()` — validate + copy to themes dir                 |
 | `src/views/StyleWatcher.tsx` | Runtime (mobx) application of theme colors as CSS custom properties |
 | `src/index.css`              | `@theme` block mapping CSS variables to Tailwind utilities          |
@@ -77,17 +76,9 @@ Mismatching these (e.g. using `accentForeground` on a `secondary` surface) cause
 
 6. **Select** from the Light Theme or Dark Theme dropdown in Settings. Changes apply immediately.
 
-## Code themes (syntax highlighting)
+## Code blocks
 
-Code block syntax highlighting uses [highlight.js](https://highlightjs.org/) themes, which are separate from the app color tokens. The app ships all ~256 bundled hljs themes.
-
-**How it works:** Lowlight (highlight.js wrapper) tokenizes code and assigns `.hljs-*` CSS classes. StyleWatcher injects the active hljs theme's CSS into a `<style>` tag, which is swapped when the app theme changes.
-
-**Defaults:** `github` for light mode, `github-dark` for dark mode. Selectable in Settings > Appearance > Code Theme (Light/Dark).
-
-**Build pipeline:** `scripts/bundle-hljs-themes.sh` copies minified CSS from `node_modules/highlight.js/styles/` into `dist/hljs-themes/` at build time. Dev reads from `node_modules` directly. Output is gitignored.
-
-**Known limitation:** Syntax highlighting only applies to the first line of a code block due to Plate's `code_line` collapse bug ([#176](https://github.com/cloverich/chronicles/issues/176)). The theme infrastructure is complete — fixing #176 will make it work fully.
+Code blocks render as plain monospace text using the app theme. The language field and Markdown fence metadata are preserved without a syntax-highlighting library. Legacy `codeTheme` fields in theme files and preferences are accepted for compatibility but have no effect.
 
 ## Managing themes
 

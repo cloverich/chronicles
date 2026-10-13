@@ -1,4 +1,4 @@
-import { $isCodeNode, getCodeLanguageOptions } from "@lexical/code";
+import { $isCodeNode } from "@lexical/code";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getNodeByKey, $getSelection, $isRangeSelection } from "lexical";
 import { CheckIcon, CopyIcon } from "lucide-react";
@@ -14,14 +14,6 @@ interface PickerPosition {
   top: number;
   right: number;
 }
-
-const codeLanguageOptions = getCodeLanguageOptions();
-
-const codeLanguageOptionElements = codeLanguageOptions.map(([value, label]) => (
-  <option key={value} value={value}>
-    {label}
-  </option>
-));
 
 function getCodeLanguageState(): CodeLanguageState | null {
   const selection = $getSelection();
@@ -43,7 +35,7 @@ function getCodeLanguageState(): CodeLanguageState | null {
 
   return {
     key: codeNode.getKey(),
-    language: codeNode.getLanguage() ?? "plain",
+    language: codeNode.getLanguage() ?? "",
   };
 }
 
@@ -120,7 +112,7 @@ export function LexicalCodeLanguagePlugin(): JSX.Element | null {
   }, [editor, state, syncPosition]);
 
   const handleChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       if (!state) return;
       const selectedLanguage = event.target.value;
       editor.update(() => {
@@ -128,9 +120,7 @@ export function LexicalCodeLanguagePlugin(): JSX.Element | null {
         if (!$isCodeNode(node)) {
           return;
         }
-        node.setLanguage(
-          selectedLanguage === "plain" ? undefined : selectedLanguage,
-        );
+        node.setLanguage(selectedLanguage || undefined);
       });
     },
     [editor, state],
@@ -164,14 +154,14 @@ export function LexicalCodeLanguagePlugin(): JSX.Element | null {
         zIndex: 5,
       }}
     >
-      <select
-        className="text-muted-foreground bg-muted/80 h-6 cursor-pointer rounded px-1.5 text-xs outline-none"
+      <input
+        className="text-muted-foreground bg-muted/80 h-6 w-28 rounded px-1.5 text-xs outline-none"
         value={state.language}
         onChange={handleChange}
         aria-label="Code language"
-      >
-        {codeLanguageOptionElements}
-      </select>
+        placeholder="plain"
+        spellCheck={false}
+      />
       <button
         className="text-muted-foreground hover:text-foreground flex h-6 w-6 items-center justify-center rounded"
         onClick={handleCopy}

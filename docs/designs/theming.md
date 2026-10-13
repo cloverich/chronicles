@@ -51,13 +51,14 @@ Themes should be stored as JSON or YAML files (e.g., `neofloss.theme.json`). Thi
 The system should map a **Palette** (base colors) to **Functional Tokens** (UI roles).
 
 **Example Mapping (Neofloss):**
+
 | Functional Token | Palette Color | Value (Hex/HSL) |
-| :--- | :--- | :--- |
-| `--background` | `base03` | `#1C1B1D` |
-| `--foreground` | `base2` | `#D8B2DE` |
-| `--primary` | `magenta` | `#8B70DA` |
-| `--accent` | `cyan` | `#60C2E0` |
-| `--destructive` | `alert` | `#DA1173` |
+| :--------------- | :------------ | :-------------- |
+| `--background`   | `base03`      | `#1C1B1D`       |
+| `--foreground`   | `base2`       | `#D8B2DE`       |
+| `--primary`      | `magenta`     | `#8B70DA`       |
+| `--accent`       | `cyan`        | `#60C2E0`       |
+| `--destructive`  | `alert`       | `#DA1173`       |
 
 ### Implementation Steps
 
