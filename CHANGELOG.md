@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- 2026-10-13 ece5ef6 Export can write one .chronicles.zip file instead of a folder, which moves to a phone much faster, and can include only the journals you pick; import accepts the zip too.
+- 2026-10-12 d09221b The note title and front matter line up with the prose column.
+- 2026-10-11 62324f1 Code blocks keep their language label and render plainly, without syntax highlighting.
 - 2026-10-06 9c1c31d Settings, import, export, repair, reset, and backups now reach the app through their own small interfaces, completing the groundwork for a native Mac and iPhone app; no visible change.
 - 2026-10-04 7933bee The first launch after an upgrade shows "Opening your library…" while the library migrates, and a failed startup explains why instead of crashing.
 - 2026-10-04 8c99a8e Fixed an endless redirect when opening an unknown page.
