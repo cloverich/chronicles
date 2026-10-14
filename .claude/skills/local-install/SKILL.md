@@ -2,7 +2,8 @@
 name: local-install
 description: Automates the build and local installation of the Chronicles application on macOS. Use when the user wants to test a local build of the application by installing it into their /Applications folder.
 context: fork
-agent: haiku
+agent: general-purpose
+model: haiku
 ---
 
 # Local Build & Install
@@ -21,6 +22,16 @@ When you are ready to test your changes in a real, installed environment:
 
 - "Build and install the app locally."
 - "Create a new local build and put it in /Applications."
+
+## Run
+
+From the repo root:
+
+```bash
+bash .claude/skills/local-install/scripts/install-build.sh
+```
+
+Use a 10-minute timeout; the build takes several minutes. Report the script's final output.
 
 ## Scripts
 
