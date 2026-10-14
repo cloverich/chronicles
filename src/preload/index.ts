@@ -14,6 +14,7 @@ import {
   openDialogSelectDir,
   openPath,
   refreshInstalledFontsCache,
+  selectExportArchive,
   selectThemeFile,
   setNativeTheme,
 } from "./utils.electron";
@@ -36,6 +37,7 @@ contextBridge.exposeInMainWorld("chronicles", {
   getSettings: () => exposeService(getHost().settings),
   getMaintenance: () => exposeService(getHost().maintenance),
   openDialogSelectDir,
+  selectExportArchive,
   selectThemeFile,
   importThemeFile,
   listAvailableThemes,
@@ -55,6 +57,7 @@ declare global {
       getSettings: () => Settings;
       getMaintenance: () => Maintenance;
       openDialogSelectDir: typeof openDialogSelectDir;
+      selectExportArchive: typeof selectExportArchive;
       selectThemeFile: typeof selectThemeFile;
       importThemeFile: typeof importThemeFile;
       listAvailableThemes: typeof listAvailableThemes;

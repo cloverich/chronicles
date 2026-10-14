@@ -370,6 +370,26 @@ ipcMain.on("select-directory", async (event, arg) => {
   });
 });
 
+// Import accepts a single-file Chronicles export (.chronicles.zip).
+ipcMain.on("select-export-archive", async (event, _arg) => {
+  if (!mainWindow) {
+    console.error(
+      "received request to open file picker but mainWindow is undefined",
+    );
+    return;
+  }
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openFile"],
+    filters: [{ name: "Chronicles export", extensions: ["zip"] }],
+  });
+
+  event.reply("export-archive-selected", {
+    value: result.filePaths[0] ?? null,
+    error: null,
+  });
+});
+
 ipcMain.on("select-theme-file", async (event, _arg) => {
   if (!mainWindow) {
     console.error(

@@ -4,6 +4,11 @@ Format version **2.0**. The export is the archive format, the bootstrap path
 between apps, and the definition of a note's canonical bytes (and therefore its
 revision).
 
+An export is a tree of files. It travels either as a folder or as a single zip
+file holding the same tree (see [Single-file form](#single-file-form)). It
+covers either the whole library or chosen journals (see
+[Partial export](#partial-export)).
+
 ## Layout
 
 ```
@@ -15,7 +20,8 @@ revision).
                          attachments referenced by exported notes (aa = sha256[0:2])
 ```
 
-Two exports of unchanged data are byte-identical except `export-info.json`.
+Two exports of unchanged data are byte-identical except `export-info.json`
+(for the single-file form: their extracted trees are).
 Writers publish atomically (write to a temp sibling, then rename) and refuse an
 existing destination.
 
@@ -133,12 +139,79 @@ keys in exactly this order:
 }
 ```
 
-- `journals`: every journal (including empty ones), in code-point order of
-  name.
-- `notes`: every note, in code-point order of `id`.
+- `journals`: every exported journal (including empty ones), in code-point
+  order of name.
+- `notes`: every note in an exported journal, in code-point order of `id`.
 - `attachments`: every attachment referenced by an exported note and present
   in the store, in code-point order of `path`. Missing attachments are reported
   to the user, not listed.
+
+## Partial export
+
+A writer may export chosen journals instead of the whole library. A partial
+export is byte-identical (except `export-info.json`) to a full export of a
+library holding only those journals and their notes. Concretely:
+
+- `journals` lists only the chosen journals, and directory names are assigned
+  among them alone.
+- `notes` lists only their notes; no other note file is written.
+- `attachments` lists only blobs referenced by those notes.
+- A link to a note in a journal left out stays in stored form,
+  `chronicles://note/<id>`, like any link to a note not in the export (see
+  [Links](#links)). It dangles after import and reconnects, with no rewrite,
+  once the target's journal is imported too.
+
+Nothing marks an export as partial; readers need not tell the difference.
+Import is always a merge (see [Import](#import)), so journals and notes absent
+from an export are never deleted from the reading library.
+
+## Single-file form
+
+The same tree can be written as one zip file, so it moves as one file (for
+example through iCloud Drive, where a folder of thousands of files downloads
+one file at a time). Zip, because every platform already reads it:
+ZIPFoundation on iOS, Node, Python's `zipfile`, Finder, and Explorer.
+
+Name: writers name the file `<name>.chronicles.zip`. The real extension stays
+`.zip`, so file pickers and system type detection treat it as an ordinary zip;
+the inner `.chronicles` marks it as an export. Readers decide by content, not
+name: a zip with `manifest.json` at its root is an export.
+
+Contents:
+
+- One entry per file in the tree. The entry name is the file's path relative
+  to the export root, with `/` separators, as the UTF-8 bytes of the same
+  names the folder form uses (`work/<id>.md`, `日記/<id>.md`,
+  `_attachments/<aa>/<sha256><ext>`, `manifest.json`, `export-info.json`).
+  Directory names are not percent-encoded; percent-encoding applies only to
+  link destinations inside notes, exactly as in the folder form.
+- Entries sit at the archive root, not under a wrapping folder.
+- Extracted entry contents are byte-identical to the folder form's files.
+- Writers emit file entries only (no directory entries) and set the UTF-8
+  name flag (general purpose bit 11). They write `manifest.json` first, then
+  the remaining entries in code-point order of name; order carries no meaning
+  for readers.
+- Writers publish atomically, like the folder form: write a temp sibling,
+  rename into place, refuse an existing destination.
+
+The contract is the extracted tree, never the archive bytes: timestamps,
+compression choices, entry order, and extra fields may differ between
+writers and between two exports of unchanged data.
+
+A reader must support:
+
+- compression methods 0 (stored) and 8 (deflate); other methods and
+  encrypted entries are an error;
+- UTF-8 entry names (bit 11 set);
+- entries whose sizes and CRC follow the data in a data descriptor (general
+  purpose bit 3), which means reading sizes from the central directory;
+- Zip64. Writers switch to Zip64 only when needed (more than 65,535 entries,
+  or any size or offset at or past 4 GiB), which a large library with many
+  attachments can reach;
+- ignoring directory entries and creating parent directories implicitly.
+
+A reader must reject, before writing anything, an entry whose name is
+absolute, contains a `..` segment or a `\`, or is a symbolic link.
 
 ## Versioning
 
@@ -151,6 +224,9 @@ directories remain importable.
 
 ## Import
 
+Importers accept both the folder and the single-file form. A single file is
+read as its extracted tree.
+
 1. Read `manifest.json` if present; reject an unknown major version.
 2. Create every manifest journal, then walk `<dir>/<id>.md` files; a note's
    journal is its directory's manifest journal. Journals match an existing
@@ -160,3 +236,5 @@ directories remain importable.
 3. A frontmatter `id` must equal the file name.
 4. Body bytes are kept verbatim except rewritten reference destinations.
 5. Existing IDs are skipped or replaced per the caller's explicit choice.
+6. Import merges into the library. Notes and journals the export does not
+   contain are left alone.

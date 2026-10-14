@@ -29,7 +29,7 @@ function createMaintenance(client: NodeClient): Maintenance {
         source,
         onConflict ? { onConflict } : undefined,
       ),
-    exportNotes: ({ dir }) => client.export.export(dir),
+    exportNotes: ({ dest, ...opts }) => client.export.export(dest, opts),
     rebuildDerived: () => client.documents.rebuildDerived(),
     resetLibrary: async () => {
       await client.documents.deleteAll();

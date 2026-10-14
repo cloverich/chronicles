@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
@@ -8,6 +8,11 @@ import { PlatformContext } from "../../hooks/usePlatform";
 import { SettingsContext } from "../../hooks/useSettings";
 import { fakeMaintenance, fakePlatform, fakeSettings } from "../../test/fakes";
 import Preferences from "./index";
+
+const JOURNALS = [
+  { id: "j1", name: "work", archived: false, noteCount: 3 },
+  { id: "j2", name: "old", archived: true, noteCount: 1 },
+];
 
 function createApplicationStore(overrides: Record<string, unknown> = {}) {
   return {
@@ -29,11 +34,18 @@ function createApplicationStore(overrides: Record<string, unknown> = {}) {
       isRepairing: false,
       repair: vi.fn(),
     },
+    journals: {
+      journals: JOURNALS,
+      active: JOURNALS.filter((j) => !j.archived),
+      archived: JOURNALS.filter((j) => j.archived),
+      refresh: vi.fn(),
+    },
     ...overrides,
   } as any;
 }
 
 let platform = fakePlatform();
+let maintenance = fakeMaintenance();
 
 function renderPreferences({
   applicationStore = createApplicationStore(),
@@ -42,7 +54,7 @@ function renderPreferences({
 } = {}) {
   return render(
     <MemoryRouter>
-      <MaintenanceContext.Provider value={fakeMaintenance()}>
+      <MaintenanceContext.Provider value={maintenance}>
         <PlatformContext.Provider value={platform}>
           <SettingsContext.Provider value={fakeSettings()}>
             <ApplicationContext.Provider value={applicationStore}>
@@ -100,5 +112,27 @@ describe("Preferences surface", () => {
     expect(
       screen.getByRole("button", { name: "View changelog" }),
     ).toBeInTheDocument();
+  });
+
+  it("exports a single file of the chosen journals, archived ones included", async () => {
+    maintenance = fakeMaintenance();
+    platform = fakePlatform({
+      openDialogSelectDir: vi.fn(async () => ({ value: "/tmp/out" })),
+    });
+    renderPreferences();
+
+    expect(screen.getByLabelText("Export format")).toHaveValue("archive");
+    expect(screen.getByLabelText(/old/)).toBeChecked();
+    fireEvent.click(screen.getByLabelText(/old/));
+    expect(screen.getByText(/1 of 2 selected/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Export notes…" }));
+    await waitFor(() => expect(maintenance.exportNotes).toHaveBeenCalled());
+    const req = maintenance.exportNotes.mock.calls[0][0] as any;
+    expect(req.format).toBe("archive");
+    expect(req.journals).toEqual(["j1"]);
+    expect(req.dest).toMatch(
+      /^\/tmp\/out\/chronicles-export-.*\.chronicles\.zip$/,
+    );
   });
 });

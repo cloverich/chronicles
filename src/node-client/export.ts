@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
+import os from "os";
 import path from "path";
 
 import {
@@ -11,6 +12,7 @@ import { parseNoteLink } from "../markdown/noteLinks";
 import { rewriteUrls } from "../markdown/rewriteUrls";
 import { createId } from "../preload/client/util";
 import { compareCodePoints, serializeNote } from "./canonical-note";
+import { writeArchive } from "./export-archive";
 import {
   assignJournalDirs,
   encodeLinkSegment,
@@ -20,8 +22,24 @@ import { isSameOrInside, pathExists } from "./fs-guards";
 import * as schema from "./schema";
 import { documents, documentTags, journals } from "./schema";
 
+export interface ExportOptions {
+  /**
+   * "folder" writes the tree at `dest`; "archive" writes it as one zip file
+   * at `dest` (spec: "Single-file form"). Defaults to "folder".
+   */
+  format?: "folder" | "archive";
+  /**
+   * Journal IDs to export (spec: "Partial export"). Omitted means every
+   * journal; an empty list is refused.
+   */
+  journals?: string[];
+}
+
 export interface ExportReport {
-  destDir: string;
+  /** The written folder or archive file. */
+  dest: string;
+  format: "folder" | "archive";
+  journals: number;
   notes: number;
   attachments: { copied: number; missing: string[] };
 }
@@ -60,9 +78,17 @@ export class ExportClient {
     private notesDir: string,
   ) {}
 
-  export = async (destDir: string): Promise<ExportReport> => {
-    const resolvedDest = path.resolve(destDir);
+  export = async (
+    dest: string,
+    opts: ExportOptions = {},
+  ): Promise<ExportReport> => {
+    const format = opts.format ?? "folder";
+    const resolvedDest = path.resolve(dest);
     const resolvedNotesDir = path.resolve(this.notesDir);
+
+    if (opts.journals && opts.journals.length === 0) {
+      throw new Error("[EXPORT_NO_JOURNALS] Choose at least one journal");
+    }
 
     if (await pathExists(resolvedDest)) {
       throw new Error(
@@ -79,22 +105,39 @@ export class ExportClient {
       );
     }
 
-    const tmpDir = path.join(
+    const tmpSibling = path.join(
       path.dirname(resolvedDest),
       "." + path.basename(resolvedDest) + ".tmp-" + createId(),
     );
 
+    if (format === "folder") {
+      try {
+        await fs.promises.mkdir(tmpSibling, { recursive: true });
+        const report = await this.writeExport(tmpSibling, opts.journals);
+        await fs.promises.rename(tmpSibling, resolvedDest);
+        return { dest: resolvedDest, format, ...report };
+      } catch (err) {
+        await fs.promises.rm(tmpSibling, { recursive: true, force: true });
+        throw err;
+      }
+    }
+
+    // Archive: stage the tree in the system temp dir, not beside the
+    // destination, so a destination in a synced folder (iCloud Drive) never
+    // sees thousands of transient files; only the finished zip is renamed in.
+    const treeDir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), "chronicles-export-"),
+    );
     try {
-      await fs.promises.mkdir(tmpDir, { recursive: true });
-
-      const report = await this.writeExport(tmpDir);
-
-      await fs.promises.rename(tmpDir, resolvedDest);
-
-      return { destDir: resolvedDest, ...report };
+      const report = await this.writeExport(treeDir, opts.journals);
+      await writeArchive(treeDir, tmpSibling);
+      await fs.promises.rename(tmpSibling, resolvedDest);
+      return { dest: resolvedDest, format, ...report };
     } catch (err) {
-      await fs.promises.rm(tmpDir, { recursive: true, force: true });
+      await fs.promises.rm(tmpSibling, { force: true });
       throw err;
+    } finally {
+      await fs.promises.rm(treeDir, { recursive: true, force: true });
     }
   };
 
@@ -107,15 +150,32 @@ export class ExportClient {
 
   private writeExport = async (
     tmpDir: string,
-  ): Promise<Omit<ExportReport, "destDir">> => {
-    const journalRows = await this.db.select().from(journals);
+    journalIds?: string[],
+  ): Promise<Omit<ExportReport, "dest" | "format">> => {
+    let journalRows = await this.db.select().from(journals);
+    if (journalIds) {
+      const wanted = new Set(journalIds);
+      const known = new Set(journalRows.map((j) => j.id));
+      const unknown = journalIds.filter((id) => !known.has(id));
+      if (unknown.length > 0) {
+        throw new Error(
+          `[EXPORT_UNKNOWN_JOURNAL] No journal with id: ${unknown.join(", ")}`,
+        );
+      }
+      // A partial export is a full export of the sub-library: directory
+      // names are assigned among the chosen journals alone, and links to
+      // notes outside them stay in stored form (spec: "Partial export").
+      journalRows = journalRows.filter((j) => wanted.has(j.id));
+    }
     const dirsByName = assignJournalDirs(journalRows.map((j) => j.name));
     // journal id → export directory
     const dirs = new Map(
       journalRows.map((j) => [j.id, dirsByName.get(j.name)!]),
     );
 
-    const rows = await this.db.select().from(documents).orderBy(documents.id);
+    const rows = (
+      await this.db.select().from(documents).orderBy(documents.id)
+    ).filter((r) => dirs.has(r.journalId));
     const journalOf = new Map(rows.map((r) => [r.id, r.journalId]));
 
     const manifestNotes: ManifestNote[] = [];
@@ -216,6 +276,7 @@ export class ExportClient {
     );
 
     return {
+      journals: journalRows.length,
       notes: rows.length,
       attachments: {
         copied: attachments.size,

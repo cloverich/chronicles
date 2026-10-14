@@ -2381,6 +2381,20 @@
   resolved "https://registry.npmjs.org/@types/unist/-/unist-3.0.2.tgz"
   integrity sha512-dqId9J8K/vGi5Zr7oo212BGii5m3q5Hxlkwy3WpYuKPklmBEvsbMYYyLxAQpSffdLl/gdW0XUpKWFvYmyoWCoQ==
 
+"@types/yauzl@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@types/yauzl/-/yauzl-3.4.0.tgz#93de17db1589472d30b4e106c5e7711bcf32a5e9"
+  integrity sha512-NRPn5w6h8dhcnmx3YIRQcqMywY/+nND/uOkJessedcrowO3C0AssHp3tMJpxKAwOhFOo0OV1y9VtsC5hbKKBAw==
+  dependencies:
+    "@types/node" "*"
+
+"@types/yazl@^3.3.1":
+  version "3.3.1"
+  resolved "https://registry.yarnpkg.com/@types/yazl/-/yazl-3.3.1.tgz#01654f3e98e35b67aab89ece3491993e5b00e114"
+  integrity sha512-DIWfCKpsTp6hE5BDBHV3+fIL/bLUF9Bv13iDrWnMlmhQpH67buNvI291ZauQ1xcccxK3FqQ9honnXpq4R8NMuQ==
+  dependencies:
+    "@types/node" "*"
+
 "@udecode/cn@^48.0.3":
   version "48.0.3"
   resolved "https://registry.npmjs.org/@udecode/cn/-/cn-48.0.3.tgz"
@@ -2650,6 +2664,11 @@ browserslist@^4.24.0:
     electron-to-chromium "^1.5.420"
     node-releases "^2.0.54"
     update-browserslist-db "^1.3.2"
+
+buffer-crc32@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/buffer-crc32/-/buffer-crc32-1.0.0.tgz#a10993b9055081d55304bd9feb4a072de179f405"
+  integrity sha512-Db1SbgBS/fg/392AblrMJk97KggmvYhr4pB5ZIMTWtaivCPMWLkmb7m21cJvpvgK+J3nsU2CmmixNBZx4vFj/w==
 
 buffer-from@^1.0.0:
   version "1.1.2"
@@ -4288,6 +4307,11 @@ pe-library@^1.0.1:
   resolved "https://registry.npmjs.org/pe-library/-/pe-library-1.0.1.tgz"
   integrity sha512-nh39Mo1eGWmZS7y+mK/dQIqg7S1lp38DpRxkyoHf0ZcUs/HDc+yyTjuOtTvSMZHmfSLuSQaX945u05Y2Q6UWZg==
 
+pend@~1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
+  integrity sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==
+
 picocolors@1.1.1, picocolors@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.1.1.tgz#3d321af3eab939b083c8f929a1d12cda81c26b6b"
@@ -5264,6 +5288,20 @@ yargs@17.7.2:
     string-width "^4.2.3"
     y18n "^5.0.5"
     yargs-parser "^21.1.1"
+
+yauzl@^3.2.0:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/yauzl/-/yauzl-3.4.0.tgz#88b2a21455f37ca7dccf2eeb33bacb4392322719"
+  integrity sha512-jIH9yLR9wqr0wOS0TpBvo/g/2UgZH5qePVbjgRliiF0BYvOZyaBknKsF+x9Iht0O6sqgnB93rCICdOZFecJuDw==
+  dependencies:
+    pend "~1.2.0"
+
+yazl@^3.3.1:
+  version "3.3.1"
+  resolved "https://registry.yarnpkg.com/yazl/-/yazl-3.3.1.tgz#a69abad02d80739d3b1a7ffcca8434422477432c"
+  integrity sha512-BbETDVWG+VcMUle37k5Fqp//7SDOK2/1+T7X8TD96M3D9G8jK5VLUdQVdVjGi8im7FGkazX7kk5hkU8X4L5Bng==
+  dependencies:
+    buffer-crc32 "^1.0.0"
 
 zwitch@^2.0.0:
   version "2.0.2"

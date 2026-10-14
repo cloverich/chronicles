@@ -11,7 +11,7 @@ Node code.
 | Document                             | Defines                                                           |
 | ------------------------------------ | ----------------------------------------------------------------- |
 | [data-model.md](data-model.md)       | Entities, identifiers, schema invariants, link/attachment grammar |
-| [export-format.md](export-format.md) | Export tree, canonical note bytes, manifest, versioning           |
+| [export-format.md](export-format.md) | Export tree, single-file form, partial export, manifest, versions |
 | [derive.md](derive.md)               | Derived data (note links, image refs, FTS)                        |
 | [notes-client.md](notes-client.md)   | The NotesClient API contract and its fixtures                     |
 | `vectors/`                           | Golden inputs and expected outputs                                |
@@ -27,17 +27,28 @@ behavior regenerates them, and the diff shows the change.
 
 ```
 vectors/
-  export/<case>/input.json   library state (journals, notes, attachments)
+  export/<case>/input.json   library state (journals, notes, attachments), plus
+                             optional exportJournals (IDs) for a partial export
   export/<case>/expected/    the exact export tree (minus export-info.json)
+  archive/<case>/*.zip       single-file exports of export/<case>/expected
   derive/<file>.json         markdown in → derived data out
   contract/<area>.json       NotesClient scenarios (seeded from contract/libraries/)
 ```
 
 An implementation passes a vector when:
 
-- **export:** loading `input.json` into an empty library and exporting yields
-  `expected/` byte-for-byte; importing `expected/` into an empty library and
-  exporting again also yields `expected/` byte-for-byte.
+- **export:** loading `input.json` into an empty library and exporting (only
+  the `exportJournals` journals, when present) yields `expected/`
+  byte-for-byte; importing `expected/` into an empty library and exporting
+  the same journals again also yields `expected/` byte-for-byte. A writer of
+  the single-file form passes when its archive extracts to `expected/` (plus
+  `export-info.json`); archive bytes are not compared.
+- **archive:** each `archive/<case>/*.chronicles.zip` extracts to
+  `export/<case>/expected/` plus an `export-info.json`, and importing it
+  equals importing the folder. `writer.chronicles.zip` is what the desktop
+  writer produces (deflate and stored entries, data descriptors, UTF-8
+  names); `zip64.chronicles.zip` holds the same tree in Zip64 records, which a
+  reader must handle though small libraries never need them.
 - **derive:** for each case, deriving from `title` + `markdown` yields
   `expected`.
 - **contract:** every scenario passes against the host's NotesClient.

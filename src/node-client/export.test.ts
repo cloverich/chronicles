@@ -14,6 +14,7 @@ import { tmpdir } from "os";
 import path from "path";
 import yaml from "yaml";
 import { SourceType } from "../preload/client/importer/SourceType";
+import { writeArchive } from "./export-archive";
 import { createClient } from "./factory";
 import * as schema from "./schema";
 
@@ -143,7 +144,7 @@ describe("ExportClient.export", () => {
   test("writes every note, manifest, and copies referenced attachments", async () => {
     const report = await fixture.client.export.export(destDir);
 
-    assert.strictEqual(report.destDir, destDir);
+    assert.strictEqual(report.dest, destDir);
     assert.strictEqual(report.notes, 5);
     assert.strictEqual(report.attachments.copied, 1);
     assert.deepStrictEqual(report.attachments.missing, [
@@ -522,6 +523,273 @@ describe("ExportClient.export → import → export", () => {
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+});
+
+/** Files under dir (minus export-info.json), relative with `/`, sorted. */
+function listTree(dir: string): string[] {
+  return fs
+    .readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile() && e.name !== "export-info.json")
+    .map((e) =>
+      path.relative(dir, path.join(e.parentPath, e.name)).replace(/\\/g, "/"),
+    )
+    .sort();
+}
+
+function assertSameTree(actual: string, expected: string) {
+  assert.deepStrictEqual(listTree(actual), listTree(expected));
+  for (const rel of listTree(expected)) {
+    assert.ok(
+      readFileSync(path.join(actual, rel)).equals(
+        readFileSync(path.join(expected, rel)),
+      ),
+      `mismatch in ${rel}`,
+    );
+  }
+}
+
+function journalId(
+  client: Awaited<ReturnType<typeof createClient>>,
+  name: string,
+) {
+  const [row] = client.db
+    .select({ id: schema.journals.id })
+    .from(schema.journals)
+    .where(eq(schema.journals.name, name))
+    .all();
+  return row.id;
+}
+
+describe("ExportClient.export partial", () => {
+  let fixture: Fixture;
+  let parentDir: string;
+
+  before(async () => {
+    fixture = await buildFixtureClient("chronicles-partial-test-");
+    parentDir = mkdtempSync(path.join(tmpdir(), "chronicles-partial-dest-"));
+  });
+
+  after(() => {
+    rmSync(fixture.notesDir, { recursive: true, force: true });
+    rmSync(parentDir, { recursive: true, force: true });
+  });
+
+  test("writes only the chosen journals, their attachments, and keeps links out as written", async () => {
+    const dest = path.join(parentDir, "beta-only");
+    const beta = journalId(fixture.client, "journal-beta");
+    const report = await fixture.client.export.export(dest, {
+      journals: [beta],
+    });
+    assert.strictEqual(report.journals, 1);
+    assert.strictEqual(report.notes, 2);
+    assert.strictEqual(report.attachments.copied, 0);
+
+    assert.deepStrictEqual(listTree(dest), [
+      `journal-beta/${fixture.ids.noteB}.md`,
+      `journal-beta/${fixture.ids.noteUnicode}.md`,
+      "manifest.json",
+    ]);
+
+    const manifest = JSON.parse(
+      readFileSync(path.join(dest, "manifest.json"), "utf8"),
+    );
+    assert.deepStrictEqual(
+      manifest.journals.map((j: { name: string }) => j.name),
+      ["journal-beta"],
+    );
+    assert.deepStrictEqual(manifest.attachments, []);
+
+    // noteB links to noteA, whose journal was left out: stored form stays.
+    const noteB = readFileSync(
+      path.join(dest, `journal-beta/${fixture.ids.noteB}.md`),
+      "utf8",
+    );
+    assert.ok(
+      noteB.includes(`(chronicles://note/${fixture.ids.noteA})`),
+      noteB,
+    );
+  });
+
+  test("refuses an empty or unknown journal list", async () => {
+    await assert.rejects(
+      fixture.client.export.export(path.join(parentDir, "none"), {
+        journals: [],
+      }),
+      /\[EXPORT_NO_JOURNALS\]/,
+    );
+    await assert.rejects(
+      fixture.client.export.export(path.join(parentDir, "unknown"), {
+        journals: ["03zzzzzzzzzzzzzzzzzzzzzzz"],
+      }),
+      /\[EXPORT_UNKNOWN_JOURNAL\]/,
+    );
+    assert.ok(!existsSync(path.join(parentDir, "unknown")));
+  });
+
+  test("imports into a library with other notes, merging; links reconnect when the other journal arrives", async () => {
+    const alpha = journalId(fixture.client, "journal-alpha");
+    const beta = journalId(fixture.client, "journal-beta");
+    const betaOut = path.join(parentDir, "merge-beta.chronicles.zip");
+    const alphaOut = path.join(parentDir, "merge-alpha.chronicles.zip");
+    await fixture.client.export.export(betaOut, {
+      journals: [beta],
+      format: "archive",
+    });
+    await fixture.client.export.export(alphaOut, {
+      journals: [alpha],
+      format: "archive",
+    });
+
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-merge-"));
+    try {
+      const client = await createClient({ dbPath: ":memory:", notesDir });
+      await client.journals.create({ name: "existing" });
+      const existingId = await client.documents.createDocument({
+        journal: "existing",
+        content: "Already here.\n",
+        frontMatter: {
+          title: "Existing",
+          tags: [],
+          createdAt: "2023-01-01T00:00:00.000Z",
+          updatedAt: "2023-01-01T00:00:00.000Z",
+        },
+      });
+
+      const report = await client.importer.import(
+        betaOut,
+        SourceType.Chronicles,
+      );
+      assert.strictEqual(report?.created, 2);
+      assert.strictEqual(report?.errored.length, 0);
+
+      const ids = () =>
+        client.db
+          .select({ id: schema.documents.id })
+          .from(schema.documents)
+          .all()
+          .map((r) => r.id)
+          .sort();
+      assert.deepStrictEqual(
+        ids(),
+        [existingId, fixture.ids.noteB, fixture.ids.noteUnicode].sort(),
+      );
+
+      // Importing the other journal later reconnects noteB's link.
+      await client.importer.import(alphaOut, SourceType.Chronicles);
+      const full = path.join(parentDir, "merged-full");
+      await client.export.export(full);
+      const noteB = readFileSync(
+        path.join(full, `journal-beta/${fixture.ids.noteB}.md`),
+        "utf8",
+      );
+      assert.ok(
+        noteB.includes(`(../journal-alpha/${fixture.ids.noteA}.md)`),
+        noteB,
+      );
+      assert.ok(existsSync(path.join(full, `existing/${existingId}.md`)));
+    } finally {
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("ExportClient.export archive", () => {
+  let fixture: Fixture;
+  let parentDir: string;
+
+  before(async () => {
+    fixture = await buildFixtureClient("chronicles-archive-test-");
+    parentDir = mkdtempSync(path.join(tmpdir(), "chronicles-archive-dest-"));
+  });
+
+  after(() => {
+    rmSync(fixture.notesDir, { recursive: true, force: true });
+    rmSync(parentDir, { recursive: true, force: true });
+  });
+
+  test("archive → import → folder export equals the folder export", async () => {
+    const folder = path.join(parentDir, "folder");
+    const zip = path.join(parentDir, "lib.chronicles.zip");
+    await fixture.client.export.export(folder);
+    const report = await fixture.client.export.export(zip, {
+      format: "archive",
+    });
+    assert.strictEqual(report.format, "archive");
+    assert.strictEqual(report.dest, zip);
+    assert.ok(fs.statSync(zip).isFile());
+    // Only the finished archive lands beside the destination.
+    assert.deepStrictEqual(readdirSync(parentDir).sort(), [
+      "folder",
+      "lib.chronicles.zip",
+    ]);
+
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-archive-rt-"));
+    try {
+      const client = await createClient({ dbPath: ":memory:", notesDir });
+      await client.importer.import(zip, SourceType.Chronicles);
+      const again = path.join(parentDir, "again");
+      await client.export.export(again);
+      assertSameTree(again, folder);
+    } finally {
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+
+  test("refuses an existing archive destination", async () => {
+    const zip = path.join(parentDir, "exists.chronicles.zip");
+    writeFileSync(zip, "");
+    await assert.rejects(
+      fixture.client.export.export(zip, { format: "archive" }),
+      /\[EXPORT_DEST_EXISTS\]/,
+    );
+  });
+
+  test("import rejects an archive entry escaping the tree, writing nothing", async () => {
+    const tree = mkdtempSync(path.join(tmpdir(), "chronicles-evil-tree-"));
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-evil-"));
+    try {
+      writeFileSync(path.join(tree, "manifest.json"), "{}\n");
+      fs.mkdirSync(path.join(tree, "aa"));
+      writeFileSync(path.join(tree, "aa", "evil.md"), "x\n");
+      const zip = path.join(parentDir, "evil.zip");
+      await writeArchive(tree, zip);
+      // Same-length rename in both the local header and central directory.
+      const bytes = readFileSync(zip);
+      const from = Buffer.from("aa/evil.md");
+      const to = Buffer.from("../evil.md");
+      let i = bytes.indexOf(from);
+      while (i !== -1) {
+        to.copy(bytes, i);
+        i = bytes.indexOf(from, i + 1);
+      }
+      writeFileSync(zip, bytes);
+
+      const client = await createClient({ dbPath: ":memory:", notesDir });
+      await assert.rejects(
+        client.importer.import(zip, SourceType.Chronicles),
+        /invalid relative path|IMPORT_ARCHIVE_INVALID/,
+      );
+      assert.ok(!existsSync(path.join(tmpdir(), "evil.md")));
+    } finally {
+      rmSync(tree, { recursive: true, force: true });
+      rmSync(notesDir, { recursive: true, force: true });
+    }
+  });
+
+  test("a zip imports only as a Chronicles export", async () => {
+    const zip = path.join(parentDir, "other.chronicles.zip");
+    await fixture.client.export.export(zip, { format: "archive" });
+    const notesDir = mkdtempSync(path.join(tmpdir(), "chronicles-other-"));
+    try {
+      const client = await createClient({ dbPath: ":memory:", notesDir });
+      await assert.rejects(
+        client.importer.import(zip, SourceType.Other),
+        /IMPORT_ARCHIVE_SOURCE/,
+      );
+    } finally {
       rmSync(notesDir, { recursive: true, force: true });
     }
   });

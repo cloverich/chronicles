@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import type { ExportReport } from "../node-client/export";
+import type { ExportOptions, ExportReport } from "../node-client/export";
 import type { ChroniclesImportReport } from "../node-client/importer-chronicles";
 import type { BackupsApi } from "../preload/backups";
 import type { SourceType } from "../preload/client/importer/SourceType";
@@ -14,13 +14,17 @@ export type { ChroniclesImportReport, ExportReport };
  * `unsupported`.
  */
 export interface Maintenance {
-  /** A Chronicles import returns a report; other sources return nothing. */
+  /**
+   * A Chronicles import returns a report; other sources return nothing.
+   * `dir` may also be a single-file (.chronicles.zip) Chronicles export.
+   */
   importNotes(req: {
     dir: string;
     source: SourceType;
     onConflict?: "skip" | "replace";
   }): Promise<ChroniclesImportReport | void>;
-  exportNotes(req: { dir: string }): Promise<ExportReport>;
+  /** Writes a folder or a single-file export of all or chosen journals. */
+  exportNotes(req: { dest: string } & ExportOptions): Promise<ExportReport>;
   /** Regenerates search, links, and attachment references from notes. */
   rebuildDerived(): Promise<{ count: number }>;
   /** Deletes all notes, journals, and import records; leaves a default journal. */

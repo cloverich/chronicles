@@ -45,6 +45,9 @@ const PreferencesPane = observer((props: Props) => {
       loading: false,
       sourceType: SourceType.Other,
       replaceExisting: false,
+      exportFormat: "archive" as "archive" | "folder",
+      // Journals left out of the next export, so a new journal starts in.
+      excludedJournals: [] as string[],
     }),
   );
   const preferences = usePreferences();
@@ -170,15 +173,23 @@ const PreferencesPane = observer((props: Props) => {
   }
 
   async function importDirectory() {
+    return runImport(() => platform.openDialogSelectDir());
+  }
+
+  async function importArchive() {
+    return runImport(() => platform.selectExportArchive());
+  }
+
+  async function runImport(pick: () => Promise<{ value?: string }>) {
     store.loading = true;
     try {
-      const result = await platform.openDialogSelectDir();
+      const result = await pick();
       if (!result?.value) {
         store.loading = false;
         return;
       }
 
-      toast.info("Importing directory...this may take a few minutes");
+      toast.info("Importing...this may take a few minutes");
       const report = await maintenance.importNotes({
         dir: result.value,
         source: store.sourceType,
@@ -230,6 +241,16 @@ const PreferencesPane = observer((props: Props) => {
     )}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   }
 
+  const exportJournals = journalsStore.journals.filter(
+    (j) => !store.excludedJournals.includes(j.id),
+  );
+
+  function toggleExportJournal(id: string, include: boolean) {
+    store.excludedJournals = include
+      ? store.excludedJournals.filter((x) => x !== id)
+      : [...store.excludedJournals, id];
+  }
+
   async function exportNotes() {
     store.loading = true;
     try {
@@ -239,13 +260,22 @@ const PreferencesPane = observer((props: Props) => {
         return;
       }
 
-      const destDir = `${result.value}/chronicles-export-${timestampForDirName()}`;
+      const name = `chronicles-export-${timestampForDirName()}`;
+      const dest =
+        store.exportFormat === "archive"
+          ? `${result.value}/${name}.chronicles.zip`
+          : `${result.value}/${name}`;
+      const partial = exportJournals.length < journalsStore.journals.length;
 
       toast.info("Exporting notes...this may take a few minutes");
-      const report = await maintenance.exportNotes({ dir: destDir });
+      const report = await maintenance.exportNotes({
+        dest,
+        format: store.exportFormat,
+        journals: partial ? exportJournals.map((j) => j.id) : undefined,
+      });
 
       toast.success(
-        `Export completed: ${report.notes} notes, ${report.attachments.copied} attachments copied to ${report.destDir}`,
+        `Export completed: ${report.notes} notes from ${report.journals} journals, ${report.attachments.copied} attachments, written to ${report.dest}`,
       );
       if (report.attachments.missing.length > 0) {
         toast.warning(
@@ -725,25 +755,117 @@ const PreferencesPane = observer((props: Props) => {
                   >
                     Import directory
                   </Button>
+                  {store.sourceType === SourceType.Chronicles && (
+                    <Button
+                      variant="ghost"
+                      loading={store.loading}
+                      disabled={store.loading}
+                      onClick={importArchive}
+                      size="sm"
+                    >
+                      Import .zip export…
+                    </Button>
+                  )}
                 </div>
               </Section>
               <Section>
                 <SectionTitle
                   title="Export notes"
-                  sub="Export every note as Markdown, with frontmatter and referenced attachments"
+                  sub="Export notes as Markdown, with frontmatter and referenced attachments"
                 />
                 <p className="mb-2 max-w-[500px]">
-                  Writes every note as{" "}
-                  <code>&lt;journal&gt;/&lt;id&gt;.md</code> with full
-                  frontmatter, plus a manifest and copies of referenced
-                  attachments. Suitable for backing up with Git, or re-importing
-                  later.
+                  Writes each note as <code>&lt;journal&gt;/&lt;id&gt;.md</code>{" "}
+                  with full frontmatter, plus a manifest and copies of
+                  referenced attachments. A single file is easiest to move to
+                  another device, such as through iCloud Drive; a folder suits
+                  backing up with Git. Either re-imports later.
                 </p>
+
+                <div className="my-6 flex max-w-[500px] flex-col space-y-2">
+                  <Label.Base className="text-sm leading-none font-medium">
+                    Format
+                  </Label.Base>
+                  <NativeSelect
+                    className="w-[260px]"
+                    aria-label="Export format"
+                    value={store.exportFormat}
+                    onChange={(e) =>
+                      (store.exportFormat = e.target.value as
+                        "archive" | "folder")
+                    }
+                  >
+                    <option value="archive">
+                      Single file (.chronicles.zip)
+                    </option>
+                    <option value="folder">Folder</option>
+                  </NativeSelect>
+                </div>
+
+                <fieldset className="my-6 flex max-w-[500px] flex-col space-y-2">
+                  <legend className="mb-2 text-sm leading-none font-medium">
+                    Journals
+                  </legend>
+                  <p className="text-muted-foreground text-[0.8rem]">
+                    {exportJournals.length} of {journalsStore.journals.length}{" "}
+                    selected. Links to notes in journals left out stay as
+                    written and reconnect if those journals are imported later.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => (store.excludedJournals = [])}
+                    >
+                      Select all
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        (store.excludedJournals = journalsStore.journals.map(
+                          (j) => j.id,
+                        ))
+                      }
+                    >
+                      Select none
+                    </Button>
+                  </div>
+                  <div className="max-h-[240px] overflow-y-auto">
+                    {[...journalsStore.active, ...journalsStore.archived].map(
+                      (j) => (
+                        <div
+                          key={j.id}
+                          className="flex items-center gap-2 py-1"
+                        >
+                          <input
+                            type="checkbox"
+                            id={`export-journal-${j.id}`}
+                            checked={!store.excludedJournals.includes(j.id)}
+                            onChange={(e) =>
+                              toggleExportJournal(j.id, e.target.checked)
+                            }
+                          />
+                          <Label.Base
+                            htmlFor={`export-journal-${j.id}`}
+                            className="text-sm leading-none"
+                          >
+                            {j.name}
+                            <span className="text-muted-foreground ml-2 text-xs">
+                              {j.noteCount}
+                              {j.archived ? " · archived" : ""}
+                            </span>
+                          </Label.Base>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </fieldset>
+
                 <div className="mt-4 flex gap-2">
                   <Button
                     variant="ghost"
                     loading={store.loading}
-                    disabled={store.loading}
+                    disabled={store.loading || exportJournals.length === 0}
                     onClick={exportNotes}
                     size="sm"
                   >

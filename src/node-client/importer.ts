@@ -1,6 +1,8 @@
 import { and, count, eq, ne } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import fs from "fs";
 import * as mdast from "mdast";
+import os from "os";
 import path from "path";
 
 import {
@@ -19,6 +21,7 @@ import {
 import { createId } from "../preload/client/util";
 import { PathStatsFile, walk } from "../preload/utils/fs-utils";
 import type { IDocumentsClient } from "./documents";
+import { extractArchive, isArchiveFile } from "./export-archive";
 import type { NodeFilesClient } from "./files";
 import { FilesImportResolver } from "./files-import-resolver";
 import { isSameOrInside } from "./fs-guards";
@@ -130,6 +133,25 @@ export class ImporterClient {
   ): Promise<ChroniclesImportReport | void> => {
     importDir = path.resolve(importDir);
     const chroniclesRoot = this.notesDir;
+
+    // A single-file export (spec: "Single-file form") imports as its
+    // extracted tree; zip is only ever a Chronicles export.
+    if (await isArchiveFile(importDir)) {
+      if (sourceType !== SourceType.Chronicles) {
+        throw new Error(
+          "[IMPORT_ARCHIVE_SOURCE] A .zip imports only as a Chronicles export",
+        );
+      }
+      const treeDir = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), "chronicles-import-"),
+      );
+      try {
+        await extractArchive(importDir, treeDir);
+        return await this.import(treeDir, sourceType, opts);
+      } finally {
+        await fs.promises.rm(treeDir, { recursive: true, force: true });
+      }
+    }
 
     // Ensure `importDir` is a directory and can be accessed
     await this.files.ensureDir(importDir);

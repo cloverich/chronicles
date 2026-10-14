@@ -38,8 +38,10 @@ const NO_BACKUPS: BackupStatus = {
 export function fakeMaintenance() {
   return {
     importNotes: vi.fn(async () => undefined),
-    exportNotes: vi.fn(async ({ dir }: { dir: string }) => ({
-      destDir: dir,
+    exportNotes: vi.fn(async ({ dest }: { dest: string }) => ({
+      dest,
+      format: "archive" as const,
+      journals: 0,
       notes: 0,
       attachments: { copied: 0, missing: [] },
     })),
@@ -63,6 +65,7 @@ export function fakePlatform(
 ): PlatformServices {
   return {
     openDialogSelectDir: vi.fn(async () => ({ value: undefined })),
+    selectExportArchive: vi.fn(async () => ({ value: undefined })),
     selectThemeFile: vi.fn(async () => ({ value: undefined })),
     importThemeFile: vi.fn(() => ({ success: true, themeName: "Custom" })),
     listAvailableThemes: vi.fn(() => ({ themes: [], overrides: [] })),

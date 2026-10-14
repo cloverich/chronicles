@@ -59,6 +59,24 @@ export const selectThemeFile = async () => {
   });
 };
 
+/** Pick a single-file Chronicles export (.chronicles.zip) to import. */
+export const selectExportArchive = async () => {
+  ipcRenderer.send("select-export-archive");
+
+  return new Promise<SelectFileResult>((resolve, reject) => {
+    ipcRenderer.once(
+      "export-archive-selected",
+      (event, arg: SelectFileResult) => {
+        if (arg.error) {
+          reject(arg.error);
+        } else {
+          resolve({ value: arg.value ?? undefined });
+        }
+      },
+    );
+  });
+};
+
 export const openPath = (dirPath: string) => {
   ipcRenderer.send("open-path", dirPath);
 };
