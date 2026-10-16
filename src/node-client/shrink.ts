@@ -226,13 +226,15 @@ export class ShrinkClient {
               if (before === 0) continue;
               const probe = await probeVideo(tools, file);
               const plan = probe && planVideo(probe);
-              if (!plan) continue;
+              // Not expected to get smaller (a short, low-bitrate fast clip):
+              // keep the original rather than re-encode it on every run.
+              if (!plan || plan.estimatedBytes >= before) continue;
               if (!apply) {
                 record(
                   row,
                   "video",
                   before,
-                  Math.min(before, plan.estimatedBytes),
+                  plan.estimatedBytes,
                   true,
                   this.notesReferencing(row.sha256),
                   undefined,
