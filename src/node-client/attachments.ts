@@ -104,6 +104,69 @@ export class AttachmentStore {
   };
 
   /**
+   * Point every note that references `old` at `next` instead, in one
+   * transaction: each changed note is re-derived (links, image links, FTS)
+   * and gets a new revision; `updatedAt` is unchanged (a storage change, not
+   * an edit). If nothing references `old` afterwards its row and file are
+   * deleted; a reference in another form (say, a different extension) keeps
+   * it. `next` must already be stored.
+   */
+  replaceAttachment = async (
+    old: { sha256: string; ext: string },
+    next: { sha256: string; ext: string },
+  ): Promise<{ notesUpdated: string[]; oldRemoved: boolean }> => {
+    const oldUrl = attachmentUrl(old.sha256, old.ext);
+    const newUrl = attachmentUrl(next.sha256, next.ext);
+    const refersTo = (sha: string) =>
+      sql`(instr(${documents.content}, ${sha}) > 0 OR instr(${documents.frontmatter}, ${sha}) > 0)`;
+
+    const result = this.db.transaction((trx) => {
+      const rows = trx
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+          frontmatter: documents.frontmatter,
+        })
+        .from(documents)
+        .where(refersTo(old.sha256))
+        .all();
+      const notesUpdated: string[] = [];
+      for (const row of rows) {
+        const content = row.content.split(oldUrl).join(newUrl);
+        const frontmatter = row.frontmatter.split(oldUrl).join(newUrl);
+        if (content === row.content && frontmatter === row.frontmatter)
+          continue;
+        trx
+          .update(documents)
+          .set({ content, frontmatter })
+          .where(sql`${documents.id} = ${row.id}`)
+          .run();
+        derive(trx, { id: row.id, title: row.title, content });
+        refreshRevision(trx, row.id);
+        notesUpdated.push(row.id);
+      }
+      const still = trx
+        .select({ id: documents.id })
+        .from(documents)
+        .where(refersTo(old.sha256))
+        .limit(1)
+        .all();
+      if (still.length > 0) return { notesUpdated, oldRemoved: false };
+      trx
+        .delete(attachments)
+        .where(sql`${attachments.sha256} = ${old.sha256}`)
+        .run();
+      return { notesUpdated, oldRemoved: true };
+    });
+
+    if (result.oldRemoved) {
+      await fs.promises.rm(this.pathFor(old.sha256, old.ext), { force: true });
+    }
+    return result;
+  };
+
+  /**
    * One-time upgrade of the legacy flat layout (`_attachments/<name>`,
    * referenced as `../_attachments/<name>`). Crash-safe and re-runnable:
    * 1. copy each flat file into the pool and record it;

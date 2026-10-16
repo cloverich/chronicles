@@ -22,6 +22,7 @@ import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
 import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
 import * as schema from "./schema";
+import { ShrinkClient } from "./shrink";
 import { TagsClient } from "./tags";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -147,6 +148,7 @@ export interface NodeClient {
   tags: TagsClient;
   importer: ImporterClient;
   export: ExportClient;
+  shrink: ShrinkClient;
 }
 
 /**
@@ -270,5 +272,6 @@ export async function createClient(
     tags,
     importer,
     export: exportClient,
+    shrink: new ShrinkClient(db, attachments),
   };
 }
