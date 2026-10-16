@@ -170,6 +170,7 @@ export class ShrinkClient {
         try {
           const file = this.store.pathFor(row.sha256, row.ext);
           const bytes = await fs.promises.readFile(file);
+          if (bytes.byteLength === 0) return;
           const prepared = await prepareImage(bytes);
           if (!prepared) return;
           if (!apply) {
@@ -222,6 +223,7 @@ export class ShrinkClient {
             try {
               const file = this.store.pathFor(row.sha256, row.ext);
               const before = (await fs.promises.stat(file)).size;
+              if (before === 0) continue;
               const probe = await probeVideo(tools, file);
               const plan = probe && planVideo(probe);
               if (!plan) continue;

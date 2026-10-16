@@ -130,7 +130,6 @@ try {
     },
   });
 
-  const verb = report.applied ? "" : "would ";
   console.log("");
   console.log(
     `Images: ${report.images.files} files ${MB(report.images.before)} → ${MB(report.images.after)} (−${pct(report.images.before, report.images.after)})`,
@@ -138,16 +137,19 @@ try {
   console.log(
     `Videos: ${report.videos.files} files ${MB(report.videos.before)} → ${report.applied ? "" : "~"}${MB(report.videos.after)} (−${pct(report.videos.before, report.videos.after)})`,
   );
-  console.log(`Notes ${verb}rewritten: ${report.notes}`);
   console.log(
-    `Unused attachments ${verb}removed: ${report.unused.files} files, ${MB(report.unused.bytes)}`,
+    `Notes ${report.applied ? "rewritten" : "to rewrite"}: ${report.notes}`,
+  );
+  console.log(
+    `Unused attachments ${report.applied ? "removed" : "to remove"}: ${report.unused.files} files, ${MB(report.unused.bytes)}`,
   );
   console.log(
     `Library (_attachments): ${MB(report.library.before)} → ${report.applied ? "" : "~"}${MB(report.library.after)} (−${pct(report.library.before, report.library.after)})`,
   );
   if (report.errors.length > 0) {
     console.log(`\n${report.errors.length} files left as they were:`);
-    for (const e of report.errors) console.log(`  ${e.name}: ${e.error}`);
+    for (const e of report.errors)
+      console.log(`  ${e.name}: ${e.error.split("\n")[0]}`);
   }
   console.log(`\nTook ${(report.ms / 1000).toFixed(1)} s.`);
   if (!report.applied)
