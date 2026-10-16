@@ -14,6 +14,7 @@
     "lint:check": "bash scripts/lint.sh",
     "postinstall": "yarn run electron-rebuild",
     "prebuild": "yarn run changelog:check && yarn run lint:check && node ./scripts/icons.js",
+    "shrink-library": "ELECTRON_RUN_AS_NODE=1 electron --import tsx scripts/shrink-library.ts",
     "start": "node ./scripts/dev.mjs",
     "test": "vitest run && yarn run test:node",
     "test:watch": "vitest",
