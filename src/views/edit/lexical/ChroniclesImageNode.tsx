@@ -6,6 +6,7 @@ import {
   type SerializedLexicalNode,
 } from "lexical";
 import React from "react";
+import { isVideoUrl } from "../../../hooks/images";
 
 export interface SerializedChroniclesImageNode extends SerializedLexicalNode {
   altText: string;
@@ -52,6 +53,19 @@ export class ChroniclesImageNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
+    // Videos are written with image syntax too (`![](clip.mp4)`), as the
+    // iPhone app and the old Plate editor do.
+    if (isVideoUrl(this.__src)) {
+      return (
+        <video
+          src={this.__src}
+          aria-label={this.__altText || undefined}
+          controls
+          preload="metadata"
+          className="max-h-[480px] max-w-[80%] rounded-md"
+        />
+      );
+    }
     return (
       <img
         src={this.__src}

@@ -472,6 +472,21 @@ describe("lexical migration spike", () => {
     );
   });
 
+  it("renders video attachments as video elements with controls", async () => {
+    const { container } = renderEditorWithRoutes(
+      "![Garage practice](chronicles://attachment/" + "a".repeat(64) + ".mp4)",
+    );
+
+    await waitFor(() => {
+      const video = container.querySelector("video");
+      expect(video?.getAttribute("src")).toBe(
+        "chronicles://attachment/" + "a".repeat(64) + ".mp4",
+      );
+      expect(video?.hasAttribute("controls")).toBe(true);
+    });
+    expect(container.querySelector('img[src$=".mp4"]')).toBeNull();
+  });
+
   it("renders relative markdown image URLs using chronicles protocol", async () => {
     renderEditorWithRoutes("![A tidy desk](../_attachments/desk.png)");
 
