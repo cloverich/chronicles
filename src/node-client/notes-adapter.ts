@@ -237,7 +237,9 @@ export function createNodeNotesClient(deps: {
             bytes.byteOffset,
             bytes.byteOffset + bytes.byteLength,
           ) as ArrayBuffer;
-          const { url, warning } = await files.uploadImageBytes(ab, name);
+          const { url, warning } = files.isVideoName(name)
+            ? await files.uploadVideoBytes(ab, name)
+            : await files.uploadImageBytes(ab, name);
           const parsed = parseAttachmentUrl(url)!;
           return { url, ...parsed, ...(warning ? { warning } : {}) };
         }

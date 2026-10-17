@@ -7,7 +7,7 @@ import {
 } from "lexical";
 import React from "react";
 import { toast } from "sonner";
-import { isImageUrl } from "../../../hooks/images";
+import { isImageUrl, isVideoUrl } from "../../../hooks/images";
 import { useOptionalNotes } from "../../../hooks/useNotes";
 import { $createChroniclesImageNode } from "./ChroniclesImageNode";
 
@@ -115,7 +115,11 @@ function extractImageFiles(event: unknown): File[] {
   const clipboardData = (event as { clipboardData?: unknown }).clipboardData;
 
   return getFilesFromDataTransfer(dataTransfer ?? clipboardData).filter(
-    (file) => file.type.startsWith("image/") || isImageUrl(file.name),
+    (file) =>
+      file.type.startsWith("image/") ||
+      file.type.startsWith("video/") ||
+      isImageUrl(file.name) ||
+      isVideoUrl(file.name),
   );
 }
 
