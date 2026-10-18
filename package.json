@@ -21,7 +21,7 @@
     "test:node": "ELECTRON_RUN_AS_NODE=1 electron --import tsx --test 'src/{backup,node-client,markdown,views,themes,fonts,components,preload}/**/*.test.ts'"
   },
   "dependencies": {
-    "@ariakit/react": "^0.4.8",
+    "@ariakit/react": "^0.4.41",
     "@moritzrs/mdast-util-ofm-tag": "^0.0.1",
     "@moritzrs/mdast-util-ofm-wikilink": "^0.0.1",
     "@moritzrs/micromark-extension-ofm-tag": "^0.0.1",
@@ -30,10 +30,10 @@
     "ajv-formats": "^2.1.0",
     "better-sqlite3": "^12.11.1",
     "conf": "^14.0.0",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.4",
     "electron-store": "^10.1.0",
-    "sharp": "^0.35.4",
-    "uuid25": "^0.1.5",
+    "sharp": "^0.35.5",
+    "uuid25": "^0.1.6",
     "uuidv7": "^0.6.3",
     "yauzl": "^3.2.0",
     "yazl": "^3.3.1"
@@ -120,6 +120,6 @@
   "resolutions": {
     "yargs": "17.7.2",
     "vite": "^7.3.6",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.5"
   }
 }
