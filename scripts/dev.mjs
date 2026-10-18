@@ -16,6 +16,12 @@ const VITE_DEV_SERVER_URL =
   vite.resolvedUrls?.local[0] ?? "http://localhost:5173";
 console.log(`Vite dev server running at ${VITE_DEV_SERVER_URL}`);
 
+// CHRONICLES_DEBUG_PORT=9333 exposes the renderer over the Chrome DevTools
+// protocol, so a script (or an agent) can drive the dev app.
+const debugArgs = process.env.CHRONICLES_DEBUG_PORT
+  ? [`--remote-debugging-port=${process.env.CHRONICLES_DEBUG_PORT}`]
+  : [];
+
 const startTracker = new Set();
 let didStart = false;
 
@@ -55,7 +61,7 @@ let eprocess;
 function startElectron() {
   console.log("starting electron");
   checkTypes();
-  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs", ...debugArgs], {
     stdio: "inherit",
     env: { ...process.env, VITE_DEV_SERVER_URL },
   });
@@ -78,7 +84,7 @@ const restartElectron = lodash.debounce(function startElectron() {
   // is incremental or something, rather than a fresh sub-process)
   checkTypes();
   console.log("restarting electron");
-  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs"], {
+  eprocess = cp.spawn(`${electron}`, ["src/main.bundle.mjs", ...debugArgs], {
     stdio: "inherit",
     env: { ...process.env, VITE_DEV_SERVER_URL },
   });
