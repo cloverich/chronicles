@@ -12,6 +12,7 @@ import {
   type Note,
   type NotesClient,
 } from "../../contract/notes";
+import { publishSlug } from "../../markdown/publishProjection";
 
 /**
  * View model for tracking save state of a loaded document
@@ -168,6 +169,24 @@ export class EditableDocument {
     const next = this.pendingSave.then(run, run);
     this.pendingSave = next.catch(() => {});
     return next;
+  };
+
+  /**
+   * Before a publish: save pending edits, and write `slug` and `date` into
+   * front matter if missing, so later title edits don't move the post
+   * (spec/publish.md, "Publishing a note").
+   */
+  pinPublishPath = async (): Promise<void> => {
+    const fm = { ...toJS(this.frontMatter) };
+    if (typeof fm.slug !== "string" || !fm.slug) {
+      const slug = publishSlug({ title: this.title, frontMatter: {} });
+      if (slug) fm.slug = slug;
+    }
+    if (typeof fm.date !== "string" || !fm.date) {
+      fm.date = new Date().toISOString();
+    }
+    this.frontMatter = fm;
+    await this.persist();
   };
 
   /**

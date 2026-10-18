@@ -41,6 +41,9 @@ export class Preferences implements IPreferences {
     title?: string;
   };
 
+  /** Saved with saveImmediate from the Blog section; see IPreferences. */
+  blog: IPreferences["blog"] = undefined;
+
   constructor(prefs: IPreferences, settings: Settings) {
     Object.assign(this, prefs);
     makeObservable(this, {
@@ -57,6 +60,7 @@ export class Preferences implements IPreferences {
       fonts: observable,
       maxWidth: observable,
       fontSizes: observable,
+      blog: observable,
     });
 
     this._lastSynced = { ...prefs };

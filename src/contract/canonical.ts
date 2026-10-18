@@ -58,7 +58,7 @@ export function compareCodePoints(a: string, b: string): number {
 }
 
 /** Recursively sort object keys by code point, dropping undefined values. */
-function canonicalValue(value: unknown): unknown {
+export function canonicalValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalValue);
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
@@ -71,7 +71,7 @@ function canonicalValue(value: unknown): unknown {
   return value;
 }
 
-function formatKey(key: string): string {
+export function formatKey(key: string): string {
   return PLAIN_KEY.test(key) && !YAML_RESERVED_KEYS.has(key.toLowerCase())
     ? key
     : JSON.stringify(key);

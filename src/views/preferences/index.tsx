@@ -1,5 +1,5 @@
 import { FolderOpen, Trash2 } from "lucide-react";
-import { observable } from "mobx";
+import { observable, toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { PropsWithChildren } from "react";
 import { useNavigate } from "react-router-dom";
@@ -641,6 +641,62 @@ const PreferencesPane = observer((props: Props) => {
                     }}
                   >
                     Reset to defaults
+                  </Button>
+                </div>
+              </Section>
+              <Section>
+                <SectionTitle
+                  title="Blog"
+                  sub="Publish writes a post folder into your site, e.g. a Hugo site's content/blog. The site's own script puts it live."
+                />
+                <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-sm">
+                  <dt className="text-foreground-strong font-medium">
+                    Blog folder
+                  </dt>
+                  <dd className="text-muted-foreground mb-2 text-xs">
+                    <code>{preferences.blog?.root || "Not set"}</code>
+                  </dd>
+                </dl>
+                <div className="my-4 flex justify-between">
+                  <div className="text-foreground-strong mb-2 font-medium">
+                    Blog journal
+                  </div>
+                  <NativeSelect
+                    value={preferences.blog?.journal ?? ""}
+                    onChange={(e) =>
+                      preferences.saveImmediate({
+                        blog: {
+                          ...toJS(preferences.blog),
+                          journal: e.target.value || undefined,
+                        },
+                      })
+                    }
+                  >
+                    <option value="">Any journal</option>
+                    {journalsStore.journals.map((j) => (
+                      <option key={j.id} value={j.name}>
+                        {j.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Which front matter keys are published, and the author, are set
+                  under <code>blog.target</code> in the settings file.
+                </p>
+                <div className="mt-4 flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      const result = await platform.openDialogSelectDir();
+                      if (!result.value) return;
+                      await preferences.saveImmediate({
+                        blog: { ...toJS(preferences.blog), root: result.value },
+                      });
+                    }}
+                  >
+                    Choose blog folder
                   </Button>
                 </div>
               </Section>

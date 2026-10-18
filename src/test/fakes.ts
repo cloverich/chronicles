@@ -56,6 +56,8 @@ export function fakeMaintenance() {
       }),
       restore: vi.fn(async (id: string) => ({ scheduled: id })),
     },
+    publishStatus: vi.fn(async () => null),
+    publishNote: vi.fn(async () => ({ state: "published" as const })),
   } satisfies Maintenance;
 }
 

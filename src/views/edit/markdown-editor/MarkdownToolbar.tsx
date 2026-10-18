@@ -43,6 +43,7 @@ export function MarkdownToolbar({
                   selectedEditorMode={selectedEditorMode}
                   setSelectedEditorMode={setSelectedEditorMode}
                   deleteDocument={deleteDocument}
+                  document={document}
                 />
               </ToolbarGroup>
             </Toolbar>

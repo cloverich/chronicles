@@ -60,6 +60,7 @@ export const EditorLayout = observer(
                       selectedEditorMode={selectedViewMode}
                       setSelectedEditorMode={setSelectedViewMode}
                       deleteDocument={deleteDocument}
+                      document={document}
                     />
                   </ToolbarGroup>
                 </Toolbar>

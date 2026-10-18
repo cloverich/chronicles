@@ -1,0 +1,37 @@
+{
+  "journals": [
+    {
+      "id": "03h2pubjournal00000000001",
+      "name": "pinecoder",
+      "archivedAt": null
+    }
+  ],
+  "attachments": [],
+  "notes": [
+    {
+      "id": "03h2pubnote00000000000001",
+      "journal": "pinecoder",
+      "title": "A title that will not be the slug",
+      "createdAt": "2026-10-14T18:30:00.000Z",
+      "updatedAt": "2026-10-16T09:00:00.000Z",
+      "tags": [
+        "devlog"
+      ],
+      "frontMatter": {
+        "slug": "custom-slug",
+        "date": "2026-10-15T00:00:00.000Z",
+        "description": "Not allowlisted here."
+      },
+      "content": ""
+    }
+  ],
+  "publish": {
+    "note": "03h2pubnote00000000000001",
+    "target": {
+      "kind": "hugo-bundle",
+      "urlPrefix": "/posts/",
+      "provenance": false
+    },
+    "published": {}
+  }
+}

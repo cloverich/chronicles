@@ -14,6 +14,7 @@ Node code.
 | [export-format.md](export-format.md) | Export tree, single-file form, partial export, manifest, versions |
 | [derive.md](derive.md)               | Derived data (note links, image refs, FTS)                        |
 | [notes-client.md](notes-client.md)   | The NotesClient API contract and its fixtures                     |
+| [publish.md](publish.md)             | Projecting a note into a public bundle (a blog post)              |
 | `vectors/`                           | Golden inputs and expected outputs                                |
 
 ## Status
@@ -33,6 +34,8 @@ vectors/
   archive/<case>/*.zip       single-file exports of export/<case>/expected
   derive/<file>.json         markdown in → derived data out
   contract/<area>.json       NotesClient scenarios (seeded from contract/libraries/)
+  publish/<case>/input.json  library state plus the note, target, and published map
+  publish/<case>/expected/   the bundle tree (absent for an expectedError case)
 ```
 
 An implementation passes a vector when:
@@ -52,6 +55,8 @@ An implementation passes a vector when:
 - **derive:** for each case, deriving from `title` + `markdown` yields
   `expected`.
 - **contract:** every scenario passes against the host's NotesClient.
+- **publish:** projecting the case's note yields `expected/` byte-for-byte, or
+  fails with `expectedError` (see [publish.md](publish.md#vectors)).
 
 In this repo, `yarn test:node` runs every vector
 (`src/node-client/spec-vectors.test.ts`). To regenerate after an intentional

@@ -1,0 +1,79 @@
+{
+  "journals": [
+    {
+      "id": "03h2pubjournal00000000001",
+      "name": "pinecoder",
+      "archivedAt": null
+    }
+  ],
+  "attachments": [
+    {
+      "ext": ".png",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    }
+  ],
+  "notes": [
+    {
+      "id": "03h2pubnote00000000000001",
+      "journal": "pinecoder",
+      "title": "Hello, Wörld! A first post",
+      "createdAt": "2026-10-14T18:30:00.000Z",
+      "updatedAt": "2026-10-16T09:00:00.000Z",
+      "tags": [
+        "devlog",
+        "blog"
+      ],
+      "frontMatter": {
+        "description": "A short summary.",
+        "secret": "do not publish",
+        "mood": {
+          "z": 1,
+          "a": "calm"
+        },
+        "headerImage": {
+          "src": "x.jpg"
+        }
+      },
+      "content": "Intro with a [published post](chronicles://note/03h2pubnote00000000000002) and a [*private* note](chronicles://note/03h2pubnote00000000000003).\n\n![A pixel](chronicles://attachment/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png)\n\n![Remote](https://example.com/a.png)\n\nIn code, `[kept](chronicles://note/03h2pubnote00000000000003)` stays.\n\n```\n[also kept](chronicles://attachment/431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460.png)\n```\n\n\n"
+    },
+    {
+      "id": "03h2pubnote00000000000002",
+      "journal": "pinecoder",
+      "title": "An older post",
+      "createdAt": "2026-10-14T18:30:00.000Z",
+      "updatedAt": "2026-10-16T09:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": "Older.\n"
+    },
+    {
+      "id": "03h2pubnote00000000000003",
+      "journal": "pinecoder",
+      "title": "Private thoughts",
+      "createdAt": "2026-10-14T18:30:00.000Z",
+      "updatedAt": "2026-10-16T09:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": "Not for the blog.\n"
+    }
+  ],
+  "publish": {
+    "note": "03h2pubnote00000000000001",
+    "target": {
+      "kind": "hugo-bundle",
+      "frontMatter": [
+        "description",
+        "tags",
+        "mood",
+        "headerImage",
+        "slug"
+      ],
+      "author": "chris",
+      "urlPrefix": "/blog/",
+      "provenance": true
+    },
+    "published": {
+      "03h2pubnote00000000000002": "/blog/2026-01-01/an-older-post/"
+    }
+  }
+}

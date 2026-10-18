@@ -1,3 +1,4 @@
+import type { PublishTarget } from "../markdown/publishProjection";
 import { APPEARANCE_DEFAULTS } from "./appearance-defaults";
 
 /**
@@ -38,6 +39,16 @@ export interface IPreferences {
     prose?: string;
     code?: string;
     frontmatter?: string;
+  };
+  /**
+   * Publishing to a blog (spec/publish.md). `root` is the folder posts are
+   * written into, e.g. a Hugo site's `content/blog`. When `journal` is set,
+   * only its notes offer Publish.
+   */
+  blog?: {
+    root?: string;
+    journal?: string;
+    target?: Partial<PublishTarget>;
   };
   fontSizes: {
     search?: string;

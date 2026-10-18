@@ -1,0 +1,40 @@
+{
+  "journals": [
+    {
+      "id": "03h2pubjournal00000000001",
+      "name": "pinecoder",
+      "archivedAt": null
+    }
+  ],
+  "attachments": [],
+  "notes": [
+    {
+      "id": "03h2pubnote00000000000001",
+      "journal": "pinecoder",
+      "title": null,
+      "createdAt": "2026-10-14T18:30:00.000Z",
+      "updatedAt": "2026-10-16T09:00:00.000Z",
+      "tags": [],
+      "frontMatter": {},
+      "content": "Body.\n"
+    }
+  ],
+  "publish": {
+    "note": "03h2pubnote00000000000001",
+    "target": {
+      "kind": "hugo-bundle",
+      "frontMatter": [
+        "description",
+        "tags",
+        "mood",
+        "headerImage",
+        "slug"
+      ],
+      "author": "chris",
+      "urlPrefix": "/blog/",
+      "provenance": true
+    },
+    "published": {}
+  },
+  "expectedError": "PUBLISH_NO_TITLE"
+}

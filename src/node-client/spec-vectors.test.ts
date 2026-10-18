@@ -5,6 +5,7 @@ import { describe, test } from "node:test";
 import { tmpdir } from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import type { PublishTarget } from "../markdown/publishProjection";
 import { SourceType } from "../preload/client/importer/SourceType";
 import { deriveData } from "./derive";
 import { extractArchive, writeArchive } from "./export-archive";
@@ -249,5 +250,57 @@ describe("spec/vectors/derive", () => {
         );
       });
     }
+  }
+});
+
+describe("spec/vectors/publish", () => {
+  const publishDir = path.join(SPEC_DIR, "publish");
+  for (const name of fs.readdirSync(publishDir)) {
+    test(name, async () => {
+      const caseDir = path.join(publishDir, name);
+      const expectedDir = path.join(caseDir, "expected");
+      const input: ExportVectorInput & {
+        publish: {
+          note: string;
+          target: PublishTarget;
+          published: Record<string, string>;
+        };
+        expectedError?: string;
+      } = JSON.parse(fs.readFileSync(path.join(caseDir, "input.json"), "utf8"));
+
+      const work = fs.mkdtempSync(path.join(tmpdir(), "chronicles-publish-"));
+      try {
+        const client = await loadExportInput(input, path.join(work, "notes"));
+        const { note, target, published } = input.publish;
+        if (input.expectedError) {
+          assert.throws(
+            () => client.publish.project(note, target, published),
+            new RegExp(`^Error: \\[${input.expectedError}\\]`),
+          );
+          return;
+        }
+
+        const bundle = client.publish.project(note, target, published);
+        const out = path.join(work, "out");
+        const dir = path.join(out, bundle.path);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, "index.md"), bundle.indexMd, "utf8");
+        for (const { sha256, ext } of bundle.assets) {
+          fs.mkdirSync(path.join(dir, "assets"), { recursive: true });
+          fs.copyFileSync(
+            client.publish.blobPath(sha256, ext),
+            path.join(dir, "assets", `${sha256}${ext}`),
+          );
+        }
+
+        if (UPDATE) {
+          fs.rmSync(expectedDir, { recursive: true, force: true });
+          fs.cpSync(out, expectedDir, { recursive: true });
+        }
+        assertSameTree(out, expectedDir);
+      } finally {
+        fs.rmSync(work, { recursive: true, force: true });
+      }
+    });
   }
 });

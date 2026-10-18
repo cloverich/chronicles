@@ -12,7 +12,9 @@ import {
   useOpenState,
 } from "../../../components/DropdownMenu";
 import { Icons } from "../../../components/icons";
+import type { EditableDocument } from "../EditableDocument";
 import { EditorMode } from "../EditorMode";
+import { PublishMenuItem } from "./PublishMenuItem";
 import { ToolbarButton } from "./Toolbar";
 
 const options = Object.freeze([
@@ -24,6 +26,7 @@ interface Props {
   selectedEditorMode: EditorMode;
   setSelectedEditorMode: (s: EditorMode) => any;
   deleteDocument: () => void;
+  document?: EditableDocument;
 }
 
 /**
@@ -33,6 +36,7 @@ export default function DebugDropdown({
   selectedEditorMode,
   setSelectedEditorMode,
   deleteDocument,
+  document,
 }: Props) {
   const openState = useOpenState();
 
@@ -71,6 +75,9 @@ export default function DebugDropdown({
           ))}
         </DropdownMenuRadioGroup>
 
+        {document && (
+          <PublishMenuItem document={document} open={openState.open} />
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={deleteDocument}>
           <Icons.trash className="ml-1 h-4 w-4" />

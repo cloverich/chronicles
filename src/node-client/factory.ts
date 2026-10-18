@@ -21,6 +21,7 @@ import { ImporterClient } from "./importer";
 import { JournalsClient } from "./journals";
 import type { IPreferences } from "./preferences";
 import { PREFERENCES_DEFAULTS, PreferencesClient } from "./preferences";
+import { PublishClient } from "./publish";
 import * as schema from "./schema";
 import { ShrinkClient } from "./shrink";
 import { TagsClient } from "./tags";
@@ -148,6 +149,7 @@ export interface NodeClient {
   tags: TagsClient;
   importer: ImporterClient;
   export: ExportClient;
+  publish: PublishClient;
   shrink: ShrinkClient;
 }
 
@@ -272,6 +274,7 @@ export async function createClient(
     tags,
     importer,
     export: exportClient,
+    publish: new PublishClient(db, opts.notesDir),
     shrink: new ShrinkClient(db, attachments),
   };
 }
