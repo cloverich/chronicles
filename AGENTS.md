@@ -27,6 +27,8 @@ Chronicles — local-first, markdown-based journaling app. Electron + React/Type
 
 See [docs/development.md](docs/development.md) for all commands, workflow, directory layout, and conventions.
 
+`make help` lists the entry points (dev, test, check, install) that Engram runs.
+
 ```bash
 HEADLESS=true yarn start    # run
 yarn test                   # test (vitest renderer + node:test suites)
