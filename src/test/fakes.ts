@@ -56,8 +56,15 @@ export function fakeMaintenance() {
       }),
       restore: vi.fn(async (id: string) => ({ scheduled: id })),
     },
-    publishStatus: vi.fn(async () => null),
+    publishStatus: vi.fn(async () => ({
+      state: "unavailable" as const,
+      reason: "Choose a blog folder in Preferences > Blog",
+    })),
     publishNote: vi.fn(async () => ({ state: "published" as const })),
+    blogOverview: vi.fn(async () => ({
+      configured: false as const,
+      reason: "Choose a blog folder in Preferences > Blog",
+    })),
   } satisfies Maintenance;
 }
 

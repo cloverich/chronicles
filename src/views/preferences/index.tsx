@@ -20,6 +20,7 @@ import { useMaintenanceStore } from "../../hooks/useMaintenanceStore";
 import { usePlatform } from "../../hooks/usePlatform";
 import { usePreferences } from "../../hooks/usePreferences";
 import { useSettings } from "../../hooks/useSettings";
+import { BLOG_TARGET_DEFAULTS } from "../../markdown/publishProjection";
 import { SourceType } from "../../preload/client/importer/SourceType";
 import {
   SKIPPABLE_FILES,
@@ -84,6 +85,20 @@ const PreferencesPane = observer((props: Props) => {
       })();
     }
   }, [props.isOpen, preferences.settingsDir]);
+
+  function saveBlog(patch: Partial<NonNullable<typeof preferences.blog>>) {
+    return preferences.saveImmediate({
+      blog: { ...toJS(preferences.blog), ...patch },
+    });
+  }
+
+  function saveBlogTarget(
+    patch: Partial<NonNullable<NonNullable<typeof preferences.blog>["target"]>>,
+  ) {
+    return saveBlog({
+      target: { ...toJS(preferences.blog?.target), ...patch },
+    });
+  }
 
   async function selectNotesRoot() {
     store.loading = true;
@@ -649,54 +664,96 @@ const PreferencesPane = observer((props: Props) => {
                   title="Blog"
                   sub="Publish writes a post folder into your site, e.g. a Hugo site's content/blog. The site's own script puts it live."
                 />
-                <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-sm">
-                  <dt className="text-foreground-strong font-medium">
-                    Blog folder
-                  </dt>
-                  <dd className="text-muted-foreground mb-2 text-xs">
-                    <code>{preferences.blog?.root || "Not set"}</code>
-                  </dd>
-                </dl>
-                <div className="my-4 flex justify-between">
-                  <div className="text-foreground-strong mb-2 font-medium">
-                    Blog journal
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Label.Base className="text-sm font-medium">
+                        Blog folder
+                      </Label.Base>
+                      <p className="text-muted-foreground text-xs break-all">
+                        <code>{preferences.blog?.root || "Not set"}</code>
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        const result = await platform.openDialogSelectDir();
+                        if (!result.value) return;
+                        await saveBlog({ root: result.value });
+                      }}
+                    >
+                      {preferences.blog?.root ? "Change…" : "Choose…"}
+                    </Button>
                   </div>
-                  <NativeSelect
-                    value={preferences.blog?.journal ?? ""}
-                    onChange={(e) =>
-                      preferences.saveImmediate({
-                        blog: {
-                          ...toJS(preferences.blog),
-                          journal: e.target.value || undefined,
-                        },
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Label.Base className="text-sm font-medium">
+                        Blog journal
+                      </Label.Base>
+                      <p className="text-muted-foreground text-xs">
+                        Notes in this journal can be published
+                      </p>
+                    </div>
+                    <NativeSelect
+                      value={preferences.blog?.journal ?? ""}
+                      onChange={(e) =>
+                        saveBlog({ journal: e.target.value || undefined })
+                      }
+                    >
+                      <option value="" disabled>
+                        Choose a journal
+                      </option>
+                      {journalsStore.journals.map((j) => (
+                        <option key={j.id} value={j.name}>
+                          {j.name}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <BlogField
+                    label="Author"
+                    description="Written as author on every post"
+                    value={preferences.blog?.target?.author ?? ""}
+                    placeholder="None"
+                    onSave={(author) => saveBlogTarget({ author })}
+                  />
+                  <BlogField
+                    label="URL prefix"
+                    description="Where the site serves the blog folder; used for links between posts"
+                    value={preferences.blog?.target?.urlPrefix ?? ""}
+                    placeholder={BLOG_TARGET_DEFAULTS.urlPrefix}
+                    onSave={(urlPrefix) => saveBlogTarget({ urlPrefix })}
+                  />
+                  <BlogField
+                    label="Front matter"
+                    description="Comma-separated keys copied to posts; every other key stays private"
+                    value={
+                      preferences.blog?.target?.frontMatter?.join(", ") ?? ""
+                    }
+                    placeholder={BLOG_TARGET_DEFAULTS.frontMatter!.join(", ")}
+                    onSave={(keys) =>
+                      saveBlogTarget({
+                        frontMatter: keys
+                          ? keys
+                              .split(",")
+                              .map((k) => k.trim())
+                              .filter(Boolean)
+                          : undefined,
                       })
                     }
-                  >
-                    <option value="">Any journal</option>
-                    {journalsStore.journals.map((j) => (
-                      <option key={j.id} value={j.name}>
-                        {j.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  />
                 </div>
-                <p className="text-muted-foreground text-xs">
-                  Which front matter keys are published, and the author, are set
-                  under <code>blog.target</code> in the settings file.
-                </p>
                 <div className="mt-4 flex">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={async () => {
-                      const result = await platform.openDialogSelectDir();
-                      if (!result.value) return;
-                      await preferences.saveImmediate({
-                        blog: { ...toJS(preferences.blog), root: result.value },
-                      });
+                    onClick={() => {
+                      props.onClose();
+                      navigate("/blog");
                     }}
                   >
-                    Choose blog folder
+                    Open blog posts
                   </Button>
                 </div>
               </Section>
@@ -1145,6 +1202,38 @@ function FontSelector({
         ))}
       </NativeSelect>
     </div>
+  );
+}
+
+/** A text preference saved on blur or Enter; empty clears it to the default. */
+function BlogField({
+  label,
+  description,
+  value,
+  placeholder,
+  onSave,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  placeholder?: string;
+  onSave: (value: string | undefined) => void;
+}) {
+  const [draft, setDraft] = React.useState(value);
+  React.useEffect(() => setDraft(value), [value]);
+  const commit = () => {
+    if (draft.trim() !== value) onSave(draft.trim() || undefined);
+  };
+  return (
+    <WidthSelector
+      label={label}
+      description={description}
+      value={draft}
+      placeholder={placeholder}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === "Enter" && commit()}
+    />
   );
 }
 

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
@@ -7,11 +8,12 @@ import {
 } from "../../../components/DropdownMenu";
 import {
   useMaintenance,
-  type PublishStatus,
+  type PublishAvailability,
 } from "../../../hooks/useMaintenance";
 import type { EditableDocument } from "../EditableDocument";
 
-const LABELS: Record<PublishStatus["state"], string> = {
+const LABELS: Record<PublishAvailability["state"], string> = {
+  unavailable: "Publish to blog",
   draft: "Publish to blog",
   edited: "Publish changes",
   published: "Published",
@@ -19,8 +21,9 @@ const LABELS: Record<PublishStatus["state"], string> = {
 
 /**
  * Writes the note's post folder into the blog folder (spec/publish.md).
- * Hidden unless a blog folder is set and the note is in the blog journal.
- * Going live is the blog repo's own step (its publish script).
+ * Always shown; disabled with the reason when the blog isn't set up or the
+ * note is outside the blog journal. Going live is the blog repo's own step
+ * (its publish script).
  */
 export function PublishMenuItem({
   document,
@@ -31,7 +34,8 @@ export function PublishMenuItem({
   open: boolean;
 }) {
   const maintenance = useMaintenance();
-  const [status, setStatus] = React.useState<PublishStatus | null>(null);
+  const navigate = useNavigate();
+  const [status, setStatus] = React.useState<PublishAvailability | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
@@ -39,13 +43,18 @@ export function PublishMenuItem({
     maintenance
       .publishStatus({ id: document.id })
       .then((s) => live && setStatus(s))
-      .catch(() => live && setStatus(null));
+      .catch(
+        (err) =>
+          live &&
+          setStatus({
+            state: "unavailable",
+            reason: err instanceof Error ? err.message : String(err),
+          }),
+      );
     return () => {
       live = false;
     };
   }, [open, document.id]);
-
-  if (!status) return null;
 
   async function publish() {
     try {
@@ -60,14 +69,31 @@ export function PublishMenuItem({
     }
   }
 
+  const state = status?.state ?? "unavailable";
+  const hint =
+    status?.state === "unavailable"
+      ? status.reason
+      : status && "path" in status && status.path
+        ? status.path
+        : null;
+
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuItem
         onClick={publish}
-        disabled={status.state === "published"}
+        disabled={state === "unavailable" || state === "published"}
+        className="flex-col items-start gap-0"
       >
-        {LABELS[status.state]}
+        <span>{LABELS[state]}</span>
+        {hint && (
+          <span className="text-muted-foreground max-w-[240px] text-xs">
+            {hint}
+          </span>
+        )}
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => navigate("/blog")}>
+        Blog posts…
       </DropdownMenuItem>
     </>
   );

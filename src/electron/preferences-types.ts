@@ -42,8 +42,9 @@ export interface IPreferences {
   };
   /**
    * Publishing to a blog (spec/publish.md). `root` is the folder posts are
-   * written into, e.g. a Hugo site's `content/blog`. When `journal` is set,
-   * only its notes offer Publish.
+   * written into, e.g. a Hugo site's `content/blog`. Publishing needs both
+   * `root` and `journal`; notes in `journal` can be published. Edited in
+   * Preferences > Blog.
    */
   blog?: {
     root?: string;

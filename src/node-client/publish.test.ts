@@ -81,6 +81,37 @@ describe("PublishClient", () => {
     );
   });
 
+  test("overview lists the journal, moved posts, and orphans", async () => {
+    const draft = await note({ slug: "draft" });
+    const moved = await note({ slug: "moved" });
+    await client.publish.publish(moved, root, TARGET);
+    await client.journals.create({ name: "private" });
+    const doc = await client.documents.findById({ id: moved });
+    await client.documents.updateDocument({
+      id: moved,
+      journal: "private",
+      content: doc.content,
+      frontMatter: doc.frontMatter,
+    });
+    fs.mkdirSync(path.join(root, "2026-01-01/gone"), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "2026-01-01/gone/index.md"),
+      '---\ntitle: "Gone"\nchronicles: {"id":"gone","revision":"r"}\n---\n',
+    );
+
+    const rows = await client.publish.overview("Pinecoder", root, TARGET);
+    const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+    assert.equal(byId[draft].state, "draft");
+    assert.equal(byId[moved].journal, "private");
+    assert.equal(byId[moved].url, "/blog/2026-10-14/moved/");
+    assert.deepEqual(rows.at(-1), {
+      id: "gone",
+      state: "orphaned",
+      path: "2026-01-01/gone",
+      url: "/blog/2026-01-01/gone/",
+    });
+  });
+
   test("a changed slug moves the bundle", async () => {
     const id = await note({ slug: "old" });
     await client.publish.publish(id, root, TARGET);

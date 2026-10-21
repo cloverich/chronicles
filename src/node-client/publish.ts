@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import path from "path";
@@ -14,7 +14,7 @@ import {
 import { createId } from "../preload/client/util";
 import { parseNoteFile } from "./canonical-note";
 import * as schema from "./schema";
-import { documents, documentTags } from "./schema";
+import { documents, documentTags, journals } from "./schema";
 
 /**
  * Publishing a note into a bundle root (for the blog, its `content/blog/`).
@@ -28,6 +28,18 @@ export type PublishState = "draft" | "published" | "edited";
 export interface PublishStatus {
   state: PublishState;
   /** Bundle path relative to the root, when published. */
+  path?: string;
+  url?: string;
+}
+
+/** One row of the blog overview: a note in the blog journal, or any bundle. */
+export interface PublishRow {
+  id: string;
+  /** `orphaned`: a bundle whose note is no longer in the library. */
+  state: PublishState | "orphaned";
+  title?: string;
+  journal?: string;
+  updatedAt?: string;
   path?: string;
   url?: string;
 }
@@ -80,6 +92,61 @@ export class PublishClient {
       path: bundle.path,
       url: bundle.url,
     };
+  };
+
+  /**
+   * Every note in `journal` plus every bundle in the root (a note moved out of
+   * the journal is still published), newest edit first; orphans last.
+   */
+  overview = async (
+    journal: string,
+    root: string,
+    target: PublishTarget,
+  ): Promise<PublishRow[]> => {
+    const bundles = await this.scan(root, target);
+    const bundled = Array.from(bundles.keys());
+    const inJournal = sql`lower(${journals.name}) = ${journal.toLowerCase()}`;
+    const notes = this.db
+      .select({
+        id: documents.id,
+        title: documents.title,
+        journal: journals.name,
+        updatedAt: documents.updatedAt,
+        revision: documents.revision,
+      })
+      .from(documents)
+      .innerJoin(journals, eq(documents.journalId, journals.id))
+      .where(
+        bundled.length
+          ? or(inJournal, inArray(documents.id, bundled))
+          : inJournal,
+      )
+      .all();
+
+    const rows: PublishRow[] = notes
+      .map(({ revision, title, ...note }) => {
+        const bundle = bundles.get(note.id);
+        const state: PublishState = !bundle
+          ? "draft"
+          : bundle.revision === revision
+            ? "published"
+            : "edited";
+        return {
+          ...note,
+          title: title ?? undefined,
+          state,
+          path: bundle?.path,
+          url: bundle?.url,
+        };
+      })
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+    const known = new Set(notes.map((n) => n.id));
+    for (const [id, bundle] of bundles) {
+      if (known.has(id)) continue;
+      rows.push({ id, state: "orphaned", path: bundle.path, url: bundle.url });
+    }
+    return rows;
   };
 
   /**

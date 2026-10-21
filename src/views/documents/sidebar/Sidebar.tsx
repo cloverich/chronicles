@@ -2,6 +2,7 @@ import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import React from "react";
 
 import { observer } from "mobx-react-lite";
+import { useNavigate } from "react-router-dom";
 import { Collapse } from "../../../components/Collapse";
 import { IconButton } from "../../../components/IconButton";
 import {
@@ -60,6 +61,7 @@ export default observer(function JournalSelectionSidebar(props: SidebarProps) {
 });
 
 const InnerContent = observer(({ store }: { store: SidebarStore }) => {
+  const navigate = useNavigate();
   return (
     <div className="text-secondary-foreground mt-6">
       <Card>
@@ -119,6 +121,14 @@ const InnerContent = observer(({ store }: { store: SidebarStore }) => {
         </Collapse>
       </Card>
       <TagsList search={store.searchTag} />
+      <Card>
+        <button
+          className="font-system-heading tracking-tight hover:underline"
+          onClick={() => navigate("/blog")}
+        >
+          Blog posts
+        </button>
+      </Card>
     </div>
   );
 });

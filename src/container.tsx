@@ -11,6 +11,7 @@ import { ApplicationContext } from "./hooks/useApplicationStore";
 import Titlebar from "./titlebar/macos";
 import { StyleWatcher } from "./views/StyleWatcher";
 import Backups from "./views/backups";
+import Blog from "./views/blog";
 import Changelog from "./views/changelog";
 import DocumentCreator from "./views/create";
 import Documents from "./views/documents";
@@ -74,6 +75,7 @@ export default observer(function Container() {
         />
         <Routes>
           <Route path="backups" element={<Backups />} />
+          <Route path="blog" element={<Blog />} />
           <Route path="changelog" element={<Changelog />} />
           <Route path="documents" element={<SearchProvider />}>
             <Route index element={<Documents />} />

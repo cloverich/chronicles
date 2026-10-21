@@ -1,9 +1,16 @@
 import path from "path";
 import type { NotesClient } from "../../contract/notes";
 import type { Settings } from "../../electron/settings";
-import type { Maintenance } from "../../hooks/useMaintenance";
+import type {
+  Maintenance,
+  PublishAvailability,
+} from "../../hooks/useMaintenance";
 import type { Settings as SettingsFacade } from "../../hooks/useSettings";
-import type { PublishTarget } from "../../markdown/publishProjection";
+import {
+  BLOG_TARGET_DEFAULTS,
+  publishSlug,
+  type PublishTarget,
+} from "../../markdown/publishProjection";
 import {
   createClient as createNodeClient,
   type NodeClient,
@@ -25,25 +32,72 @@ function createSettings(prefs: PreferencesClient): SettingsFacade {
   };
 }
 
-const DEFAULT_BLOG_TARGET: PublishTarget = {
-  kind: "hugo-bundle",
-  frontMatter: ["description", "tags"],
-  urlPrefix: "/blog/",
-  provenance: true,
-};
+type BlogConfig =
+  { root: string; journal: string; target: PublishTarget } | { reason: string };
 
-/** The blog root and target, when the note may be published there. */
-async function blogFor(client: NodeClient, id: string) {
+/** The blog preference, or why publishing is unavailable. */
+async function blogConfig(client: NodeClient): Promise<BlogConfig> {
   const blog = (await client.preferences.get("blog")) as IPreferences["blog"];
-  if (!blog?.root) return null;
-  if (blog.journal) {
-    const { journal } = await client.documents.findById({ id });
-    if (journal !== blog.journal) return null;
+  if (!blog?.root) {
+    return { reason: "Choose a blog folder in Preferences > Blog" };
+  }
+  if (!blog.journal) {
+    return { reason: "Choose a blog journal in Preferences > Blog" };
   }
   return {
     root: blog.root,
-    target: { ...DEFAULT_BLOG_TARGET, ...blog.target } as PublishTarget,
+    journal: blog.journal,
+    target: { ...BLOG_TARGET_DEFAULTS, ...blog.target } as PublishTarget,
   };
+}
+
+/**
+ * A note may be published when it is in the blog journal, or already has a
+ * post (moving a published note out of the journal doesn't strand its post).
+ */
+async function noteStatus(
+  client: NodeClient,
+  id: string,
+): Promise<PublishAvailability> {
+  const blog = await blogConfig(client);
+  if ("reason" in blog) return { state: "unavailable", reason: blog.reason };
+  const status = await client.publish.status(id, blog.root, blog.target);
+  const { journal } = await client.documents.findById({ id });
+  if (
+    status.state === "draft" &&
+    journal.toLowerCase() !== blog.journal.toLowerCase()
+  ) {
+    return {
+      state: "unavailable",
+      reason: `Move this note to the ${blog.journal} journal to publish it`,
+    };
+  }
+  return status;
+}
+
+/**
+ * Write `slug` and `date` into the note when missing (spec/publish.md step 1).
+ * The editor pins first to keep its open copy current; this covers publishing
+ * from the Blog view.
+ */
+async function pinPublishPath(client: NodeClient, id: string) {
+  const doc = await client.documents.findById({ id });
+  const fm = doc.frontMatter as Record<string, unknown>;
+  const hasSlug = typeof fm.slug === "string" && !!fm.slug;
+  const hasDate = typeof fm.date === "string" && !!fm.date;
+  if (hasSlug && hasDate) return;
+  const slug = publishSlug({ title: doc.frontMatter.title, frontMatter: {} });
+  await client.documents.updateDocument({
+    id,
+    journal: doc.journal,
+    content: doc.content,
+    frontMatter: {
+      ...doc.frontMatter,
+      ...(!hasSlug && slug ? { slug } : {}),
+      ...(!hasDate ? { date: new Date().toISOString() } : {}),
+      updatedAt: new Date().toISOString(),
+    },
+  });
 }
 
 function createMaintenance(client: NodeClient): Maintenance {
@@ -61,18 +115,31 @@ function createMaintenance(client: NodeClient): Maintenance {
       await client.journals.ensureDefault();
     },
     backups,
-    publishStatus: async ({ id }) => {
-      const blog = await blogFor(client, id);
-      return blog ? client.publish.status(id, blog.root, blog.target) : null;
-    },
+    publishStatus: ({ id }) => noteStatus(client, id),
     publishNote: async ({ id }) => {
-      const blog = await blogFor(client, id);
-      if (!blog) {
+      const status = await noteStatus(client, id);
+      const blog = await blogConfig(client);
+      if (status.state === "unavailable" || "reason" in blog) {
         throw new Error(
-          "[PUBLISH_NOT_CONFIGURED] Set a blog folder in Preferences first",
+          `[PUBLISH_NOT_CONFIGURED] ${"reason" in status ? status.reason : ""}`,
         );
       }
+      await pinPublishPath(client, id);
       return client.publish.publish(id, blog.root, blog.target);
+    },
+    blogOverview: async () => {
+      const blog = await blogConfig(client);
+      if ("reason" in blog) return { configured: false, reason: blog.reason };
+      return {
+        configured: true,
+        root: blog.root,
+        journal: blog.journal,
+        rows: await client.publish.overview(
+          blog.journal,
+          blog.root,
+          blog.target,
+        ),
+      };
     },
   };
 }

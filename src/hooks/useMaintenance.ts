@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
 import type { ExportOptions, ExportReport } from "../node-client/export";
 import type { ChroniclesImportReport } from "../node-client/importer-chronicles";
-import type { PublishStatus } from "../node-client/publish";
+import type { PublishRow, PublishStatus } from "../node-client/publish";
 import type { BackupsApi } from "../preload/backups";
 import type { SourceType } from "../preload/client/importer/SourceType";
 
-export type { ChroniclesImportReport, ExportReport, PublishStatus };
+export type { ChroniclesImportReport, ExportReport, PublishRow, PublishStatus };
 
 /**
  * Whole-library operations: import, export, repair, reset, and backups.
@@ -33,12 +33,22 @@ export interface Maintenance {
   backups: BackupsApi;
   /**
    * Blog publishing (spec/publish.md), configured by the `blog` preference.
-   * Null when no blog folder is set, or the note is outside the blog journal.
+   * `unavailable` carries what the user must do first (pick a folder or
+   * journal, move the note into the blog journal).
    */
-  publishStatus(req: { id: string }): Promise<PublishStatus | null>;
+  publishStatus(req: { id: string }): Promise<PublishAvailability>;
   /** Writes the note's post folder into the blog folder. */
   publishNote(req: { id: string }): Promise<PublishStatus>;
+  /** Every note in the blog journal and every post in the blog folder. */
+  blogOverview(): Promise<BlogOverview>;
 }
+
+export type PublishAvailability =
+  PublishStatus | { state: "unavailable"; reason: string };
+
+export type BlogOverview =
+  | { configured: false; reason: string }
+  | { configured: true; root: string; journal: string; rows: PublishRow[] };
 
 export const MaintenanceContext = React.createContext<Maintenance | null>(null);
 MaintenanceContext.displayName = "MaintenanceContext";

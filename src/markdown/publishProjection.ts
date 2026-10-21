@@ -27,6 +27,14 @@ export interface PublishTarget {
   provenance?: boolean;
 }
 
+/** What the desktop's blog target uses for fields the preference leaves out. */
+export const BLOG_TARGET_DEFAULTS: PublishTarget = {
+  kind: "hugo-bundle",
+  frontMatter: ["description", "tags"],
+  urlPrefix: "/blog/",
+  provenance: true,
+};
+
 export interface PublishableNote {
   id: string;
   title?: string | null;
