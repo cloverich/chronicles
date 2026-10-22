@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.14.0 — 2026-10-22
+
+- 2026-10-22 1661c8d Publish a note from the note menu to a blog folder as a ready-to-publish post; Preferences › Blog sets the folder, journal, and author, and the Blog page lists every draft, published, and changed post and publishes one or all. The note menu no longer clips.
+- 2026-10-16 3d6047e Photos and videos you add are stored like the iPhone app's: large photos become JPEGs (2048 px at most), and videos can be dropped into a note and shrunk to 1080p when ffmpeg is installed.
+- 2026-10-16 d6b1234 Notes play their videos again.
+- 2026-10-16 c9d04ed `yarn shrink-library` shrinks an existing library's photos and videos to the same media policy, with a dry run and a required backup before applying.
 - 2026-10-13 ece5ef6 Export can write one .chronicles.zip file instead of a folder, which moves to a phone much faster, and can include only the journals you pick; import accepts the zip too.
 - 2026-10-12 d09221b The note title and front matter line up with the prose column.
 - 2026-10-11 62324f1 Code blocks keep their language label and render plainly, without syntax highlighting.
