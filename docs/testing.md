@@ -30,6 +30,15 @@ These run under Electron's own Node (`ELECTRON_RUN_AS_NODE=1 electron --import t
 
 **No Electron end-to-end suite.** Several attempts (Playwright, a file-polling UI driver, an in-process `electron-test` runner) were abandoned; the Electron test ecosystem has not been worth the cost. Whole-app verification is done by running the app (`HEADLESS=true yarn start`) and exercising key flows — increasingly by an LLM driving the app as a final QA step rather than by a checked-in harness. Historical context: [designs/ui-driver.md](designs/ui-driver.md), [plans/archived/playwright-e2e.md](plans/archived/playwright-e2e.md).
 
+### Final QA pass (LLM-driven)
+
+Run the packaged app on a scratch profile with `--remote-debugging-port=9333` (or the dev app with `CHRONICLES_DEBUG_PORT=9333`) and drive it with [`scripts/qa.mjs`](../scripts/qa.mjs). For every UI change:
+
+- Exercise each state the change can be in, using its longest real strings (e.g. every disabled reason), not just the first that renders.
+- Run `qa.mjs layout '<selectors for the changed UI>' --widths 480,800,1280` with the UI open (menus included: the container and its children). It catches clipped or scrolling boxes, overlaps, and buttons pushed out of view, which text reads (`innerText`) and a single screenshot miss.
+- For actions that update the page, sample row positions and sizes while the action runs; nothing should move.
+- Walk the cross-view round trip (change a setting elsewhere, come back) and seed awkward data (missing timestamps, a large journal).
+
 ## Gaps
 
 - Coverage is thin on interaction flows (save, journal move, bulk actions); most renderer tests are render/shell checks.
