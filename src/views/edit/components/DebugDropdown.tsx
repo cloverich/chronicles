@@ -53,7 +53,12 @@ export default function DebugDropdown({
         </ToolbarButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="min-w-0">
+      {/* Grows to the space below the trigger; the default max-h-52 would
+          scroll Delete out of view. */}
+      <DropdownMenuContent
+        align="start"
+        className="max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-0"
+      >
         <DropdownMenuLabel>Toggle debug mode</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           className="flex flex-col gap-0.5"

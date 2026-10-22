@@ -39,6 +39,7 @@ export interface PublishRow {
   state: PublishState | "orphaned";
   title?: string;
   journal?: string;
+  createdAt?: string;
   updatedAt?: string;
   path?: string;
   url?: string;
@@ -96,7 +97,7 @@ export class PublishClient {
 
   /**
    * Every note in `journal` plus every bundle in the root (a note moved out of
-   * the journal is still published), newest edit first; orphans last.
+   * the journal is still published), newest note first; orphans last.
    */
   overview = async (
     journal: string,
@@ -111,6 +112,7 @@ export class PublishClient {
         id: documents.id,
         title: documents.title,
         journal: journals.name,
+        createdAt: documents.createdAt,
         updatedAt: documents.updatedAt,
         revision: documents.revision,
       })
@@ -139,7 +141,8 @@ export class PublishClient {
           url: bundle?.url,
         };
       })
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      // Creation order, so publishing or editing a note doesn't move its row.
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     const known = new Set(notes.map((n) => n.id));
     for (const [id, bundle] of bundles) {

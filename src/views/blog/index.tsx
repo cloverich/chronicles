@@ -1,3 +1,5 @@
+import { toJS } from "mobx";
+import { observer } from "mobx-react-lite";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -9,6 +11,8 @@ import {
   type BlogOverview,
   type PublishRow,
 } from "../../hooks/useMaintenance";
+import { usePlatform } from "../../hooks/usePlatform";
+import { usePreferences } from "../../hooks/usePreferences";
 import Titlebar from "../../titlebar/macos";
 import { formatAge } from "../backups";
 import * as Base from "../layout";
@@ -20,22 +24,31 @@ const STATE_LABELS: Record<PublishRow["state"], string> = {
   orphaned: "Note deleted",
 };
 
-const STATE_ORDER: PublishRow["state"][] = [
-  "edited",
-  "draft",
-  "published",
-  "orphaned",
-];
+/**
+ * Last edit, else creation; older libraries can carry a missing or unparseable
+ * updatedAt.
+ */
+export function formatEdited(row: PublishRow, now: Date): string {
+  for (const iso of [row.updatedAt, row.createdAt]) {
+    if (iso && !Number.isNaN(new Date(iso).getTime())) {
+      return formatAge(iso, now);
+    }
+  }
+  return "Unknown";
+}
 
 /**
  * Every note in the blog journal and every post in the blog folder, with
  * whether the post is current (spec/publish.md, "Publication state").
  */
-export default function Blog() {
+export default observer(function Blog() {
   const maintenance = useMaintenance();
+  const platform = usePlatform();
+  const preferences = usePreferences();
   const appState = useApplicationStore();
   const navigate = useNavigate();
   const [overview, setOverview] = React.useState<BlogOverview | null>(null);
+  /** The row being published, or "all". Buttons only disable while busy. */
   const [busy, setBusy] = React.useState<string | null>(null);
 
   const refresh = React.useCallback(async () => {
@@ -49,14 +62,16 @@ export default function Blog() {
     }
   }, []);
 
+  // Re-read when Preferences > Blog changes, e.g. via Blog settings… here.
+  const blogPrefs = JSON.stringify(toJS(preferences.blog) ?? null);
   React.useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, blogPrefs]);
 
-  async function publish(rows: PublishRow[]) {
+  async function publish(rows: PublishRow[], all = false) {
     let written = 0;
     for (const row of rows) {
-      setBusy(row.id);
+      setBusy(all ? "all" : row.id);
       try {
         await maintenance.publishNote({ id: row.id });
         written++;
@@ -66,13 +81,13 @@ export default function Blog() {
         );
       }
     }
+    await refresh();
     setBusy(null);
     if (written > 0) {
       toast.success(
         `Wrote ${written === 1 ? "1 post" : `${written} posts`}. Run the blog's publish script to put it live.`,
       );
     }
-    await refresh();
   }
 
   const rows = overview?.configured ? overview.rows : [];
@@ -125,11 +140,11 @@ export default function Blog() {
             <Button
               variant="default"
               disabled={edited.length === 0 || busy !== null}
-              loading={busy !== null}
-              onClick={() => publish(edited)}
+              onClick={() => publish(edited, true)}
             >
-              Publish all changes
-              {edited.length > 0 ? ` (${edited.length})` : ""}
+              {busy === "all"
+                ? "Publishing…"
+                : `Publish all changes${edited.length > 0 ? ` (${edited.length})` : ""}`}
             </Button>
             <Button
               variant="ghost"
@@ -150,83 +165,101 @@ export default function Blog() {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
+              <table className="w-full min-w-[560px] table-fixed border-collapse text-left text-sm">
+                {/* Fixed widths, and every row has the post line, so
+                    publishing never resizes a column or a row. Title takes
+                    the rest and truncates. */}
+                <colgroup>
+                  <col />
+                  <col className="w-44" />
+                  <col className="w-24" />
+                  <col className="w-36" />
+                </colgroup>
                 <thead className="text-muted-foreground text-xs">
                   <tr>
-                    <th className="py-1 pr-4 font-normal">Title</th>
+                    <th className="py-1 pr-4 font-normal">Title and post</th>
                     <th className="py-1 pr-4 font-normal">Status</th>
                     <th className="py-1 pr-4 font-normal">Edited</th>
-                    <th className="py-1 pr-4 font-normal">Post</th>
                     <th className="py-1 font-normal">
                       <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[...rows]
-                    .sort(
-                      (a, b) =>
-                        STATE_ORDER.indexOf(a.state) -
-                        STATE_ORDER.indexOf(b.state),
-                    )
-                    .map((row) => (
-                      <tr key={row.id} className="border-border border-t">
-                        <td className="py-1 pr-4">
-                          {row.state === "orphaned" ? (
-                            <span className="text-muted-foreground">
-                              {row.id}
+                  {rows.map((row) => (
+                    <tr key={row.id} className="border-border border-t">
+                      <td className="truncate py-1 pr-4">
+                        {row.state === "orphaned" ? (
+                          <span className="text-muted-foreground">
+                            {row.id}
+                          </span>
+                        ) : (
+                          <button
+                            className="text-left hover:underline"
+                            onClick={() =>
+                              navigate(`/documents/edit/${row.id}`)
+                            }
+                          >
+                            {row.title || "Untitled"}
+                          </button>
+                        )}
+                        {row.journal &&
+                          overview?.configured &&
+                          row.journal.toLowerCase() !==
+                            overview.journal.toLowerCase() && (
+                            <span className="text-muted-foreground ml-2 text-xs">
+                              in {row.journal}
                             </span>
-                          ) : (
+                          )}
+                        <div className="truncate font-mono text-xs">
+                          {row.path && overview?.configured ? (
                             <button
-                              className="text-left hover:underline"
+                              className="text-muted-foreground max-w-full truncate text-left hover:underline"
+                              title="Show in Finder"
                               onClick={() =>
-                                navigate(`/documents/edit/${row.id}`)
+                                platform.openPath(
+                                  `${overview.root}/${row.path}`,
+                                )
                               }
                             >
-                              {row.title || "Untitled"}
+                              {row.url ?? row.path}
                             </button>
+                          ) : (
+                            <span className="text-muted-foreground/60">
+                              Not published
+                            </span>
                           )}
-                          {row.journal &&
-                            overview?.configured &&
-                            row.journal.toLowerCase() !==
-                              overview.journal.toLowerCase() && (
-                              <span className="text-muted-foreground ml-2 text-xs">
-                                in {row.journal}
-                              </span>
-                            )}
-                        </td>
-                        <td
-                          className={`py-1 pr-4 whitespace-nowrap ${row.state === "edited" ? "text-foreground-strong font-medium" : "text-muted-foreground"}`}
+                        </div>
+                      </td>
+                      <td
+                        className={`truncate py-1 pr-4 ${row.state === "edited" ? "text-foreground-strong font-medium" : "text-muted-foreground"}`}
+                      >
+                        {busy === row.id ||
+                        (busy === "all" && row.state === "edited")
+                          ? "Publishing…"
+                          : STATE_LABELS[row.state]}
+                      </td>
+                      <td className="text-muted-foreground truncate py-1 pr-4">
+                        {formatEdited(row, now)}
+                      </td>
+                      <td className="py-1 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={
+                            busy !== null ||
+                            row.state === "published" ||
+                            row.state === "orphaned"
+                          }
+                          onClick={() => publish([row])}
                         >
-                          {STATE_LABELS[row.state]}
-                        </td>
-                        <td className="text-muted-foreground py-1 pr-4 whitespace-nowrap">
-                          {row.updatedAt ? formatAge(row.updatedAt, now) : "—"}
-                        </td>
-                        <td className="py-1 pr-4 font-mono text-xs">
-                          {row.url ?? (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="py-1 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={
-                              busy !== null ||
-                              row.state === "published" ||
-                              row.state === "orphaned"
-                            }
-                            loading={busy === row.id}
-                            onClick={() => publish([row])}
-                          >
-                            {row.state === "edited"
-                              ? "Publish changes"
-                              : "Publish"}
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                          {row.state === "edited"
+                            ? "Publish changes"
+                            : "Publish"}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -235,4 +268,4 @@ export default function Blog() {
       </Base.ScrollContainer>
     </Base.Container>
   );
-}
+});

@@ -83,7 +83,7 @@ export function PublishMenuItem({
       <DropdownMenuItem
         onClick={publish}
         disabled={state === "unavailable" || state === "published"}
-        className="flex-col items-start gap-0"
+        className="h-auto min-h-9 flex-col items-start gap-0"
       >
         <span>{LABELS[state]}</span>
         {hint && (
