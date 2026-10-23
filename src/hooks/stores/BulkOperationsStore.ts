@@ -1,6 +1,12 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 import { toast } from "sonner";
-import type { BulkOp, NoteQuery, NotesClient } from "../../contract/notes";
+import type {
+  BulkOp,
+  Journal,
+  NoteQuery,
+  NotesClient,
+} from "../../contract/notes";
+import type { JournalsStore } from "./journals";
 
 export type OperationStatus = "idle" | "processing" | "completed" | "error";
 
@@ -9,7 +15,10 @@ export class BulkOperationsStore {
   /** Guards status against an older run finishing after a newer one. */
   private runId = 0;
 
-  constructor(private notes: NotesClient) {
+  constructor(
+    private notes: NotesClient,
+    private journals: JournalsStore,
+  ) {
     makeObservable(this, {
       status: observable,
       addTag: action,
@@ -26,13 +35,71 @@ export class BulkOperationsStore {
   removeTag = (query: NoteQuery, tag: string) =>
     this.run(query, { type: "remove_tag", tag }, `Removing tag "${tag}"`);
 
-  /** Move all notes matching the query to a journal. */
-  changeJournal = (query: NoteQuery, journal: { id: string; name: string }) =>
-    this.run(
+  /**
+   * Move all notes matching the query to a journal, then refresh journal
+   * counts and offer to delete any journal the move left empty.
+   */
+  changeJournal = async (
+    query: NoteQuery,
+    journal: { id: string; name: string },
+  ) => {
+    const before = new Map(
+      (await this.notes.listJournals()).journals.map((j) => [
+        j.id,
+        j.noteCount,
+      ]),
+    );
+    await this.run(
       query,
       { type: "change_journal", journalId: journal.id },
       `Moving to "${journal.name}"`,
     );
+
+    try {
+      await this.journals.refresh();
+    } catch {
+      return; // refresh logs; the move itself already reported
+    }
+    for (const j of this.journals.journals) {
+      if (j.id !== journal.id && j.noteCount === 0 && before.get(j.id)) {
+        this.offerDelete(j);
+      }
+    }
+  };
+
+  private offerDelete = (journal: Journal) => {
+    const isDefault = journal.name === this.journals.defaultJournal;
+    toast(`"${journal.name}" is now empty`, {
+      duration: 15_000,
+      description: isDefault
+        ? "It's the default journal; choose another default to delete it."
+        : undefined,
+      action: isDefault
+        ? undefined
+        : {
+            label: "Delete journal",
+            onClick: () => void this.deleteIfEmpty(journal.id),
+          },
+    });
+  };
+
+  /** Re-checks emptiness, since notes may have been added since the offer. */
+  private deleteIfEmpty = async (id: string) => {
+    try {
+      await this.journals.refresh();
+      const journal = this.journals.journals.find((j) => j.id === id);
+      if (!journal) return;
+      if (journal.noteCount > 0) {
+        toast.error(`"${journal.name}" has notes again; not deleted`);
+        return;
+      }
+      await this.journals.remove(journal);
+      toast.success(`Deleted "${journal.name}"`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Delete failed: ${message}`);
+    }
+  };
 
   private run = async (
     query: NoteQuery,

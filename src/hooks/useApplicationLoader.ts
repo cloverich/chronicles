@@ -54,7 +54,7 @@ export function useAppLoader(): IApplicationState {
 
         setJournalsStore(journalStore);
         setMaintenanceStore(maintenanceStoreInstance);
-        setBulkOperationsStore(new BulkOperationsStore(notes));
+        setBulkOperationsStore(new BulkOperationsStore(notes, journalStore));
         setLoading(false);
       } catch (err: any) {
         if (!isEffectMounted) return;
