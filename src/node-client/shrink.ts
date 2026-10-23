@@ -1,6 +1,7 @@
 /**
  * "Shrink library": applies the Large media policy (media-policy.ts) to the
- * attachments notes already use, then removes attachments no note uses.
+ * attachments notes already use, renames images whose extension doesn't
+ * match their bytes, then removes attachments no note uses.
  * Each re-encoded file is stored as a new content-addressed attachment, the
  * notes that reference the old one are rewritten (new revision, same
  * updatedAt), and the old blob is deleted. A file that already fits is never
@@ -18,10 +19,12 @@ import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import sharp from "sharp";
 
 import type { AttachmentStore } from "./attachments";
 import {
   findFfmpeg,
+  IMAGE_FORMAT_EXT,
   planVideo,
   prepareImage,
   probeVideo,
@@ -82,6 +85,8 @@ export interface ShrinkReport {
   applied: boolean;
   images: Tally;
   videos: Tally;
+  /** Images kept as they are but renamed to their real format's extension. */
+  renamed: { files: number };
   /** Notes rewritten (or, in a dry run, that would be). */
   notes: number;
   /** Attachments no note references (removed when applied). */
@@ -108,6 +113,7 @@ export class ShrinkClient {
       applied: apply,
       images: { files: 0, before: 0, after: 0 },
       videos: { files: 0, before: 0, after: 0 },
+      renamed: { files: 0 },
       notes: 0,
       unused: { files: 0, bytes: 0 },
       errors: [],
@@ -172,7 +178,10 @@ export class ShrinkClient {
           const bytes = await fs.promises.readFile(file);
           if (bytes.byteLength === 0) return;
           const prepared = await prepareImage(bytes);
-          if (!prepared) return;
+          if (!prepared) {
+            await this.fixExtension(row, bytes, apply, notes, report);
+            return;
+          }
           if (!apply) {
             record(
               row,
@@ -328,6 +337,29 @@ export class ShrinkClient {
       files: unused.length,
       bytes: unused.reduce((n, f) => n + f.size, 0),
     };
+  };
+
+  /**
+   * An image that fits but whose name lies about its format (WebP stored as
+   * `.png`, say) is renamed to its format's extension. Readers that pick a
+   * decoder by extension, like the blog's resizer, fail on those.
+   */
+  private fixExtension = async (
+    row: Row,
+    bytes: Buffer,
+    apply: boolean,
+    notes: Set<string>,
+    report: ShrinkReport,
+  ): Promise<void> => {
+    const format = (await sharp(bytes, { failOn: "none" }).metadata()).format;
+    const ext = format && IMAGE_FORMAT_EXT[format];
+    if (!ext || ext === (row.ext === ".jpeg" ? ".jpg" : row.ext)) return;
+    const noteIds = apply
+      ? (await this.store.renameExtension(row.sha256, row.ext, ext))
+          .notesUpdated
+      : this.notesReferencing(row.sha256);
+    report.renamed.files++;
+    noteIds.forEach((id) => notes.add(id));
   };
 
   /** Every sha256 that appears in a note's content or front matter. */

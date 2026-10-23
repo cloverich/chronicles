@@ -41,6 +41,16 @@ export interface PreparedImage {
   ext: string;
 }
 
+/** Stored extension for a format sharp reports, for images kept as they are. */
+export const IMAGE_FORMAT_EXT: Record<string, string> = {
+  jpeg: ".jpg",
+  png: ".png",
+  webp: ".webp",
+  gif: ".gif",
+  avif: ".avif",
+  svg: ".svg",
+};
+
 /** Formats re-encoded to JPEG whatever their size (readers can't show them). */
 const CONVERTED = new Set(["heif", "tiff"]);
 

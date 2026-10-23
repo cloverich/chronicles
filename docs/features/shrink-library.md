@@ -37,6 +37,11 @@ Quit Chronicles first; `--apply` refuses while it runs and requires
   matter**, the same test the phone's Storage page uses. The sweep deletes
   every pool file and `attachments` row outside that set, plus leftover
   `.tmp-` files, so it must not run while the app is writing.
+- **Extensions follow the bytes.** The pre-3d6047e desktop ingest stored
+  WebP under the upload's `.png`/`.jpg` name. An image that fits but whose
+  name doesn't match its format (per sharp) is renamed, not re-encoded: same
+  sha256, new extension, references rewritten like a swap. The blog's
+  resizer picks its decoder by extension and stops on these.
 - **Encoder:** `h264_videotoolbox` when ffmpeg has it (fast, hardware),
   otherwise `libx264`; `--encoder` overrides.
 - **Dry run sizes:** images are re-encoded in memory, so their numbers are

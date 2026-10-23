@@ -138,6 +138,9 @@ try {
     `Videos: ${report.videos.files} files ${MB(report.videos.before)} → ${report.applied ? "" : "~"}${MB(report.videos.after)} (−${pct(report.videos.before, report.videos.after)})`,
   );
   console.log(
+    `Extensions ${report.applied ? "fixed" : "to fix"}: ${report.renamed.files} images whose name didn't match their format`,
+  );
+  console.log(
     `Notes ${report.applied ? "rewritten" : "to rewrite"}: ${report.notes}`,
   );
   console.log(

@@ -33,6 +33,51 @@ const MIME: Record<string, string> = {
   ".txt": "text/plain",
 };
 
+const refersTo = (sha: string) =>
+  sql`(instr(${documents.content}, ${sha}) > 0 OR instr(${documents.frontmatter}, ${sha}) > 0)`;
+
+type Trx = Parameters<
+  Parameters<BetterSQLite3Database<typeof schema>["transaction"]>[0]
+>[0];
+
+/**
+ * Replace `oldUrl` with `newUrl` in every note mentioning `sha256`,
+ * re-deriving each changed note and giving it a new revision. Returns the
+ * ids of the notes changed.
+ */
+function rewriteReferences(
+  trx: Trx,
+  sha256: string,
+  oldUrl: string,
+  newUrl: string,
+): string[] {
+  const rows = trx
+    .select({
+      id: documents.id,
+      title: documents.title,
+      content: documents.content,
+      frontmatter: documents.frontmatter,
+    })
+    .from(documents)
+    .where(refersTo(sha256))
+    .all();
+  const notesUpdated: string[] = [];
+  for (const row of rows) {
+    const content = row.content.split(oldUrl).join(newUrl);
+    const frontmatter = row.frontmatter.split(oldUrl).join(newUrl);
+    if (content === row.content && frontmatter === row.frontmatter) continue;
+    trx
+      .update(documents)
+      .set({ content, frontmatter })
+      .where(sql`${documents.id} = ${row.id}`)
+      .run();
+    derive(trx, { id: row.id, title: row.title, content });
+    refreshRevision(trx, row.id);
+    notesUpdated.push(row.id);
+  }
+  return notesUpdated;
+}
+
 export interface StoredAttachment {
   sha256: string;
   ext: string;
@@ -117,35 +162,9 @@ export class AttachmentStore {
   ): Promise<{ notesUpdated: string[]; oldRemoved: boolean }> => {
     const oldUrl = attachmentUrl(old.sha256, old.ext);
     const newUrl = attachmentUrl(next.sha256, next.ext);
-    const refersTo = (sha: string) =>
-      sql`(instr(${documents.content}, ${sha}) > 0 OR instr(${documents.frontmatter}, ${sha}) > 0)`;
 
     const result = this.db.transaction((trx) => {
-      const rows = trx
-        .select({
-          id: documents.id,
-          title: documents.title,
-          content: documents.content,
-          frontmatter: documents.frontmatter,
-        })
-        .from(documents)
-        .where(refersTo(old.sha256))
-        .all();
-      const notesUpdated: string[] = [];
-      for (const row of rows) {
-        const content = row.content.split(oldUrl).join(newUrl);
-        const frontmatter = row.frontmatter.split(oldUrl).join(newUrl);
-        if (content === row.content && frontmatter === row.frontmatter)
-          continue;
-        trx
-          .update(documents)
-          .set({ content, frontmatter })
-          .where(sql`${documents.id} = ${row.id}`)
-          .run();
-        derive(trx, { id: row.id, title: row.title, content });
-        refreshRevision(trx, row.id);
-        notesUpdated.push(row.id);
-      }
+      const notesUpdated = rewriteReferences(trx, old.sha256, oldUrl, newUrl);
       const still = trx
         .select({ id: documents.id })
         .from(documents)
@@ -164,6 +183,43 @@ export class AttachmentStore {
       await fs.promises.rm(this.pathFor(old.sha256, old.ext), { force: true });
     }
     return result;
+  };
+
+  /**
+   * Give a blob the extension its bytes call for (the old desktop ingest
+   * stored WebP under the upload's `.png`/`.jpg` name). Same bytes, same
+   * sha256: the file is copied to its new name, then every reference and the
+   * row change in one transaction (new revision, same `updatedAt`), then the
+   * old file is deleted.
+   */
+  renameExtension = async (
+    sha256: string,
+    from: string,
+    to: string,
+  ): Promise<{ notesUpdated: string[] }> => {
+    const oldPath = this.pathFor(sha256, from);
+    const newPath = this.pathFor(sha256, to);
+    if (!fs.existsSync(newPath)) {
+      const tmp = `${newPath}.tmp-${process.pid}-${crypto.randomBytes(4).toString("hex")}`;
+      await fs.promises.copyFile(oldPath, tmp);
+      await fs.promises.rename(tmp, newPath);
+    }
+    const notesUpdated = this.db.transaction((trx) => {
+      const updated = rewriteReferences(
+        trx,
+        sha256,
+        attachmentUrl(sha256, from),
+        attachmentUrl(sha256, to),
+      );
+      trx
+        .update(attachments)
+        .set({ ext: to, mime: MIME[to] ?? "application/octet-stream" })
+        .where(sql`${attachments.sha256} = ${sha256}`)
+        .run();
+      return updated;
+    });
+    await fs.promises.rm(oldPath, { force: true });
+    return { notesUpdated };
   };
 
   /**

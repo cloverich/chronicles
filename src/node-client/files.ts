@@ -5,6 +5,7 @@ import sharp from "sharp";
 
 import type { AttachmentStore } from "./attachments";
 import {
+  IMAGE_FORMAT_EXT,
   VIDEO_EXTENSIONS,
   findFfmpeg,
   planVideo,
@@ -12,16 +13,6 @@ import {
   probeVideo,
   transcodeVideo,
 } from "./media-policy";
-
-/** Stored extension for a format sharp reports, for images kept as they are. */
-const FORMAT_EXT: Record<string, string> = {
-  jpeg: ".jpg",
-  png: ".png",
-  webp: ".webp",
-  gif: ".gif",
-  avif: ".avif",
-  svg: ".svg",
-};
 
 export type UploadImageWarningCode =
   "decode_missing_plugin" | "decode_failed" | "process_failed";
@@ -125,7 +116,8 @@ export class NodeFilesClient {
         const format = (await sharp(buffer, { failOn: "none" }).metadata())
           .format as string | undefined;
         bytes = buffer;
-        ext = (format && FORMAT_EXT[format]) || path.extname(name) || ".bin";
+        ext =
+          (format && IMAGE_FORMAT_EXT[format]) || path.extname(name) || ".bin";
       }
     } catch (error) {
       warning = getSharpWarning(error);

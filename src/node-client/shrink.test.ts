@@ -330,6 +330,64 @@ describe("ShrinkClient", () => {
     assert.equal(again.library.after, again.library.before);
   });
 
+  test("an image named for the wrong format is renamed, not re-encoded", async () => {
+    const notesDir = path.join(scratch, "lib-ext");
+    const client = await createClient({ dbPath: ":memory:", notesDir });
+    await client.journals.create({ name: "work" });
+    const store = client.files.attachments;
+
+    // The old desktop ingest: WebP bytes under the upload's `.png` name.
+    const webp = await noise(300, 200).webp().toBuffer();
+    const png = await noise(100, 100).png().toBuffer();
+    const a = await store.putBytes(webp, { ext: ".png" });
+    const b = await store.putBytes(png, { ext: ".png" });
+    const content = `![x](${a.url})\n\n![y](${b.url})`;
+    const id = await client.documents.createDocument({
+      journal: "work",
+      content,
+      frontMatter: {
+        tags: [],
+        title: "Old",
+        createdAt: "2020-01-01T00:00:00.000Z",
+        updatedAt: "2020-01-02T00:00:00.000Z",
+        cover: a.url,
+      },
+    });
+    const before = await client.documents.findById({ id });
+
+    const dry = await client.shrink.run({ videos: false });
+    assert.equal(dry.renamed.files, 1);
+    assert.equal(dry.notes, 1);
+    assert.equal(dry.images.files, 0);
+    assert.equal((await client.documents.findById({ id })).content, content);
+
+    const real = await client.shrink.run({ apply: true, videos: false });
+    assert.deepEqual(real.errors, []);
+    assert.equal(real.renamed.files, 1);
+    const after = await client.documents.findById({ id });
+    const renamed = `chronicles://attachment/${a.sha256}.webp`;
+    assert.equal(after.content, `![x](${renamed})\n\n![y](${b.url})`);
+    assert.equal(after.frontMatter.cover, renamed);
+    assert.equal(after.frontMatter.updatedAt, before.frontMatter.updatedAt);
+    assert.notEqual(after.revision, before.revision);
+    assert.ok(!fs.existsSync(store.pathFor(a.sha256, ".png")));
+    assert.deepEqual(
+      fs.readFileSync(store.pathFor(a.sha256, ".webp")),
+      Buffer.from(webp),
+    );
+    const row = client.db
+      .select()
+      .from(schema.attachments)
+      .all()
+      .find((r) => r.sha256 === a.sha256);
+    assert.equal(row?.ext, ".webp");
+    assert.equal(row?.mime, "image/webp");
+
+    const again = await client.shrink.run({ apply: true, videos: false });
+    assert.equal(again.renamed.files, 0);
+    assert.equal(again.notes, 0);
+  });
+
   test("HDR (HLG) video maps to SDR Rec. 709", async (t) => {
     const tools = await ffmpegOrSkip(t);
     if (!tools) return;
