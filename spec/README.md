@@ -15,6 +15,7 @@ Node code.
 | [derive.md](derive.md)               | Derived data (note links, image refs, FTS)                        |
 | [notes-client.md](notes-client.md)   | The NotesClient API contract and its fixtures                     |
 | [publish.md](publish.md)             | Projecting a note into a public bundle (a blog post)              |
+| [theme.md](theme.md)                 | Theme files: colors, note typography, and how overrides resolve   |
 | `vectors/`                           | Golden inputs and expected outputs                                |
 
 ## Status
@@ -36,6 +37,7 @@ vectors/
   contract/<area>.json       NotesClient scenarios (seeded from contract/libraries/)
   publish/<case>/input.json  library state plus the note, target, and published map
   publish/<case>/expected/   the bundle tree (absent for an expectedError case)
+  theme/cases.json           theme file in → resolved variants and typography, or error paths
 ```
 
 An implementation passes a vector when:
@@ -57,9 +59,11 @@ An implementation passes a vector when:
 - **contract:** every scenario passes against the host's NotesClient.
 - **publish:** projecting the case's note yields `expected/` byte-for-byte, or
   fails with `expectedError` (see [publish.md](publish.md#vectors)).
+- **theme:** reading each case's `input` yields `expected` (see
+  [theme.md](theme.md#vectors)).
 
-In this repo, `yarn test:node` runs every vector
-(`src/node-client/spec-vectors.test.ts`). To regenerate after an intentional
+In this repo, `yarn test:node` runs every vector except `theme/`
+(`src/node-client/spec-vectors.test.ts`); the Swift app runs those. To regenerate after an intentional
 change:
 
 ```bash

@@ -1,0 +1,994 @@
+[
+  {
+    "name": "dark-hex-forms",
+    "input": {
+      "name": "Hex Night",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      }
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "dark",
+          "isDark": true,
+          "colors": {
+            "accent": "#8BD5CA",
+            "accentForeground": "#1C1B1D",
+            "accentMuted": "#1C1B1D",
+            "accentSecondary": "#8BD5CA",
+            "accentSecondaryForeground": "#1C1B1D",
+            "accentTertiary": "#8BD5CA",
+            "accentTertiaryForeground": "#1C1B1D",
+            "background": "#1C1B1D",
+            "border": "#FFFFFF1F",
+            "card": "#1C1B1D",
+            "cardForeground": "#D4D0D8",
+            "destructive": "#1C1B1D",
+            "destructiveForeground": "#1C1B1D",
+            "foreground": "#D4D0D8",
+            "foregroundStrong": "#F4F0FF",
+            "input": "#FFFFFF1F",
+            "interactiveHover": "#8BD5CA",
+            "link": "#1C1B1D",
+            "linkHover": "#1C1B1D",
+            "muted": "#1C1B1D",
+            "mutedForeground": "#1C1B1D",
+            "popover": "#1C1B1D",
+            "popoverForeground": "#D4D0D8",
+            "primary": "#BEA7FF",
+            "primaryForeground": "#1C1B1D",
+            "ring": "#1C1B1D",
+            "secondary": "#2A2830",
+            "secondaryForeground": "#E0DCE6",
+            "tag": "#AABBCC",
+            "tagBorder": "#FFFFFF1F",
+            "tagForeground": "#AABBCCDD",
+            "tagSecondary": "#2A2830",
+            "tagSecondaryBorder": "#FFFFFF1F",
+            "tagSecondaryForeground": "#E0DCE6",
+            "tooltip": "#1C1B1D",
+            "tooltipForeground": "#1C1B1D"
+          }
+        }
+      ],
+      "typography": {
+        "body": "Mona Sans",
+        "heading": "Hubot Sans",
+        "mono": "IBM Plex Mono",
+        "size": 17,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  {
+    "name": "light-hsl-forms",
+    "input": {
+      "name": "Paper",
+      "version": "1.2.0",
+      "mode": "light",
+      "colors": {
+        "background": "hsl(40, 30%, 96%)",
+        "foreground": "30 10% 20%",
+        "foregroundStrong": "hsl(30 15% 10%)",
+        "muted": "hsl(40, 30%, 96%)",
+        "mutedForeground": "hsl(40, 30%, 96%)",
+        "tooltip": "hsl(40, 30%, 96%)",
+        "tooltipForeground": "hsl(40, 30%, 96%)",
+        "primary": "hsl(222.5, 47.2%, 11.2%)",
+        "primaryForeground": "hsl(40, 30%, 96%)",
+        "secondary": "hsl(40, 30%, 96%)",
+        "secondaryForeground": "hsl(40, 30%, 96%)",
+        "accent": "200 80% 45%",
+        "accentForeground": "hsl(40, 30%, 96%)",
+        "accentMuted": "hsl(40, 30%, 96%)",
+        "link": "hsl(0, 100%, 50%)",
+        "linkHover": "hsl(40, 30%, 96%)",
+        "destructive": "hsl(40, 30%, 96%)",
+        "destructiveForeground": "hsl(40, 30%, 96%)",
+        "border": "hsl(400, 10%, 85%)",
+        "ring": "hsl(40, 30%, 96%)",
+        "tag": "hsl(40, 30%, 96%)",
+        "tagForeground": "hsl(40, 30%, 96%)",
+        "card": "#FFFFFF",
+        "tagSecondary": "45 90% 60%"
+      }
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "light",
+          "isDark": false,
+          "colors": {
+            "accent": "#1791CF",
+            "accentForeground": "#F8F6F2",
+            "accentMuted": "#F8F6F2",
+            "accentSecondary": "#1791CF",
+            "accentSecondaryForeground": "#F8F6F2",
+            "accentTertiary": "#1791CF",
+            "accentTertiaryForeground": "#F8F6F2",
+            "background": "#F8F6F2",
+            "border": "#DDDAD5",
+            "card": "#FFFFFF",
+            "cardForeground": "#38332E",
+            "destructive": "#F8F6F2",
+            "destructiveForeground": "#F8F6F2",
+            "foreground": "#38332E",
+            "foregroundStrong": "#1D1A16",
+            "input": "#DDDAD5",
+            "interactiveHover": "#1791CF",
+            "link": "#FF0000",
+            "linkHover": "#F8F6F2",
+            "muted": "#F8F6F2",
+            "mutedForeground": "#F8F6F2",
+            "popover": "#F8F6F2",
+            "popoverForeground": "#38332E",
+            "primary": "#0F172A",
+            "primaryForeground": "#F8F6F2",
+            "ring": "#F8F6F2",
+            "secondary": "#F8F6F2",
+            "secondaryForeground": "#F8F6F2",
+            "tag": "#F8F6F2",
+            "tagBorder": "#DDDAD5",
+            "tagForeground": "#F8F6F2",
+            "tagSecondary": "#F5C73D",
+            "tagSecondaryBorder": "#DDDAD5",
+            "tagSecondaryForeground": "#F8F6F2",
+            "tooltip": "#F8F6F2",
+            "tooltipForeground": "#F8F6F2"
+          }
+        }
+      ],
+      "typography": {
+        "body": "Mona Sans",
+        "heading": "Hubot Sans",
+        "mono": "IBM Plex Mono",
+        "size": 17,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  {
+    "name": "inherent-mode",
+    "input": {
+      "name": "Dim Light",
+      "version": "1.0.0",
+      "mode": "light",
+      "inherentMode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      }
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "light",
+          "isDark": true,
+          "colors": {
+            "accent": "#8BD5CA",
+            "accentForeground": "#1C1B1D",
+            "accentMuted": "#1C1B1D",
+            "accentSecondary": "#8BD5CA",
+            "accentSecondaryForeground": "#1C1B1D",
+            "accentTertiary": "#8BD5CA",
+            "accentTertiaryForeground": "#1C1B1D",
+            "background": "#1C1B1D",
+            "border": "#FFFFFF1F",
+            "card": "#1C1B1D",
+            "cardForeground": "#D4D0D8",
+            "destructive": "#1C1B1D",
+            "destructiveForeground": "#1C1B1D",
+            "foreground": "#D4D0D8",
+            "foregroundStrong": "#F4F0FF",
+            "input": "#FFFFFF1F",
+            "interactiveHover": "#8BD5CA",
+            "link": "#1C1B1D",
+            "linkHover": "#1C1B1D",
+            "muted": "#1C1B1D",
+            "mutedForeground": "#1C1B1D",
+            "popover": "#1C1B1D",
+            "popoverForeground": "#D4D0D8",
+            "primary": "#BEA7FF",
+            "primaryForeground": "#1C1B1D",
+            "ring": "#1C1B1D",
+            "secondary": "#2A2830",
+            "secondaryForeground": "#E0DCE6",
+            "tag": "#AABBCC",
+            "tagBorder": "#FFFFFF1F",
+            "tagForeground": "#AABBCCDD",
+            "tagSecondary": "#2A2830",
+            "tagSecondaryBorder": "#FFFFFF1F",
+            "tagSecondaryForeground": "#E0DCE6",
+            "tooltip": "#1C1B1D",
+            "tooltipForeground": "#1C1B1D"
+          }
+        }
+      ],
+      "typography": {
+        "body": "Mona Sans",
+        "heading": "Hubot Sans",
+        "mono": "IBM Plex Mono",
+        "size": 17,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  {
+    "name": "both-modes",
+    "input": {
+      "name": "Twins",
+      "version": "2.0.0",
+      "mode": "both",
+      "colors": {
+        "light": {
+          "background": "hsl(40, 30%, 96%)",
+          "foreground": "30 10% 20%",
+          "foregroundStrong": "hsl(30 15% 10%)",
+          "muted": "hsl(40, 30%, 96%)",
+          "mutedForeground": "hsl(40, 30%, 96%)",
+          "tooltip": "hsl(40, 30%, 96%)",
+          "tooltipForeground": "hsl(40, 30%, 96%)",
+          "primary": "hsl(222.5, 47.2%, 11.2%)",
+          "primaryForeground": "hsl(40, 30%, 96%)",
+          "secondary": "hsl(40, 30%, 96%)",
+          "secondaryForeground": "hsl(40, 30%, 96%)",
+          "accent": "200 80% 45%",
+          "accentForeground": "hsl(40, 30%, 96%)",
+          "accentMuted": "hsl(40, 30%, 96%)",
+          "link": "hsl(0, 100%, 50%)",
+          "linkHover": "hsl(40, 30%, 96%)",
+          "destructive": "hsl(40, 30%, 96%)",
+          "destructiveForeground": "hsl(40, 30%, 96%)",
+          "border": "hsl(400, 10%, 85%)",
+          "ring": "hsl(40, 30%, 96%)",
+          "tag": "hsl(40, 30%, 96%)",
+          "tagForeground": "hsl(40, 30%, 96%)",
+          "card": "#FFFFFF",
+          "tagSecondary": "45 90% 60%"
+        },
+        "dark": {
+          "background": "#1C1B1D",
+          "foreground": "#d4d0d8",
+          "foregroundStrong": "#F4F0FF",
+          "muted": "#1C1B1D",
+          "mutedForeground": "#1C1B1D",
+          "tooltip": "#1C1B1D",
+          "tooltipForeground": "#1C1B1D",
+          "primary": "#bea7ff",
+          "primaryForeground": "#1C1B1D",
+          "secondary": "#2a2830",
+          "secondaryForeground": "#E0DCE6",
+          "accent": "#8BD5CA",
+          "accentForeground": "#1C1B1D",
+          "accentMuted": "#1C1B1D",
+          "link": "#1C1B1D",
+          "linkHover": "#1C1B1D",
+          "destructive": "#1C1B1D",
+          "destructiveForeground": "#1C1B1D",
+          "border": "#ffffff1f",
+          "ring": "#1C1B1D",
+          "tag": "#abc",
+          "tagForeground": "#abcd"
+        }
+      },
+      "codeTheme": "github"
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "light",
+          "isDark": false,
+          "colors": {
+            "accent": "#1791CF",
+            "accentForeground": "#F8F6F2",
+            "accentMuted": "#F8F6F2",
+            "accentSecondary": "#1791CF",
+            "accentSecondaryForeground": "#F8F6F2",
+            "accentTertiary": "#1791CF",
+            "accentTertiaryForeground": "#F8F6F2",
+            "background": "#F8F6F2",
+            "border": "#DDDAD5",
+            "card": "#FFFFFF",
+            "cardForeground": "#38332E",
+            "destructive": "#F8F6F2",
+            "destructiveForeground": "#F8F6F2",
+            "foreground": "#38332E",
+            "foregroundStrong": "#1D1A16",
+            "input": "#DDDAD5",
+            "interactiveHover": "#1791CF",
+            "link": "#FF0000",
+            "linkHover": "#F8F6F2",
+            "muted": "#F8F6F2",
+            "mutedForeground": "#F8F6F2",
+            "popover": "#F8F6F2",
+            "popoverForeground": "#38332E",
+            "primary": "#0F172A",
+            "primaryForeground": "#F8F6F2",
+            "ring": "#F8F6F2",
+            "secondary": "#F8F6F2",
+            "secondaryForeground": "#F8F6F2",
+            "tag": "#F8F6F2",
+            "tagBorder": "#DDDAD5",
+            "tagForeground": "#F8F6F2",
+            "tagSecondary": "#F5C73D",
+            "tagSecondaryBorder": "#DDDAD5",
+            "tagSecondaryForeground": "#F8F6F2",
+            "tooltip": "#F8F6F2",
+            "tooltipForeground": "#F8F6F2"
+          }
+        },
+        {
+          "mode": "dark",
+          "isDark": true,
+          "colors": {
+            "accent": "#8BD5CA",
+            "accentForeground": "#1C1B1D",
+            "accentMuted": "#1C1B1D",
+            "accentSecondary": "#8BD5CA",
+            "accentSecondaryForeground": "#1C1B1D",
+            "accentTertiary": "#8BD5CA",
+            "accentTertiaryForeground": "#1C1B1D",
+            "background": "#1C1B1D",
+            "border": "#FFFFFF1F",
+            "card": "#1C1B1D",
+            "cardForeground": "#D4D0D8",
+            "destructive": "#1C1B1D",
+            "destructiveForeground": "#1C1B1D",
+            "foreground": "#D4D0D8",
+            "foregroundStrong": "#F4F0FF",
+            "input": "#FFFFFF1F",
+            "interactiveHover": "#8BD5CA",
+            "link": "#1C1B1D",
+            "linkHover": "#1C1B1D",
+            "muted": "#1C1B1D",
+            "mutedForeground": "#1C1B1D",
+            "popover": "#1C1B1D",
+            "popoverForeground": "#D4D0D8",
+            "primary": "#BEA7FF",
+            "primaryForeground": "#1C1B1D",
+            "ring": "#1C1B1D",
+            "secondary": "#2A2830",
+            "secondaryForeground": "#E0DCE6",
+            "tag": "#AABBCC",
+            "tagBorder": "#FFFFFF1F",
+            "tagForeground": "#AABBCCDD",
+            "tagSecondary": "#2A2830",
+            "tagSecondaryBorder": "#FFFFFF1F",
+            "tagSecondaryForeground": "#E0DCE6",
+            "tooltip": "#1C1B1D",
+            "tooltipForeground": "#1C1B1D"
+          }
+        }
+      ],
+      "typography": {
+        "body": "Mona Sans",
+        "heading": "Hubot Sans",
+        "mono": "IBM Plex Mono",
+        "size": 17,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  {
+    "name": "typography-full",
+    "input": {
+      "name": "Reader",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      },
+      "typography": {
+        "body": "ui-serif",
+        "heading": "Archivo",
+        "mono": "ui-monospace",
+        "size": 19,
+        "lineHeight": 1.7
+      }
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "dark",
+          "isDark": true,
+          "colors": {
+            "accent": "#8BD5CA",
+            "accentForeground": "#1C1B1D",
+            "accentMuted": "#1C1B1D",
+            "accentSecondary": "#8BD5CA",
+            "accentSecondaryForeground": "#1C1B1D",
+            "accentTertiary": "#8BD5CA",
+            "accentTertiaryForeground": "#1C1B1D",
+            "background": "#1C1B1D",
+            "border": "#FFFFFF1F",
+            "card": "#1C1B1D",
+            "cardForeground": "#D4D0D8",
+            "destructive": "#1C1B1D",
+            "destructiveForeground": "#1C1B1D",
+            "foreground": "#D4D0D8",
+            "foregroundStrong": "#F4F0FF",
+            "input": "#FFFFFF1F",
+            "interactiveHover": "#8BD5CA",
+            "link": "#1C1B1D",
+            "linkHover": "#1C1B1D",
+            "muted": "#1C1B1D",
+            "mutedForeground": "#1C1B1D",
+            "popover": "#1C1B1D",
+            "popoverForeground": "#D4D0D8",
+            "primary": "#BEA7FF",
+            "primaryForeground": "#1C1B1D",
+            "ring": "#1C1B1D",
+            "secondary": "#2A2830",
+            "secondaryForeground": "#E0DCE6",
+            "tag": "#AABBCC",
+            "tagBorder": "#FFFFFF1F",
+            "tagForeground": "#AABBCCDD",
+            "tagSecondary": "#2A2830",
+            "tagSecondaryBorder": "#FFFFFF1F",
+            "tagSecondaryForeground": "#E0DCE6",
+            "tooltip": "#1C1B1D",
+            "tooltipForeground": "#1C1B1D"
+          }
+        }
+      ],
+      "typography": {
+        "body": "ui-serif",
+        "heading": "Archivo",
+        "mono": "ui-monospace",
+        "size": 19,
+        "lineHeight": 1.7
+      }
+    }
+  },
+  {
+    "name": "typography-partial",
+    "input": {
+      "name": "Big",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      },
+      "typography": {
+        "size": 20.5,
+        "future": true
+      }
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "dark",
+          "isDark": true,
+          "colors": {
+            "accent": "#8BD5CA",
+            "accentForeground": "#1C1B1D",
+            "accentMuted": "#1C1B1D",
+            "accentSecondary": "#8BD5CA",
+            "accentSecondaryForeground": "#1C1B1D",
+            "accentTertiary": "#8BD5CA",
+            "accentTertiaryForeground": "#1C1B1D",
+            "background": "#1C1B1D",
+            "border": "#FFFFFF1F",
+            "card": "#1C1B1D",
+            "cardForeground": "#D4D0D8",
+            "destructive": "#1C1B1D",
+            "destructiveForeground": "#1C1B1D",
+            "foreground": "#D4D0D8",
+            "foregroundStrong": "#F4F0FF",
+            "input": "#FFFFFF1F",
+            "interactiveHover": "#8BD5CA",
+            "link": "#1C1B1D",
+            "linkHover": "#1C1B1D",
+            "muted": "#1C1B1D",
+            "mutedForeground": "#1C1B1D",
+            "popover": "#1C1B1D",
+            "popoverForeground": "#D4D0D8",
+            "primary": "#BEA7FF",
+            "primaryForeground": "#1C1B1D",
+            "ring": "#1C1B1D",
+            "secondary": "#2A2830",
+            "secondaryForeground": "#E0DCE6",
+            "tag": "#AABBCC",
+            "tagBorder": "#FFFFFF1F",
+            "tagForeground": "#AABBCCDD",
+            "tagSecondary": "#2A2830",
+            "tagSecondaryBorder": "#FFFFFF1F",
+            "tagSecondaryForeground": "#E0DCE6",
+            "tooltip": "#1C1B1D",
+            "tooltipForeground": "#1C1B1D"
+          }
+        }
+      ],
+      "typography": {
+        "body": "Mona Sans",
+        "heading": "Hubot Sans",
+        "mono": "IBM Plex Mono",
+        "size": 20.5,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  {
+    "name": "unknown-fields",
+    "input": {
+      "name": "Future",
+      "version": "1.0.0-beta",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd",
+        "glow": "#fff"
+      },
+      "spacing": {
+        "gutter": 16
+      }
+    },
+    "expected": {
+      "variants": [
+        {
+          "mode": "dark",
+          "isDark": true,
+          "colors": {
+            "accent": "#8BD5CA",
+            "accentForeground": "#1C1B1D",
+            "accentMuted": "#1C1B1D",
+            "accentSecondary": "#8BD5CA",
+            "accentSecondaryForeground": "#1C1B1D",
+            "accentTertiary": "#8BD5CA",
+            "accentTertiaryForeground": "#1C1B1D",
+            "background": "#1C1B1D",
+            "border": "#FFFFFF1F",
+            "card": "#1C1B1D",
+            "cardForeground": "#D4D0D8",
+            "destructive": "#1C1B1D",
+            "destructiveForeground": "#1C1B1D",
+            "foreground": "#D4D0D8",
+            "foregroundStrong": "#F4F0FF",
+            "input": "#FFFFFF1F",
+            "interactiveHover": "#8BD5CA",
+            "link": "#1C1B1D",
+            "linkHover": "#1C1B1D",
+            "muted": "#1C1B1D",
+            "mutedForeground": "#1C1B1D",
+            "popover": "#1C1B1D",
+            "popoverForeground": "#D4D0D8",
+            "primary": "#BEA7FF",
+            "primaryForeground": "#1C1B1D",
+            "ring": "#1C1B1D",
+            "secondary": "#2A2830",
+            "secondaryForeground": "#E0DCE6",
+            "tag": "#AABBCC",
+            "tagBorder": "#FFFFFF1F",
+            "tagForeground": "#AABBCCDD",
+            "tagSecondary": "#2A2830",
+            "tagSecondaryBorder": "#FFFFFF1F",
+            "tagSecondaryForeground": "#E0DCE6",
+            "tooltip": "#1C1B1D",
+            "tooltipForeground": "#1C1B1D"
+          }
+        }
+      ],
+      "typography": {
+        "body": "Mona Sans",
+        "heading": "Hubot Sans",
+        "mono": "IBM Plex Mono",
+        "size": 17,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  {
+    "name": "invalid-colors",
+    "input": {
+      "name": "Broken",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "red",
+        "tag": "#abc",
+        "tagForeground": "#abcd",
+        "card": "#12345"
+      }
+    },
+    "expected": {
+      "errors": [
+        "colors.card",
+        "colors.primary",
+        "colors.ring"
+      ]
+    }
+  },
+  {
+    "name": "invalid-mode",
+    "input": {
+      "name": "Moody",
+      "version": "1.0.0",
+      "mode": "dusk",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      }
+    },
+    "expected": {
+      "errors": [
+        "mode"
+      ]
+    }
+  },
+  {
+    "name": "invalid-header",
+    "input": {
+      "name": "  ",
+      "version": "one",
+      "mode": "dark",
+      "inherentMode": "dim",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      }
+    },
+    "expected": {
+      "errors": [
+        "inherentMode",
+        "name",
+        "version"
+      ]
+    }
+  },
+  {
+    "name": "invalid-both",
+    "input": {
+      "name": "Half",
+      "version": "1.0.0",
+      "mode": "both",
+      "colors": {
+        "light": {
+          "background": "hsl(40, 30%, 96%)",
+          "foreground": "30 10% 20%",
+          "foregroundStrong": "hsl(30 15% 10%)",
+          "muted": "hsl(40, 30%, 96%)",
+          "mutedForeground": "hsl(40, 30%, 96%)",
+          "tooltip": "hsl(40, 30%, 96%)",
+          "tooltipForeground": "hsl(40, 30%, 96%)",
+          "primary": "hsl(222.5, 47.2%, 11.2%)",
+          "primaryForeground": "hsl(40, 30%, 96%)",
+          "secondary": "hsl(40, 30%, 96%)",
+          "secondaryForeground": "hsl(40, 30%, 96%)",
+          "accent": "200 80% 45%",
+          "accentForeground": "hsl(40, 30%, 96%)",
+          "accentMuted": "hsl(40, 30%, 96%)",
+          "link": "hsl(0, 100%, 50%)",
+          "linkHover": "hsl(40, 30%, 96%)",
+          "destructive": "hsl(40, 30%, 96%)",
+          "destructiveForeground": "hsl(40, 30%, 96%)",
+          "border": "hsl(400, 10%, 85%)",
+          "ring": "hsl(40, 30%, 96%)",
+          "tag": "hsl(40, 30%, 96%)",
+          "tagForeground": "hsl(40, 30%, 96%)",
+          "card": "#FFFFFF",
+          "tagSecondary": "45 90% 60%"
+        }
+      }
+    },
+    "expected": {
+      "errors": [
+        "colors.dark"
+      ]
+    }
+  },
+  {
+    "name": "invalid-flat-for-both",
+    "input": {
+      "name": "Flat",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "light": {
+          "background": "hsl(40, 30%, 96%)",
+          "foreground": "30 10% 20%",
+          "foregroundStrong": "hsl(30 15% 10%)",
+          "muted": "hsl(40, 30%, 96%)",
+          "mutedForeground": "hsl(40, 30%, 96%)",
+          "tooltip": "hsl(40, 30%, 96%)",
+          "tooltipForeground": "hsl(40, 30%, 96%)",
+          "primary": "hsl(222.5, 47.2%, 11.2%)",
+          "primaryForeground": "hsl(40, 30%, 96%)",
+          "secondary": "hsl(40, 30%, 96%)",
+          "secondaryForeground": "hsl(40, 30%, 96%)",
+          "accent": "200 80% 45%",
+          "accentForeground": "hsl(40, 30%, 96%)",
+          "accentMuted": "hsl(40, 30%, 96%)",
+          "link": "hsl(0, 100%, 50%)",
+          "linkHover": "hsl(40, 30%, 96%)",
+          "destructive": "hsl(40, 30%, 96%)",
+          "destructiveForeground": "hsl(40, 30%, 96%)",
+          "border": "hsl(400, 10%, 85%)",
+          "ring": "hsl(40, 30%, 96%)",
+          "tag": "hsl(40, 30%, 96%)",
+          "tagForeground": "hsl(40, 30%, 96%)",
+          "card": "#FFFFFF",
+          "tagSecondary": "45 90% 60%"
+        },
+        "dark": {
+          "background": "#1C1B1D",
+          "foreground": "#d4d0d8",
+          "foregroundStrong": "#F4F0FF",
+          "muted": "#1C1B1D",
+          "mutedForeground": "#1C1B1D",
+          "tooltip": "#1C1B1D",
+          "tooltipForeground": "#1C1B1D",
+          "primary": "#bea7ff",
+          "primaryForeground": "#1C1B1D",
+          "secondary": "#2a2830",
+          "secondaryForeground": "#E0DCE6",
+          "accent": "#8BD5CA",
+          "accentForeground": "#1C1B1D",
+          "accentMuted": "#1C1B1D",
+          "link": "#1C1B1D",
+          "linkHover": "#1C1B1D",
+          "destructive": "#1C1B1D",
+          "destructiveForeground": "#1C1B1D",
+          "border": "#ffffff1f",
+          "ring": "#1C1B1D",
+          "tag": "#abc",
+          "tagForeground": "#abcd"
+        }
+      }
+    },
+    "expected": {
+      "errors": [
+        "colors"
+      ]
+    }
+  },
+  {
+    "name": "invalid-typography",
+    "input": {
+      "name": "Tiny",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      },
+      "typography": {
+        "body": "",
+        "size": 8,
+        "lineHeight": "1.5",
+        "mono": 3
+      }
+    },
+    "expected": {
+      "errors": [
+        "typography.body",
+        "typography.lineHeight",
+        "typography.mono",
+        "typography.size"
+      ]
+    }
+  },
+  {
+    "name": "invalid-typography-type",
+    "input": {
+      "name": "Odd",
+      "version": "1.0.0",
+      "mode": "dark",
+      "colors": {
+        "background": "#1C1B1D",
+        "foreground": "#d4d0d8",
+        "foregroundStrong": "#F4F0FF",
+        "muted": "#1C1B1D",
+        "mutedForeground": "#1C1B1D",
+        "tooltip": "#1C1B1D",
+        "tooltipForeground": "#1C1B1D",
+        "primary": "#bea7ff",
+        "primaryForeground": "#1C1B1D",
+        "secondary": "#2a2830",
+        "secondaryForeground": "#E0DCE6",
+        "accent": "#8BD5CA",
+        "accentForeground": "#1C1B1D",
+        "accentMuted": "#1C1B1D",
+        "link": "#1C1B1D",
+        "linkHover": "#1C1B1D",
+        "destructive": "#1C1B1D",
+        "destructiveForeground": "#1C1B1D",
+        "border": "#ffffff1f",
+        "ring": "#1C1B1D",
+        "tag": "#abc",
+        "tagForeground": "#abcd"
+      },
+      "typography": [
+        17
+      ]
+    },
+    "expected": {
+      "errors": [
+        "typography"
+      ]
+    }
+  }
+]
