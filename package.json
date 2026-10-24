@@ -113,13 +113,13 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.15",
     "typescript": "5.9.3",
-    "vite": "^7.3.6",
+    "vite": "^7.3.7",
     "vitest": "^4.0.18",
     "yaml": "^2.5.1"
   },
   "resolutions": {
     "yargs": "17.7.2",
-    "vite": "^7.3.6",
+    "vite": "^7.3.7",
     "sharp": "^0.35.4"
   }
 }
